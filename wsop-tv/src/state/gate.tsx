@@ -1,6 +1,6 @@
 // Playback-permission flow (login → upgrade → back to the same content).
 // Separate from the promotional modal in components/PromoModal.tsx.
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   ACCESS_LABEL,
@@ -50,13 +50,18 @@ export function GateProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   // A request belongs to the page it was made on: leaving the page cancels it and content stays locked.
   const req = rawReq && rawReq.path === location.pathname ? rawReq : null;
+  // Router path (basename-stripped). Layout effects run before the page's passive effects that call open().
+  const pathRef = useRef(location.pathname);
+  useLayoutEffect(() => {
+    pathRef.current = location.pathname;
+  }, [location.pathname]);
 
   // Close automatically once the user has enough access → player unlocks in place.
   useEffect(() => {
     if (req && canAccess(auth.tier, req.level)) setReq(null);
   }, [auth.tier, req]);
 
-  const open = useCallback((r: GateRequest) => setReq({ ...r, path: window.location.pathname }), []);
+  const open = useCallback((r: GateRequest) => setReq({ ...r, path: pathRef.current }), []);
   const api = useMemo(() => ({ tier: auth.tier, open, isOpen: !!req }), [auth.tier, open, req]);
 
   return (

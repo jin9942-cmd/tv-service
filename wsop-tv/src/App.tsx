@@ -12,7 +12,7 @@ import { NotFound } from './pages/NotFound';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
       <GateProvider>
         <Layout>
           <Routes>

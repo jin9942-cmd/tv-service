@@ -8,9 +8,9 @@ licence.
 
 | Files in this folder | Source video | Author | Licence |
 | --- | --- | --- | --- |
-| `fold_40/110/180/260/330/400.jpg` | [Incredibly Unbelievable Fold on the World Poker Tour](https://commons.wikimedia.org/wiki/File:Incredibly_Unbelievable_Fold_on_the_World_Poker_Tour.webm) | World Poker Tour | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `fold_40/110/180/260/330/400.jpg`, `hero_ft.jpg` (1280 px) | [Incredibly Unbelievable Fold on the World Poker Tour](https://commons.wikimedia.org/wiki/File:Incredibly_Unbelievable_Fold_on_the_World_Poker_Tour.webm) | World Poker Tour | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `mtl_25.jpg`, `mtl_70.jpg` | [Lynn Gilmartin Previews WPT Montreal at Playground Poker Club](https://commons.wikimedia.org/wiki/File:Lynn_Gilmartin_Previews_WPT_Montreal_at_Playground_Poker_Club.webm) | World Poker Tour | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `wpt_30.jpg` | [World Poker Tour asks players which country is the best](https://commons.wikimedia.org/wiki/File:World_Poker_Tour_asks_players_which_country_is_the_best.webm) | World Poker Tour | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
 | `deal_40.jpg` | [Texas Hold 'em](https://commons.wikimedia.org/wiki/File:Texas_Hold_%27em.webm) | BrewCrewCountry93 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 
-Stills are unmodified apart from scaling (500 px wide).
+Stills are unmodified apart from scaling (500 px wide; hero_ft.jpg 1280 px).

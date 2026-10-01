@@ -6,6 +6,7 @@ import type { ArchiveVideo, Broadcast, HandRecord, Player, Season, TournamentEve
 import { atEventTime, minutesAgo } from '../lib/time';
 
 const WM = 'https://upload.wikimedia.org/wikipedia/commons/';
+const MEDIA = import.meta.env.BASE_URL + 'media/';
 
 // Real poker footage published under Creative Commons licences on Wikimedia Commons.
 // None of it is WSOP footage. Frames in /media are stills from these files (same licence).
@@ -20,12 +21,12 @@ export const videoSources: VideoSource[] = [
     sourcePage: 'https://commons.wikimedia.org/wiki/File:Incredibly_Unbelievable_Fold_on_the_World_Poker_Tour.webm',
     durationLabel: '7:27',
     frames: [
-      { sec: 40, src: '/media/fold_40.jpg' },
-      { sec: 110, src: '/media/fold_110.jpg' },
-      { sec: 180, src: '/media/fold_180.jpg' },
-      { sec: 260, src: '/media/fold_260.jpg' },
-      { sec: 330, src: '/media/fold_330.jpg' },
-      { sec: 400, src: '/media/fold_400.jpg' },
+      { sec: 40, src: MEDIA + 'fold_40.jpg' },
+      { sec: 110, src: MEDIA + 'fold_110.jpg' },
+      { sec: 180, src: MEDIA + 'fold_180.jpg' },
+      { sec: 260, src: MEDIA + 'fold_260.jpg' },
+      { sec: 330, src: MEDIA + 'fold_330.jpg' },
+      { sec: 400, src: MEDIA + 'fold_400.jpg' },
     ],
   },
   {
@@ -38,8 +39,8 @@ export const videoSources: VideoSource[] = [
     sourcePage: 'https://commons.wikimedia.org/wiki/File:Lynn_Gilmartin_Previews_WPT_Montreal_at_Playground_Poker_Club.webm',
     durationLabel: '1:47',
     frames: [
-      { sec: 25, src: '/media/mtl_25.jpg' },
-      { sec: 70, src: '/media/mtl_70.jpg' },
+      { sec: 25, src: MEDIA + 'mtl_25.jpg' },
+      { sec: 70, src: MEDIA + 'mtl_70.jpg' },
     ],
   },
   {
@@ -51,7 +52,7 @@ export const videoSources: VideoSource[] = [
     credit: 'World Poker Tour · CC BY 3.0 · via Wikimedia Commons',
     sourcePage: 'https://commons.wikimedia.org/wiki/File:World_Poker_Tour_asks_players_which_country_is_the_best.webm',
     durationLabel: '1:31',
-    frames: [{ sec: 30, src: '/media/wpt_30.jpg' }],
+    frames: [{ sec: 30, src: MEDIA + 'wpt_30.jpg' }],
   },
   {
     id: 'src-holdem',
@@ -62,7 +63,7 @@ export const videoSources: VideoSource[] = [
     credit: 'BrewCrewCountry93 · CC BY-SA 4.0 · via Wikimedia Commons',
     sourcePage: "https://commons.wikimedia.org/wiki/File:Texas_Hold_'em.webm",
     durationLabel: '1:56',
-    frames: [{ sec: 40, src: '/media/deal_40.jpg' }],
+    frames: [{ sec: 40, src: MEDIA + 'deal_40.jpg' }],
   },
 ];
 

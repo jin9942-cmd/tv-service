@@ -16,7 +16,15 @@ npm run preview    # 빌드 결과 미리보기
 
 - Node 20+ 권장 (Node 24에서 확인)
 - 영상은 Wikimedia Commons에서 스트리밍하므로 **인터넷 연결이 필요**합니다. 오프라인이면 플레이어의 오류 화면과 재시도 버튼이 표시됩니다.
-- 공개 배포는 하지 않았습니다. SPA라서 정적 호스팅에 올릴 때는 모든 경로를 `index.html`로 돌려주는 설정이 필요합니다.
+## 배포 (GitHub Pages)
+
+`main`에 push하면 `.github/workflows/deploy-pages.yml`이 빌드해서 GitHub Pages에 올립니다.
+
+- 주소: `https://<계정>.github.io/<저장소>/` (이 저장소는 https://jin9942-cmd.github.io/tv-service/)
+- **최초 1회** 저장소 Settings → Pages → Build and deployment → Source를 **GitHub Actions**로 바꿔야 합니다.
+- 하위 경로에서 돌기 때문에 빌드 시 `BASE_PATH=/<저장소>/`를 넣습니다 (워크플로가 자동 설정). 라우터 `basename`과 이미지 경로가 이 값을 따라갑니다.
+- SPA 딥링크(예: `/tv-service/hands/h-101`) 새로고침을 위해 빌드 결과의 `index.html`을 `404.html`로 복사합니다.
+- 하위 경로 빌드를 로컬에서 확인하려면: `BASE_PATH=/tv-service/ npm run build && npx vite preview --base /tv-service/` (Windows Git Bash에서는 앞에 `MSYS_NO_PATHCONV=1`)
 
 ## 기술 구성
 

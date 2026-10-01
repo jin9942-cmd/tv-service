@@ -4,8 +4,30 @@
     {
       "name": "wsop-tv",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5173", "--strictPort"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
       "port": 5173
+    },
+    {
+      "name": "wsop-tv-pages",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--port",
+        "4173",
+        "--strictPort",
+        "--base",
+        "/tv-service/"
+      ],
+      "port": 4173,
+      "url": "http://localhost:4173"
     }
   ]
 }
