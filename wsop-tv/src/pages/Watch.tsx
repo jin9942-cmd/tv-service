@@ -9,13 +9,14 @@ import {
   getPlayersByIds,
   getTickerEvents,
   getVideoSource,
+  frameFor,
   lookup,
 } from '../data/api';
 import type { Broadcast, HandRecord, Player, TournamentEvent } from '../data/types';
 import { useAsync } from '../lib/useAsync';
 import { Ticker } from '../components/Ticker';
 import { VideoPlayer } from '../components/VideoPlayer';
-import { AccessTag, EmptyState, Loading, PlayerLink, SampleNote, StatusBadge, Avatar } from '../components/ui';
+import { AccessTag, EmptyState, FootageNote, Loading, PlayerLink, SampleNote, StatusBadge, Avatar } from '../components/ui';
 import { HandCard } from '../components/HandCard';
 import { LockIcon, useAuth, useGate } from '../state/gate';
 import { ACCESS_LABEL, TIER_LABEL, checkAccess, minimumTier } from '../config/entitlements';
@@ -210,19 +211,28 @@ function WatchView({
             liveStartAt={broadcast?.startAt}
             blocked={blocked}
             label={contentTitle}
+            poster={frameFor(broadcast?.sourceId)}
             progress={
               isReplay && broadcast
-                ? { key: `bc:${broadcast.id}`, title: contentTitle, subtitle: 'Replay', url: `/watch/${event.id}/${broadcast.id}` }
+                ? {
+                    key: `bc:${broadcast.id}`,
+                    title: contentTitle,
+                    subtitle: 'Replay',
+                    url: `/watch/${event.id}/${broadcast.id}`,
+                    image: frameFor(broadcast.sourceId),
+                  }
                 : undefined
             }
           />
           {source && playable && !blocked && (
-            <SampleNote>
-              Video is the open film “{source.label}” ({source.credit}), not WSOP footage.
+            <>
+              <FootageNote source={source} />
               {sharing.length > 0 && (
-                <> Same sample file is also used by: {sharing.map((s) => `${lookup.event(s.eventId)?.shortName} · ${s.title}`).join(', ')}.</>
+                <SampleNote>
+                  Same footage is also used by: {sharing.map((s) => `${lookup.event(s.eventId)?.shortName} · ${s.title}`).join(', ')}.
+                </SampleNote>
               )}
-            </SampleNote>
+            </>
           )}
 
           <div className="watch-head">
@@ -236,7 +246,7 @@ function WatchView({
             </div>
             <h1 className="watch-title">{event.name}</h1>
             {broadcast?.status === 'live' && (
-              <p className="watch-sub">Simulated live from a looping sample video — not a real live stream. Started {formatEventTime(broadcast.startAt)}.</p>
+              <p className="watch-sub">Simulated live: recorded footage on a loop — not a real live stream. Started {formatEventTime(broadcast.startAt)}.</p>
             )}
           </div>
 
@@ -358,7 +368,7 @@ function StreamSelector({ event, broadcasts, current }: { event: TournamentEvent
               <span className="stream-meta">
                 {b.kind === 'main' ? 'Main stream' : 'Additional'} · {b.seats.length ? `${b.seats.length} featured players` : b.table}
               </span>
-              {sharing.length > 0 && <span className="stream-note">Same sample video as {sharing.map((s) => lookup.event(s.eventId)?.shortName + ' · ' + s.title).join(', ')}</span>}
+              {sharing.length > 0 && <span className="stream-note">Same footage as {sharing.map((s) => lookup.event(s.eventId)?.shortName + ' · ' + s.title).join(', ')}</span>}
               {selected && <span className="stream-now">Now watching</span>}
             </Link>
           );

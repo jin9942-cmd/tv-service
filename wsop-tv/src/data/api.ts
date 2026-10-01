@@ -79,6 +79,14 @@ export const getBroadcastsForEvent = (eventId: ID): Promise<Broadcast[]> =>
 
 export const getVideoSource = (id: ID): VideoSource | null => db.videoSources.find((s) => s.id === id) ?? null;
 
+/** Still frame closest to a position in a source (used for thumbnails and posters). */
+export function frameFor(sourceId: ID | undefined, sec = 0): string | undefined {
+  const frames = db.videoSources.find((s) => s.id === sourceId)?.frames ?? [];
+  let best = frames[0];
+  for (const f of frames) if (Math.abs(f.sec - sec) < Math.abs((best?.sec ?? 0) - sec)) best = f;
+  return best?.src;
+}
+
 /** Other live streams that reuse the same sample file (shown so testers aren't confused by identical video). */
 export const getBroadcastsSharingSource = (b: Broadcast): Broadcast[] =>
   b.status !== 'live' ? [] : allBroadcasts().filter((o) => o.id !== b.id && o.sourceId === b.sourceId && o.status === 'live');

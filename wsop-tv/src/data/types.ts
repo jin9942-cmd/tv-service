@@ -141,7 +141,13 @@ export interface ArchiveVideo {
 export interface VideoSource {
   id: ID;
   label: string;
+  /** What the footage actually shows (it is never WSOP footage). */
+  footage: string;
   url: string;
   type: string;
   credit: string;
+  sourcePage: string;
+  durationLabel: string;
+  /** Locally stored stills used as thumbnails/posters. */
+  frames: { sec: number; src: string }[];
 }

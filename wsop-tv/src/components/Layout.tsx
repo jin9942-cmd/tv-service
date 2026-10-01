@@ -35,8 +35,9 @@ export function Layout({ children }: { children: ReactNode }) {
       </main>
       <footer className="footer">
         <p>
-          WSOP TV <span className="demo-badge">Demo</span> — fictional players, sample results and open-licence sample films
-          (Blender Foundation, MDN). No AWS, GGPass, EBS or payment system is connected.
+          WSOP TV <span className="demo-badge">Demo</span> — fictional players and sample results. Video is real poker footage under
+          Creative Commons licences (World Poker Tour, CC BY 3.0; Texas Hold ’em table cam, CC BY-SA 4.0) via Wikimedia Commons — not
+          WSOP footage. No AWS, GGPass, EBS or payment system is connected.
         </p>
       </footer>
       <BottomNav />

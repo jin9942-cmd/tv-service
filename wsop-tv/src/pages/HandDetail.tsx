@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { getHand, getHands, getVideoSource, lookup } from '../data/api';
+import { frameFor, getHand, getHands, getVideoSource, lookup } from '../data/api';
 import { useAsync } from '../lib/useAsync';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { HandCard } from '../components/HandCard';
-import { Avatar, EmptyState, Loading, SampleNote, StatusBadge } from '../components/ui';
+import { Avatar, EmptyState, FootageNote, Loading, SampleNote, StatusBadge } from '../components/ui';
 import { LockIcon, useAuth, useGate } from '../state/gate';
 import { ACCESS_LABEL, TIER_LABEL, checkAccess } from '../config/entitlements';
 import { fmtChips } from '../lib/format';
@@ -99,7 +99,14 @@ export function HandDetail() {
             clip={hand.clip ? { start: hand.clip.startSec, duration: hand.clip.durationSec } : undefined}
             blocked={blocked}
             label={hand.title}
-            progress={{ key: `hand:${hand.id}`, title: hand.title, subtitle: 'Hand replay', url: `/hands/${hand.id}` }}
+            poster={frameFor(hand.clip?.sourceId, hand.clip?.startSec)}
+            progress={{
+              key: `hand:${hand.id}`,
+              title: hand.title,
+              subtitle: 'Hand replay',
+              url: `/hands/${hand.id}`,
+              image: frameFor(hand.clip?.sourceId, hand.clip?.startSec),
+            }}
             endSlot={
               <>
                 <p className="overlay-title">Hand complete</p>
@@ -116,11 +123,7 @@ export function HandDetail() {
               </>
             }
           />
-          {source && !blocked && (
-            <SampleNote>
-              Clip is a segment of the open film “{source.label}” ({source.credit}), not WSOP footage.
-            </SampleNote>
-          )}
+          {source && !blocked && <FootageNote source={source} />}
 
           <div className="watch-head">
             <p className="watch-crumbs">

@@ -17,7 +17,7 @@ export function ContinueWatching() {
         {items.map((p) => (
           <div key={p.key} className="card cw-card">
             <Link to={p.url} className="cw-link">
-              <Thumb seed={p.key} sub={p.subtitle}>
+              <Thumb seed={p.key} image={p.image} sub={p.subtitle}>
                 <span className="thumb-duration">
                   {formatClock(p.position)} / {formatClock(p.duration)}
                 </span>

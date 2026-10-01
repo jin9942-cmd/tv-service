@@ -19,6 +19,7 @@ export interface ProgressEntry {
   title: string;
   subtitle: string;
   url: string;
+  image?: string;
   position: number;
   duration: number;
   updatedAt: number;

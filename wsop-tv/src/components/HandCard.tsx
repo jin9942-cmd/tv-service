@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { HandRecord } from '../data/types';
-import { lookup } from '../data/api';
+import { frameFor, lookup } from '../data/api';
 import { useAuth } from '../state/gate';
 import { AccessTag, Thumb } from './ui';
 import { formatClock } from '../lib/time';
@@ -14,7 +14,7 @@ export function HandCard({ hand, compact }: { hand: HandRecord; compact?: boolea
   if (!hand.clip) return null;
   return (
     <Link to={`/hands/${hand.id}`} state={{ select: true }} className={`card hand-card ${compact ? 'is-compact' : ''}`}>
-      <Thumb seed={hand.id} sub={compact ? undefined : `Hand #${hand.handNumber}`}>
+      <Thumb seed={hand.id} image={frameFor(hand.clip.sourceId, hand.clip.startSec)} sub={compact ? undefined : `Hand #${hand.handNumber}`}>
         <span className="thumb-duration">{formatClock(hand.clip.durationSec)}</span>
         {progress && (
           <span className="thumb-progress" style={{ width: `${(progress.position / progress.duration) * 100}%` }} />

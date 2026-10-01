@@ -1,48 +1,68 @@
 // MOCK DATA — fictional players and sample results. Not real WSOP data, not an EBS feed.
+// Video is real poker footage under open licences (see public/media/CREDITS.md); the people
+// in the footage are unrelated to the fictional players below.
 // Times are generated relative to "today" so the demo always has live / upcoming content.
 import type { ArchiveVideo, Broadcast, HandRecord, Player, Season, TournamentEvent, VideoSource } from './types';
 import { atEventTime, minutesAgo } from '../lib/time';
 
-const WM = 'https://upload.wikimedia.org/wikipedia/commons/transcoded/';
+const WM = 'https://upload.wikimedia.org/wikipedia/commons/';
 
-// Open-licence sample films. None of these is WSOP footage.
+// Real poker footage published under Creative Commons licences on Wikimedia Commons.
+// None of it is WSOP footage. Frames in /media are stills from these files (same licence).
 export const videoSources: VideoSource[] = [
   {
-    id: 'src-bbb',
-    label: 'Big Buck Bunny',
-    url: WM + 'c/c0/Big_Buck_Bunny_4K.webm/Big_Buck_Bunny_4K.webm.480p.vp9.webm',
+    id: 'src-ft',
+    label: 'WPT Rolling Thunder — final table',
+    footage: 'World Poker Tour final-table broadcast with on-screen hand graphics',
+    url: WM + 'transcoded/f/fd/Incredibly_Unbelievable_Fold_on_the_World_Poker_Tour.webm/Incredibly_Unbelievable_Fold_on_the_World_Poker_Tour.webm.480p.vp9.webm',
     type: 'video/webm',
-    credit: '© Blender Foundation · CC BY 3.0 · via Wikimedia Commons',
+    credit: 'World Poker Tour · CC BY 3.0 · via Wikimedia Commons',
+    sourcePage: 'https://commons.wikimedia.org/wiki/File:Incredibly_Unbelievable_Fold_on_the_World_Poker_Tour.webm',
+    durationLabel: '7:27',
+    frames: [
+      { sec: 40, src: '/media/fold_40.jpg' },
+      { sec: 110, src: '/media/fold_110.jpg' },
+      { sec: 180, src: '/media/fold_180.jpg' },
+      { sec: 260, src: '/media/fold_260.jpg' },
+      { sec: 330, src: '/media/fold_330.jpg' },
+      { sec: 400, src: '/media/fold_400.jpg' },
+    ],
   },
   {
-    id: 'src-sintel',
-    label: 'Sintel',
-    url: WM + 'f/f1/Sintel_movie_4K.webm/Sintel_movie_4K.webm.480p.vp9.webm',
+    id: 'src-mtl',
+    label: 'WPT Montreal — tournament floor',
+    footage: 'World Poker Tour event preview from the tournament floor',
+    url: WM + 'transcoded/d/d4/Lynn_Gilmartin_Previews_WPT_Montreal_at_Playground_Poker_Club.webm/Lynn_Gilmartin_Previews_WPT_Montreal_at_Playground_Poker_Club.webm.480p.vp9.webm',
     type: 'video/webm',
-    credit: '© Blender Foundation · CC BY 3.0 · via Wikimedia Commons',
+    credit: 'World Poker Tour · CC BY 3.0 · via Wikimedia Commons',
+    sourcePage: 'https://commons.wikimedia.org/wiki/File:Lynn_Gilmartin_Previews_WPT_Montreal_at_Playground_Poker_Club.webm',
+    durationLabel: '1:47',
+    frames: [
+      { sec: 25, src: '/media/mtl_25.jpg' },
+      { sec: 70, src: '/media/mtl_70.jpg' },
+    ],
   },
   {
-    id: 'src-tos',
-    label: 'Tears of Steel',
-    url:
-      WM +
-      '1/10/Tears_of_Steel_in_4k_-_Official_Blender_Foundation_release.webm/Tears_of_Steel_in_4k_-_Official_Blender_Foundation_release.webm.480p.vp9.webm',
+    id: 'src-int',
+    label: 'WPT Vienna — player interviews',
+    footage: 'World Poker Tour player interviews at a Main Event',
+    url: WM + 'transcoded/8/88/World_Poker_Tour_asks_players_which_country_is_the_best.webm/World_Poker_Tour_asks_players_which_country_is_the_best.webm.480p.vp9.webm',
     type: 'video/webm',
-    credit: '© Blender Foundation · CC BY 3.0 · via Wikimedia Commons',
+    credit: 'World Poker Tour · CC BY 3.0 · via Wikimedia Commons',
+    sourcePage: 'https://commons.wikimedia.org/wiki/File:World_Poker_Tour_asks_players_which_country_is_the_best.webm',
+    durationLabel: '1:31',
+    frames: [{ sec: 30, src: '/media/wpt_30.jpg' }],
   },
   {
-    id: 'src-ed',
-    label: 'Elephants Dream',
-    url: WM + 'a/a2/Elephants_Dream_%282006%29.webm/Elephants_Dream_%282006%29.webm.480p.vp9.webm',
+    id: 'src-holdem',
+    label: 'Texas Hold ’em — table cam',
+    footage: 'Close-up of a live Texas Hold ’em hand being dealt',
+    url: WM + '9/99/Texas_Hold_%27em.webm',
     type: 'video/webm',
-    credit: '© Blender Foundation · CC BY 2.5 · via Wikimedia Commons',
-  },
-  {
-    id: 'src-flower',
-    label: 'Flower (MDN sample)',
-    url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-    type: 'video/mp4',
-    credit: 'CC0 sample clip from MDN Web Docs',
+    credit: 'BrewCrewCountry93 · CC BY-SA 4.0 · via Wikimedia Commons',
+    sourcePage: "https://commons.wikimedia.org/wiki/File:Texas_Hold_'em.webm",
+    durationLabel: '1:56',
+    frames: [{ sec: 40, src: '/media/deal_40.jpg' }],
   },
 ];
 
@@ -393,7 +413,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'main',
     status: 'live',
     access: 'main-live',
-    sourceId: 'src-bbb',
+    sourceId: 'src-ft',
     startAt: minutesAgo(150),
     seats: [
       { playerId: 'p-kw', seat: 2, chips: 14_875_000 },
@@ -411,7 +431,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'additional',
     status: 'live',
     access: 'additional-table',
-    sourceId: 'src-tos',
+    sourceId: 'src-holdem',
     startAt: minutesAgo(150),
     seats: [
       { playerId: 'p-takahashi', seat: 3, chips: 6_215_000 },
@@ -427,7 +447,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'additional',
     status: 'delayed',
     access: 'additional-table',
-    sourceId: 'src-sintel',
+    sourceId: 'src-mtl',
     startAt: atEventTime(0, 23, 30),
     statusNote: 'Camera setup is running late. Start pushed back (simulated).',
     seats: [],
@@ -441,7 +461,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'additional',
     status: 'interrupted',
     access: 'additional-table',
-    sourceId: 'src-ed',
+    sourceId: 'src-int',
     startAt: minutesAgo(150),
     statusNote: 'Stream interrupted due to a technical issue (simulated). Please choose another table.',
     seats: [],
@@ -456,7 +476,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'main',
     status: 'live',
     access: 'main-live',
-    sourceId: 'src-tos',
+    sourceId: 'src-mtl',
     startAt: minutesAgo(95),
     seats: [
       { playerId: 'p-okonkwo', seat: 1, chips: 2_145_750_000 },
@@ -472,7 +492,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'main',
     status: 'ended',
     access: 'main-live',
-    sourceId: 'src-sintel',
+    sourceId: 'src-ft',
     startAt: minutesAgo(600),
     statusNote: 'This broadcast has ended. The replay will be added to the archive soon.',
     seats: [],
@@ -486,7 +506,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'main',
     status: 'scheduled',
     access: 'main-live',
-    sourceId: 'src-bbb',
+    sourceId: 'src-ft',
     startAt: atEventTime(1, 13, 30),
     seats: [],
     handIds: [],
@@ -499,7 +519,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'main',
     status: 'scheduled',
     access: 'main-live',
-    sourceId: 'src-sintel',
+    sourceId: 'src-mtl',
     startAt: atEventTime(4, 12, 30),
     seats: [],
     handIds: [],
@@ -513,7 +533,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'main',
     status: 'replay',
     access: 'free-vod',
-    sourceId: 'src-bbb',
+    sourceId: 'src-ft',
     startAt: '2025-07-16T00:00:00Z',
     seats: [
       { playerId: 'p-park', seat: 1, chips: 98_400_000 },
@@ -531,7 +551,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'main',
     status: 'replay',
     access: 'paid-vod',
-    sourceId: 'src-ed',
+    sourceId: 'src-mtl',
     startAt: '2025-07-14T19:00:00Z',
     seats: [],
     handIds: [],
@@ -544,7 +564,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'additional',
     status: 'replay',
     access: 'highlight',
-    sourceId: 'src-flower',
+    sourceId: 'src-int',
     startAt: '2025-07-17T08:00:00Z',
     seats: [],
     handIds: [],
@@ -557,7 +577,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'main',
     status: 'replay',
     access: 'paid-vod',
-    sourceId: 'src-sintel',
+    sourceId: 'src-ft',
     startAt: '2025-06-28T22:00:00Z',
     seats: [
       { playerId: 'p-takahashi', seat: 2, chips: 4_100_000 },
@@ -574,7 +594,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'main',
     status: 'replay',
     access: 'paid-vod',
-    sourceId: 'src-tos',
+    sourceId: 'src-ft',
     startAt: '2024-07-17T00:00:00Z',
     seats: [
       { playerId: 'p-moreau', seat: 2, chips: 132_000_000 },
@@ -591,7 +611,7 @@ export const broadcasts: Broadcast[] = [
     kind: 'main',
     status: 'replay',
     access: 'paid-vod',
-    sourceId: 'src-ed',
+    sourceId: 'src-holdem',
     startAt: '2024-06-30T22:00:00Z',
     seats: [
       { playerId: 'p-okonkwo', seat: 1, chips: 6_700_000 },
@@ -622,7 +642,7 @@ export const hands: HandRecord[] = [
       { street: 'Turn', board: 'K♦ 9♥ 4♣ 9♣', text: 'Quads for the Professor. Check, Brennan bets 650,000, check-raise to 1,900,000, call.' },
       { street: 'River', board: 'K♦ 9♥ 4♣ 9♣ 2♠', text: 'Shove, Brennan calls with kings full.' },
     ],
-    clip: { sourceId: 'src-bbb', startSec: 60, durationSec: 40, access: 'highlight' },
+    clip: { sourceId: 'src-ft', startSec: 60, durationSec: 40, access: 'highlight' },
   },
   {
     id: 'h-102',
@@ -642,7 +662,7 @@ export const hands: HandRecord[] = [
       { street: 'Turn', board: 'J♥ 8♠ 3♥ 2♣', text: 'Moreau bets 780,000, called.' },
       { street: 'River', board: 'J♥ 8♠ 3♥ 2♣ Q♦', text: 'Moreau jams 2,100,000. Long tank — fold.' },
     ],
-    clip: { sourceId: 'src-bbb', startSec: 140, durationSec: 45, access: 'paid-vod' },
+    clip: { sourceId: 'src-ft', startSec: 140, durationSec: 45, access: 'paid-vod' },
   },
   {
     id: 'h-103',
@@ -662,7 +682,7 @@ export const hands: HandRecord[] = [
       { street: 'Turn', board: 'K♠ 9♠ 5♦ 2♥', text: 'Check, check.' },
       { street: 'River', board: 'K♠ 9♠ 5♦ 2♥ J♦', text: 'Moreau overbets 1,050,000. Brennan calls with fives.' },
     ],
-    clip: { sourceId: 'src-bbb', startSec: 220, durationSec: 40, access: 'free-vod' },
+    clip: { sourceId: 'src-ft', startSec: 220, durationSec: 40, access: 'free-vod' },
   },
   {
     id: 'h-104',
@@ -699,7 +719,7 @@ export const hands: HandRecord[] = [
       { street: 'Turn', board: 'Q♥ 8♦ 3♠ 6♣', text: 'All the money goes in.' },
       { street: 'River', board: 'Q♥ 8♦ 3♠ 6♣ A♦', text: 'No eight. Takahashi scoops.' },
     ],
-    clip: { sourceId: 'src-tos', startSec: 90, durationSec: 40, access: 'paid-vod' },
+    clip: { sourceId: 'src-holdem', startSec: 20, durationSec: 40, access: 'paid-vod' },
   },
   {
     id: 'h-106',
@@ -719,7 +739,7 @@ export const hands: HandRecord[] = [
       { street: 'Turn', board: 'Q♦ 7♥ 6♠ 2♣', text: 'Blank.' },
       { street: 'River', board: 'Q♦ 7♥ 6♠ 2♣ T♠', text: 'Straight. Okonkwo-Silva takes a 2-to-1 lead.' },
     ],
-    clip: { sourceId: 'src-tos', startSec: 300, durationSec: 45, access: 'highlight' },
+    clip: { sourceId: 'src-mtl', startSec: 10, durationSec: 40, access: 'highlight' },
   },
   {
     id: 'h-107',
@@ -737,7 +757,7 @@ export const hands: HandRecord[] = [
       { street: 'Preflop', text: 'Third street: Park (A♣ 2♦) 4♠ completes, Okonkwo-Silva (K♥ Q♥) 9♥ calls.' },
       { street: 'Showdown', text: 'Seventh street: Park shows a 5-high straight and a 5-4-3-2-A low. Scoop.' },
     ],
-    clip: { sourceId: 'src-tos', startSec: 420, durationSec: 40, access: 'paid-vod' },
+    clip: { sourceId: 'src-mtl', startSec: 55, durationSec: 40, access: 'paid-vod' },
   },
   {
     id: 'h-108',
@@ -755,7 +775,7 @@ export const hands: HandRecord[] = [
       { street: 'Preflop', text: 'Okonkwo-Silva shoves A♦ Q♣, Park calls with 7♠ 7♥.' },
       { street: 'Showdown', board: 'J♣ 5♦ 2♠ 9♥ 4♣', text: 'Sevens hold. Park is the champion.' },
     ],
-    clip: { sourceId: 'src-bbb', startSec: 500, durationSec: 50, access: 'highlight' },
+    clip: { sourceId: 'src-ft', startSec: 300, durationSec: 50, access: 'highlight' },
   },
   {
     id: 'h-109',
@@ -773,7 +793,7 @@ export const hands: HandRecord[] = [
       { street: 'Preflop', text: 'Takahashi shoves K♠ T♠, Brennan calls with A♣ 4♣, the Professor overcalls with 8♦ 8♥.' },
       { street: 'Showdown', board: 'K♦ 6♣ 2♥ T♣ 3♦', text: 'Two pair for Takahashi. Triple-up.' },
     ],
-    clip: { sourceId: 'src-sintel', startSec: 200, durationSec: 45, access: 'paid-vod' },
+    clip: { sourceId: 'src-ft', startSec: 180, durationSec: 45, access: 'paid-vod' },
   },
   {
     id: 'h-110',
@@ -792,7 +812,7 @@ export const hands: HandRecord[] = [
       { street: 'Turn', board: 'A♥ 9♥ 4♠ 2♥', text: 'Flush.' },
       { street: 'River', board: 'A♥ 9♥ 4♠ 2♥ 7♣', text: 'Moreau wins the 2024 Main Event.' },
     ],
-    clip: { sourceId: 'src-tos', startSec: 600, durationSec: 45, access: 'free-vod' },
+    clip: { sourceId: 'src-ft', startSec: 380, durationSec: 45, access: 'free-vod' },
   },
   {
     id: 'h-111',
@@ -807,7 +827,7 @@ export const hands: HandRecord[] = [
     pot: 13_400_000,
     level: 'Level 38 (Razz)',
     streets: [{ street: 'Showdown', text: 'Seventh street: 8-6-4-2-A beats 8-7-5-3-2.' }],
-    clip: { sourceId: 'src-ed', startSec: 120, durationSec: 40, access: 'paid-vod' },
+    clip: { sourceId: 'src-holdem', startSec: 60, durationSec: 40, access: 'paid-vod' },
   },
   {
     id: 'h-112',
@@ -825,15 +845,15 @@ export const hands: HandRecord[] = [
       { street: 'Preflop', text: 'Lindqvist shoves A♠ Q♠, Okonkwo-Silva calls with A♥ K♣.' },
       { street: 'Showdown', board: 'K♦ 8♣ 5♥ 3♦ T♠', text: 'King on the flop. Lindqvist finishes 3rd.' },
     ],
-    clip: { sourceId: 'src-bbb', startSec: 330, durationSec: 40, access: 'highlight' },
+    clip: { sourceId: 'src-ft', startSec: 250, durationSec: 40, access: 'highlight' },
   },
 ];
 
 export const archiveVideos: ArchiveVideo[] = [
-  { id: 'ar-2025-main-ft', seasonId: 's2025', eventId: 'ev-2025-main', broadcastId: 'bc-2025-main-ft', title: 'Main Event — Final Table', kind: 'Final Table', durationLabel: '10:34', access: 'free-vod' },
-  { id: 'ar-2025-main-d7', seasonId: 's2025', eventId: 'ev-2025-main', broadcastId: 'bc-2025-main-d7', title: 'Main Event — Day 7', kind: 'Day', durationLabel: '10:53', access: 'paid-vod' },
-  { id: 'ar-2025-main-hl', seasonId: 's2025', eventId: 'ev-2025-main', broadcastId: 'bc-2025-main-hl', title: 'Main Event — Highlights reel', kind: 'Highlights', durationLabel: '0:05', access: 'highlight' },
-  { id: 'ar-2025-hr-ft', seasonId: 's2025', eventId: 'ev-2025-hr', broadcastId: 'bc-2025-hr-ft', title: '$100K High Roller — Final Table', kind: 'Final Table', durationLabel: '14:48', access: 'paid-vod' },
-  { id: 'ar-2024-main-ft', seasonId: 's2024', eventId: 'ev-2024-main', broadcastId: 'bc-2024-main-ft', title: 'Main Event — Final Table', kind: 'Final Table', durationLabel: '12:14', access: 'paid-vod' },
-  { id: 'ar-2024-ppc-ft', seasonId: 's2024', eventId: 'ev-2024-ppc', broadcastId: 'bc-2024-ppc-ft', title: 'Players Championship — Final Table', kind: 'Final Table', durationLabel: '10:53', access: 'paid-vod' },
+  { id: 'ar-2025-main-ft', seasonId: 's2025', eventId: 'ev-2025-main', broadcastId: 'bc-2025-main-ft', title: 'Main Event — Final Table', kind: 'Final Table', durationLabel: '7:27', access: 'free-vod' },
+  { id: 'ar-2025-main-d7', seasonId: 's2025', eventId: 'ev-2025-main', broadcastId: 'bc-2025-main-d7', title: 'Main Event — Day 7', kind: 'Day', durationLabel: '1:47', access: 'paid-vod' },
+  { id: 'ar-2025-main-hl', seasonId: 's2025', eventId: 'ev-2025-main', broadcastId: 'bc-2025-main-hl', title: 'Main Event — Highlights reel', kind: 'Highlights', durationLabel: '1:31', access: 'highlight' },
+  { id: 'ar-2025-hr-ft', seasonId: 's2025', eventId: 'ev-2025-hr', broadcastId: 'bc-2025-hr-ft', title: '$100K High Roller — Final Table', kind: 'Final Table', durationLabel: '7:27', access: 'paid-vod' },
+  { id: 'ar-2024-main-ft', seasonId: 's2024', eventId: 'ev-2024-main', broadcastId: 'bc-2024-main-ft', title: 'Main Event — Final Table', kind: 'Final Table', durationLabel: '7:27', access: 'paid-vod' },
+  { id: 'ar-2024-ppc-ft', seasonId: 's2024', eventId: 'ev-2024-ppc', broadcastId: 'bc-2024-ppc-ft', title: 'Players Championship — Final Table', kind: 'Final Table', durationLabel: '1:56', access: 'paid-vod' },
 ];

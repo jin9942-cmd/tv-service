@@ -8,6 +8,7 @@ export interface ProgressMeta {
   title: string;
   subtitle: string;
   url: string;
+  image?: string;
 }
 
 interface Props {
@@ -23,6 +24,8 @@ interface Props {
   /** Rendered over the frame when a clip finishes. */
   endSlot?: ReactNode;
   label: string;
+  /** Still frame shown before playback and behind blocked states. */
+  poster?: string;
 }
 
 interface PlayerState {
@@ -225,6 +228,7 @@ export function VideoPlayer(props: Props) {
     return (
       <div className="player" ref={frameRef}>
         <div className="player-stage">
+          {props.poster && <img className="player-poster" src={props.poster} alt="" />}
           <div className="player-overlay player-overlay-solid">{blocked ?? <p>No video available.</p>}</div>
         </div>
       </div>
@@ -242,6 +246,7 @@ export function VideoPlayer(props: Props) {
           ref={videoRef}
           className="player-video"
           playsInline
+          poster={props.poster}
           preload="metadata"
           loop={mode === 'live'}
           aria-label={props.label}

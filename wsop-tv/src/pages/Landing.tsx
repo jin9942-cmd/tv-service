@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { getHands, getTickerEvents, lookup } from '../data/api';
+import { frameFor, getHands, getTickerEvents, lookup } from '../data/api';
 import { useAsync } from '../lib/useAsync';
 import { HandCard } from '../components/HandCard';
 import { ContinueWatching } from '../components/ContinueWatching';
@@ -82,7 +82,7 @@ export function Landing() {
             All hands →
           </Link>
         </div>
-        <p className="muted">No account needed. Clips are segments of open-licence sample films, not WSOP footage.</p>
+        <p className="muted">No account needed. Clips use real, openly licensed poker footage (World Poker Tour, CC BY) — not WSOP footage.</p>
         {!hands ? (
           <Loading />
         ) : (
@@ -91,8 +91,8 @@ export function Landing() {
               <HandCard key={h.id} hand={h} />
             ))}
             <Link to="/watch/ev-2025-main/bc-2025-main-hl" className="card">
-              <Thumb seed="ar-2025-main-hl" sub="2025 · Highlights">
-                <span className="thumb-duration">0:05</span>
+              <Thumb seed="ar-2025-main-hl" image={frameFor('src-int')} sub="2025 · Highlights">
+                <span className="thumb-duration">1:31</span>
               </Thumb>
               <div className="card-body">
                 <div className="card-tags">

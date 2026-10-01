@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { getArchive, getEvents, getSeasons, lookup } from '../data/api';
+import { frameFor, getArchive, getEvents, getSeasons, lookup } from '../data/api';
 import { useAsync } from '../lib/useAsync';
 import { AccessTag, EmptyState, Loading, Thumb } from '../components/ui';
 import { ContinueWatching } from '../components/ContinueWatching';
@@ -79,7 +79,7 @@ export function Archive() {
             const p = progress[`bc:${v.broadcastId}`];
             return (
               <Link key={v.id} to={`/watch/${v.eventId}/${v.broadcastId}`} state={{ select: true }} className="card">
-                <Thumb seed={v.id} sub={`${season?.year} · ${v.kind}`}>
+                <Thumb seed={v.id} image={frameFor(lookup.broadcast(v.broadcastId)?.sourceId)} sub={`${season?.year} · ${v.kind}`}>
                   <span className="thumb-duration">{v.durationLabel}</span>
                   {p && <span className="thumb-progress" style={{ width: `${(p.position / p.duration) * 100}%` }} />}
                 </Thumb>
@@ -98,7 +98,7 @@ export function Archive() {
           })}
         </div>
       )}
-      {archivedEventIds.size > 0 && <p className="muted small">Running time shown is the sample film’s length.</p>}
+      {archivedEventIds.size > 0 && <p className="muted small">Running time is the length of the openly licensed footage used for this demo.</p>}
     </div>
   );
 }

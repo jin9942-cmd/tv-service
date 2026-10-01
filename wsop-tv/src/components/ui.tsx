@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import type { BroadcastStatus, EventStatus, Player } from '../data/types';
+import type { BroadcastStatus, EventStatus, Player, VideoSource } from '../data/types';
 import { initials } from '../lib/format';
 import { ACCESS_LABEL, TIER_LABEL, canAccess, minimumTier, type AccessLevel, type Tier } from '../config/entitlements';
 import { LockIcon } from '../state/gate';
@@ -20,8 +20,10 @@ export function Avatar({ player, size = 40 }: { player: Pick<Player, 'name' | 'c
 
 const SUITS = ['♠', '♥', '♦', '♣'];
 
-/** Placeholder thumbnail — no official imagery is used in this demo. */
-export function Thumb({ seed, label, sub, children }: { seed: string; label?: string; sub?: string; children?: ReactNode }) {
+/** Thumbnail: a still from the (openly licensed) footage, falling back to a generated placeholder. */
+export function Thumb({ seed, label, sub, image, children }: { seed: string; label?: string; sub?: string; image?: string; children?: ReactNode }) {
+  const [failed, setFailed] = useState(false);
+  const showImage = image && !failed;
   let h = 0;
   for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const hue = h % 360;
@@ -32,7 +34,11 @@ export function Thumb({ seed, label, sub, children }: { seed: string; label?: st
       style={{ background: `linear-gradient(135deg, hsl(${hue} 35% 22%), hsl(${(hue + 40) % 360} 30% 10%))` }}
       aria-hidden={!label}
     >
-      <span className={`thumb-suit ${suit === '♥' || suit === '♦' ? 'is-red' : ''}`}>{suit}</span>
+      {showImage ? (
+        <img className="thumb-img" src={image} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
+      ) : (
+        <span className={`thumb-suit ${suit === '♥' || suit === '♦' ? 'is-red' : ''}`}>{suit}</span>
+      )}
       {label && <span className="thumb-label">{label}</span>}
       {sub && <span className="thumb-sub">{sub}</span>}
       {children}
@@ -77,6 +83,19 @@ export function EmptyState({ title, children, actions }: { title: string; childr
       {children && <div className="empty-text">{children}</div>}
       {actions && <div className="empty-actions">{actions}</div>}
     </div>
+  );
+}
+
+/** Credit + disclaimer shown under every player. */
+export function FootageNote({ source }: { source: VideoSource }) {
+  return (
+    <p className="sample-note">
+      <span className="sample-pill">Footage</span> {source.footage} —{' '}
+      <a href={source.sourcePage} target="_blank" rel="noopener noreferrer" className="credit-link">
+        {source.credit}
+      </a>
+      . Real poker footage, <strong>not WSOP</strong>; people on screen are unrelated to the demo’s fictional players and data.
+    </p>
   );
 }
 
