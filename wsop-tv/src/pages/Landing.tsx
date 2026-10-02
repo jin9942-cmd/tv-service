@@ -1,27 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { frameFor, getHands, getTickerEvents, getVideoSource, lookup } from '../data/api';
+import { frameFor, getArchive, getHands, getLiveChannels, getPlayers, getTickerEvents, getVideoSource, lookup } from '../data/api';
 import { useAsync } from '../lib/useAsync';
 import { HandCard } from '../components/HandCard';
 import { ContinueWatching } from '../components/ContinueWatching';
-import { Loading, StatusBadge, Thumb } from '../components/ui';
+import { AccessTag, Avatar, Loading, StatusBadge, Thumb } from '../components/ui';
 import { PLAN_FEATURES, TIER_LABEL, type Tier } from '../config/entitlements';
 import { useAuth } from '../state/gate';
-import { formatEventDate, formatEventTime } from '../lib/time';
+import { formatEventDate, formatEventTime, formatLocalTime, relativeFromNow } from '../lib/time';
+import { fmtChips } from '../lib/format';
+import type { Broadcast, TournamentEvent } from '../data/types';
 
 const HERO_IMAGE = import.meta.env.BASE_URL + 'media/hero_ft.jpg';
+/** Shown when nothing is live: the most recent Main Event final table replay. */
+const FALLBACK_FEATURE = { eventId: 'ev-2025-main', broadcastId: 'bc-2025-main-ft' };
 
 export function Landing() {
   const { tier, setTier } = useAuth();
   const location = useLocation();
   const { data: events } = useAsync(getTickerEvents, []);
+  const { data: channels } = useAsync(getLiveChannels, []);
   const { data: hands } = useAsync(() => getHands({ clipsOnly: true }), []);
-  const highlights = (hands ?? []).filter((h) => h.clip?.access === 'highlight');
-  const live = (events ?? []).filter((e) => e.status === 'live');
-  const upcoming = (events ?? []).filter((e) => e.status === 'upcoming').slice(0, 3);
-
-  const heroSource = getVideoSource('src-ft');
-  const featured = live[0];
+  const { data: archive } = useAsync(() => getArchive(), []);
+  const { data: players } = useAsync(getPlayers, []);
   const [reduceMotion] = useState(() => {
     try {
       return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -30,135 +31,36 @@ export function Landing() {
     }
   });
 
+  const live = (events ?? []).filter((e) => e.status === 'live');
+  const upcoming = (events ?? []).filter((e) => e.status === 'upcoming');
+  const highlights = (hands ?? []).filter((h) => h.clip?.access === 'highlight');
+  const finals = (archive ?? []).filter((a) => a.kind === 'Final Table');
+
   useEffect(() => {
     if (location.hash === '#plans') document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' });
   }, [location.hash, events]);
 
   return (
     <div className="page landing">
-      <div className="hero-wrap">
-      <section className="hero-banner" aria-label="Featured">
-        <div className="hero-media" aria-hidden="true">
-          <img className="hero-poster" src={HERO_IMAGE} alt="" />
-          {heroSource && !reduceMotion && (
-            <video className="hero-video" src={`${heroSource.url}#t=110`} poster={HERO_IMAGE} muted autoPlay loop playsInline preload="metadata" />
-          )}
-          <div className="hero-shade" />
-        </div>
-        <div className="hero-content">
-          {featured ? (
-            <p className="hero-live-tag">
-              <StatusBadge status="live" small /> #{featured.number} {featured.shortName} · {featured.dayLabel}
-            </p>
-          ) : (
-            <p className="kicker">Demo · poker tournament streaming</p>
-          )}
-          <h1 className="hero-title">Follow the tournament that’s happening right now.</h1>
-          <p className="hero-lead">
-            Pick a live table, rewatch the key hands, jump to a player’s profile and their past final tables — all in one flow.
-          </p>
-          <div className="hero-actions">
-            <Link to={featured ? `/watch/${featured.id}` : '/watch'} state={{ select: true }} className="btn btn-primary btn-lg">
-              ▶ Watch live
-            </Link>
-            <a href="#highlights" className="btn btn-glass btn-lg">
-              Free highlights
-            </a>
-          </div>
-        </div>
-        {heroSource && (
-          <p className="hero-credit">
-            Footage: {heroSource.credit} — real poker footage, not WSOP
-          </p>
-        )}
-      </section>
-        <aside className="hero-schedule" aria-label="Schedule">
-          <p className="aside-title">On now</p>
-          {!events ? (
-            <Loading />
-          ) : live.length ? (
-            live.map((e) => (
-              <Link key={e.id} to={`/watch/${e.id}`} state={{ select: true }} className="live-row">
-                <StatusBadge status="live" small />
-                <span className="live-row-name">
-                  #{e.number} {e.shortName}
-                </span>
-                <span className="muted">{e.dayLabel}</span>
-              </Link>
-            ))
-          ) : (
-            <p className="muted">No live tournaments right now.</p>
-          )}
-          {upcoming.length > 0 && <p className="aside-title hero-next">Coming up</p>}
-          {upcoming.map((e) => (
-            <Link key={e.id} to={`/watch/${e.id}`} className="live-row">
-              <StatusBadge status="upcoming" small />
-              <span className="live-row-name">{e.shortName}</span>
-              <span className="muted">
-                {formatEventDate(e.startAt)} {formatEventTime(e.startAt)}
-              </span>
-            </Link>
-          ))}
-          <Link to="/schedule" className="link-more">
-            Full schedule →
-          </Link>
-        </aside>
-      </div>
-
-      <section className="block">
-        <div className="section-head">
-          <h2 className="section-title">Live now</h2>
-          <Link to="/schedule" className="link-more">
-            Full schedule →
-          </Link>
-        </div>
-        {!events ? (
-          <Loading />
-        ) : live.length ? (
-          <div className="row-scroll row-live">
-            {live.map((e) => {
-              const main = e.defaultBroadcastId ? lookup.broadcast(e.defaultBroadcastId) : null;
-              return (
-                <Link key={e.id} to={`/watch/${e.id}`} state={{ select: true }} className="card live-card">
-                  <Thumb seed={e.id} image={frameFor(main?.sourceId, 110)}>
-                    <span className="thumb-live">
-                      <StatusBadge status="live" small />
-                    </span>
-                    <span className="thumb-streams">
-                      {e.broadcastIds.length} stream{e.broadcastIds.length > 1 ? 's' : ''}
-                    </span>
-                  </Thumb>
-                  <div className="card-body">
-                    <p className="card-title">
-                      #{e.number} {e.shortName}
-                    </p>
-                    <p className="card-meta">{e.dayLabel}</p>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="muted">
-            No live tournaments right now. <Link to="/schedule" className="credit-link">See the schedule</Link>.
-          </p>
-        )}
-      </section>
+      <Billboard live={live[0]} channels={channels} loading={!events} reduceMotion={reduceMotion} />
 
       <ContinueWatching />
 
-      <section className="block" id="highlights">
-        <div className="section-head">
-          <h2 className="section-title">Free highlights</h2>
-          <Link to="/hands" className="link-more">
-            All hands →
-          </Link>
-        </div>
-        <p className="muted">No account needed. Clips use real, openly licensed poker footage (World Poker Tour, CC BY) — not WSOP footage.</p>
+      <Rail title="Coming up" more={{ to: '/schedule', label: 'Full schedule' }}>
+        {!events ? (
+          <Loading />
+        ) : upcoming.length ? (
+          upcoming.map((e) => <UpcomingCard key={e.id} event={e} />)
+        ) : (
+          <p className="muted">No upcoming events scheduled.</p>
+        )}
+      </Rail>
+
+      <Rail id="highlights" title="Free highlights" note="No account needed" more={{ to: '/hands', label: 'All hands' }}>
         {!hands ? (
           <Loading />
         ) : (
-          <div className="row-scroll">
+          <>
             {highlights.map((h) => (
               <HandCard key={h.id} hand={h} />
             ))}
@@ -174,36 +76,62 @@ export function Landing() {
                 <p className="card-meta">{lookup.season('s2025')?.name}</p>
               </div>
             </Link>
-          </div>
+          </>
         )}
-      </section>
+      </Rail>
 
-      <section className="block">
-        <h2 className="section-title">How it works</h2>
-        <ol className="flow">
-          <li>
-            <strong>Watch</strong>
-            <span>Choose a tournament and table in the ticker.</span>
-          </li>
-          <li>
-            <strong>Replay hands</strong>
-            <span>Jump to the key hands from the Hand History tab.</span>
-          </li>
-          <li>
-            <strong>Meet players</strong>
-            <span>Open a profile from any hand or chip count.</span>
-          </li>
-          <li>
-            <strong>Past finals</strong>
-            <span>Rewatch the final tables a player reached.</span>
-          </li>
-        </ol>
-      </section>
+      <Rail title="Relive the finals" more={{ to: '/archive', label: 'Archive' }} wide>
+        {!archive ? (
+          <Loading />
+        ) : (
+          finals.map((a) => {
+            const ev = lookup.event(a.eventId);
+            const champ = ev?.results?.find((r) => r.place === 1);
+            const champion = champ ? lookup.player(champ.playerId) : null;
+            const b = lookup.broadcast(a.broadcastId);
+            return (
+              <Link key={a.id} to={`/watch/${a.eventId}/${a.broadcastId}`} state={{ select: true }} className="card final-card">
+                <Thumb seed={a.id} image={frameFor(b?.sourceId, 260)}>
+                  <span className="final-card-year">{lookup.season(a.seasonId)?.year}</span>
+                  <span className="thumb-duration">{a.durationLabel}</span>
+                </Thumb>
+                <div className="card-body">
+                  <div className="card-tags">
+                    <span className="tag">Replay</span>
+                    <AccessTag level={a.access} tier={tier} />
+                  </div>
+                  <p className="card-title">{ev?.name}</p>
+                  <p className="card-meta">{champion ? `Won by ${champion.name}` : a.title}</p>
+                </div>
+              </Link>
+            );
+          })
+        )}
+      </Rail>
+
+      <Rail title="Featured players" more={{ to: '/players', label: 'All players' }}>
+        {!players ? (
+          <Loading />
+        ) : (
+          players.map((p) => (
+            <Link key={p.id} to={`/players/${p.id}`} className="player-tile">
+              <Avatar player={p} size={88} />
+              <span className="player-tile-name">{p.name}</span>
+              <span className="card-meta">
+                {p.countryCode} · {p.bracelets} bracelet{p.bracelets === 1 ? '' : 's'}
+              </span>
+            </Link>
+          ))
+        )}
+      </Rail>
 
       <section className="block" id="plans">
-        <h2 className="section-title">WSOP+ plans (demo)</h2>
-        <p className="muted">
-          Subscriptions and payment will be handled by <strong>WSOP+</strong> (integration planned); sign-in uses <strong>GGPass</strong>. Plan names, prices and benefits are placeholders — every plan is shown as a <strong>Demo plan</strong>. Nothing is charged and no payment details are collected.
+        <div className="section-head">
+          <h2 className="section-title">WSOP+ plans (demo)</h2>
+        </div>
+        <p className="muted small">
+          Sign-in uses <strong>GGPass</strong>; subscriptions and payment will be handled by <strong>WSOP+</strong> (integration planned). Plan
+          names, prices and benefits are placeholders — nothing is charged and no payment details are collected.
         </p>
         <div className="plans">
           {(['free', 'standard', 'platinum'] as Exclude<Tier, 'guest'>[]).map((p) => (
@@ -229,5 +157,154 @@ export function Landing() {
         </div>
       </section>
     </div>
+  );
+}
+
+/** Full-width featured stream with the live channel rail over its lower edge. */
+function Billboard({
+  live,
+  channels,
+  loading,
+  reduceMotion,
+}: {
+  live?: TournamentEvent;
+  channels?: Broadcast[];
+  loading: boolean;
+  reduceMotion: boolean;
+}) {
+  const { tier } = useAuth();
+  const event = live ?? lookup.event(FALLBACK_FEATURE.eventId);
+  const broadcast = lookup.broadcast(live?.defaultBroadcastId ?? FALLBACK_FEATURE.broadcastId);
+  const source = broadcast ? getVideoSource(broadcast.sourceId) : null;
+  const poster = source?.id === 'src-ft' ? HERO_IMAGE : frameFor(source?.id, 110);
+  const isLive = !!live;
+  const season = event ? lookup.season(event.seasonId) : null;
+  const watchUrl = event && broadcast ? `/watch/${event.id}/${broadcast.id}` : '/watch';
+
+  return (
+    <section className="billboard" aria-label="Featured">
+      <div className="hero-media" aria-hidden="true">
+        {poster && <img className="hero-poster" src={poster} alt="" />}
+        {source && !reduceMotion && (
+          <video key={source.id} className="hero-video" src={`${source.url}#t=110`} poster={poster} muted autoPlay loop playsInline preload="metadata" />
+        )}
+        <div className="hero-shade" />
+      </div>
+
+      <div className="billboard-content">
+        {event && (
+          <>
+            <p className="billboard-eyebrow">
+              {isLive ? <StatusBadge status="live" small /> : <span className="replay-flag">Replay · {season?.year}</span>}
+              <span>{isLive ? 'Featured now' : 'No live tournaments right now'}</span>
+            </p>
+            <h1 className="billboard-title">{event.shortName}</h1>
+            <p className="billboard-meta">
+              <span>{season?.name}</span>
+              <span>Event #{event.number}</span>
+              <span>{event.dayLabel}</span>
+              {isLive && event.playersLeft !== undefined && <span>{fmtChips(event.playersLeft)} players left</span>}
+              {isLive && event.blinds && <span className="meta-wide">Blinds {event.blinds.split(' ·')[0]}</span>}
+            </p>
+            <p className="billboard-lead">{event.description}</p>
+            <div className="hero-actions">
+              <Link to={watchUrl} state={{ select: true }} className="btn btn-primary btn-lg">
+                ▶ {isLive ? 'Watch live' : 'Watch replay'}
+              </Link>
+              <Link to={`/watch/${event.id}?tab=hands`} className="btn btn-glass btn-lg">
+                Key hands
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="billboard-channels">
+        <p className="billboard-channels-title">{isLive ? 'Live channels' : 'Schedule'}</p>
+        <div className="channel-row">
+          {loading || !channels ? (
+            <Loading />
+          ) : channels.length ? (
+            channels.map((b) => {
+              const ev = lookup.event(b.eventId);
+              return (
+                <Link key={b.id} to={`/watch/${b.eventId}/${b.id}`} state={{ select: true }} className={`channel-card ${b.status === 'live' ? '' : 'is-offline'}`}>
+                  <Thumb seed={b.id} image={frameFor(b.sourceId, 110)}>
+                    <span className="thumb-live">
+                      <StatusBadge status={b.status} small />
+                    </span>
+                    <span className="channel-lock">
+                      <AccessTag level={b.access} tier={tier} />
+                    </span>
+                  </Thumb>
+                  <span className="channel-name">{ev?.shortName}</span>
+                  <span className="channel-sub">{b.title}</span>
+                </Link>
+              );
+            })
+          ) : (
+            <Link to="/schedule" className="channel-card channel-empty">
+              <span className="channel-name">Next broadcasts</span>
+              <span className="channel-sub">Open the schedule →</span>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {source && <p className="hero-credit">Footage: {source.credit} — real poker footage, not WSOP</p>}
+    </section>
+  );
+}
+
+function UpcomingCard({ event }: { event: TournamentEvent }) {
+  const b = event.defaultBroadcastId ? lookup.broadcast(event.defaultBroadcastId) : null;
+  const start = b?.startAt ?? event.startAt;
+  return (
+    <Link to={`/watch/${event.id}`} className="card upcoming-card">
+      <Thumb seed={event.id} image={b ? frameFor(b.sourceId, 40) : undefined}>
+        <span className="upcoming-when">
+          <span className="upcoming-date">{formatEventDate(start)}</span>
+          <span className="upcoming-time">{formatEventTime(start)}</span>
+        </span>
+        <span className="thumb-live">
+          <StatusBadge status="upcoming" small />
+        </span>
+      </Thumb>
+      <div className="card-body">
+        <p className="card-title">
+          #{event.number} {event.shortName}
+        </p>
+        <p className="card-meta">
+          {event.hasBroadcast ? `${event.dayLabel} · starts ${relativeFromNow(start)}` : `${event.dayLabel} · not broadcast`}
+        </p>
+        <p className="card-meta">{formatLocalTime(start)} your time</p>
+      </div>
+    </Link>
+  );
+}
+
+function Rail(props: {
+  id?: string;
+  title: string;
+  note?: string;
+  more?: { to: string; label: string };
+  wide?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section className="block rail" id={props.id}>
+      <div className="section-head">
+        <h2 className="section-title">
+          {props.title}
+          {props.note && <span className="rail-note">{props.note}</span>}
+        </h2>
+        {props.more && (
+          <Link to={props.more.to} className="link-more">
+            {props.more.label} →
+          </Link>
+        )}
+      </div>
+      <div className={`row-scroll ${props.wide ? 'row-wide' : ''}`}>{props.children}</div>
+    </section>
   );
 }

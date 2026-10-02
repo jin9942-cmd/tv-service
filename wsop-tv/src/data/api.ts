@@ -77,6 +77,17 @@ export const getBroadcast = (id: ID): Promise<Broadcast | null> =>
 export const getBroadcastsForEvent = (eventId: ID): Promise<Broadcast[]> =>
   delay(allBroadcasts().filter((b) => b.eventId === eventId));
 
+/** Streams of every live event (main + additional tables), main tables first — the home "Live channels" rail. */
+export function getLiveChannels(): Promise<Broadcast[]> {
+  const liveIds = new Set(allEvents().filter((e) => e.status === 'live').map((e) => e.id));
+  const rank = { live: 0, delayed: 1, interrupted: 2 } as Record<string, number>;
+  return delay(
+    allBroadcasts()
+      .filter((b) => liveIds.has(b.eventId) && b.status in rank)
+      .sort((x, y) => rank[x.status] - rank[y.status] || (x.kind === 'main' ? -1 : 1) - (y.kind === 'main' ? -1 : 1)),
+  );
+}
+
 export const getVideoSource = (id: ID): VideoSource | null => db.videoSources.find((s) => s.id === id) ?? null;
 
 /** Still frame closest to a position in a source (used for thumbnails and posters). */

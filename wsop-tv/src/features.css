@@ -1,48 +1,5 @@
 /* Styles for My WSOP, activity badges, save/follow and the optional poker-terms help. */
 
-/* ---------- landing: hero + schedule list ---------- */
-.hero-wrap {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 16px;
-  margin-top: 16px;
-  align-items: stretch;
-}
-
-.hero-wrap .hero-banner {
-  margin-top: 0;
-}
-
-.hero-schedule {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.hero-schedule .link-more {
-  margin-top: auto;
-}
-
-@media (max-width: 1023px) {
-  .hero-wrap {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 767px) {
-  .hero-wrap {
-    margin-top: 0;
-    gap: 0;
-  }
-  .hero-schedule {
-    border-radius: var(--radius);
-  }
-}
-
 /* ---------- header user chip ---------- */
 a.user-chip {
   min-height: var(--tap);
