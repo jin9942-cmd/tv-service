@@ -469,7 +469,7 @@ code {
   color: #fff;
 }
 
-.status-delayed,
+.status-late-start,
 .status-interrupted {
   background: rgba(231, 173, 46, 0.16);
   color: var(--amber);

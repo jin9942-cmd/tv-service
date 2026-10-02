@@ -18,7 +18,7 @@ function applyEvent(e: TournamentEvent): TournamentEvent {
 }
 
 function applyBroadcast(b: Broadcast): Broadcast {
-  if (demoStore.get().noLive && (b.status === 'live' || b.status === 'delayed' || b.status === 'interrupted')) {
+  if (demoStore.get().noLive && (b.status === 'live' || b.status === 'late-start' || b.status === 'interrupted')) {
     return { ...b, status: 'ended', statusNote: 'No live broadcast right now (Demo tools: “No live tournaments” is on).' };
   }
   return b;
@@ -80,7 +80,7 @@ export const getBroadcastsForEvent = (eventId: ID): Promise<Broadcast[]> =>
 /** Streams of every live event (main + additional tables), main tables first — the home "Live channels" rail. */
 export function getLiveChannels(): Promise<Broadcast[]> {
   const liveIds = new Set(allEvents().filter((e) => e.status === 'live').map((e) => e.id));
-  const rank = { live: 0, delayed: 1, interrupted: 2 } as Record<string, number>;
+  const rank = { live: 0, 'late-start': 1, interrupted: 2 } as Record<string, number>;
   return delay(
     allBroadcasts()
       .filter((b) => liveIds.has(b.eventId) && b.status in rank)
@@ -131,14 +131,44 @@ export function getPastFinals(playerId: ID): Promise<PastFinal[]> {
   return delay(list.sort((a, b) => b.season.year - a.season.year || a.place - b.place));
 }
 
+// --- broadcast delay ------------------------------------------------------
+// Poker streams air on a delay. Anything shown next to a live stream must not run ahead of it,
+// so hands are released only once they have aired (playedAt + delay).
+// DEMO: filtered in the browser. PRODUCTION: the server must withhold un-aired data entirely
+// (EBS feeds, hand records, clips, chip counts) — client-side filtering is not a security boundary.
+
+export const DEFAULT_DELAY_MINUTES = 30;
+
+export function streamDelayMinutes(broadcastId: ID | undefined): number {
+  return db.broadcasts.find((b) => b.id === broadcastId)?.delayMinutes ?? 0;
+}
+
+/** Wall-clock moment currently showing on a delayed stream. */
+export function streamTime(broadcastId: ID | undefined, now = Date.now()): Date {
+  return new Date(now - streamDelayMinutes(broadcastId) * 60_000);
+}
+
+/** When a hand appears on the broadcast (null = past event, always available). */
+export function handAirsAt(hand: HandRecord): Date | null {
+  if (!hand.playedAt) return null;
+  return new Date(new Date(hand.playedAt).getTime() + streamDelayMinutes(hand.broadcastId) * 60_000);
+}
+
+export function isHandAired(hand: HandRecord, now = Date.now()): boolean {
+  const at = handAirsAt(hand);
+  return !at || at.getTime() <= now;
+}
+
 // --- hands ------------------------------------------------------------------
 
 export const getHand = (id: ID): Promise<HandRecord | null> => delay(db.hands.find((h) => h.id === id) ?? null);
 
+/** Hands that have aired. Un-aired hands from live tables are never listed. */
 export function getHands(filter: { eventId?: ID; broadcastId?: ID; playerId?: ID; clipsOnly?: boolean } = {}): Promise<HandRecord[]> {
   return delay(
     db.hands.filter(
       (h) =>
+        isHandAired(h) &&
         (!filter.eventId || h.eventId === filter.eventId) &&
         (!filter.broadcastId || h.broadcastId === filter.broadcastId) &&
         (!filter.playerId || h.playerIds.includes(filter.playerId)) &&

@@ -14,7 +14,7 @@
   --content-inset: max(var(--gutter), calc((100% - var(--maxw)) / 2 + var(--gutter)));
 }
 
-.landing > :not(.billboard) {
+.landing > :not(.billboard):not(.channel-band) {
   max-width: var(--maxw);
   margin-inline: auto;
   padding-inline: var(--gutter);
@@ -23,12 +23,12 @@
 /* ---------- billboard ---------- */
 .billboard {
   position: relative;
-  min-height: 680px;
+  min-height: 560px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  background: #000;
+  background: var(--bg);
   isolation: isolate;
 }
 
@@ -42,25 +42,31 @@
   height: 100%;
 }
 
+/* The footage keeps its own 16:9 frame, pinned to the right, instead of being stretched across
+   the full width (which cropped faces). Its left edge fades into the page colour. */
 .hero-media {
   z-index: -1;
+  left: auto;
+  width: auto;
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
 }
 
 .hero-poster,
 .hero-video {
   object-fit: cover;
-  object-position: 62% center;
+  object-position: center;
 }
 
 .hero-shade {
   background:
-    linear-gradient(90deg, rgba(11, 12, 15, 0.95) 0%, rgba(11, 12, 15, 0.72) 32%, rgba(11, 12, 15, 0.1) 62%, rgba(11, 12, 15, 0.25) 100%),
-    linear-gradient(0deg, var(--bg) 0%, rgba(11, 12, 15, 0.92) 30%, rgba(11, 12, 15, 0.55) 48%, rgba(11, 12, 15, 0) 66%),
-    radial-gradient(ellipse at 70% 30%, transparent 40%, rgba(0, 0, 0, 0.35) 100%);
+    linear-gradient(90deg, var(--bg) 0%, rgba(11, 12, 15, 0.92) 20%, rgba(11, 12, 15, 0.6) 34%, rgba(11, 12, 15, 0.15) 50%, rgba(11, 12, 15, 0) 62%),
+    linear-gradient(0deg, var(--bg) 0%, rgba(11, 12, 15, 0.55) 22%, rgba(11, 12, 15, 0) 45%),
+    linear-gradient(180deg, rgba(11, 12, 15, 0.55) 0%, rgba(11, 12, 15, 0) 18%);
 }
 
 .billboard-content {
-  padding: 64px var(--content-inset) 28px;
+  padding: 64px var(--content-inset) 44px;
 }
 
 .billboard-content > * {
@@ -131,8 +137,16 @@
   background: rgba(255, 255, 255, 0.24);
 }
 
-.billboard-channels {
-  padding: 0 0 32px var(--content-inset);
+/* Live channels sit in their own band so the hero and the page have a clear edge. */
+.channel-band {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0 20px;
+}
+
+.channel-band-inner {
+  padding-left: var(--content-inset);
 }
 
 .channel-row {
@@ -356,7 +370,7 @@
 /* ---------- responsive ---------- */
 @media (max-width: 1023px) {
   .billboard {
-    min-height: 580px;
+    min-height: 520px;
   }
   .billboard-content {
     padding-top: 48px;
@@ -378,6 +392,8 @@
   .hero-media {
     position: relative;
     z-index: 0;
+    width: 100%;
+    max-width: none;
     aspect-ratio: 16 / 9;
     height: auto;
   }
@@ -412,8 +428,8 @@
   .billboard .hero-actions .btn {
     flex: 1 1 140px;
   }
-  .billboard-channels {
-    padding-bottom: 8px;
+  .channel-band {
+    padding: 14px 0 16px;
   }
   .channel-card {
     flex-basis: 200px;
@@ -437,4 +453,14 @@
     height: 72px !important;
     font-size: 26px !important;
   }
+}
+
+/* ---------- broadcast delay ---------- */
+.status-delay {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  padding-left: 6px;
+  margin-left: 2px;
+  border-left: 1px solid rgba(255, 255, 255, 0.45);
 }

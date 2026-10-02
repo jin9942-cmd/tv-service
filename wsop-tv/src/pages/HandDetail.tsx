@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { frameFor, getHand, getHands, getVideoSource, lookup } from '../data/api';
+import { frameFor, getHand, getHands, getVideoSource, handAirsAt, isHandAired, lookup } from '../data/api';
+import { formatEventTime, formatLocalTime } from '../lib/time';
 import { useAsync } from '../lib/useAsync';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { HandCard } from '../components/HandCard';
@@ -35,6 +36,30 @@ export function HandDetail() {
 
   if (loading) return <Loading />;
   if (!hand) return <NotFound what="hand replay" />;
+  // Spoiler / integrity guard: a hand from a live table is only shown after it has aired on the delayed stream.
+  if (!isHandAired(hand)) {
+    const at = handAirsAt(hand)!.toISOString();
+    return (
+      <div className="page page-narrow">
+        <EmptyState
+          title="This hand hasn’t aired yet"
+          actions={
+            <>
+              <Link className="btn btn-primary" to={`/watch/${hand.eventId}/${hand.broadcastId}`}>
+                Watch the broadcast
+              </Link>
+              <Link className="btn btn-secondary" to="/hands">
+                Other hands
+              </Link>
+            </>
+          }
+        >
+          The stream runs on a broadcast delay, so this hand becomes available after it airs — around {formatEventTime(at)} (
+          {formatLocalTime(at)} your time).
+        </EmptyState>
+      </div>
+    );
+  }
 
   const event = lookup.event(hand.eventId);
   const season = event ? lookup.season(event.seasonId) : null;

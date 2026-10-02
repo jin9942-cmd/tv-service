@@ -30,6 +30,8 @@ interface Props {
   poster?: string;
   /** Broadcast playback counts toward activity badges (signed-in users only). */
   activity?: { broadcastId: string; isFinal: boolean };
+  /** Live streams air on a broadcast delay; shown in the live badge. */
+  delayMinutes?: number;
 }
 
 interface PlayerState {
@@ -314,7 +316,7 @@ export function VideoPlayer(props: Props) {
 
         {mode === 'live' && !st.error && (
           <span className="live-badge" title="Simulated with a looping sample video">
-            <span className="live-dot" /> LIVE · SIMULATED
+            <span className="live-dot" /> LIVE{props.delayMinutes ? ` · ${props.delayMinutes}M DELAY` : ''} · SIMULATED
           </span>
         )}
 
@@ -402,7 +404,7 @@ export function VideoPlayer(props: Props) {
             </span>
           </>
         ) : (
-          <span className="seek-live">Live simulation · no rewind (DVR not offered)</span>
+          <span className="seek-live">{props.delayMinutes ? `${props.delayMinutes}-min broadcast delay · ` : ''}simulated live · no rewind (DVR not offered)</span>
         )}
         <button className="ctrl" onClick={toggleFullscreen} aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}>
           {fullscreen ? <ExitFsIcon /> : <FsIcon />}

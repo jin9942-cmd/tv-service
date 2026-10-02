@@ -182,6 +182,7 @@ function Billboard({
   const watchUrl = event && broadcast ? `/watch/${event.id}/${broadcast.id}` : '/watch';
 
   return (
+    <>
     <section className="billboard" aria-label="Featured">
       <div className="hero-media" aria-hidden="true">
         {poster && <img className="hero-poster" src={poster} alt="" />}
@@ -195,7 +196,7 @@ function Billboard({
         {event && (
           <>
             <p className="billboard-eyebrow">
-              {isLive ? <StatusBadge status="live" small /> : <span className="replay-flag">Replay · {season?.year}</span>}
+              {isLive ? <StatusBadge status="live" small delay={broadcast?.delayMinutes} /> : <span className="replay-flag">Replay · {season?.year}</span>}
               <span>{isLive ? 'Featured now' : 'No live tournaments right now'}</span>
             </p>
             <h1 className="billboard-title">{event.shortName}</h1>
@@ -219,7 +220,10 @@ function Billboard({
         )}
       </div>
 
-      <div className="billboard-channels">
+      {source && <p className="hero-credit">Footage: {source.credit} — real poker footage, not WSOP</p>}
+    </section>
+    <section className="channel-band" aria-label={isLive ? 'Live channels' : 'Schedule'}>
+      <div className="channel-band-inner">
         <p className="billboard-channels-title">{isLive ? 'Live channels' : 'Schedule'}</p>
         <div className="channel-row">
           {loading || !channels ? (
@@ -238,7 +242,10 @@ function Billboard({
                     </span>
                   </Thumb>
                   <span className="channel-name">{ev?.shortName}</span>
-                  <span className="channel-sub">{b.title}</span>
+                  <span className="channel-sub">
+                    {b.title}
+                    {b.status === 'live' && b.delayMinutes ? ` · ${b.delayMinutes}m delay` : ''}
+                  </span>
                 </Link>
               );
             })
@@ -250,9 +257,8 @@ function Billboard({
           )}
         </div>
       </div>
-
-      {source && <p className="hero-credit">Footage: {source.credit} — real poker footage, not WSOP</p>}
     </section>
+    </>
   );
 }
 

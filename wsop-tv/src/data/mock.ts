@@ -3,7 +3,7 @@
 // in the footage are unrelated to the fictional players below.
 // Times are generated relative to "today" so the demo always has live / upcoming content.
 import type { ArchiveVideo, Broadcast, HandRecord, Player, Season, TournamentEvent, VideoSource } from './types';
-import { atEventTime, minutesAgo } from '../lib/time';
+import { atEventTime, minutesAgo, minutesBefore } from '../lib/time';
 
 const WM = 'https://upload.wikimedia.org/wikipedia/commons/';
 const MEDIA = import.meta.env.BASE_URL + 'media/';
@@ -416,6 +416,7 @@ export const broadcasts: Broadcast[] = [
     access: 'main-live',
     sourceId: 'src-ft',
     startAt: minutesAgo(150),
+    delayMinutes: 30,
     seats: [
       { playerId: 'p-kw', seat: 2, chips: 14_875_000 },
       { playerId: 'p-brennan', seat: 4, chips: 12_450_000 },
@@ -434,6 +435,7 @@ export const broadcasts: Broadcast[] = [
     access: 'additional-table',
     sourceId: 'src-holdem',
     startAt: minutesAgo(150),
+    delayMinutes: 15,
     seats: [
       { playerId: 'p-takahashi', seat: 3, chips: 6_215_000 },
       { playerId: 'p-lindqvist', seat: 7, chips: 3_940_000 },
@@ -446,11 +448,12 @@ export const broadcasts: Broadcast[] = [
     title: 'Outer Table 3',
     table: 'Table 3 · Outer',
     kind: 'additional',
-    status: 'delayed',
+    status: 'late-start',
     access: 'additional-table',
     sourceId: 'src-mtl',
     startAt: atEventTime(0, 23, 30),
-    statusNote: 'Camera setup is running late. Start pushed back (simulated).',
+    delayMinutes: 15,
+    statusNote: 'Camera setup is running late, so this table starts later than planned (simulated).',
     seats: [],
     handIds: [],
   },
@@ -464,6 +467,7 @@ export const broadcasts: Broadcast[] = [
     access: 'additional-table',
     sourceId: 'src-int',
     startAt: minutesAgo(150),
+    delayMinutes: 15,
     statusNote: 'Stream interrupted due to a technical issue (simulated). Please choose another table.',
     seats: [],
     handIds: [],
@@ -479,6 +483,7 @@ export const broadcasts: Broadcast[] = [
     access: 'main-live',
     sourceId: 'src-mtl',
     startAt: minutesAgo(95),
+    delayMinutes: 30,
     seats: [
       { playerId: 'p-okonkwo', seat: 1, chips: 2_145_750_000 },
       { playerId: 'p-park', seat: 2, chips: 1_013_250_000 },
@@ -495,6 +500,7 @@ export const broadcasts: Broadcast[] = [
     access: 'main-live',
     sourceId: 'src-ft',
     startAt: minutesAgo(600),
+    delayMinutes: 30,
     statusNote: 'This broadcast has ended. The replay will be added to the archive soon.',
     seats: [],
     handIds: [],
@@ -509,6 +515,7 @@ export const broadcasts: Broadcast[] = [
     access: 'main-live',
     sourceId: 'src-ft',
     startAt: atEventTime(1, 13, 30),
+    delayMinutes: 30,
     seats: [],
     handIds: [],
   },
@@ -522,6 +529,7 @@ export const broadcasts: Broadcast[] = [
     access: 'main-live',
     sourceId: 'src-mtl',
     startAt: atEventTime(4, 12, 30),
+    delayMinutes: 30,
     seats: [],
     handIds: [],
   },
@@ -637,6 +645,7 @@ export const hands: HandRecord[] = [
     winnerId: 'p-kw',
     pot: 6_400_000,
     level: 'Level 26',
+    playedAt: minutesBefore(125),
     streets: [
       { street: 'Preflop', text: 'Brennan opens to 180,000 with K♥ K♣; Konstantinopoulos-Weatherby calls with 9♠ 9♦.' },
       { street: 'Flop', board: 'K♦ 9♥ 4♣', text: 'Both flop sets. Brennan bets 220,000, called.' },
@@ -657,6 +666,7 @@ export const hands: HandRecord[] = [
     winnerId: 'p-moreau',
     pot: 3_150_000,
     level: 'Level 26',
+    playedAt: minutesBefore(105),
     streets: [
       { street: 'Preflop', text: 'Konstantinopoulos-Weatherby opens with A♣ J♦, Moreau 3-bets with A♥ 5♥.' },
       { street: 'Flop', board: 'J♥ 8♠ 3♥', text: 'Moreau c-bets 320,000, called.' },
@@ -677,6 +687,7 @@ export const hands: HandRecord[] = [
     winnerId: 'p-brennan',
     pot: 2_480_000,
     level: 'Level 26',
+    playedAt: minutesBefore(75),
     streets: [
       { street: 'Preflop', text: 'Moreau raises with 7♠ 6♠, Brennan defends the big blind with Q♣ 5♣.' },
       { street: 'Flop', board: 'K♠ 9♠ 5♦', text: 'Check, bet 160,000, call.' },
@@ -697,6 +708,7 @@ export const hands: HandRecord[] = [
     winnerId: 'p-hale',
     pot: 4_560_000,
     level: 'Level 26',
+    playedAt: minutesBefore(18),
     streets: [
       { street: 'Preflop', text: 'Brennan opens with J♦ J♣, Hale 4-bets all in with A♠ A♦, call.' },
       { street: 'Showdown', board: 'T♣ 7♥ 4♦ 3♠ K♥', text: 'Aces hold. Hale doubles to over 9 million.' },
@@ -714,6 +726,7 @@ export const hands: HandRecord[] = [
     winnerId: 'p-takahashi',
     pot: 3_720_000,
     level: 'Level 26',
+    playedAt: minutesBefore(95),
     streets: [
       { street: 'Preflop', text: 'Lindqvist opens with 8♥ 8♣, Takahashi calls with Q♠ Q♦.' },
       { street: 'Flop', board: 'Q♥ 8♦ 3♠', text: 'Bet, raise, re-raise, call.' },
@@ -734,6 +747,7 @@ export const hands: HandRecord[] = [
     winnerId: 'p-okonkwo',
     pot: 960_000_000,
     level: 'Level 31 (PLO)',
+    playedAt: minutesBefore(65),
     streets: [
       { street: 'Preflop', text: 'Park raises with A♠ A♥ K♦ 7♣, Okonkwo-Silva calls with J♥ T♥ 9♣ 8♣.' },
       { street: 'Flop', board: 'Q♦ 7♥ 6♠', text: 'Pot, pot, all in.' },
@@ -754,6 +768,7 @@ export const hands: HandRecord[] = [
     winnerId: 'p-park',
     pot: 410_000_000,
     level: 'Level 31 (Stud 8)',
+    playedAt: minutesBefore(10),
     streets: [
       { street: 'Preflop', text: 'Third street: Park (A♣ 2♦) 4♠ completes, Okonkwo-Silva (K♥ Q♥) 9♥ calls.' },
       { street: 'Showdown', text: 'Seventh street: Park shows a 5-high straight and a 5-4-3-2-A low. Scoop.' },

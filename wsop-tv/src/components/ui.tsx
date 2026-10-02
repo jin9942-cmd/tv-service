@@ -48,7 +48,7 @@ export function Thumb({ seed, label, sub, image, children }: { seed: string; lab
 
 const STATUS_TEXT: Record<BroadcastStatus | EventStatus, string> = {
   live: 'Live',
-  delayed: 'Delayed',
+  'late-start': 'Late start',
   interrupted: 'Interrupted',
   ended: 'Ended',
   scheduled: 'Scheduled',
@@ -56,11 +56,17 @@ const STATUS_TEXT: Record<BroadcastStatus | EventStatus, string> = {
   replay: 'Replay',
 };
 
-export function StatusBadge({ status, small }: { status: BroadcastStatus | EventStatus; small?: boolean }) {
+/** `delay` (minutes) marks a live stream as airing on a broadcast delay, e.g. "Live · 30m delay". */
+export function StatusBadge({ status, small, delay }: { status: BroadcastStatus | EventStatus; small?: boolean; delay?: number }) {
+  const delayed = status === 'live' && !!delay;
   return (
-    <span className={`status status-${status} ${small ? 'status-sm' : ''}`}>
+    <span
+      className={`status status-${status} ${small ? 'status-sm' : ''}`}
+      title={delayed ? `Airing on a ${delay}-minute broadcast delay` : undefined}
+    >
       {status === 'live' && <span className="live-dot" />}
       {STATUS_TEXT[status]}
+      {delayed && <span className="status-delay">{delay}m delay</span>}
     </span>
   );
 }

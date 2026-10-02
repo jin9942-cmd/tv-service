@@ -55,13 +55,14 @@ export interface TournamentEvent {
 
 /**
  * live        – simulated live stream (sample video loops)
- * delayed     – scheduled but start pushed back
+ * late-start  – scheduled, but the stream start has been pushed back
+ *               (not to be confused with the broadcast delay below)
  * interrupted – stream temporarily stopped
  * ended       – today's stream finished
  * scheduled   – upcoming, not started
  * replay      – on-demand video of a past session
  */
-export type BroadcastStatus = 'live' | 'delayed' | 'interrupted' | 'ended' | 'scheduled' | 'replay';
+export type BroadcastStatus = 'live' | 'late-start' | 'interrupted' | 'ended' | 'scheduled' | 'replay';
 
 export interface Seat {
   playerId: ID;
@@ -79,6 +80,11 @@ export interface Broadcast {
   access: AccessLevel;
   sourceId: ID;
   startAt: string;
+  /**
+   * Poker streams air on a delay so hole cards can be shown without helping players at the table.
+   * Everything shown with the stream (chip counts, hands, replays) is synced to stream time = now − delay.
+   */
+  delayMinutes?: number;
   statusNote?: string;
   seats: Seat[];
   handIds: ID[];
@@ -117,6 +123,8 @@ export interface HandRecord {
   winnerId: ID;
   pot: number;
   level: string;
+  /** When the hand was played on the tournament floor (live events). It airs delayMinutes later. */
+  playedAt?: string;
   streets: HandStreet[];
   /** A hand may have no replay clip yet. */
   clip?: {

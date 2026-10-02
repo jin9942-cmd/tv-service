@@ -25,7 +25,7 @@ export function Schedule() {
       <header className="page-head">
         <h1>Schedule</h1>
         <p className="muted">
-          Times in <strong>Las Vegas (PT)</strong> with your local time ({localTimeZoneName()}). Dates follow the venue’s calendar.
+          Times in <strong>Las Vegas (PT)</strong> with your local time ({localTimeZoneName()}). Dates follow the venue’s calendar. Times are stream start times; streams air on a broadcast delay, so they show play from a little earlier.
         </p>
       </header>
 
@@ -69,7 +69,8 @@ export function Schedule() {
           {events.map((e) => {
             const main = e.defaultBroadcastId ? lookup.broadcast(e.defaultBroadcastId) : null;
             const startIso = main?.startAt ?? e.startAt;
-            const status = main?.status === 'delayed' ? 'delayed' : e.status;
+            const status = main?.status === 'late-start' ? 'late-start' : e.status;
+            const delay = main?.delayMinutes;
             return (
               <li key={e.id} className={`sched-row is-${e.status}`}>
                 <div className="sched-time">
@@ -78,7 +79,7 @@ export function Schedule() {
                 </div>
                 <div className="sched-main">
                   <div className="sched-badges">
-                    <StatusBadge status={status} small />
+                    <StatusBadge status={status} small delay={e.status === 'live' ? delay : undefined} />
                     <span className="muted">
                       #{e.number} · {e.dayLabel} · {fmtUSD(e.buyIn)}
                     </span>
@@ -88,9 +89,9 @@ export function Schedule() {
                     {!e.hasBroadcast
                       ? 'Not broadcast'
                       : e.status === 'live'
-                        ? `Live now · ${e.broadcastIds.length} stream${e.broadcastIds.length > 1 ? 's' : ''}`
+                        ? `On air · ${e.broadcastIds.length} stream${e.broadcastIds.length > 1 ? 's' : ''}${delay ? ` · ${delay}-min broadcast delay` : ''}`
                         : e.status === 'upcoming'
-                          ? `Broadcast starts ${relativeFromNow(startIso)}`
+                          ? `Stream starts ${relativeFromNow(startIso)}${delay ? ` · airs on a ${delay}-min delay` : ''}`
                           : 'Coverage ended'}
                   </p>
                 </div>

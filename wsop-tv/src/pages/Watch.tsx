@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import {
   getBroadcastsForEvent,
@@ -10,6 +10,7 @@ import {
   getTickerEvents,
   getVideoSource,
   frameFor,
+  streamTime,
   lookup,
 } from '../data/api';
 import type { Broadcast, HandRecord, Player, TournamentEvent } from '../data/types';
@@ -156,9 +157,9 @@ function WatchView({
         <OverlayLinks />
       </StateOverlay>
     );
-  } else if (broadcast.status === 'delayed') {
+  } else if (broadcast.status === 'late-start') {
     blocked = (
-      <StateOverlay title="Broadcast delayed" tone="warn">
+      <StateOverlay title="Stream starting late" tone="warn">
         {broadcast.statusNote} New start: {formatEventTime(broadcast.startAt)} ({formatLocalTime(broadcast.startAt)} your time).
         <OverlayLinks event={event} />
       </StateOverlay>
@@ -209,6 +210,7 @@ function WatchView({
           <VideoPlayer
             source={source}
             mode={isReplay ? 'vod' : 'live'}
+            delayMinutes={broadcast?.delayMinutes}
             liveStartAt={broadcast?.startAt}
             blocked={blocked}
             label={contentTitle}
@@ -239,7 +241,7 @@ function WatchView({
 
           <div className="watch-head">
             <div className="watch-badges">
-              {broadcast && !isReplay && <StatusBadge status={broadcast.status} />}
+              {broadcast && !isReplay && <StatusBadge status={broadcast.status} delay={broadcast.delayMinutes} />}
               {isReplay && <span className="replay-flag">Replay · {season?.year}</span>}
               <span className="watch-crumbs">
                 {season?.name} · Event #{event.number} · {event.dayLabel}
@@ -248,7 +250,7 @@ function WatchView({
             </div>
             <h1 className="watch-title">{event.name}</h1>
             {broadcast?.status === 'live' && (
-              <p className="watch-sub">Simulated live: recorded footage on a loop — not a real live stream. Started {formatEventTime(broadcast.startAt)}.</p>
+              <DelayNote broadcast={broadcast} />
             )}
           </div>
 
@@ -284,9 +286,11 @@ function WatchView({
             <GlossaryToggle compact />
           </div>
           <div className="tab-panel" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-            {tab === 'overview' && <Overview event={event} />}
+            {tab === 'overview' && <Overview event={event} broadcast={broadcast} />}
             {tab === 'players' && <PlayersTab event={event} broadcast={broadcast} players={players.data} />}
-            {tab === 'hands' && <HandHistory hands={tabHands} players={players.data} event={event} />}
+            {tab === 'hands' && (
+              <HandHistory hands={tabHands} players={players.data} event={event} delayMinutes={broadcast?.status === 'live' ? broadcast.delayMinutes : undefined} />
+            )}
           </div>
         </section>
 
@@ -313,6 +317,25 @@ function WatchView({
         </aside>
       </div>
     </div>
+  );
+}
+
+/** Explains the broadcast delay and shows what time the stream is currently at. */
+function DelayNote({ broadcast }: { broadcast: Broadcast }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+  const d = broadcast.delayMinutes ?? 0;
+  if (!d) return <p className="watch-sub">Simulated live stream from recorded footage.</p>;
+  const at = streamTime(broadcast.id, now).toISOString();
+  return (
+    <p className="watch-sub">
+      <strong>{d}-minute broadcast delay.</strong> The stream is showing play from about {formatEventTime(at)} (
+      {formatLocalTime(at)} your time); the tournament floor is {d} minutes ahead. Chip counts and hands below follow the stream.
+      Simulated with recorded footage.
+    </p>
   );
 }
 
@@ -366,7 +389,7 @@ function StreamSelector({ event, broadcasts, current }: { event: TournamentEvent
               aria-current={selected ? 'true' : undefined}
             >
               <span className="stream-top">
-                <StatusBadge status={b.status} small />
+                <StatusBadge status={b.status} small delay={b.delayMinutes} />
                 <AccessTag level={b.access} tier={tier} />
               </span>
               <span className="stream-title">{b.title}</span>
@@ -392,7 +415,7 @@ function Fact({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-function Overview({ event }: { event: TournamentEvent }) {
+function Overview({ event, broadcast }: { event: TournamentEvent; broadcast?: Broadcast }) {
   const champion = event.results?.find((r) => r.place === 1);
   const champ = champion ? lookup.player(champion.playerId) : null;
   return (
@@ -417,6 +440,9 @@ function Overview({ event }: { event: TournamentEvent }) {
             </>
           }
         />
+        {broadcast?.status === 'live' && broadcast.delayMinutes ? (
+          <Fact label="Broadcast delay" value={<GlossaryText>{`${broadcast.delayMinutes}-minute delay`}</GlossaryText>} />
+        ) : null}
         <Fact label="Venue" value={event.venue} />
       </dl>
       <SampleNote>Tournament figures are sample data, not an EBS / live-reporting feed.</SampleNote>
@@ -461,6 +487,9 @@ function PlayersTab({ event, broadcast, players }: { event: TournamentEvent; bro
   return (
     <div>
       <h3 className="panel-title">Chip counts{event.playersLeft ? ` · top of ${event.playersLeft} remaining` : ''}</h3>
+      {broadcast?.delayMinutes ? (
+        <p className="muted small sync-note">As of stream time ({broadcast.delayMinutes}-min delay) — counts never run ahead of the broadcast.</p>
+      ) : null}
       <ol className="rank-list">
         {board.map((l, i) => {
           const p = players[l.playerId];
@@ -488,7 +517,17 @@ function PlayersTab({ event, broadcast, players }: { event: TournamentEvent; bro
   );
 }
 
-function HandHistory({ hands, players, event }: { hands: HandRecord[]; players?: Record<string, Player>; event: TournamentEvent }) {
+function HandHistory({
+  hands,
+  players,
+  event,
+  delayMinutes,
+}: {
+  hands: HandRecord[];
+  players?: Record<string, Player>;
+  event: TournamentEvent;
+  delayMinutes?: number;
+}) {
   if (!hands.length) {
     return (
       <EmptyState
@@ -543,6 +582,9 @@ function HandHistory({ hands, players, event }: { hands: HandRecord[]; players?:
           </li>
         ))}
       </ul>
+      {delayMinutes ? (
+        <p className="muted small sync-note">Hands appear here once they have aired on the {delayMinutes}-min delayed broadcast.</p>
+      ) : null}
       <SampleNote>Hand records are sample data, not an EBS feed.</SampleNote>
     </div>
   );

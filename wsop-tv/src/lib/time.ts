@@ -49,6 +49,11 @@ export function atEventTime(dayOffset: number, h: number, mi = 0): string {
   return zonedToDate(y, m - 1, d + dayOffset, h, mi).toISOString();
 }
 
+/** ISO string for exactly N minutes before now. */
+export function minutesBefore(min: number): string {
+  return new Date(Date.now() - min * 60_000).toISOString();
+}
+
 /** ISO string for now minus N minutes, rounded down to 15 minutes. */
 export function minutesAgo(min: number): string {
   const t = Date.now() - min * 60_000;

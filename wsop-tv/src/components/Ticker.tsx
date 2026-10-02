@@ -6,6 +6,8 @@ import { formatEventDate, formatEventTime } from '../lib/time';
 import type { TournamentEvent } from '../data/types';
 import { StatusBadge } from './ui';
 
+const delayOf = (e: TournamentEvent) => (e.defaultBroadcastId ? lookup.broadcast(e.defaultBroadcastId)?.delayMinutes : undefined);
+
 /** Tournament Ticker: the "remote control" for choosing an event. */
 export function Ticker({ currentEventId }: { currentEventId?: string }) {
   const { data: events } = useAsync(getTickerEvents, []);
@@ -61,7 +63,7 @@ export function Ticker({ currentEventId }: { currentEventId?: string }) {
                 {e.status === 'upcoming'
                   ? `${formatEventDate(e.startAt)} · ${formatEventTime(e.startAt)}`
                   : e.status === 'live'
-                    ? `${e.broadcastIds.length} stream${e.broadcastIds.length > 1 ? 's' : ''}`
+                    ? `${e.broadcastIds.length} stream${e.broadcastIds.length > 1 ? 's' : ''}${delayOf(e) ? ` · ${delayOf(e)}m delay` : ''}`
                     : replay
                       ? 'Viewing replay'
                       : 'Coverage ended'}

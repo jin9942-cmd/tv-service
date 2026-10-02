@@ -26,6 +26,7 @@ export const GLOSSARY: GlossaryTerm[] = [
   { id: 'cooler', term: 'Cooler', match: ['cooler'], definition: 'A hand where both players hold very strong cards, so a big pot is almost unavoidable.' },
   { id: 'bubble', term: 'Bubble', match: ['bubble', 'Bubble'], definition: 'The last place before the prize money. Busting on the bubble wins nothing.' },
   { id: 'heads-up', term: 'Heads-up', match: ['Heads-up', 'heads-up'], definition: 'Only two players left in a hand or in the tournament.' },
+  { id: 'delay', term: 'Broadcast delay', match: ['broadcast delay', 'delay'], definition: 'Poker streams air some minutes after the action (often around 30). That lets the broadcast show hole cards without giving players at the table any information.' },
   { id: 'final-table', term: 'Final table', match: ['final table', 'Final Table', 'final-table'], definition: 'The last table of a tournament, usually 9 players or fewer, where the top prizes are decided.' },
   { id: 'chip-leader', term: 'Chip leader', match: ['chip leader'], definition: 'The player with the most chips at that moment.' },
   { id: 'pot', term: 'Pot', match: ['pot', 'Pot'], definition: 'All chips bet in the current hand. The winner takes the pot.' },
