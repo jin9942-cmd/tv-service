@@ -23,7 +23,8 @@
 /* ---------- billboard ---------- */
 .billboard {
   position: relative;
-  min-height: 560px;
+  /* height of a 16:9 frame across the content column, capped */
+  min-height: min(680px, calc(min(100vw, var(--maxw)) * 0.5625));
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -42,14 +43,29 @@
   height: 100%;
 }
 
-/* The footage keeps its own 16:9 frame, pinned to the right, instead of being stretched across
-   the full width (which cropped faces). Its left edge fades into the page colour. */
+/* The footage keeps its own 16:9 frame (never stretched, so nothing is cropped), centred on the
+   page column. All four edges fade into the page colour, so there is no hard frame line. */
 .hero-media {
   z-index: -1;
-  left: auto;
-  width: auto;
+  top: 0;
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(100%, var(--maxw), 1210px);
+  height: auto;
   aspect-ratio: 16 / 9;
-  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .hero-media {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%),
+      linear-gradient(180deg, transparent 0%, #000 8%, #000 72%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%),
+      linear-gradient(180deg, transparent 0%, #000 8%, #000 72%, transparent 100%);
+    mask-composite: intersect;
+  }
 }
 
 .hero-poster,
@@ -60,9 +76,8 @@
 
 .hero-shade {
   background:
-    linear-gradient(90deg, var(--bg) 0%, rgba(11, 12, 15, 0.92) 20%, rgba(11, 12, 15, 0.6) 34%, rgba(11, 12, 15, 0.15) 50%, rgba(11, 12, 15, 0) 62%),
-    linear-gradient(0deg, var(--bg) 0%, rgba(11, 12, 15, 0.55) 22%, rgba(11, 12, 15, 0) 45%),
-    linear-gradient(180deg, rgba(11, 12, 15, 0.55) 0%, rgba(11, 12, 15, 0) 18%);
+    linear-gradient(90deg, rgba(11, 12, 15, 0.94) 0%, rgba(11, 12, 15, 0.86) 28%, rgba(11, 12, 15, 0.4) 48%, rgba(11, 12, 15, 0) 64%),
+    linear-gradient(0deg, rgba(11, 12, 15, 0.6) 0%, rgba(11, 12, 15, 0) 40%);
 }
 
 .billboard-content {
@@ -137,12 +152,11 @@
   background: rgba(255, 255, 255, 0.24);
 }
 
-/* Live channels sit in their own band so the hero and the page have a clear edge. */
+/* Live channels get a quiet band: a hairline and a faint tint mark the edge without a hard box. */
 .channel-band {
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  padding: 18px 0 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 85%);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 18px 0 8px;
 }
 
 .channel-band-inner {
@@ -392,6 +406,8 @@
   .hero-media {
     position: relative;
     z-index: 0;
+    left: auto;
+    transform: none;
     width: 100%;
     max-width: none;
     aspect-ratio: 16 / 9;
