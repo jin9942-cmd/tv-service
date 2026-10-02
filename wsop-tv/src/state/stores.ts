@@ -44,3 +44,10 @@ export function clearProgress(key: string) {
     return next;
   });
 }
+
+export interface Prefs {
+  /** Optional beginner help ("Poker terms"). Off by default; independent of plan and badges. */
+  glossary: boolean;
+}
+
+export const prefsStore = createStore<Prefs>('prefs', { glossary: false });

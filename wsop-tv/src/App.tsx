@@ -9,11 +9,14 @@ import { PlayerProfile, PlayersList } from './pages/Players';
 import { Schedule } from './pages/Schedule';
 import { Archive } from './pages/Archive';
 import { NotFound } from './pages/NotFound';
+import { MyWsop } from './pages/MyWsop';
+import { GlossaryProvider } from './components/Glossary';
 
 export default function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
       <GateProvider>
+        <GlossaryProvider>
         <Layout>
           <Routes>
             <Route path="/" element={<Landing />} />
@@ -26,9 +29,11 @@ export default function App() {
             <Route path="/players/:playerId" element={<PlayerProfile />} />
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/archive" element={<Archive />} />
+            <Route path="/me" element={<MyWsop />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
+        </GlossaryProvider>
       </GateProvider>
     </BrowserRouter>
   );

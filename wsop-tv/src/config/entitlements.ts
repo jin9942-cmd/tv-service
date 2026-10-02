@@ -1,5 +1,10 @@
 // DEMO ASSUMPTION: access policy for the prototype only.
 // Replace this file (or load it from a config/entitlement API) when real plans are defined.
+//
+// Tiers combine two independent facts:
+//   - authentication: GGPass (guest = signed out, every other tier = signed in)
+//   - subscription:   WSOP+  (free = no plan, standard / platinum = demo plan names, not final)
+// Activity badges (config/badges.ts) are separate and never affect access.
 
 export type Tier = 'guest' | 'free' | 'standard' | 'platinum';
 

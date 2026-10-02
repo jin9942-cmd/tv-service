@@ -6,6 +6,8 @@ import { HandCard } from '../components/HandCard';
 import { fmtUSD, ordinal } from '../lib/format';
 import { lookup } from '../data/api';
 import { useAuth } from '../state/gate';
+import { FollowButton } from '../components/ActivityButtons';
+import { GlossaryText } from '../components/Glossary';
 
 export function PlayersList() {
   const { data: players, loading } = useAsync(getPlayers, []);
@@ -61,7 +63,13 @@ export function PlayerProfile() {
           </p>
           <h1 className="profile-name">{player.name}</h1>
           {player.nickname && <p className="profile-nick">“{player.nickname}”</p>}
-          <p className="lead">{player.bio}</p>
+          <p className="lead">
+            <GlossaryText>{player.bio}</GlossaryText>
+          </p>
+          <div className="profile-actions">
+            <FollowButton playerId={player.id} playerName={player.name} />
+            <span className="muted small">Followed players are listed in My WSOP. Following doesn’t track a player’s table or location.</span>
+          </div>
         </div>
       </section>
 

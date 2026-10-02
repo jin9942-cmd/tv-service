@@ -9,6 +9,9 @@ import { LockIcon, useAuth, useGate } from '../state/gate';
 import { ACCESS_LABEL, TIER_LABEL, checkAccess } from '../config/entitlements';
 import { fmtChips } from '../lib/format';
 import { NotFound } from './NotFound';
+import { SaveHandButton } from '../components/ActivityButtons';
+import { GlossaryText, GlossaryToggle } from '../components/Glossary';
+import { track } from '../lib/analytics';
 
 export function HandDetail() {
   const { handId = '' } = useParams();
@@ -81,9 +84,19 @@ export function HandDetail() {
   return (
     <div className="page">
       <div className="backbar">
-        <Link to={backUrl} className="btn btn-ghost btn-sm back-btn">
-          ← Back to original broadcast
-        </Link>
+        {broadcast?.status === 'live' ? (
+          <Link
+            to={backUrl}
+            className="btn btn-sm back-btn is-live"
+            onClick={() => track('return_to_live_clicked', { from: 'hand', hand: hand.id })}
+          >
+            ↩ Return to live
+          </Link>
+        ) : (
+          <Link to={backUrl} className="btn btn-ghost btn-sm back-btn">
+            ← Back to original broadcast
+          </Link>
+        )}
         <span className="muted backbar-ctx">
           {season?.year} {event?.shortName} · {broadcast?.title}
           {broadcast && <StatusBadge status={broadcast.status} small />}
@@ -111,8 +124,12 @@ export function HandDetail() {
               <>
                 <p className="overlay-title">Hand complete</p>
                 <div className="overlay-actions">
-                  <Link className="btn btn-primary" to={backUrl}>
-                    Back to broadcast
+                  <Link
+                    className="btn btn-primary"
+                    to={backUrl}
+                    onClick={() => broadcast?.status === 'live' && track('return_to_live_clicked', { from: 'clip-end', hand: hand.id })}
+                  >
+                    {broadcast?.status === 'live' ? '↩ Return to live' : 'Back to broadcast'}
                   </Link>
                   {more[0] && (
                     <Link className="btn btn-secondary" to={`/hands/${more[0].id}`} state={{ select: true }}>
@@ -133,7 +150,13 @@ export function HandDetail() {
               · Hand #{hand.handNumber} · {hand.level}
             </p>
             <h1 className="watch-title">{hand.title}</h1>
-            <p className="lead">{hand.description}</p>
+            <div className="hand-actions">
+              {hand.clip && <SaveHandButton handId={hand.id} />}
+              <GlossaryToggle compact />
+            </div>
+            <p className="lead">
+              <GlossaryText>{hand.description}</GlossaryText>
+            </p>
           </div>
 
           <section className="block">
@@ -165,7 +188,9 @@ export function HandDetail() {
                   <span className="street-name">{s.street}</span>
                   <span className="street-body">
                     {s.board && <span className="board">{s.board}</span>}
-                    {s.text}
+                    <span>
+                      <GlossaryText>{s.text}</GlossaryText>
+                    </span>
                   </span>
                 </li>
               ))}

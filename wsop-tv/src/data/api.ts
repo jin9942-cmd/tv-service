@@ -151,6 +151,7 @@ export const lookup = {
   event: (id: ID) => applyEventOrNull(db.events.find((e) => e.id === id)),
   season: (id: ID) => db.seasons.find((s) => s.id === id) ?? null,
   player: (id: ID) => db.players.find((p) => p.id === id) ?? null,
+  hand: (id: ID) => db.hands.find((h) => h.id === id) ?? null,
   broadcast: (id: ID) => {
     const b = db.broadcasts.find((x) => x.id === id);
     return b ? applyBroadcast(b) : null;

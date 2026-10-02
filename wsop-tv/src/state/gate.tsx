@@ -1,4 +1,6 @@
-// Playback-permission flow (login → upgrade → back to the same content).
+// Access flows:
+//  - playback permission: sign in (GGPass, demo) → subscribe (WSOP+, demo) → back to the same content
+//  - sign-in for personal actions (save hand, follow player): sign in → the action is completed in place
 // Separate from the promotional modal in components/PromoModal.tsx.
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -15,14 +17,26 @@ import {
 import { authStore, useStore } from './stores';
 import { Modal } from '../components/Modal';
 
-interface GateRequest {
+interface PlaybackRequest {
   level: AccessLevel;
   contentTitle: string;
 }
 
+interface SignInRequest {
+  /** e.g. "save this hand" */
+  signInFor: string;
+  /** Runs once the user is signed in, so they end up exactly where they were. */
+  then?: () => void;
+}
+
+type GateRequest = PlaybackRequest | SignInRequest;
+
+const isSignInRequest = (r: GateRequest): r is SignInRequest => 'signInFor' in r;
+
 interface GateApi {
   tier: Tier;
-  open: (req: GateRequest) => void;
+  open: (req: PlaybackRequest) => void;
+  requireSignIn: (req: SignInRequest) => void;
   isOpen: boolean;
 }
 
@@ -56,24 +70,72 @@ export function GateProvider({ children }: { children: ReactNode }) {
     pathRef.current = location.pathname;
   }, [location.pathname]);
 
-  // Close automatically once the user has enough access → player unlocks in place.
+  // Close automatically once the user has enough access → player unlocks / action completes in place.
   useEffect(() => {
-    if (req && canAccess(auth.tier, req.level)) setReq(null);
+    if (!req) return;
+    if (isSignInRequest(req)) {
+      if (auth.tier !== 'guest') {
+        setReq(null);
+        req.then?.();
+      }
+    } else if (canAccess(auth.tier, req.level)) setReq(null);
   }, [auth.tier, req]);
 
   const open = useCallback((r: GateRequest) => setReq({ ...r, path: pathRef.current }), []);
-  const api = useMemo(() => ({ tier: auth.tier, open, isOpen: !!req }), [auth.tier, open, req]);
+  const api = useMemo(
+    () => ({ tier: auth.tier, open, requireSignIn: open, isOpen: !!req }),
+    [auth.tier, open, req],
+  );
 
   return (
     <GateContext.Provider value={api}>
       {children}
-      {req && <GateModal req={req} tier={auth.tier} onClose={() => setReq(null)} onSignIn={() => auth.signIn('free')} onUpgrade={auth.setTier} />}
+      {req && isSignInRequest(req) && (
+        <SignInModal reason={req.signInFor} onClose={() => setReq(null)} onSignIn={() => auth.signIn('free')} />
+      )}
+      {req && !isSignInRequest(req) && (
+        <GateModal req={req} tier={auth.tier} onClose={() => setReq(null)} onSignIn={() => auth.signIn('free')} onUpgrade={auth.setTier} />
+      )}
     </GateContext.Provider>
   );
 }
 
+/** Demo GGPass sign-in. No credentials are collected and GGPass is never contacted. */
+function GGPassButton({ onSignIn }: { onSignIn: () => void }) {
+  return (
+    <div className="modal-actions">
+      <button className="btn btn-primary btn-block" onClick={onSignIn} autoFocus>
+        Continue with GGPass (demo)
+      </button>
+      <p className="fineprint">
+        WSOP TV accounts use GGPass. This demo signs you in as “Demo Viewer” without contacting GGPass — no email, password or other
+        personal data is collected.
+      </p>
+    </div>
+  );
+}
+
+function SignInModal(props: { reason: string; onClose: () => void; onSignIn: () => void }) {
+  return (
+    <Modal onClose={props.onClose} labelledBy="signin-title" variant="gate">
+      <p className="modal-kicker">Sign-in required</p>
+      <h2 id="signin-title" className="modal-title">
+        Sign in to {props.reason}
+      </h2>
+      <p className="modal-body">
+        Saved hands, followed players and your viewing activity are kept in <strong>My WSOP</strong>. You stay on this page after
+        signing in.
+      </p>
+      <GGPassButton onSignIn={props.onSignIn} />
+      <button className="btn btn-ghost btn-block" onClick={props.onClose}>
+        Not now
+      </button>
+    </Modal>
+  );
+}
+
 function GateModal(props: {
-  req: GateRequest;
+  req: PlaybackRequest;
   tier: Tier;
   onClose: () => void;
   onSignIn: () => void;
@@ -87,10 +149,10 @@ function GateModal(props: {
   return (
     <Modal onClose={props.onClose} labelledBy="gate-title" variant="gate">
       <p className="modal-kicker">
-        <LockIcon /> Playback requires {step === 'login' ? 'sign-in' : `${TIER_LABEL[required]} plan`}
+        <LockIcon /> Playback requires {step === 'login' ? 'sign-in' : `WSOP+ ${TIER_LABEL[required]}`}
       </p>
       <h2 id="gate-title" className="modal-title">
-        {step === 'login' ? 'Sign in to watch' : `Upgrade to ${TIER_LABEL[required]}`}
+        {step === 'login' ? 'Sign in to watch' : `Subscribe with WSOP+`}
       </h2>
       <p className="modal-body">
         <strong>{req.contentTitle}</strong> is a <em>{ACCESS_LABEL[req.level]}</em> and needs the{' '}
@@ -100,16 +162,13 @@ function GateModal(props: {
       </p>
 
       {step === 'login' ? (
-        <div className="modal-actions">
-          <button className="btn btn-primary btn-block" onClick={props.onSignIn} autoFocus>
-            Demo sign-in as “Demo Viewer” (Free)
-          </button>
-          <p className="fineprint">
-            Demo only — no email, password, GGPass or other account is used. You can switch plans any time in Demo tools.
-          </p>
-        </div>
+        <GGPassButton onSignIn={props.onSignIn} />
       ) : (
         <div className="plan-options">
+          <p className="fineprint">
+            Subscriptions and payment are handled by <strong>WSOP+</strong> (integration planned). In this demo you can switch the viewing
+            plan directly — plan names and benefits are placeholders.
+          </p>
           {plans.map((p) => (
             <button key={p} className={`plan-option ${p === required ? 'is-recommended' : ''}`} onClick={() => props.onUpgrade(p)}>
               <span className="plan-option-head">
@@ -117,10 +176,10 @@ function GateModal(props: {
                 <span className="plan-price">Demo plan</span>
               </span>
               <span className="plan-option-feat">{PLAN_FEATURES[p].slice(1).join(' · ')}</span>
-              <span className="plan-option-cta">Activate demo {TIER_LABEL[p]}</span>
+              <span className="plan-option-cta">Switch to demo {TIER_LABEL[p]}</span>
             </button>
           ))}
-          <p className="fineprint">No payment is taken. Plans and prices are placeholders.</p>
+          <p className="fineprint">No payment is taken and WSOP+ is not contacted.</p>
         </div>
       )}
       <button className="btn btn-ghost btn-block" onClick={props.onClose}>

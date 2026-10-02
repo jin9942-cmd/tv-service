@@ -23,6 +23,7 @@ import { ACCESS_LABEL, TIER_LABEL, checkAccess, minimumTier } from '../config/en
 import { fmtChips, fmtCompact, fmtUSD, ordinal } from '../lib/format';
 import { formatEventDate, formatEventTime, formatLocalTime, relativeFromNow } from '../lib/time';
 import { NotFound } from './NotFound';
+import { GlossaryText, GlossaryToggle } from '../components/Glossary';
 
 /** /watch → first live event, or the "no live" state. */
 export function WatchIndex() {
@@ -212,6 +213,7 @@ function WatchView({
             blocked={blocked}
             label={contentTitle}
             poster={frameFor(broadcast?.sourceId)}
+            activity={broadcast && playable ? { broadcastId: broadcast.id, isFinal: broadcast.title === 'Final Table' } : undefined}
             progress={
               isReplay && broadcast
                 ? {
@@ -277,6 +279,9 @@ function WatchView({
                 {id === 'hands' && tabHands.length > 0 && <span className="tab-count">{tabHands.length}</span>}
               </button>
             ))}
+          </div>
+          <div className="tab-tools">
+            <GlossaryToggle compact />
           </div>
           <div className="tab-panel" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
             {tab === 'overview' && <Overview event={event} />}
@@ -392,14 +397,16 @@ function Overview({ event }: { event: TournamentEvent }) {
   const champ = champion ? lookup.player(champion.playerId) : null;
   return (
     <div>
-      <p className="lead">{event.description}</p>
+      <p className="lead">
+        <GlossaryText>{event.description}</GlossaryText>
+      </p>
       <dl className="facts">
         <Fact label="Buy-in" value={fmtUSD(event.buyIn)} />
         {event.entries && <Fact label="Entries" value={fmtChips(event.entries)} />}
         {event.prizePool && <Fact label="Prize pool" value={fmtUSD(event.prizePool)} />}
         {event.playersLeft !== undefined && event.status === 'live' && <Fact label="Players left" value={event.playersLeft} />}
-        {event.level && event.status === 'live' && <Fact label="Level" value={event.level} />}
-        {event.blinds && event.status === 'live' && <Fact label="Blinds" value={event.blinds} />}
+        {event.level && event.status === 'live' && <Fact label="Level" value={<GlossaryText>{event.level}</GlossaryText>} />}
+        {event.blinds && event.status === 'live' && <Fact label="Blinds" value={<GlossaryText>{event.blinds}</GlossaryText>} />}
         {champ && <Fact label="Champion" value={<PlayerLink player={champ} />} />}
         <Fact
           label={event.status === 'upcoming' ? 'Starts' : 'Started'}
@@ -513,7 +520,9 @@ function HandHistory({ hands, players, event }: { hands: HandRecord[]; players?:
                 Hand #{h.handNumber} · {h.level}
               </p>
               <p className="hand-row-title">{h.title}</p>
-              <p className="hand-row-sum">{h.summary}</p>
+              <p className="hand-row-sum">
+                <GlossaryText>{h.summary}</GlossaryText>
+              </p>
               <p className="hand-row-players">
                 {h.playerIds.map((id, i) => (
                   <span key={id}>

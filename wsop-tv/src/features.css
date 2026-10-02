@@ -1,0 +1,600 @@
+/* Styles for My WSOP, activity badges, save/follow and the optional poker-terms help. */
+
+/* ---------- landing: hero + schedule list ---------- */
+.hero-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  margin-top: 16px;
+  align-items: stretch;
+}
+
+.hero-wrap .hero-banner {
+  margin-top: 0;
+}
+
+.hero-schedule {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hero-schedule .link-more {
+  margin-top: auto;
+}
+
+@media (max-width: 1023px) {
+  .hero-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-wrap {
+    margin-top: 0;
+    gap: 0;
+  }
+  .hero-schedule {
+    border-radius: var(--radius);
+  }
+}
+
+/* ---------- header user chip ---------- */
+a.user-chip {
+  min-height: var(--tap);
+}
+
+a.user-chip:hover {
+  border-color: var(--text);
+}
+
+.user-tier {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  border-left: 1px solid var(--border-strong);
+  padding-left: 8px;
+}
+
+@media (max-width: 380px) {
+  .user-tier {
+    display: none;
+  }
+}
+
+/* ---------- save / follow ---------- */
+.btn-on {
+  background: var(--surface-3);
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.hand-actions,
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 10px 0 12px;
+}
+
+.back-btn.is-live {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+}
+
+.saved-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.saved-item .btn {
+  align-self: flex-start;
+}
+
+/* ---------- My WSOP ---------- */
+.me-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.me-id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.me-name {
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.me-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, auto));
+  gap: 8px 24px;
+  margin: 0;
+}
+
+.me-stats dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.me-stats dd {
+  margin: 2px 0 0;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.me-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 28px;
+  align-items: start;
+}
+
+.me-main,
+.me-aside {
+  min-width: 0;
+}
+
+.follow-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.follow-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 8px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.follow-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tap);
+}
+
+.follow-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.setting-title {
+  font-weight: 700;
+}
+
+.next-badge {
+  font-size: 13.5px;
+  margin: 10px 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--red);
+  background: var(--surface);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+@media (max-width: 1023px) {
+  .me-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .me-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .me-name {
+    font-size: 22px;
+  }
+  .setting-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ---------- badges: small and neutral ---------- */
+.badge-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.badge-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.badge-card.is-earned {
+  border-color: var(--border-strong);
+}
+
+.badge-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  border: 1px dashed var(--border-strong);
+}
+
+.badge-icon.is-earned {
+  color: #fff;
+  border: 1px solid var(--red);
+  background: var(--red-soft);
+}
+
+.badge-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.badge-name {
+  font-weight: 700;
+}
+
+.badge-desc {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.badge-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.badge-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-3);
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.badge-bar span {
+  display: block;
+  height: 100%;
+  background: var(--text);
+}
+
+/* ---------- toast: corner only, never over the player centre ---------- */
+.toast-region {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 55;
+  max-width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 6px 10px 12px;
+  background: #16181d;
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+
+.toast-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.toast-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.toast-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.toast-close {
+  width: var(--tap);
+  height: var(--tap);
+  flex-shrink: 0;
+  border: 0;
+  background: none;
+  font-size: 20px;
+  color: var(--muted);
+}
+
+@media (max-width: 767px) {
+  .toast-region {
+    left: 12px;
+    right: 12px;
+    max-width: none;
+    bottom: calc(var(--bottom-nav-h) + 12px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ---------- poker terms help ---------- */
+.term {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--red-strong);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  cursor: help;
+}
+
+.term:hover,
+.term:focus-visible {
+  color: #fff;
+  background: var(--red-soft);
+  border-radius: 3px;
+}
+
+/* Bigger hit area on touch screens without changing the line layout. */
+@media (pointer: coarse) {
+  .term {
+    padding: 6px 0;
+    margin: -6px 0;
+  }
+}
+
+.term-popover,
+.term-sheet {
+  z-index: 70;
+  background: #16181d;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.term-popover {
+  position: fixed;
+  width: min(320px, calc(100vw - 16px));
+  border-radius: var(--radius);
+  padding: 8px 6px 12px 14px;
+}
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+}
+
+.term-sheet {
+  width: 100%;
+  border-radius: 16px 16px 0 0;
+  padding: 8px 8px calc(18px + env(safe-area-inset-bottom)) 18px;
+  border-bottom: 0;
+}
+
+.sheet-handle {
+  display: block;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-strong);
+  margin: 0 auto 6px;
+}
+
+.term-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.term-title {
+  font-weight: 800;
+}
+
+.term-close {
+  width: var(--tap);
+  height: var(--tap);
+  flex-shrink: 0;
+  border: 0;
+  background: none;
+  font-size: 22px;
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+}
+
+.term-def {
+  font-size: 14px;
+  color: #d4d7dd;
+  padding-right: 8px;
+}
+
+.term-foot {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.link-inline {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--text);
+  text-decoration: underline;
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .link-inline {
+    padding: 12px 6px;
+  }
+}
+
+.glossary-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 0 12px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.glossary-toggle.is-on {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+.switch-track {
+  width: 30px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--surface-3);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.glossary-toggle.is-on .switch-track {
+  background: var(--red);
+}
+
+.glossary-toggle.is-on .switch-thumb {
+  transform: translateX(12px);
+  background: #fff;
+}
+
+.tab-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+/* ---------- demo tools additions ---------- */
+.demo-badges {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+}
+
+.demo-badges li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.demo-ok {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.demo-log summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+}
+
+.demo-log ol {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { VideoSource } from '../data/types';
 import { demoStore, progressStore, saveProgress, clearProgress, useStore } from '../state/stores';
 import { formatClock } from '../lib/time';
+import { recordWatchTick, releaseWatchLease } from '../state/activity';
+import { track } from '../lib/analytics';
 
 export interface ProgressMeta {
   key: string;
@@ -26,6 +28,8 @@ interface Props {
   label: string;
   /** Still frame shown before playback and behind blocked states. */
   poster?: string;
+  /** Broadcast playback counts toward activity badges (signed-in users only). */
+  activity?: { broadcastId: string; isFinal: boolean };
 }
 
 interface PlayerState {
@@ -63,6 +67,37 @@ export function VideoPlayer(props: Props) {
   const [attempt, setAttempt] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const lastSaved = useRef(0);
+  const startedTracked = useRef(false);
+  const stRef = useRef(st);
+  useEffect(() => {
+    stRef.current = st;
+  });
+
+  // Activity: count only real playback. Each second compare wall time with media time;
+  // paused/buffering (no media progress) and seeks (media jumps) add nothing.
+  const activity = props.activity;
+  useEffect(() => {
+    if (!activity) return;
+    let lastWall = performance.now();
+    let lastMedia = videoRef.current?.currentTime ?? 0;
+    const id = window.setInterval(() => {
+      const v = videoRef.current;
+      const now = performance.now();
+      const wallSec = (now - lastWall) / 1000;
+      const media = v?.currentTime ?? 0;
+      let mediaSec = media - lastMedia;
+      if (mediaSec < 0 && v?.loop && v.duration && lastMedia > v.duration - 2) mediaSec += v.duration; // live loop wrap
+      lastWall = now;
+      lastMedia = media;
+      const s = stRef.current;
+      if (!v || v.paused || v.seeking || s.buffering || s.error || v.readyState < 3) return;
+      recordWatchTick({ broadcastId: activity.broadcastId, isFinal: activity.isFinal, wallSec, mediaSec });
+    }, 1000);
+    return () => {
+      window.clearInterval(id);
+      releaseWatchLease();
+    };
+  }, [activity?.broadcastId, activity?.isFinal]); // eslint-disable-line react-hooks/exhaustive-deps
   const progressRef = useRef(props.progress);
   useEffect(() => {
     progressRef.current = props.progress;
@@ -253,7 +288,13 @@ export function VideoPlayer(props: Props) {
           onLoadedMetadata={onLoadedMetadata}
           onTimeUpdate={onTimeUpdate}
           onPlay={() => update({ playing: true, ended: false })}
-          onPlaying={() => update({ playing: true, buffering: false, needsTap: false })}
+          onPlaying={() => {
+            update({ playing: true, buffering: false, needsTap: false });
+            if (!startedTracked.current) {
+              startedTracked.current = true;
+              track('playback_started', { mode, label: props.label });
+            }
+          }}
           onPause={() => {
             update({ playing: false });
             persist(true);

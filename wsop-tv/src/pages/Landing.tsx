@@ -36,6 +36,7 @@ export function Landing() {
 
   return (
     <div className="page landing">
+      <div className="hero-wrap">
       <section className="hero-banner" aria-label="Featured">
         <div className="hero-media" aria-hidden="true">
           <img className="hero-poster" src={HERO_IMAGE} alt="" />
@@ -71,6 +72,38 @@ export function Landing() {
           </p>
         )}
       </section>
+        <aside className="hero-schedule" aria-label="Schedule">
+          <p className="aside-title">On now</p>
+          {!events ? (
+            <Loading />
+          ) : live.length ? (
+            live.map((e) => (
+              <Link key={e.id} to={`/watch/${e.id}`} state={{ select: true }} className="live-row">
+                <StatusBadge status="live" small />
+                <span className="live-row-name">
+                  #{e.number} {e.shortName}
+                </span>
+                <span className="muted">{e.dayLabel}</span>
+              </Link>
+            ))
+          ) : (
+            <p className="muted">No live tournaments right now.</p>
+          )}
+          {upcoming.length > 0 && <p className="aside-title hero-next">Coming up</p>}
+          {upcoming.map((e) => (
+            <Link key={e.id} to={`/watch/${e.id}`} className="live-row">
+              <StatusBadge status="upcoming" small />
+              <span className="live-row-name">{e.shortName}</span>
+              <span className="muted">
+                {formatEventDate(e.startAt)} {formatEventTime(e.startAt)}
+              </span>
+            </Link>
+          ))}
+          <Link to="/schedule" className="link-more">
+            Full schedule →
+          </Link>
+        </aside>
+      </div>
 
       <section className="block">
         <div className="section-head">
@@ -104,26 +137,6 @@ export function Landing() {
                 </Link>
               );
             })}
-            {upcoming.map((e) => (
-              <Link key={e.id} to={`/watch/${e.id}`} className="card live-card is-upcoming">
-                <Thumb seed={e.id}>
-                  <span className="thumb-live">
-                    <StatusBadge status="upcoming" small />
-                  </span>
-                  <span className="thumb-when">
-                    {formatEventDate(e.startAt)}
-                    <br />
-                    {formatEventTime(e.startAt)}
-                  </span>
-                </Thumb>
-                <div className="card-body">
-                  <p className="card-title">
-                    #{e.number} {e.shortName}
-                  </p>
-                  <p className="card-meta">{e.hasBroadcast ? e.dayLabel : `${e.dayLabel} · not broadcast`}</p>
-                </div>
-              </Link>
-            ))}
           </div>
         ) : (
           <p className="muted">
@@ -188,9 +201,9 @@ export function Landing() {
       </section>
 
       <section className="block" id="plans">
-        <h2 className="section-title">Demo plans</h2>
+        <h2 className="section-title">WSOP+ plans (demo)</h2>
         <p className="muted">
-          Prices are not final — every plan is shown as a <strong>Demo plan</strong>. Nothing is charged and no payment details are collected.
+          Subscriptions and payment will be handled by <strong>WSOP+</strong> (integration planned); sign-in uses <strong>GGPass</strong>. Plan names, prices and benefits are placeholders — every plan is shown as a <strong>Demo plan</strong>. Nothing is charged and no payment details are collected.
         </p>
         <div className="plans">
           {(['free', 'standard', 'platinum'] as Exclude<Tier, 'guest'>[]).map((p) => (
@@ -208,7 +221,7 @@ export function Landing() {
                 </span>
               ) : (
                 <button className={`btn btn-block ${p === 'standard' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setTier(p)}>
-                  {p === 'free' ? 'Demo sign-in (Free)' : `Try demo ${TIER_LABEL[p]}`}
+                  {p === 'free' ? 'Sign in with GGPass (demo)' : `Try demo ${TIER_LABEL[p]}`}
                 </button>
               )}
             </div>

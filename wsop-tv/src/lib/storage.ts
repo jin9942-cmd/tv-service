@@ -29,20 +29,43 @@ export function clearAll(): void {
   }
 }
 
-/** Minimal observable value backed by localStorage, usable with useSyncExternalStore. */
+function removeKey(key: string): void {
+  try {
+    window.localStorage.removeItem(PREFIX + key);
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Minimal observable value backed by localStorage, usable with useSyncExternalStore.
+ * Stays in sync across tabs (storage event), and functional updates re-read storage first so
+ * two tabs updating the same record don't overwrite each other.
+ */
 export function createStore<T>(key: string, initial: T) {
   let value = readJSON<T>(key, initial);
   const listeners = new Set<() => void>();
+  const notify = () => listeners.forEach((l) => l());
+  try {
+    window.addEventListener('storage', (e) => {
+      if (e.key !== PREFIX + key && e.key !== null) return;
+      value = readJSON<T>(key, initial);
+      notify();
+    });
+  } catch {
+    /* non-browser */
+  }
   return {
     get: () => value,
     set(next: T | ((prev: T) => T)) {
-      value = typeof next === 'function' ? (next as (p: T) => T)(value) : next;
+      value = typeof next === 'function' ? (next as (p: T) => T)(readJSON<T>(key, value)) : next;
       writeJSON(key, value);
-      listeners.forEach((l) => l());
+      notify();
     },
     reset() {
       value = initial;
-      listeners.forEach((l) => l());
+      removeKey(key);
+      notify();
     },
     subscribe(l: () => void) {
       listeners.add(l);
