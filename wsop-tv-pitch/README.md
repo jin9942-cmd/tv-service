@@ -11,6 +11,7 @@ npm run dev      # http://localhost:5173 (포트는 Vite가 지정)
 npm run build    # 타입 체크 + 정적 빌드 (dist/)
 ```
 
+- 배포 주소: https://jin9942-cmd.github.io/tv-service/pitch/ (`main`에 push하면 GitHub Actions가 자동 배포)
 - 데스크톱 1440px 기준 화면입니다. 화면 폭이 767px 이하(휴대폰)이면 앱 화면만 전체 화면으로 나옵니다.
 - 백엔드는 없습니다. 상태는 메모리에만 있어서 **새로고침하면 초기화**됩니다.
 

@@ -1,4 +1,6 @@
-# Builds wsop-tv/ and publishes it to GitHub Pages on every push to main.
+# Builds both demos and publishes them to GitHub Pages on every push to main:
+#   /<repo>/        → wsop-tv (viewer demo)
+#   /<repo>/pitch/  → wsop-tv-pitch (app + CMS demo for internal reporting)
 # One-time setup: repository Settings → Pages → Source: "GitHub Actions".
 name: Deploy demo to GitHub Pages
 
@@ -19,22 +21,28 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: wsop-tv
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: wsop-tv/package-lock.json
-      - run: npm ci
-      - run: npm run build
+          cache-dependency-path: |
+            wsop-tv/package-lock.json
+            wsop-tv-pitch/package-lock.json
+      - name: Build viewer demo (wsop-tv)
+        working-directory: wsop-tv
+        run: npm ci && npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
       # SPA fallback: Pages serves 404.html for unknown paths, so deep links still boot the app.
-      - run: cp dist/index.html dist/404.html
+      - run: cp wsop-tv/dist/index.html wsop-tv/dist/404.html
+      - name: Build pitch demo (wsop-tv-pitch) into /pitch
+        working-directory: wsop-tv-pitch
+        run: npm ci && npm run build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/pitch/
+      - run: cp -r wsop-tv-pitch/dist wsop-tv/dist/pitch
       - uses: actions/upload-pages-artifact@v3
         with:
           path: wsop-tv/dist
