@@ -23,7 +23,7 @@ export interface AppEnv {
   scrollRoot: () => HTMLElement | null;
 }
 
-export type SheetKind = null | { kind: 'login'; reason: string } | { kind: 'paywall'; tier: Tier; title: string };
+export type SheetKind = null | { kind: 'login'; reason: string; then?: () => void } | { kind: 'paywall'; tier: Tier; title: string };
 
 export const Env = createContext<AppEnv>(null as unknown as AppEnv);
 export const useEnv = () => useContext(Env);

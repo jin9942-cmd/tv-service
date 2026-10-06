@@ -12,6 +12,7 @@ import { Search } from './screens/Search';
 import { Paywall } from './screens/Paywall';
 import { MyTab, Inbox } from './screens/My';
 import { LivePlayer } from './screens/LivePlayer';
+import { MyListScreen } from './MyList';
 
 const TABS: { tab: AppTab; label: string; icon: string }[] = [
   { tab: 'home', label: 'Home', icon: 'home' },
@@ -127,6 +128,8 @@ function Screen({ route }: { route: AppRoute }) {
       return <Paywall />;
     case 'inbox':
       return <Inbox />;
+    case 'mylist':
+      return <MyListScreen />;
   }
 }
 
@@ -148,6 +151,7 @@ function BottomSheet({ sheet, onClose }: { sheet: NonNullable<SheetKind>; onClos
                 store.set({ member: 'free' });
                 toast('Logged in as a Free member (demo)');
                 onClose();
+                sheet.then?.();
               }}
             >
               Log in (demo)

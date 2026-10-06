@@ -4,6 +4,7 @@ import { fmtMoney } from '../../lib/time';
 import { Note } from '../ui';
 import { PlayerAvatar, VodCard } from './Home';
 import { Missing, SubHead } from './LivePlayer';
+import { MyListButton } from '../MyList';
 
 export function PlayerDetail({ playerId }: { playerId: string }) {
   const p = playerById(playerId);
@@ -19,6 +20,7 @@ export function PlayerDetail({ playerId }: { playerId: string }) {
           {p.flag} {p.country}
         </p>
         <p className="fictional">Fictional demo player</p>
+        <MyListButton kind="player" id={p.id} />
       </div>
       <dl className="stats">
         <div>

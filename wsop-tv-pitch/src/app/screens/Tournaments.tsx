@@ -6,6 +6,7 @@ import { phaseOf, seriesById, statusOf, useNow } from '../../state/selectors';
 import { Art, Note } from '../ui';
 import { AppHeader, LiveCard, ScheduleRow, SeriesCard, VodCard, fmtSeriesDates } from './Home';
 import { SubHead } from './LivePlayer';
+import { MyListButton } from '../MyList';
 
 const GROUPS: { phase: SeriesPhase; label: string }[] = [
   { phase: 'ongoing', label: 'On now' },
@@ -74,6 +75,9 @@ export function SeriesDetail({ seriesId }: { seriesId: string }) {
           {fmtSeriesDates(se.start, se.end)} · {se.venue}, {se.city}
         </p>
         <p className="detail-meta">Local time zone: {se.timezone}</p>
+        <div className="detail-actions">
+          <MyListButton kind="series" id={se.id} />
+        </div>
       </div>
 
       {live.length > 0 && (

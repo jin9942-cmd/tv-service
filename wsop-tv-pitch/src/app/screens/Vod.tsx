@@ -7,6 +7,7 @@ import { MockPlayer } from '../Player';
 import { Note, TierBadge, useEnv } from '../ui';
 import { AppHeader, PlayerAvatar, VodCard } from './Home';
 import { Missing, SubHead } from './LivePlayer';
+import { MyListButton } from '../MyList';
 
 const TYPES: VodType[] = ['Full Replay', 'Highlight', 'Clip', 'Hand', 'Interview', 'Shorts'];
 
@@ -84,6 +85,9 @@ export function VodDetail({ vodId }: { vodId: string }) {
           <span className="tag">{fmtCount(v.views)} views</span>
         </div>
         <h2 className="detail-title">{v.title}</h2>
+        <div className="detail-actions">
+          <MyListButton kind="vod" id={v.id} />
+        </div>
         {resume && (
           <p className="resume-line">
             Resume from {fmtDuration(Math.round(v.durationSec * resume.progress))}

@@ -1,7 +1,7 @@
 // One in-memory store shared by the App demo and the CMS demo (refresh resets it).
 // CMS writes here → the app re-renders immediately: that is the "no app release needed" story.
 import { useSyncExternalStore } from 'react';
-import type { HomeSection, Member, Schedule } from '../data/types';
+import type { HomeSection, Member, MyListItem, MyListKind, Schedule } from '../data/types';
 import { defaultOffSeasonLayout, defaultSeasonLayout, schedules as seedSchedules } from '../data/mock';
 import type { DisplayTz } from '../lib/time';
 
@@ -24,6 +24,7 @@ export interface State {
   /** When each layout set was last published from the CMS. */
   publishedAt: Record<Mode, number | null>;
   alarms: string[];
+  myList: MyListItem[];
   recentSearches: string[];
   push: boolean;
   nightPush: boolean;
@@ -40,6 +41,11 @@ let state: State = {
   layouts: { season: defaultSeasonLayout, offseason: defaultOffSeasonLayout },
   publishedAt: { season: null, offseason: null },
   alarms: ['sc-13'],
+  // Example items so the list isn't empty in the demo.
+  myList: [
+    { kind: 'vod', id: 'v-01', addedAt: Date.now() - 3_600_000 },
+    { kind: 'player', id: 'pl-4', addedAt: Date.now() - 7_200_000 },
+  ],
   recentSearches: ['Main Event', 'Han'],
   push: true,
   nightPush: false,
@@ -76,6 +82,15 @@ export function toggleAlarm(scheduleId: string) {
   store.set((s) => ({
     alarms: s.alarms.includes(scheduleId) ? s.alarms.filter((a) => a !== scheduleId) : [...s.alarms, scheduleId],
   }));
+}
+
+/** Add or remove an item from My List. Returns true when the item was added. */
+export function toggleMyList(kind: MyListKind, id: string): boolean {
+  const has = store.get().myList.some((x) => x.kind === kind && x.id === id);
+  store.set((s) => ({
+    myList: has ? s.myList.filter((x) => !(x.kind === kind && x.id === id)) : [{ kind, id, addedAt: Date.now() }, ...s.myList],
+  }));
+  return !has;
 }
 
 export function addSchedule(s: Schedule) {

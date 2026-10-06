@@ -56,6 +56,7 @@ const SCENARIOS = [
   { n: 6, text: 'CMS 메인 화면 관리: 순서 변경/숨김 → 저장 → 앱 즉시 반영', cms: true },
   { n: 7, text: 'CMS 편성표: 편성 추가 → 앱 편성표·오늘의 편성 반영', cms: true },
   { n: 8, text: '시간대 변경 → 앱 안의 모든 시각 변환', set: { tz: 'America/Los_Angeles' as DisplayTz } },
+  { n: 9, text: '비로그인 → VOD 상세 “+ My List” → 로그인 → MY 탭 My List에서 확인', set: { member: 'guest' as Member } },
 ];
 
 export function ScenarioGuide({ onOpenCms }: { onOpenCms: () => void }) {

@@ -5,6 +5,7 @@ import { fmtDate, fmtDuration } from '../../lib/time';
 import { Icon, Note, useEnv } from '../ui';
 import { AppHeader } from './Home';
 import { SubHead } from './LivePlayer';
+import { MyListPreview } from '../MyList';
 
 export function MyTab() {
   const env = useEnv();
@@ -44,8 +45,10 @@ export function MyTab() {
             </span>
           </button>
         )}
-        <Note side="inline">계정 · 구독 등급 · 시청 기록 · 알림 설정 · 알림함 · 공지 · 고객센터</Note>
+        <Note side="inline">계정 · 구독 등급 · My List · 시청 기록 · 알림 설정 · 알림함 · 공지 · 고객센터</Note>
       </div>
+
+      <MyListPreview />
 
       {!guest && (
         <section className="sec">

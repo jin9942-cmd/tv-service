@@ -145,6 +145,15 @@ export type AppRoute =
   | { name: 'player'; playerId: string }
   | { name: 'search' }
   | { name: 'paywall' }
-  | { name: 'inbox' };
+  | { name: 'inbox' }
+  | { name: 'mylist' };
+
+/** My List (favourites): saved videos, players and tournaments. */
+export type MyListKind = 'vod' | 'player' | 'series';
+export interface MyListItem {
+  kind: MyListKind;
+  id: string;
+  addedAt: number;
+}
 
 export type AppTab = 'home' | 'schedule' | 'vod' | 'tournaments' | 'my';
