@@ -1,0 +1,382 @@
+/* Demo shell around the app / CMS. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: Inter, 'Pretendard', system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', Roboto, sans-serif;
+  background: #0e0f12;
+  color: #eceef2;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid #e5c158;
+  outline-offset: 2px;
+}
+
+#root {
+  min-height: 100%;
+}
+
+.stub {
+  padding: 40px 20px;
+  text-align: center;
+  color: #888;
+}
+
+/* ---------- top bar ---------- */
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell-top {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 24px;
+  background: #15171c;
+  border-bottom: 1px solid #262931;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.shell-brand {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #e5c158;
+}
+
+.shell-brand span {
+  color: #9aa0ab;
+  font-weight: 600;
+  font-size: 13px;
+  margin-left: 6px;
+}
+
+.shell-tabs {
+  display: flex;
+  gap: 4px;
+  background: #0e0f12;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.shell-tabs button {
+  border: 0;
+  background: none;
+  padding: 8px 18px;
+  border-radius: 7px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #9aa0ab;
+}
+
+.shell-tabs button.is-on {
+  background: #e5c158;
+  color: #15171c;
+}
+
+.shell-hint {
+  margin: 0 0 0 auto;
+  font-size: 12px;
+  color: #7c828d;
+}
+
+/* ---------- app demo stage ---------- */
+.stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) 430px minmax(280px, 340px);
+  justify-content: center;
+  align-items: start;
+  gap: 32px;
+  padding: 28px 24px 40px;
+  background: radial-gradient(70% 60% at 50% 30%, #1d2028, #0e0f12 70%);
+}
+
+.stage-center {
+  display: flex;
+  justify-content: center;
+  position: sticky;
+  top: 76px;
+}
+
+.stage {
+  padding-top: 20px;
+}
+
+.phone {
+  position: relative;
+  width: 414px;
+  height: 868px;
+  flex-shrink: 0;
+  transform-origin: top center;
+  padding: 12px;
+  border-radius: 54px;
+  background: #050506;
+  box-shadow:
+    0 0 0 2px #2b2e36,
+    0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+.phone .app {
+  border-radius: 42px;
+}
+
+.phone-notch {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 30px;
+  border-radius: 20px;
+  background: #050506;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.mobile-root {
+  position: fixed;
+  inset: 0;
+}
+
+.mobile-root .app {
+  border-radius: 0;
+}
+
+/* ---------- panels ---------- */
+.panel {
+  background: #171a20;
+  border: 1px solid #262931;
+  border-radius: 14px;
+  padding: 18px;
+  position: sticky;
+  top: 76px;
+}
+
+.panel-title {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.field {
+  padding: 12px 0;
+  border-top: 1px solid #23262d;
+}
+
+.field:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field-label small {
+  font-weight: 500;
+  color: #7c828d;
+  font-size: 11.5px;
+}
+
+.pseg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  background: #0e0f12;
+  padding: 4px;
+  border-radius: 9px;
+}
+
+.pseg button {
+  flex: 1 1 auto;
+  border: 0;
+  background: none;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #9aa0ab;
+  white-space: nowrap;
+}
+
+.pseg button.is-on {
+  background: #2a2e37;
+  color: #e5c158;
+}
+
+.ptoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #333741;
+  background: #0e0f12;
+  border-radius: 999px;
+  padding: 4px 12px 4px 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #9aa0ab;
+}
+
+.ptoggle span {
+  width: 34px;
+  height: 20px;
+  border-radius: 10px;
+  background: #333741;
+  position: relative;
+}
+
+.ptoggle span::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #9aa0ab;
+  transition: transform 0.15s;
+}
+
+.ptoggle.is-on {
+  color: #e5c158;
+  border-color: #e5c158;
+}
+
+.ptoggle.is-on span {
+  background: #e5c158;
+}
+
+.ptoggle.is-on span::after {
+  transform: translateX(14px);
+  background: #15171c;
+}
+
+.panel-foot {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid #23262d;
+  font-size: 12px;
+  color: #9aa0ab;
+}
+
+.panel-foot p {
+  margin: 4px 0;
+}
+
+.guide ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guide li {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 8px;
+  align-items: start;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #c9ccd3;
+}
+
+.guide-n {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2a2e37;
+  color: #e5c158;
+  font-weight: 800;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guide-go {
+  border: 1px solid #333741;
+  background: #0e0f12;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e5c158;
+  white-space: nowrap;
+}
+
+.guide-reset {
+  margin-top: 14px;
+  width: 100%;
+  border: 1px dashed #333741;
+  background: none;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+  color: #9aa0ab;
+}
+
+/* ---------- CMS toasts ---------- */
+.cms-toasts {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cms-toast {
+  background: #15171c;
+  color: #fff;
+  border-left: 4px solid #22a06b;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 1200px) {
+  .stage {
+    grid-template-columns: 430px minmax(260px, 320px);
+  }
+  .stage-left {
+    display: none;
+  }
+}
