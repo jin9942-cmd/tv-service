@@ -126,9 +126,8 @@ export type HomeSectionId =
   | 'tournaments'
   | 'strip'
   | 'curation'
-  | 'popular'
+  | 'plans'
   | 'continue'
-  | 'shorts'
   | 'players'
   | 'notice';
 

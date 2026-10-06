@@ -12,9 +12,8 @@ const SECTION_LABEL: Record<HomeSectionId, { ko: string; en: string }> = {
   tournaments: { ko: '대회', en: 'Tournaments' },
   strip: { ko: '띠배너', en: 'Promo strip' },
   curation: { ko: '큐레이션 VOD', en: 'Curated VOD' },
-  popular: { ko: '인기 VOD TOP 10', en: 'Top 10' },
+  plans: { ko: '요금제', en: 'Plans' },
   continue: { ko: '이어보기', en: 'Continue watching' },
-  shorts: { ko: '쇼츠', en: 'Shorts' },
   players: { ko: '선수', en: 'Players' },
   notice: { ko: '공지', en: 'Notice' },
 };

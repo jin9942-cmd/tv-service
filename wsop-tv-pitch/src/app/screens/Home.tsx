@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { HomeSectionId, Schedule, Vod } from '../../data/types';
-import { banners, continueWatching, curations, notices, players, series, stripBanners, vods } from '../../data/mock';
+import type { HomeSectionId, Schedule, Tier, Vod } from '../../data/types';
+import { PLANS, PLAN_ORDER } from '../../data/plans';
+import { banners, continueWatching, curations, notices, players, series, stripBanners } from '../../data/mock';
 import { toggleAlarm, toast, useStore } from '../../state/store';
 import { accessFor, eventLabel, liveNow, nextUpcoming, phaseOf, schedulesOnDay, seriesById, statusOf, useNow, viewersOf, vodById } from '../../state/selectors';
 import { addDays, dateKey, fmtCount, fmtCountdown, fmtDate, fmtDuration, fmtTime } from '../../lib/time';
@@ -19,9 +20,8 @@ export function Home() {
     tournaments: () => <TournamentsRow now={now} />,
     strip: () => <Strip />,
     curation: () => <Curations />,
-    popular: () => <Popular />,
+    plans: () => <PlansSection />,
     continue: () => <ContinueRow />,
-    shorts: () => <Shorts />,
     players: () => <PlayersRow />,
     notice: () => <NoticeRow />,
   };
@@ -393,21 +393,34 @@ function Curations() {
   );
 }
 
-function Popular() {
+/** Plans: example policy shown on home so viewers see what each plan unlocks. */
+function PlansSection() {
   const env = useEnv();
-  const top = [...vods].filter((v) => v.type !== 'Shorts').sort((a, b) => b.views - a.views).slice(0, 10);
+  const current = env.member === 'guest' ? null : env.member;
+  const open = (t: Tier) => {
+    if (env.member === 'guest' && t === 'free') return env.sheet({ kind: 'login', reason: 'Create a free account to start watching.' });
+    env.push({ name: 'paywall' });
+  };
   return (
     <section className="sec">
-      <SectionHead title="Top 10 This Week" note="조회수 TOP 10" />
+      <SectionHead title="Plans" action="Compare" onAction={() => env.push({ name: 'paywall' })} note="요금제 노출 (예시 정책) · 노출 대상 등급은 CMS에서 설정" />
+      <p className="plans-policy">Example policy · not final</p>
       <div className="hscroll">
-        {top.map((v, i) => (
-          <button key={v.id} className="rank-card" onClick={() => env.push({ name: 'vod', vodId: v.id })}>
-            <span className="rank-num">{i + 1}</span>
-            <Art hue={seriesById(v.seriesId).hue + 20} ratio="3/4" title={v.type}>
-              <span className="art-tr">
-                <TierBadge tier={v.tier} />
-              </span>
-            </Art>
+        {PLAN_ORDER.map((t) => (
+          <button key={t} className={`plan-card plan-${t} ${current === t ? 'is-current' : ''}`} onClick={() => open(t)}>
+            <span className="plan-card-top">
+              <TierBadge tier={t} />
+              {current === t && <span className="plan-yours">Your plan</span>}
+            </span>
+            <b className="plan-card-name">{PLANS[t].name}</b>
+            <span className="plan-card-tag">{PLANS[t].tagline}</span>
+            <ul>
+              {PLANS[t].highlights.map((h) => (
+                <li key={h}>{h}</li>
+              ))}
+            </ul>
+            <span className="plan-card-price">{PLANS[t].price}</span>
+            <span className="plan-card-cta">{current === t ? 'Current plan' : env.member === 'guest' && t === 'free' ? 'Start free' : 'View plan'}</span>
           </button>
         ))}
       </div>
@@ -436,32 +449,6 @@ function ContinueRow() {
             </Art>
             <span className="card-title">{v.title}</span>
             <span className="card-meta">{fmtDuration(Math.round(v.durationSec * (1 - progress)))} left</span>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Shorts() {
-  const env = useEnv();
-  const list = vods.filter((v) => v.type === 'Shorts');
-  if (!list.length) return null;
-  return (
-    <section className="sec">
-      <SectionHead title="Shorts" note="세로형(9:16) 숏폼" />
-      <div className="hscroll">
-        {list.map((v) => (
-          <button key={v.id} className="short-card" onClick={() => env.push({ name: 'vod', vodId: v.id })}>
-            <Art hue={seriesById(v.seriesId).hue + 60} ratio="9/16">
-              <span className="art-tr">
-                <TierBadge tier={v.tier} />
-              </span>
-              <span className="short-title">{v.title}</span>
-              <span className="short-views">
-                <Icon name="eye" size={11} /> {fmtCount(v.views)}
-              </span>
-            </Art>
           </button>
         ))}
       </div>

@@ -179,11 +179,10 @@ export const defaultSeasonLayout: HomeSection[] = [
   { id: 'liveNow', visible: true, audiences: ALL },
   { id: 'todaySchedule', visible: true, audiences: ALL },
   { id: 'tournaments', visible: true, audiences: ALL },
-  { id: 'strip', visible: true, audiences: ALL },
+  { id: 'plans', visible: true, audiences: ['guest', 'free', 'basic'] },
   { id: 'curation', visible: true, audiences: ALL },
-  { id: 'popular', visible: true, audiences: ALL },
+  { id: 'strip', visible: true, audiences: ALL },
   { id: 'continue', visible: true, audiences: ['free', 'basic', 'premium'] },
-  { id: 'shorts', visible: true, audiences: ALL },
   { id: 'players', visible: true, audiences: ALL },
   { id: 'notice', visible: true, audiences: ALL },
 ];
@@ -191,13 +190,12 @@ export const defaultSeasonLayout: HomeSection[] = [
 export const defaultOffSeasonLayout: HomeSection[] = [
   { id: 'banner', visible: true, audiences: ALL },
   { id: 'curation', visible: true, audiences: ALL },
-  { id: 'popular', visible: true, audiences: ALL },
+  { id: 'plans', visible: true, audiences: ['guest', 'free', 'basic'] },
   { id: 'continue', visible: true, audiences: ['free', 'basic', 'premium'] },
   { id: 'liveNow', visible: false, audiences: ALL },
   { id: 'todaySchedule', visible: true, audiences: ALL },
   { id: 'tournaments', visible: true, audiences: ALL },
   { id: 'strip', visible: true, audiences: ALL },
-  { id: 'shorts', visible: true, audiences: ALL },
   { id: 'players', visible: true, audiences: ALL },
   { id: 'notice', visible: true, audiences: ALL },
 ];

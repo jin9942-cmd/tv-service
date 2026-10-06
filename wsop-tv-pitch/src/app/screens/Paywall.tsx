@@ -1,16 +1,9 @@
 import type { Tier } from '../../data/types';
 import { store, toast } from '../../state/store';
 import { MEMBER_LABEL } from '../../state/selectors';
+import { PLAN_ROWS as ROWS } from '../../data/plans';
 import { Note, useEnv } from '../ui';
 import { SubHead } from './LivePlayer';
-
-// EXAMPLE POLICY — not final. Kept here so it can be swapped for the real plan matrix.
-const ROWS: { label: string; values: Record<Tier, string> }[] = [
-  { label: 'Content', values: { free: 'Free content only', basic: 'Up to Basic content', premium: 'All content' } },
-  { label: 'Ads', values: { free: 'Ads shown', basic: 'Pre-roll only', premium: 'No ads' } },
-  { label: 'Max quality', values: { free: '720p', basic: '1080p', premium: '1080p+' } },
-  { label: 'Price', values: { free: '$0', basic: 'TBD', premium: 'TBD' } },
-];
 
 export function Paywall() {
   const env = useEnv();
