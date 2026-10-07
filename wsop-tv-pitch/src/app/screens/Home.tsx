@@ -5,7 +5,7 @@ import { banners, continueWatching, curations, notices, players, series, stripBa
 import { toggleAlarm, toast, useStore } from '../../state/store';
 import { accessFor, eventLabel, liveNow, nextUpcoming, phaseOf, schedulesOnDay, seriesById, statusOf, useNow, viewersOf, vodById } from '../../state/selectors';
 import { addDays, dateKey, fmtCount, fmtCountdown, fmtDate, fmtDuration, fmtTime } from '../../lib/time';
-import { Art, ChipAvatar, Icon, LiveBadge, LockIcon, Note, SectionHead, TierBadge, cardFor, useEnv } from '../ui';
+import { Art, Icon, LiveBadge, LockIcon, Note, ProfileAvatar, SectionHead, TierBadge, useEnv } from '../ui';
 
 export function Home() {
   const env = useEnv();
@@ -34,7 +34,7 @@ export function Home() {
       {env.notes && (
         <div className="note-banner">
           <Note side="inline">
-            {env.mode === 'season' ? '시즌 구성: LIVE를 가장 먼저 노출' : '비시즌 구성: VOD 섹션을 배너 바로 아래로'} · 섹션 순서/노출은 CMS에서 변경 · 포커 키워드: Check=저장, Call=알림, Raise=업그레이드, All-in=프리미엄, Fold=닫기 · 썸네일 카드 랭크 J/Q/A=Free/Basic/Premium
+            {env.mode === 'season' ? '시즌 구성: LIVE를 가장 먼저 노출' : '비시즌 구성: VOD 섹션을 배너 바로 아래로'} · 섹션 순서/노출은 CMS에서 변경 · 톤: 스포츠 중계 (칩 · 베팅 용어 · 카드 연출 등 사행성 연상 요소 미사용)
           </Note>
         </div>
       )}
@@ -158,7 +158,7 @@ function LiveNowSection({ now, schedules }: { now: number; schedules: Schedule[]
       ) : (
         next && (
           <button className="countdown" onClick={() => env.goTab('schedule')}>
-            <span className="countdown-label">Next deal in</span>
+            <span className="countdown-label">Next live in</span>
             <span className="countdown-time">{fmtCountdown(Date.parse(next.start) - now)}</span>
             <span className="countdown-title">{next.title}</span>
             <span className="countdown-meta">
@@ -177,7 +177,7 @@ export function LiveCard({ s, now, wide }: { s: Schedule; now: number; wide?: bo
   const locked = accessFor(env.member, s.tier) !== 'ok';
   return (
     <button className={`card live-card ${wide ? 'is-wide' : ''}`} onClick={() => env.push({ name: 'live', scheduleId: s.id })}>
-      <Art hue={se.hue + (s.lang === 'ES' ? 30 : 0)} title={s.type} sub={`${se.name.replace('2026 WSOP ', '')} · ${s.lang}`} card={cardFor(s.tier, s.type)}>
+      <Art hue={se.hue + (s.lang === 'ES' ? 30 : 0)} title={s.type} sub={`${se.name.replace('2026 WSOP ', '')} · ${s.lang}`}>
         <span className="art-tl">
           <LiveBadge small />
         </span>
@@ -262,7 +262,7 @@ export function ScheduleRow({ s, now }: { s: Schedule; now: number }) {
   const bell = () => {
     if (env.member === 'guest') return env.sheet({ kind: 'login', reason: 'Log in to get a reminder when this broadcast starts.' });
     toggleAlarm(s.id);
-    toast(on ? 'Folded · reminder removed' : `Called · we’ll remind you at ${fmtTime(s.start, env.tz)}`);
+    toast(on ? 'Reminder removed' : `Reminder set · ${fmtTime(s.start, env.tz)}`);
   };
   return (
     <li className={`sched-row is-${status}`}>
@@ -283,8 +283,9 @@ export function ScheduleRow({ s, now }: { s: Schedule; now: number }) {
         <span className={`st st-${status}`}>{status === 'live' ? 'LIVE' : status === 'upcoming' ? 'Upcoming' : s.vodId ? 'Replay' : 'Ended'}</span>
       </button>
       {status === 'upcoming' && (
-        <button className={`call-chip ${on ? 'is-on' : ''}`} aria-pressed={on} aria-label={on ? 'Remove reminder' : 'Set reminder'} title={on ? 'Reminder set (Called)' : 'Call = get a reminder'} onClick={bell}>
-          {on ? 'Called' : 'Call'}
+        <button className={`remind-btn ${on ? 'is-on' : ''}`} aria-pressed={on} aria-label={on ? 'Remove reminder' : 'Set reminder'} onClick={bell}>
+          <Icon name="bell" size={14} />
+          {on ? 'Set' : 'Remind'}
         </button>
       )}
     </li>
@@ -358,7 +359,7 @@ export function VodCard({ v, width = 'md' }: { v: Vod; width?: 'md' | 'lg' }) {
   const locked = accessFor(env.member, v.tier) !== 'ok';
   return (
     <button className={`card vod-card w-${width}`} onClick={() => env.push({ name: 'vod', vodId: v.id })}>
-      <Art hue={se.hue + 20} title={v.type} sub={se.name.replace('2026 WSOP ', '')} card={cardFor(v.tier, v.type)}>
+      <Art hue={se.hue + 20} title={v.type} sub={se.name.replace('2026 WSOP ', '')}>
         <span className="art-tr">
           <TierBadge tier={v.tier} />
         </span>
@@ -420,7 +421,7 @@ function PlansSection() {
               ))}
             </ul>
             <span className="plan-card-price">{PLANS[t].price}</span>
-            <span className="plan-card-cta">{current === t ? 'Current plan' : t === 'free' ? 'Check in free' : t === 'premium' ? 'All-in · Premium' : 'Raise to Basic'}</span>
+            <span className="plan-card-cta">{current === t ? 'Current plan' : env.member === 'guest' && t === 'free' ? 'Start free' : 'View plan'}</span>
           </button>
         ))}
       </div>
@@ -435,11 +436,11 @@ function ContinueRow() {
   if (!items.length) return null;
   return (
     <section className="sec">
-      <SectionHead title="Back to the Table" note="이어보기 (로그인 회원만) · 포커 키워드로 섹션명 표현" />
+      <SectionHead title="Continue Watching" note="로그인 회원만 노출 · 진행률 표시" />
       <div className="hscroll">
         {items.map(({ v, progress }) => (
           <button key={v.id} className="card vod-card w-md" onClick={() => env.push({ name: 'vod', vodId: v.id })}>
-            <Art hue={seriesById(v.seriesId).hue + 20} title={v.type} card={cardFor(v.tier, v.type)}>
+            <Art hue={seriesById(v.seriesId).hue + 20} title={v.type}>
               <span className="progress">
                 <i style={{ width: `${progress * 100}%` }} />
               </span>
@@ -476,9 +477,8 @@ function PlayersRow() {
   );
 }
 
-/** Player avatar framed as a casino chip. */
 export function PlayerAvatar({ name, hue, size = 64 }: { name: string; hue: number; size?: number }) {
-  return <ChipAvatar name={name} hue={hue} size={size} />;
+  return <ProfileAvatar name={name} hue={hue} size={size} />;
 }
 
 function NoticeRow() {

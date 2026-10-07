@@ -33,7 +33,6 @@ export const useEnv = () => useContext(Env);
 export function TierBadge({ tier }: { tier: Tier }) {
   return (
     <span className={`tier tier-${tier}`}>
-      <i className="tier-chip" aria-hidden="true" />
       {tier === 'free' ? 'Free' : tier === 'basic' ? 'Basic' : 'Premium'}
     </span>
   );
@@ -55,79 +54,23 @@ export function LockIcon({ size = 12 }: { size?: number }) {
   );
 }
 
-// ---- placeholder art: a poker table seen from above, with an optional playing-card frame ----
+// ---- placeholder art: the broadcast table set seen from above (no casino props) ----
 
-/** Felt colours used on real tables (green, blue, purple, red), picked by hue band; classic green by default. */
+/** Felt colours by hue band; classic green by default. */
 const feltHue = (hue: number) => {
   const h = ((hue % 360) + 360) % 360;
-  if (h < 60 || h > 330) return 355; // red
-  if (h >= 250) return 275; // purple
-  if (h >= 210) return 205; // blue
-  return 150; // green
+  if (h < 60 || h > 330) return 355;
+  if (h >= 250) return 275;
+  if (h >= 210) return 205;
+  return 150;
 };
 
-export interface CardFace {
-  rank: string;
-  suit: '♠' | '♥' | '♦' | '♣';
-}
-
-/** Card index for content: rank = plan (J Free · Q Basic · A Premium), suit = content type. */
-export function cardFor(tier: Tier, kind: string): CardFace {
-  const rank = tier === 'free' ? 'J' : tier === 'basic' ? 'Q' : 'A';
-  const suit: CardFace['suit'] =
-    kind === 'Highlight' || kind === 'Final Table' || kind === 'Interview'
-      ? '♥'
-      : kind === 'Clip' || kind === 'Highlight Show' || kind === 'Shorts'
-        ? '♦'
-        : kind === 'Hand'
-          ? '♣'
-          : '♠';
-  return { rank, suit };
-}
-
-export function Art({
-  hue,
-  title,
-  sub,
-  ratio = '16/9',
-  card,
-  children,
-  className = '',
-}: {
-  hue: number;
-  title?: string;
-  sub?: string;
-  ratio?: string;
-  card?: CardFace;
-  children?: ReactNode;
-  className?: string;
-}) {
-  const red = card && (card.suit === '♥' || card.suit === '♦');
+export function Art({ hue, title, sub, ratio = '16/9', children, className = '' }: { hue: number; title?: string; sub?: string; ratio?: string; children?: ReactNode; className?: string }) {
   return (
-    <div className={`art ${card ? 'is-card' : ''} ${className}`} style={{ aspectRatio: ratio, ['--felt' as string]: feltHue(hue) }}>
+    <div className={`art ${className}`} style={{ aspectRatio: ratio, ['--felt' as string]: feltHue(hue) }}>
       <span className="felt" aria-hidden="true">
         <span className="felt-line" />
-        <span className="felt-chips">
-          <i />
-          <i />
-          <i />
-        </span>
       </span>
-      {card && (
-        <>
-          <span className={`card-idx tl ${red ? 'is-red' : ''}`} aria-hidden="true">
-            {card.rank}
-            <i>{card.suit}</i>
-          </span>
-          <span className={`card-idx br ${red ? 'is-red' : ''}`} aria-hidden="true">
-            {card.rank}
-            <i>{card.suit}</i>
-          </span>
-          <span className={`card-pip ${red ? 'is-red' : ''}`} aria-hidden="true">
-            {card.suit}
-          </span>
-        </>
-      )}
       {(title || sub) && (
         <span className="art-text">
           {title && <b>{title}</b>}
@@ -139,19 +82,17 @@ export function Art({
   );
 }
 
-// ---- poker chip (avatar frame / small badge icon) -----------------------------------
+// ---- player avatar: initials with a gold ring (bracelet / trophy cue) ----
 
-export function ChipAvatar({ name, hue, size = 64 }: { name: string; hue: number; size?: number }) {
+export function ProfileAvatar({ name, hue, size = 64 }: { name: string; hue: number; size?: number }) {
   const ini = name
     .split(/[s-]+/)
     .slice(0, 2)
     .map((x) => x[0])
     .join('');
   return (
-    <span className="chip-avatar" style={{ width: size, height: size, ['--chip' as string]: `hsl(${hue} 60% 42%)` }}>
-      <span className="chip-face" style={{ fontSize: size * 0.3 }}>
-        {ini}
-      </span>
+    <span className="p-avatar" style={{ width: size, height: size, fontSize: size * 0.34, background: `linear-gradient(135deg, hsl(${hue} 45% 42%), hsl(${hue} 50% 18%))` }}>
+      {ini}
     </span>
   );
 }
