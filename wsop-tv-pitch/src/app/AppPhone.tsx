@@ -36,8 +36,11 @@ export function AppPhone({ preview }: { preview?: PreviewOverrides }) {
     layouts: useStore((s) => s.layouts),
     tz: useStore((s) => s.tz),
     notes: useStore((s) => s.notes),
+    expired: useStore((s) => s.expired),
   };
-  const member = preview?.member ?? live.member;
+  // A lapsed Basic/Premium plan behaves like Free until renewed.
+  const expiredPlan = !preview && live.expired && (live.member === 'basic' || live.member === 'premium') ? live.member : null;
+  const member = preview?.member ?? (expiredPlan ? 'free' : live.member);
   const mode = preview?.mode ?? live.mode;
   const layout = preview?.layout ?? live.layouts[mode];
 
@@ -77,9 +80,10 @@ export function AppPhone({ preview }: { preview?: PreviewOverrides }) {
       back,
       goTab,
       sheet: (s) => !preview && setSheet(s),
+      expiredPlan,
       scrollRoot: () => scrollRef.current,
     }),
-    [member, mode, layout, live.tz, live.notes, preview, route, push, replace, back, goTab],
+    [member, mode, layout, live.tz, live.notes, preview, route, push, replace, back, goTab, expiredPlan],
   );
 
   const tabRoute = route.name === 'tab';
@@ -103,6 +107,7 @@ export function AppPhone({ preview }: { preview?: PreviewOverrides }) {
           </nav>
         )}
 
+        {expiredPlan && <ExpiredBar plan={expiredPlan} onTab={tabRoute} />}
         {sheet && <BottomSheet sheet={sheet} onClose={() => setSheet(null)} />}
         {!preview && <AppToasts />}
       </div>
@@ -194,6 +199,25 @@ function BottomSheet({ sheet, onClose }: { sheet: NonNullable<SheetKind>; onClos
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Lapsed subscription: content falls back to Free, with a one-tap renew (graceful handling, no hard block). */
+function ExpiredBar({ plan, onTab }: { plan: 'basic' | 'premium'; onTab: boolean }) {
+  return (
+    <div className={`expired-bar ${onTab ? 'on-tab' : ''}`} role="status">
+      <span>
+        <b>Your {MEMBER_LABEL[plan]} plan has expired.</b> You're watching as Free.
+      </span>
+      <button
+        onClick={() => {
+          store.set({ expired: false });
+          toast(`${MEMBER_LABEL[plan]} renewed (demo) — welcome back`);
+        }}
+      >
+        Renew
+      </button>
     </div>
   );
 }

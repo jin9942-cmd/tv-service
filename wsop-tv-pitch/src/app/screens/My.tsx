@@ -1,5 +1,5 @@
-import { continueWatching, notices } from '../../data/mock';
-import { store, toast, useStore } from '../../state/store';
+import { notices } from '../../data/mock';
+import { removeContinue, store, toast, useStore } from '../../state/store';
 import { MEMBER_LABEL, vodById } from '../../state/selectors';
 import { fmtDate, fmtDuration } from '../../lib/time';
 import { Icon, Note, useEnv } from '../ui';
@@ -11,6 +11,7 @@ export function MyTab() {
   const env = useEnv();
   const push = useStore((s) => s.push);
   const night = useStore((s) => s.nightPush);
+  const continueList = useStore((s) => s.continueList);
   const guest = env.member === 'guest';
 
   return (
@@ -41,7 +42,7 @@ export function MyTab() {
           <button className="row-btn" onClick={() => env.push({ name: 'paywall' })}>
             <span>Subscription</span>
             <span className="muted">
-              {MEMBER_LABEL[env.member]} <Icon name="chevron" size={14} />
+              {env.expiredPlan ? `${MEMBER_LABEL[env.expiredPlan]} · Expired` : MEMBER_LABEL[env.member]} <Icon name="chevron" size={14} />
             </span>
           </button>
         )}
@@ -53,26 +54,52 @@ export function MyTab() {
       {!guest && (
         <section className="sec">
           <div className="sec-head">
-            <h2>Watch history</h2>
+            <h2>Continue Watching</h2>
+            {continueList.length > 0 && (
+              <button
+                className="sec-more"
+                onClick={() => {
+                  store.set({ continueList: [] });
+                  toast('Continue Watching cleared');
+                }}
+              >
+                Clear all
+              </button>
+            )}
           </div>
-          <ul className="list">
-            {continueWatching.map((c) => {
-              const v = vodById(c.vodId)!;
-              return (
-                <li key={c.vodId}>
-                  <button className="history-row" onClick={() => env.push({ name: 'vod', vodId: v.id })}>
-                    <span className="history-title">{v.title}</span>
-                    <span className="history-meta">
-                      {Math.round(c.progress * 100)}% · {fmtDuration(v.durationSec)}
-                    </span>
-                    <span className="history-bar">
-                      <i style={{ width: `${c.progress * 100}%` }} />
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <Note>이어보기 직접 삭제(개별 · 전체) · My List와 별개로 관리</Note>
+          {continueList.length ? (
+            <ul className="list">
+              {continueList.map((c) => {
+                const v = vodById(c.vodId)!;
+                return (
+                  <li key={c.vodId} className="history-item">
+                    <button className="history-row" onClick={() => env.push({ name: 'vod', vodId: v.id })}>
+                      <span className="history-title">{v.title}</span>
+                      <span className="history-meta">
+                        {Math.round(c.progress * 100)}% · {fmtDuration(v.durationSec)}
+                      </span>
+                      <span className="history-bar">
+                        <i style={{ width: `${c.progress * 100}%` }} />
+                      </span>
+                    </button>
+                    <button
+                      className="ml-remove"
+                      aria-label={`Remove ${v.title} from Continue Watching`}
+                      onClick={() => {
+                        removeContinue(c.vodId);
+                        toast('Removed from Continue Watching');
+                      }}
+                    >
+                      <Icon name="close" size={16} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="screen-pad muted">Nothing to continue. Videos you start will appear here.</p>
+          )}
         </section>
       )}
 

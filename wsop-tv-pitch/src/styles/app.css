@@ -2309,3 +2309,291 @@
 .mylist-btn {
   min-height: 36px;
 }
+
+/* ---- Proposal alignment: player features, access states, continue-watching edit ---- */
+.controls {
+  gap: 2px;
+  padding: 4px 6px;
+}
+
+.controls > button {
+  width: 30px;
+  height: 32px;
+}
+
+.controls > button:disabled {
+  opacity: 0.35;
+}
+
+.controls .ctl-cc {
+  width: auto !important;
+  padding: 0 6px !important;
+  height: 22px !important;
+  font-size: 10.5px;
+  font-weight: 900;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 4px;
+}
+
+.controls .ctl-cc.is-on {
+  background: #fff !important;
+  color: #000 !important;
+}
+
+.controls .ctl-q {
+  padding: 0 6px !important;
+  height: 22px !important;
+}
+
+.ctl-time {
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.ctl-track {
+  position: relative;
+  overflow: visible;
+  min-width: 24px;
+}
+
+.ctl-track i {
+  border-radius: 2px;
+}
+
+.ctl-dvr i {
+  background: linear-gradient(90deg, rgba(229, 50, 45, 0.45), var(--red));
+}
+
+.ctl-marker {
+  position: absolute;
+  top: -2px;
+  width: 3px;
+  height: 7px;
+  margin-left: -1px;
+  background: var(--gold-2);
+  border-radius: 1px;
+}
+
+.ctl-live {
+  flex: none;
+}
+
+.ctl-golive {
+  flex: none;
+  font: inherit;
+  font-size: 10.5px !important;
+  font-weight: 800;
+  color: #fff !important;
+  background: rgba(229, 50, 45, 0.85) !important;
+  border-radius: 4px;
+  padding: 3px 6px !important;
+  white-space: nowrap;
+}
+
+.q-menu {
+  right: 8px;
+  min-width: 170px;
+  max-height: calc(100% - 50px);
+  overflow-y: auto;
+}
+
+.q-head {
+  margin: 4px 10px 2px;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.q-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.q-tabs button {
+  flex: 1;
+  justify-content: center !important;
+  font-size: 11.5px !important;
+  color: var(--muted) !important;
+}
+
+.q-tabs button.is-on {
+  color: var(--text) !important;
+  background: var(--surface-2) !important;
+}
+
+.caption {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 46px;
+  z-index: 3;
+  margin: 0;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.caption span,
+.caption {
+  text-shadow: none;
+}
+
+.caption {
+  background: rgba(0, 0, 0, 0.72);
+  border-radius: 4px;
+  padding: 3px 8px;
+  width: fit-content;
+  max-width: 80%;
+  margin-inline: auto;
+}
+
+.geo-block {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 28px 30px;
+  text-align: center;
+  background: rgba(6, 6, 8, 0.86);
+  backdrop-filter: blur(3px);
+}
+
+.geo-block svg {
+  color: var(--gold-2);
+}
+
+.geo-block b {
+  font-size: 15px;
+}
+
+.geo-block span {
+  font-size: 11.5px;
+  color: #c9c9d0;
+  line-height: 1.45;
+}
+
+.geo-block .btn {
+  margin-top: 4px;
+}
+
+.expired-bar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #1f1a0d;
+  border: 1px solid rgba(217, 178, 76, 0.55);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.expired-bar.on-tab {
+  bottom: 90px;
+}
+
+.expired-bar b {
+  color: var(--gold-2);
+}
+
+.expired-bar button {
+  margin-left: auto;
+  flex: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font: inherit;
+  font-weight: 800;
+  background: var(--gold);
+  color: #000;
+}
+
+.cw-item {
+  position: relative;
+  flex: none;
+}
+
+.cw-item.is-editing .card {
+  opacity: 0.6;
+}
+
+.cw-remove {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 4;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+}
+
+.history-item .history-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.moments {
+  list-style: none;
+  margin: 0;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.moments button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.moment-t {
+  flex: none;
+  min-width: 52px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gold-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.moment-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.player-art.has-caption .art-text {
+  opacity: 0;
+}

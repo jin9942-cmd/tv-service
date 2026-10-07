@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import type { VodType } from '../../data/types';
-import { continueWatching, series, vods } from '../../data/mock';
+import type { Vod, VodType } from '../../data/types';
+import { series, vods } from '../../data/mock';
+import { useStore } from '../../state/store';
 import { eventLabel, playerById, seriesById, vodById } from '../../state/selectors';
 import { fmtCount, fmtDate, fmtDuration } from '../../lib/time';
 import { MockPlayer } from '../Player';
@@ -59,9 +60,12 @@ export function VodTab() {
 export function VodDetail({ vodId }: { vodId: string }) {
   const env = useEnv();
   const v = vodById(vodId);
+  const continueList = useStore((s) => s.continueList);
+  const [seek, setSeek] = useState<{ t: number; n: number }>();
   if (!v) return <Missing />;
+  const moments = keyMoments(v);
+  const resume = env.member !== 'guest' ? continueList.find((c) => c.vodId === v.id) : undefined;
   const se = seriesById(v.seriesId);
-  const resume = env.member !== 'guest' ? continueWatching.find((c) => c.vodId === v.id) : undefined;
   const sameEvent = vods.filter((x) => x.id !== v.id && v.eventId && x.eventId === v.eventId).slice(0, 6);
   const samePlayer = vods.filter((x) => x.id !== v.id && !sameEvent.includes(x) && x.playerIds.some((p) => v.playerIds.includes(p))).slice(0, 6);
 
@@ -76,6 +80,8 @@ export function VodDetail({ vodId }: { vodId: string }) {
         contentTitle={v.title}
         durationSec={v.durationSec}
         resumeAt={resume ? Math.round(v.durationSec * resume.progress) : 0}
+        seek={seek}
+        markers={moments.map((m) => m.t)}
       />
       <div className="detail">
         <div className="detail-badges">
@@ -106,6 +112,26 @@ export function VodDetail({ vodId }: { vodId: string }) {
         </button>
       </div>
 
+      {moments.length > 0 && (
+        <section className="sec">
+          <div className="sec-head">
+            <h2>Key moments</h2>
+          </div>
+          <Note>콘텐츠 메타데이터: 대회 · 테이블 · 핸드 · 선수 · 주요 장면 태깅 → 탭하면 해당 위치로 이동</Note>
+          <ul className="moments">
+            {moments.map((m) => (
+              <li key={m.t}>
+                <button onClick={() => setSeek({ t: m.t, n: Date.now() })}>
+                  <span className="moment-t">{fmtDuration(m.t)}</span>
+                  <span className="moment-label">{m.label}</span>
+                  <span className="tag">{m.tag}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {v.playerIds.length > 0 && (
         <section className="sec">
           <div className="sec-head">
@@ -130,6 +156,20 @@ export function VodDetail({ vodId }: { vodId: string }) {
       <Related title="More with these players" list={samePlayer} />
     </div>
   );
+}
+
+/** Mock key-moment metadata for long-form videos (tagged in the CMS). */
+function keyMoments(v: Vod): { t: number; label: string; tag: string }[] {
+  if (v.type !== 'Full Replay' && v.type !== 'Highlight') return [];
+  const names = v.playerIds.map((id) => playerById(id)?.name).filter(Boolean) as string[];
+  const at = (f: number) => Math.round(v.durationSec * f);
+  return [
+    { t: at(0.03), label: 'Broadcast opens · table introductions', tag: 'Table' },
+    { t: at(0.21), label: names[0] ? `Player spotlight · ${names[0]}` : 'Player spotlight', tag: 'Player' },
+    { t: at(0.47), label: 'Key hand of the day', tag: 'Hand' },
+    { t: at(0.7), label: names[1] ? `Turning point · ${names[1]}` : 'Turning point', tag: 'Key moment' },
+    { t: at(0.92), label: 'Closing moments & interview', tag: 'Interview' },
+  ];
 }
 
 function Related({ title, list }: { title: string; list: typeof vods }) {

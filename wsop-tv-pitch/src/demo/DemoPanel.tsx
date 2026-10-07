@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Member } from '../data/types';
-import { store, useStore, type Mode } from '../state/store';
+import { store, useStore, type Geo, type Mode } from '../state/store';
 import { MEMBER_KO } from '../state/selectors';
 import { DISPLAY_TZ, tzAbbr, type DisplayTz } from '../lib/time';
 
@@ -21,6 +21,14 @@ export function DemoPanel() {
 
       <Field label="진행 중 라이브 0건" hint="오늘 첫 방송 전 시각으로 데모 시계를 이동">
         <Toggle on={s.noLive} onChange={(noLive) => store.set({ noLive })} />
+      </Field>
+
+      <Field label="시청 환경" hint="지역 제한은 라이브만 차단, VPN 감지는 전체 재생 차단">
+        <Seg<Geo> value={s.geo} options={['ok', 'blackout', 'vpn']} label={(g) => (g === 'ok' ? '정상' : g === 'blackout' ? '지역 제한' : 'VPN 감지')} onChange={(geo) => store.set({ geo })} />
+      </Field>
+
+      <Field label="구독 만료" hint="베이직·프리미엄 회원의 구독이 만료된 상태 (무료로 전환 + 갱신 안내)">
+        <Toggle on={s.expired} onChange={(expired) => store.set({ expired })} />
       </Field>
 
       <Field label="표시 시간대" hint="앱 안의 모든 시각이 변환됩니다">
@@ -57,6 +65,11 @@ const SCENARIOS = [
   { n: 7, text: 'CMS 편성표: 편성 추가 → 앱 편성표·오늘의 편성 반영', cms: true },
   { n: 8, text: '시간대 변경 → 앱 안의 모든 시각 변환', set: { tz: 'America/Los_Angeles' as DisplayTz } },
   { n: 9, text: '비로그인 → VOD 상세 “+ My List” → 로그인 → MY 탭 My List에서 확인', set: { member: 'guest' as Member } },
+  { n: 10, text: 'Premium → 라이브 → 일시정지·10초 되감기 → Go Live 복귀 → CC에서 자막·오디오 선택', set: { member: 'premium' as Member, geo: 'ok' as Geo } },
+  { n: 11, text: 'VPN 감지 → 라이브 진입 시 차단 안내 → I’m travelling (여행자 인증) → 시청', set: { member: 'premium' as Member, geo: 'vpn' as Geo } },
+  { n: 12, text: '구독 만료 → 하단 갱신 안내 → Premium 라이브 미리보기 → Renew', set: { member: 'premium' as Member, expired: true } },
+  { n: 13, text: '이어보기 Edit → 항목 삭제 (홈 · MY)', set: { member: 'free' as Member } },
+  { n: 14, text: 'CMS 포커 용어 사전: 대기 용어 배포 → 앱 자막(CC › English) 교정 반영', cms: true },
 ];
 
 export function ScenarioGuide({ onOpenCms }: { onOpenCms: () => void }) {
@@ -82,7 +95,7 @@ export function ScenarioGuide({ onOpenCms }: { onOpenCms: () => void }) {
       </ol>
       <button
         className="guide-reset"
-        onClick={() => store.set({ member: 'guest', mode: 'season', noLive: false, tz: 'Asia/Seoul' })}
+        onClick={() => store.set({ member: 'guest', mode: 'season', noLive: false, tz: 'Asia/Seoul', geo: 'ok', expired: false })}
       >
         설정 기본값으로
       </button>

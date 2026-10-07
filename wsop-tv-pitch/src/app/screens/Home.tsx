@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { HomeSectionId, Schedule, Tier, Vod } from '../../data/types';
 import { PLANS, PLAN_ORDER } from '../../data/plans';
-import { banners, continueWatching, curations, notices, players, series, stripBanners } from '../../data/mock';
-import { toggleAlarm, toast, useStore } from '../../state/store';
+import { banners, curations, notices, players, series, stripBanners } from '../../data/mock';
+import { removeContinue, toggleAlarm, toast, useStore } from '../../state/store';
 import { accessFor, eventLabel, liveNow, nextUpcoming, phaseOf, schedulesOnDay, seriesById, statusOf, useNow, viewersOf, vodById } from '../../state/selectors';
 import { addDays, dateKey, fmtCount, fmtCountdown, fmtDate, fmtDuration, fmtTime } from '../../lib/time';
 import { Art, Icon, LiveBadge, LockIcon, Note, ProfileAvatar, SectionHead, TierBadge, useEnv } from '../ui';
@@ -431,26 +431,47 @@ function PlansSection() {
 
 function ContinueRow() {
   const env = useEnv();
+  const continueList = useStore((s) => s.continueList);
+  const [editing, setEditing] = useState(false);
   if (env.member === 'guest') return null;
-  const items = continueWatching.map((c) => ({ ...c, v: vodById(c.vodId)! })).filter((c) => c.v);
+  const items = continueList.map((c) => ({ ...c, v: vodById(c.vodId)! })).filter((c) => c.v);
   if (!items.length) return null;
   return (
     <section className="sec">
-      <SectionHead title="Continue Watching" note="로그인 회원만 노출 · 진행률 표시" />
+      <SectionHead
+        title="Continue Watching"
+        action={env.preview ? undefined : editing ? 'Done' : 'Edit'}
+        onAction={() => setEditing((e) => !e)}
+        note="로그인 회원만 노출 · 진행률 표시 · Edit로 항목 직접 삭제 (모든 기기 동기화)"
+      />
       <div className="hscroll">
         {items.map(({ v, progress }) => (
-          <button key={v.id} className="card vod-card w-md" onClick={() => env.push({ name: 'vod', vodId: v.id })}>
-            <Art hue={seriesById(v.seriesId).hue + 20} title={v.type}>
-              <span className="progress">
-                <i style={{ width: `${progress * 100}%` }} />
-              </span>
-              <span className="art-tr">
-                <TierBadge tier={v.tier} />
-              </span>
-            </Art>
-            <span className="card-title">{v.title}</span>
-            <span className="card-meta">{fmtDuration(Math.round(v.durationSec * (1 - progress)))} left</span>
-          </button>
+          <div key={v.id} className={`cw-item ${editing ? 'is-editing' : ''}`}>
+            <button className="card vod-card w-md" onClick={() => (editing ? undefined : env.push({ name: 'vod', vodId: v.id }))}>
+              <Art hue={seriesById(v.seriesId).hue + 20} title={v.type}>
+                <span className="progress">
+                  <i style={{ width: `${progress * 100}%` }} />
+                </span>
+                <span className="art-tr">
+                  <TierBadge tier={v.tier} />
+                </span>
+              </Art>
+              <span className="card-title">{v.title}</span>
+              <span className="card-meta">{fmtDuration(Math.round(v.durationSec * (1 - progress)))} left</span>
+            </button>
+            {editing && (
+              <button
+                className="cw-remove"
+                aria-label={`Remove ${v.title} from Continue Watching`}
+                onClick={() => {
+                  removeContinue(v.id);
+                  toast('Removed from Continue Watching');
+                }}
+              >
+                <Icon name="close" size={14} />
+              </button>
+            )}
+          </div>
         ))}
       </div>
     </section>

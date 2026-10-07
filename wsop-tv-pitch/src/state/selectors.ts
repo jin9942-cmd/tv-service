@@ -73,9 +73,9 @@ export const MEMBER_KO: Record<Member, string> = { guest: '비로그인', free: 
 /** Max quality per plan (example policy). */
 export const MAX_QUALITY: Record<Member, string[]> = {
   guest: ['720p'],
-  free: ['Auto', '720p', '480p'],
-  basic: ['Auto', '1080p', '720p', '480p'],
-  premium: ['Auto', '1080p60', '1080p', '720p', '480p'],
+  free: ['Auto', '720p', '480p', '360p', '240p'],
+  basic: ['Auto', '1080p', '720p', '480p', '360p', '240p'],
+  premium: ['Auto', '1080p60', '1080p', '720p', '480p', '360p', '240p'],
 };
 
 // ---- lookups ----------------------------------------------------------------

@@ -1060,3 +1060,115 @@ button.kpi:hover {
   background: #fafbfd;
   border-right: 1px solid var(--c-line);
 }
+
+/* poker vocabulary manager */
+.vocab-grid {
+  margin-bottom: 14px;
+}
+
+.kpis-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vocab-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  align-items: end;
+}
+
+.vocab-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.vocab-form input,
+.vocab-form select,
+.vocab-search {
+  border: 1px solid var(--c-line);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 400;
+  background: #fff;
+  color: var(--c-text);
+  min-width: 0;
+}
+
+.vocab-warn {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #c0262d;
+  font-size: 12px;
+}
+
+.vocab-preview {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vocab-preview li {
+  background: #111;
+  color: #fff;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+.vocab-preview mark {
+  background: none;
+  color: #f0cf72;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.vocab-preview .vocab-raw {
+  color: #ff9a8f;
+  font-style: italic;
+}
+
+.vocab-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.vocab-toolbar h2 {
+  margin: 0;
+}
+
+.vocab-search {
+  margin-left: auto;
+  width: 180px;
+}
+
+.muted-cell {
+  color: var(--c-muted);
+}
+
+.st {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.st-ok {
+  background: #e3f5e9;
+  color: #1c7a3e;
+}
+
+.st-wait {
+  background: #fff1d6;
+  color: #9a6200;
+}

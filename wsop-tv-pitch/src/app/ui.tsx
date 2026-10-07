@@ -20,6 +20,8 @@ export interface AppEnv {
   back: () => void;
   goTab: (t: AppTab) => void;
   sheet: (s: SheetKind) => void;
+  /** Paid plan that has lapsed (member then behaves as Free), or null. */
+  expiredPlan: Tier | null;
   scrollRoot: () => HTMLElement | null;
 }
 
@@ -148,9 +150,12 @@ const PATHS: Record<string, string> = {
   gear: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9 4-2 .6a7 7 0 0 1-.7 1.7l1 1.8-2 2-1.8-1a7 7 0 0 1-1.7.7L13 21h-2l-.6-2a7 7 0 0 1-1.7-.7l-1.8 1-2-2 1-1.8a7 7 0 0 1-.7-1.7L3 13v-2l2-.6a7 7 0 0 1 .7-1.7l-1-1.8 2-2 1.8 1A7 7 0 0 1 10.2 5L11 3h2l.6 2a7 7 0 0 1 1.7.7l1.8-1 2 2-1 1.8a7 7 0 0 1 .7 1.7L21 11z',
   eye: 'M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8z',
   film: 'M4 4h16v16H4zM8 4v16M16 4v16M4 8h4M4 12h4M4 16h4M16 8h4M16 12h4M16 16h4',
+  rew: 'M11 7 6 12l5 5M18 7l-5 5 5 5',
+  fwd: 'M13 7l5 5-5 5M6 7l5 5-5 5',
+  globe: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18',
 };
 
-const STROKE = new Set(['back', 'chevron', 'close', 'full', 'pip', 'bellOn', 'film']);
+const STROKE = new Set(['back', 'chevron', 'close', 'full', 'pip', 'bellOn', 'film', 'rew', 'fwd', 'globe']);
 
 export function Icon({ name, size = 22 }: { name: keyof typeof PATHS | string; size?: number }) {
   const stroke = STROKE.has(name);

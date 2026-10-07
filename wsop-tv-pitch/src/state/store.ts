@@ -2,10 +2,17 @@
 // CMS writes here → the app re-renders immediately: that is the "no app release needed" story.
 import { useSyncExternalStore } from 'react';
 import type { HomeSection, Member, MyListItem, MyListKind, Schedule } from '../data/types';
-import { defaultOffSeasonLayout, defaultSeasonLayout, schedules as seedSchedules } from '../data/mock';
+import { continueWatching, defaultOffSeasonLayout, defaultSeasonLayout, schedules as seedSchedules } from '../data/mock';
+import { seedVocab, type VocabTerm } from '../data/vocab';
 import type { DisplayTz } from '../lib/time';
 
 export type Mode = 'season' | 'offseason';
+/** Viewing-location simulation: normal, regional blackout, VPN/proxy detected. */
+export type Geo = 'ok' | 'blackout' | 'vpn';
+export interface ContinueItem {
+  vodId: string;
+  progress: number;
+}
 
 export interface Toast {
   id: number;
@@ -19,12 +26,18 @@ export interface State {
   noLive: boolean;
   tz: DisplayTz;
   notes: boolean;
+  geo: Geo;
+  /** Paid plan has lapsed: Basic/Premium members fall back to Free until they renew. */
+  expired: boolean;
   schedules: Schedule[];
   layouts: Record<Mode, HomeSection[]>;
   /** When each layout set was last published from the CMS. */
   publishedAt: Record<Mode, number | null>;
   alarms: string[];
   myList: MyListItem[];
+  continueList: ContinueItem[];
+  vocab: VocabTerm[];
+  vocabVersion: number;
   recentSearches: string[];
   push: boolean;
   nightPush: boolean;
@@ -37,6 +50,8 @@ let state: State = {
   noLive: false,
   tz: 'Asia/Seoul',
   notes: false,
+  geo: 'ok',
+  expired: false,
   schedules: seedSchedules,
   layouts: { season: defaultSeasonLayout, offseason: defaultOffSeasonLayout },
   publishedAt: { season: null, offseason: null },
@@ -46,6 +61,9 @@ let state: State = {
     { kind: 'vod', id: 'v-01', addedAt: Date.now() - 3_600_000 },
     { kind: 'player', id: 'pl-4', addedAt: Date.now() - 7_200_000 },
   ],
+  continueList: continueWatching,
+  vocab: seedVocab,
+  vocabVersion: 12,
   recentSearches: ['Main Event', 'Han'],
   push: true,
   nightPush: false,
@@ -99,4 +117,8 @@ export function addSchedule(s: Schedule) {
 
 export function publishLayout(mode: Mode, sections: HomeSection[]) {
   store.set((s) => ({ layouts: { ...s.layouts, [mode]: sections }, publishedAt: { ...s.publishedAt, [mode]: Date.now() } }));
+}
+
+export function removeContinue(vodId: string) {
+  store.set((s) => ({ continueList: s.continueList.filter((c) => c.vodId !== vodId) }));
 }
