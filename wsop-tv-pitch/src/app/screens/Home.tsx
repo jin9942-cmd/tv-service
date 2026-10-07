@@ -3,9 +3,9 @@ import type { HomeSectionId, Schedule, Tier, Vod } from '../../data/types';
 import { PLANS, PLAN_ORDER } from '../../data/plans';
 import { banners, curations, notices, players, series, stripBanners } from '../../data/mock';
 import { removeContinue, toggleAlarm, toast, useStore } from '../../state/store';
-import { accessFor, eventLabel, liveNow, nextUpcoming, phaseOf, schedulesOnDay, seriesById, statusOf, useNow, viewersOf, vodById } from '../../state/selectors';
+import { eventLabel, liveNow, nextUpcoming, phaseOf, schedulesOnDay, seriesById, statusOf, useNow, viewersOf, vodById } from '../../state/selectors';
 import { addDays, dateKey, fmtCount, fmtCountdown, fmtDate, fmtDuration, fmtTime } from '../../lib/time';
-import { Art, Icon, LiveBadge, LockIcon, Note, ProfileAvatar, SectionHead, TierBadge, useEnv } from '../ui';
+import { Art, Icon, LiveBadge, Note, ProfileAvatar, SectionHead, TierBadge, useEnv } from '../ui';
 
 export function Home() {
   const env = useEnv();
@@ -174,10 +174,9 @@ function LiveNowSection({ now, schedules }: { now: number; schedules: Schedule[]
 export function LiveCard({ s, now, wide }: { s: Schedule; now: number; wide?: boolean }) {
   const env = useEnv();
   const se = seriesById(s.seriesId);
-  const locked = accessFor(env.member, s.tier) !== 'ok';
   return (
     <button className={`card live-card ${wide ? 'is-wide' : ''}`} onClick={() => env.push({ name: 'live', scheduleId: s.id })}>
-      <Art hue={se.hue + (s.lang === 'ES' ? 30 : 0)} title={s.type} sub={`${se.name.replace('2026 WSOP ', '')} · ${s.lang}`}>
+      <Art hue={se.hue + (s.lang === 'ES' ? 30 : 0)}>
         <span className="art-tl">
           <LiveBadge small />
         </span>
@@ -187,11 +186,6 @@ export function LiveCard({ s, now, wide }: { s: Schedule; now: number; wide?: bo
         <span className="art-bl viewers">
           <Icon name="eye" size={12} /> {fmtCount(viewersOf(s, now))}
         </span>
-        {locked && (
-          <span className="art-br lock">
-            <LockIcon />
-          </span>
-        )}
       </Art>
       <span className="card-title">{s.title}</span>
       <span className="card-meta">
@@ -219,7 +213,7 @@ function TodaySchedule({ now, schedules }: { now: number; schedules: Schedule[] 
 
   return (
     <section className="sec">
-      <SectionHead title="Today’s Schedule" action="Full schedule" onAction={() => env.goTab('schedule')} note="편성 = 시간 슬롯 × 송출 채널 · 알림 신청 · 시간 변경 시 Changed" />
+      <SectionHead title="Schedule" action="Full schedule" onAction={() => env.goTab('schedule')} note="편성 = 시간 슬롯 × 송출 채널 · 알림 신청 · 시간 변경 시 Changed" />
       <div className="seg">
         {keys.map((k, n) => (
           <button key={k} className={n === tab ? 'is-on' : ''} onClick={() => setTab(n)}>
@@ -277,10 +271,11 @@ export function ScheduleRow({ s, now }: { s: Schedule; now: number }) {
             {s.title}
           </span>
           <span className="sched-meta">
-            {eventLabel(s)} · {s.channelId} · {s.lang}
+            {eventLabel(s)} · {s.lang}
           </span>
         </span>
-        <span className={`st st-${status}`}>{status === 'live' ? 'LIVE' : status === 'upcoming' ? 'Upcoming' : s.vodId ? 'Replay' : 'Ended'}</span>
+        {status === 'live' && <span className="st st-live">LIVE</span>}
+        {status === 'ended' && s.vodId && <span className="st-replay">Replay</span>}
       </button>
       {status === 'upcoming' && (
         <button className={`remind-btn ${on ? 'is-on' : ''}`} aria-pressed={on} aria-label={on ? 'Remove reminder' : 'Set reminder'} onClick={bell}>
@@ -317,9 +312,9 @@ export function SeriesCard({ id, now }: { id: string; now: number }) {
   const phase = phaseOf(x, now);
   return (
     <button className="card series-card" onClick={() => env.push({ name: 'series', seriesId: x.id })}>
-      <Art hue={x.hue} title={x.name.replace('2026 ', '')} sub={x.city} ratio="16/10">
+      <Art hue={x.hue} ratio="16/10">
         <span className="art-tl tour">{x.tour}</span>
-        {phase === 'ongoing' && <span className="art-tr phase">ON NOW</span>}
+        {phase === 'ongoing' && <span className="art-tr phase">● On now</span>}
       </Art>
       <span className="card-title">{x.name}</span>
       <span className="card-meta">
@@ -356,27 +351,23 @@ function Strip() {
 export function VodCard({ v, width = 'md' }: { v: Vod; width?: 'md' | 'lg' }) {
   const env = useEnv();
   const se = seriesById(v.seriesId);
-  const locked = accessFor(env.member, v.tier) !== 'ok';
   return (
     <button className={`card vod-card w-${width}`} onClick={() => env.push({ name: 'vod', vodId: v.id })}>
-      <Art hue={se.hue + 20} title={v.type} sub={se.name.replace('2026 WSOP ', '')}>
+      <Art hue={se.hue + 20}>
         <span className="art-tr">
           <TierBadge tier={v.tier} />
         </span>
         <span className="art-br dur">{fmtDuration(v.durationSec)}</span>
-        {locked && (
-          <span className="art-tl lock">
-            <LockIcon />
-          </span>
-        )}
       </Art>
       <span className="card-title">{v.title}</span>
+      <span className="card-meta">{v.type}</span>
     </button>
   );
 }
 
 function Curations() {
-  const list = curations.map((c) => ({ ...c, vods: c.vodIds.map((id) => vodById(id)).filter((v): v is Vod => !!v) })).filter((c) => c.vods.length);
+  const list = curations.map((c) => ({ ...c, vods: c.vodIds.map((id) => vodById(id)).filter((v): v is Vod => !!v) })).filter((c) => c.vods.length)
+    .slice(0, 2);
   if (!list.length) return null;
   return (
     <>
@@ -448,7 +439,7 @@ function ContinueRow() {
         {items.map(({ v, progress }) => (
           <div key={v.id} className={`cw-item ${editing ? 'is-editing' : ''}`}>
             <button className="card vod-card w-md" onClick={() => (editing ? undefined : env.push({ name: 'vod', vodId: v.id }))}>
-              <Art hue={seriesById(v.seriesId).hue + 20} title={v.type}>
+              <Art hue={seriesById(v.seriesId).hue + 20}>
                 <span className="progress">
                   <i style={{ width: `${progress * 100}%` }} />
                 </span>

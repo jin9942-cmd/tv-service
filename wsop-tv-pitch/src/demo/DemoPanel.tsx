@@ -62,7 +62,7 @@ const SCENARIOS = [
   { n: 4, text: '시즌 → 비시즌 전환: LIVE NOW 숨김, VOD 섹션 위로', set: { mode: 'offseason' as Mode } },
   { n: 5, text: '라이브 0건 ON → 다음 라이브 카운트다운', set: { noLive: true } },
   { n: 6, text: 'CMS 메인 화면 관리: 순서 변경/숨김 → 저장 → 앱 즉시 반영', cms: true },
-  { n: 7, text: 'CMS 편성표: 편성 추가 → 앱 편성표·오늘의 편성 반영', cms: true },
+  { n: 7, text: 'CMS 편성표: 편성 추가 → 앱 편성표·홈 Schedule 반영', cms: true },
   { n: 8, text: '시간대 변경 → 앱 안의 모든 시각 변환', set: { tz: 'America/Los_Angeles' as DisplayTz } },
   { n: 9, text: '비로그인 → VOD 상세 “+ My List” → 로그인 → MY 탭 My List에서 확인', set: { member: 'guest' as Member } },
   { n: 10, text: 'Premium → 라이브 → 일시정지·10초 되감기 → Go Live 복귀 → CC에서 자막·오디오 선택', set: { member: 'premium' as Member, geo: 'ok' as Geo } },
@@ -76,23 +76,31 @@ export function ScenarioGuide({ onOpenCms }: { onOpenCms: () => void }) {
   return (
     <div className="panel guide">
       <h2 className="panel-title">시연 시나리오</h2>
-      <ol>
-        {SCENARIOS.map((sc) => (
-          <li key={sc.n}>
-            <span className="guide-n">{sc.n}</span>
-            <span className="guide-text">{sc.text}</span>
-            {sc.cms ? (
-              <button className="guide-go" onClick={onOpenCms}>
-                CMS 열기
-              </button>
-            ) : (
-              <button className="guide-go" onClick={() => store.set(sc.set!)}>
-                준비
-              </button>
-            )}
-          </li>
-        ))}
-      </ol>
+      {[
+        { label: '기본 흐름', list: SCENARIOS.filter((sc) => sc.n <= 9) },
+        { label: '제안서(V5) 반영', list: SCENARIOS.filter((sc) => sc.n > 9) },
+      ].map((g) => (
+        <div key={g.label} className="guide-group">
+          <p className="guide-group-title">{g.label}</p>
+          <ol>
+            {g.list.map((sc) => (
+              <li key={sc.n}>
+                <span className="guide-n">{sc.n}</span>
+                <span className="guide-text">{sc.text}</span>
+                {sc.cms ? (
+                  <button className="guide-go" onClick={onOpenCms}>
+                    CMS 열기
+                  </button>
+                ) : (
+                  <button className="guide-go" onClick={() => store.set(sc.set!)}>
+                    준비
+                  </button>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))}
       <button
         className="guide-reset"
         onClick={() => store.set({ member: 'guest', mode: 'season', noLive: false, tz: 'Asia/Seoul', geo: 'ok', expired: false })}

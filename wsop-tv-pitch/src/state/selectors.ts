@@ -95,5 +95,5 @@ export function eventLabel(s: { eventId?: string; dayId?: string }) {
   const ev = eventById(s.eventId);
   if (!ev) return '';
   const day = s.dayId ? ev.days.find((d) => d.id === s.dayId)?.label : undefined;
-  return `Event #${ev.number} ${ev.name}${day ? ` · ${day}` : ''}`;
+  return `${ev.name}${day ? ` · ${day}` : ''}`;
 }

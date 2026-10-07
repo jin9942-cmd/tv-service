@@ -2597,3 +2597,49 @@
 .player-art.has-caption .art-text {
   opacity: 0;
 }
+
+/* ---- Calm pass: fewer competing signals ---- */
+.tier-premium {
+  background: rgba(217, 178, 76, 0.16);
+  color: var(--gold-2);
+  border: 1px solid rgba(217, 178, 76, 0.55);
+}
+
+.tier-free {
+  background: rgba(0, 0, 0, 0.45);
+  color: #b9bec8;
+  border-color: rgba(139, 147, 161, 0.4);
+}
+
+.tier-basic {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.tour,
+.phase {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+.phase {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(229, 50, 45, 0.55);
+  color: #ff7a75;
+}
+
+.st-replay {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.sched-meta {
+  color: var(--muted);
+}
+
+.card .viewers {
+  background: rgba(0, 0, 0, 0.55);
+  padding: 2px 6px;
+  border-radius: 4px;
+}

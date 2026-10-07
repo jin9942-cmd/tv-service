@@ -380,3 +380,26 @@ button {
     display: none;
   }
 }
+
+.guide-group + .guide-group {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #23262d;
+}
+
+.guide-group-title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #8b909b;
+}
+
+.guide ol {
+  gap: 6px;
+}
+
+.guide li {
+  font-size: 12px;
+  line-height: 1.4;
+}

@@ -31,13 +31,13 @@ export const events: TourEvent[] = [
   { id: 'ev-p10', seriesId: 'ser-paradise', number: 10, name: 'NLH High Roller', buyIn: '$25,000', days: days('ev-p10', NASSAU, [['Day 1A', -2], ['Day 2', -1], ['Final Table', 0]]) },
   { id: 'ev-p11', seriesId: 'ser-paradise', number: 11, name: 'Pot-Limit Omaha', buyIn: '$5,000', days: days('ev-p11', NASSAU, [['Day 1A', -3], ['Day 2', -1], ['Final Table', 0]]) },
   { id: 'ev-p12', seriesId: 'ser-paradise', number: 12, name: 'Ladies Championship', buyIn: '$1,000', days: days('ev-p12', NASSAU, [['Day 1A', -1], ['Final Table', 0]]) },
-  { id: 'ev-p13', seriesId: 'ser-paradise', number: 13, name: 'NLH Main Event $2M GTD', buyIn: '$3,000', days: days('ev-p13', NASSAU, [['Day 1A', -2], ['Day 1B', -1], ['Day 2', 0], ['Day 3', 1], ['Final Table', 2]]) },
+  { id: 'ev-p13', seriesId: 'ser-paradise', number: 13, name: 'Main Event', buyIn: '$3,000', days: days('ev-p13', NASSAU, [['Day 1A', -2], ['Day 1B', -1], ['Day 2', 0], ['Day 3', 1], ['Final Table', 2]]) },
   { id: 'ev-p14', seriesId: 'ser-paradise', number: 14, name: 'Mini Main Event', buyIn: '$600', days: days('ev-p14', NASSAU, [['Day 1A', 0], ['Day 1B', 1], ['Day 2', 2], ['Final Table', 3]]) },
   // Super Circuit Cyprus (upcoming)
   { id: 'ev-c1', seriesId: 'ser-cyprus', number: 1, name: 'Opener NLH', buyIn: '€550', days: days('ev-c1', NICOSIA, [['Day 1A', 20], ['Day 2', 21], ['Final Table', 22]]) },
   { id: 'ev-c5', seriesId: 'ser-cyprus', number: 5, name: 'PLO Championship', buyIn: '€2,200', days: days('ev-c5', NICOSIA, [['Day 1A', 23], ['Final Table', 24]]) },
   { id: 'ev-c9', seriesId: 'ser-cyprus', number: 9, name: 'Super High Roller', buyIn: '€50,000', days: days('ev-c9', NICOSIA, [['Day 1A', 26], ['Final Table', 27]]) },
-  { id: 'ev-c12', seriesId: 'ser-cyprus', number: 12, name: 'Main Event €3M GTD', buyIn: '€5,300', days: days('ev-c12', NICOSIA, [['Day 1A', 27], ['Day 1B', 28], ['Day 2', 29], ['Final Table', 31]]) },
+  { id: 'ev-c12', seriesId: 'ser-cyprus', number: 12, name: 'Main Event', buyIn: '€5,300', days: days('ev-c12', NICOSIA, [['Day 1A', 27], ['Day 1B', 28], ['Day 2', 29], ['Final Table', 31]]) },
   // Circuit LA (ended)
   { id: 'ev-l1', seriesId: 'ser-la', number: 1, name: 'Circuit Opener', buyIn: '$400', days: days('ev-l1', LA, [['Day 1A', -45], ['Final Table', -44]]) },
   { id: 'ev-l6', seriesId: 'ser-la', number: 6, name: 'PLO Bounty', buyIn: '$600', days: days('ev-l6', LA, [['Day 1A', -41], ['Final Table', -40]]) },
@@ -178,26 +178,27 @@ export const defaultSeasonLayout: HomeSection[] = [
   { id: 'banner', visible: true, audiences: ALL },
   { id: 'liveNow', visible: true, audiences: ALL },
   { id: 'todaySchedule', visible: true, audiences: ALL },
-  { id: 'tournaments', visible: true, audiences: ALL },
-  { id: 'plans', visible: true, audiences: ['guest', 'free', 'basic'] },
-  { id: 'curation', visible: true, audiences: ALL },
-  { id: 'strip', visible: true, audiences: ALL },
   { id: 'continue', visible: true, audiences: ['free', 'basic', 'premium'] },
+  { id: 'tournaments', visible: true, audiences: ALL },
+  { id: 'curation', visible: true, audiences: ALL },
+  { id: 'plans', visible: true, audiences: ['guest', 'free', 'basic'] },
   { id: 'players', visible: true, audiences: ALL },
-  { id: 'notice', visible: true, audiences: ALL },
+  { id: 'strip', visible: false, audiences: ALL },
+  { id: 'notice', visible: false, audiences: ALL },
 ];
 
+// Strip banner and notices start hidden to keep home calm; operators can turn them on in the CMS.
 export const defaultOffSeasonLayout: HomeSection[] = [
   { id: 'banner', visible: true, audiences: ALL },
+  { id: 'continue', visible: true, audiences: ['free', 'basic', 'premium'] },
   { id: 'curation', visible: true, audiences: ALL },
   { id: 'plans', visible: true, audiences: ['guest', 'free', 'basic'] },
-  { id: 'continue', visible: true, audiences: ['free', 'basic', 'premium'] },
-  { id: 'liveNow', visible: false, audiences: ALL },
   { id: 'todaySchedule', visible: true, audiences: ALL },
   { id: 'tournaments', visible: true, audiences: ALL },
-  { id: 'strip', visible: true, audiences: ALL },
   { id: 'players', visible: true, audiences: ALL },
-  { id: 'notice', visible: true, audiences: ALL },
+  { id: 'liveNow', visible: false, audiences: ALL },
+  { id: 'strip', visible: false, audiences: ALL },
+  { id: 'notice', visible: false, audiences: ALL },
 ];
 
 /** CMS dashboard extras. */

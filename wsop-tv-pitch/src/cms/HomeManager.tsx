@@ -8,7 +8,7 @@ import { AppPhone } from '../app/AppPhone';
 const SECTION_LABEL: Record<HomeSectionId, { ko: string; en: string }> = {
   banner: { ko: '메인 배너', en: 'Main banner' },
   liveNow: { ko: 'LIVE NOW', en: 'Live now' },
-  todaySchedule: { ko: '오늘의 편성', en: 'Today’s schedule' },
+  todaySchedule: { ko: '스케줄', en: 'Schedule' },
   tournaments: { ko: '대회', en: 'Tournaments' },
   strip: { ko: '띠배너', en: 'Promo strip' },
   curation: { ko: '큐레이션 VOD', en: 'Curated VOD' },

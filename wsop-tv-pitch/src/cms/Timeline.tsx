@@ -311,7 +311,7 @@ function ScheduleModal({ day, onClose, onSaved }: { day: string; onClose: () => 
     };
     addSchedule(s);
     toast(`편성 저장 완료 · 라이브 자동 생성됨 (LIVE-${s.id.slice(4)})`, 'cms');
-    toast(visible ? '앱 편성표 · 홈 “오늘의 편성”에 즉시 반영되었습니다' : '노출 꺼짐: 앱에는 표시되지 않습니다', 'cms');
+    toast(visible ? '앱 편성표 · 홈 “Schedule”에 즉시 반영되었습니다' : '노출 꺼짐: 앱에는 표시되지 않습니다', 'cms');
     onSaved(s);
   };
 
