@@ -4,14 +4,14 @@ import type { MyListItem, MyListKind } from '../data/types';
 import { toast, toggleMyList, useStore } from '../state/store';
 import { playerById, seriesById, vodById } from '../state/selectors';
 import { fmtDuration } from '../lib/time';
-import { Art, Icon, Note, TierBadge, useEnv } from './ui';
+import { Art, Icon, Note, TierBadge, cardFor, useEnv } from './ui';
 import { PlayerAvatar, fmtSeriesDates } from './screens/Home';
 import { SubHead } from './screens/LivePlayer';
 
 const LABEL: Record<MyListKind, { add: string; saved: string }> = {
-  vod: { add: '+ My List', saved: '✓ In My List' },
-  player: { add: '☆ Favorite', saved: '★ Favorited' },
-  series: { add: '☆ Save', saved: '★ Saved' },
+  vod: { add: 'Check', saved: 'Checked' },
+  player: { add: 'Check', saved: 'Checked' },
+  series: { add: 'Check', saved: 'Checked' },
 };
 
 export function useInMyList(kind: MyListKind, id: string) {
@@ -29,15 +29,17 @@ export function MyListButton({ kind, id }: { kind: MyListKind; id: string }) {
         reason: 'Log in to save videos, players and tournaments to My List.',
         then: () => {
           toggleMyList(kind, id);
-          toast('Added to My List');
+          toast('Checked · saved to My List');
         },
       });
     }
-    toast(toggleMyList(kind, id) ? 'Added to My List' : 'Removed from My List');
+    toast(toggleMyList(kind, id) ? 'Checked · saved to My List' : 'Folded · removed from My List');
   };
   return (
-    <button className={`mylist-btn ${saved ? 'is-on' : ''}`} aria-pressed={saved} onClick={toggle}>
-      {saved ? LABEL[kind].saved : LABEL[kind].add}
+    <button className={`mylist-btn ${saved ? 'is-on' : ''}`} aria-pressed={saved} aria-label={saved ? 'Remove from My List' : 'Save to My List'} onClick={toggle}>
+      <i className="btn-chip" aria-hidden="true" />
+      <b>{saved ? LABEL[kind].saved : LABEL[kind].add}</b>
+      <small>My List</small>
     </button>
   );
 }
@@ -54,7 +56,7 @@ function ItemRow({ item, removable }: { item: MyListItem; removable?: boolean })
     open = () => env.push({ name: 'vod', vodId: v.id });
     body = (
       <>
-        <Art hue={se.hue + 20} title={v.type} className="ml-thumb" />
+        <Art hue={se.hue + 20} title={v.type} className="ml-thumb" card={cardFor(v.tier, v.type)} />
         <span className="ml-text">
           <b>{v.title}</b>
           <small>
@@ -105,7 +107,7 @@ function ItemRow({ item, removable }: { item: MyListItem; removable?: boolean })
           aria-label="Remove from My List"
           onClick={() => {
             toggleMyList(item.kind, item.id);
-            toast('Removed from My List');
+            toast('Folded · removed from My List');
           }}
         >
           <Icon name="close" size={16} />
@@ -146,7 +148,7 @@ export function MyListPreview() {
           </button>
         )}
       </div>
-      <Note>즐겨찾기(My List): VOD · 선수 · 대회 상세에서 저장 → MY에서 모아보기</Note>
+      <Note>즐겨찾기(My List): VOD · 선수 · 대회 상세의 “Check”로 저장 → MY에서 모아보기</Note>
       {list.length ? (
         <ul className="list">
           {list.slice(0, 4).map((it) => (
@@ -156,8 +158,8 @@ export function MyListPreview() {
       ) : (
         <div className="screen-pad">
           <button className="ml-empty" onClick={() => env.goTab('vod')}>
-            <b>Your list is empty</b>
-            <span>Tap “+ My List” on any video, or favourite a player or tournament.</span>
+            <b>No checks yet</b>
+            <span>Tap “Check” on any video, player or tournament.</span>
           </button>
         </div>
       )}
@@ -201,7 +203,7 @@ export function MyListScreen() {
         <div className="screen-pad">
           <button className="ml-empty" onClick={() => env.goTab(filter === 'player' ? 'home' : filter === 'series' ? 'tournaments' : 'vod')}>
             <b>Nothing here yet</b>
-            <span>{filter === 'player' ? 'Open a player and tap ☆ Favorite.' : filter === 'series' ? 'Open a tournament and tap ☆ Save.' : 'Tap “+ My List” on any video.'}</span>
+            <span>{filter === 'player' ? 'Open a player and tap Check.' : filter === 'series' ? 'Open a tournament and tap Check.' : 'Tap Check on any video.'}</span>
           </button>
         </div>
       )}

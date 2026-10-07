@@ -2204,3 +2204,301 @@
   font-size: 12px;
   color: var(--muted);
 }
+
+/* =====================================================================
+   Poker identity: table felt thumbnails, playing-card frames, chips
+   ===================================================================== */
+
+/* ---------- table: dark room → wooden rail → felt → betting line ---------- */
+.art {
+  --felt: 150;
+  background: radial-gradient(120% 100% at 50% 110%, #1b1410 0%, #0a0807 60%, #050404 100%);
+}
+
+.felt {
+  position: absolute;
+  inset: 14% 7% 12%;
+  border-radius: 50% / 50%;
+  background:
+    radial-gradient(ellipse at 50% 35%, hsl(var(--felt) 48% 34%) 0%, hsl(var(--felt) 55% 22%) 55%, hsl(var(--felt) 60% 13%) 100%);
+  box-shadow:
+    0 0 0 6px #4a2d16,
+    0 0 0 7px rgba(217, 178, 76, 0.55),
+    0 0 0 10px #2b190c,
+    0 10px 26px rgba(0, 0, 0, 0.7),
+    inset 0 0 28px rgba(0, 0, 0, 0.55);
+}
+
+/* subtle felt weave */
+.felt::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 4px);
+}
+
+.felt-line {
+  position: absolute;
+  inset: 16% 12%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+/* three chip stacks on the rail */
+.felt-chips {
+  position: absolute;
+  right: 14%;
+  top: 30%;
+  display: flex;
+  gap: 3px;
+}
+
+.felt-chips i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(#d9b24c 0 30deg, #f4ecd6 30deg 60deg);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.5), 0 2px 0 #6e5310;
+}
+
+.felt-chips i:nth-child(2) {
+  background: repeating-conic-gradient(#c8322d 0 30deg, #f4ecd6 30deg 60deg);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.5), 0 2px 0 #6a1714;
+}
+
+.felt-chips i:nth-child(3) {
+  background: repeating-conic-gradient(#1f1f24 0 30deg, #f4ecd6 30deg 60deg);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.5), 0 2px 0 #000;
+}
+
+.art-grain {
+  display: none;
+}
+
+/* text sits on a soft shadow so it reads over the table */
+.art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.7));
+  pointer-events: none;
+}
+
+.art-text,
+.art-tl,
+.art-tr,
+.art-bl,
+.art-br {
+  z-index: 2;
+}
+
+/* ---------- playing-card frame ---------- */
+.art.is-card {
+  border-radius: 12px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    inset 0 0 0 4px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 5px rgba(217, 178, 76, 0.35);
+}
+
+.card-idx {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 18px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
+  font-size: 13px;
+  line-height: 1;
+  color: #f6f1e4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.card-idx i {
+  font-style: normal;
+  font-size: 11px;
+  margin-top: 1px;
+}
+
+.card-idx.is-red {
+  color: #ff6b63;
+}
+
+.card-idx.tl {
+  top: 7px;
+  left: 7px;
+}
+
+.card-idx.br {
+  bottom: 7px;
+  right: 7px;
+  transform: rotate(180deg);
+}
+
+.card-pip {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  font-size: 34px;
+  color: rgba(246, 241, 228, 0.16);
+  pointer-events: none;
+}
+
+.card-pip.is-red {
+  color: rgba(255, 107, 99, 0.2);
+}
+
+/* make room for the card index in the top-left / bottom-right corners */
+.is-card .art-tl {
+  left: 30px;
+}
+
+.is-card .art-br {
+  right: 30px;
+}
+
+/* the live player keeps a clean frame (no index over the controls) */
+.player-art .felt {
+  inset: 12% 10% 22%;
+}
+
+/* ---------- chip avatar ---------- */
+.chip-avatar {
+  --chip: #2f6fd6;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: repeating-conic-gradient(var(--chip) 0 22.5deg, #f3ecdc 22.5deg 45deg);
+  box-shadow:
+    0 0 0 2px #0b0b0d,
+    0 4px 0 color-mix(in srgb, var(--chip) 55%, #000),
+    0 6px 14px rgba(0, 0, 0, 0.6);
+}
+
+.chip-face {
+  position: absolute;
+  inset: 13%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.02em;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--chip) 75%, #fff), var(--chip) 55%, color-mix(in srgb, var(--chip) 60%, #000));
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55), inset 0 0 0 4px var(--chip), inset 0 0 0 5px rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- tier badge = small chip ---------- */
+.tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tier-chip {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: repeating-conic-gradient(currentColor 0 45deg, rgba(255, 255, 255, 0.85) 45deg 90deg);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+.tier-premium .tier-chip {
+  background: repeating-conic-gradient(#3a2a06 0 45deg, #fff6d6 45deg 90deg);
+}
+
+/* ---------- Call chip (reminder) ---------- */
+.call-chip {
+  flex-shrink: 0;
+  min-width: 58px;
+  height: 30px;
+  padding: 0 10px !important;
+  border-radius: 999px;
+  border: 1px dashed rgba(217, 178, 76, 0.6) !important;
+  color: var(--gold-2) !important;
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center !important;
+}
+
+.call-chip.is-on {
+  border-style: solid !important;
+  background: linear-gradient(180deg, var(--gold-2), var(--gold)) !important;
+  color: #1a1408 !important;
+}
+
+/* ---------- Check chip (My List) ---------- */
+.mylist-btn {
+  gap: 8px;
+  padding: 0 14px 0 6px !important;
+  min-height: 38px;
+}
+
+.mylist-btn b {
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 12.5px;
+}
+
+.mylist-btn small {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.btn-chip {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(#5b5b66 0 30deg, #e9e3d3 30deg 60deg);
+  box-shadow: inset 0 0 0 5px #2a2a31, 0 0 0 1px #000;
+}
+
+.mylist-btn.is-on .btn-chip {
+  background: repeating-conic-gradient(var(--gold) 0 30deg, #fff6d6 30deg 60deg);
+  box-shadow: inset 0 0 0 5px #8a6a1c, 0 0 0 1px #000;
+}
+
+.mylist-btn.is-on .btn-chip::after {
+  content: '✓';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+}
+
+/* ---------- banner & hero on the table ---------- */
+.banner-art .felt {
+  inset: 10% -8% 18%;
+}
+
+.banner-art .felt-chips i {
+  width: 16px;
+  height: 16px;
+}
+
+.hero-art .felt {
+  inset: 14% 4% 14%;
+}
+
+.ml-thumb .felt-chips,
+.rank-card .felt-chips {
+  display: none;
+}

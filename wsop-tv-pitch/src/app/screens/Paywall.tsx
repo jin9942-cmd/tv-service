@@ -53,7 +53,7 @@ export function Paywall() {
         <div className="plan-buttons">
           {(['premium', 'basic', 'free'] as Tier[]).map((t) => (
             <button key={t} className={`btn btn-block ${t === 'premium' ? 'btn-gold' : 'btn-outline'}`} disabled={current === t} onClick={() => choose(t)}>
-              {current === t ? `Current plan · ${MEMBER_LABEL[t]}` : t === 'free' ? 'Continue with Free' : `Subscribe ${MEMBER_LABEL[t]}`}
+              {current === t ? `Current plan · ${MEMBER_LABEL[t]}` : t === 'free' ? (current === 'guest' || current === 'free' ? 'Check · stay on Free' : 'Fold to Free') : t === 'premium' ? 'All-in · Premium' : `Raise to ${MEMBER_LABEL[t]}`}
             </button>
           ))}
         </div>

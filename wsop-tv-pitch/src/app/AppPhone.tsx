@@ -157,7 +157,7 @@ function BottomSheet({ sheet, onClose }: { sheet: NonNullable<SheetKind>; onClos
               Log in (demo)
             </button>
             <button className="btn btn-ghost btn-block" onClick={onClose}>
-              Not now
+              Fold · not now
             </button>
             <p className="fineprint">Demo only — no real account or password.</p>
           </>
@@ -179,7 +179,7 @@ function BottomSheet({ sheet, onClose }: { sheet: NonNullable<SheetKind>; onClos
                   onClose();
                 }}
               >
-                Subscribe {MEMBER_LABEL[t]}
+                {t === 'premium' ? 'All-in · Premium' : `Raise to ${MEMBER_LABEL[t]}`}
               </button>
             ))}
             <button
