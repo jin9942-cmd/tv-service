@@ -45,10 +45,11 @@ export function MockPlayer(props: {
 }) {
   const env = useEnv();
   const geo = useStore((s) => s.geo);
+  const l3 = useStore((s) => s.l3Device);
   const vocab = useStore((s) => s.vocab);
   const access = accessFor(env.member, props.tier);
-  // Blackout is a live-rights rule; VPN/proxy blocks all playback.
-  const blocked = access !== 'login' && (geo === 'vpn' || (geo === 'blackout' && props.live)) ? geo : null;
+  // Blackout is a live-rights rule; VPN/proxy and network errors block all playback.
+  const blocked = access !== 'login' && (geo === 'vpn' || geo === 'network' || (geo === 'blackout' && props.live)) ? geo : null;
   const [playing, setPlaying] = useState(access !== 'login');
   const [previewElapsed, setPreviewElapsed] = useState(0);
   const [position, setPosition] = useState(props.resumeAt ?? 0);
@@ -131,8 +132,13 @@ export function MockPlayer(props: {
     setPlaying(true);
   };
 
-  const allowed = MAX_QUALITY[env.member];
+  // Widevine L3 devices are limited to SD (DRM-05).
+  const allowed = l3 ? MAX_QUALITY[env.member].filter((q) => q === 'Auto' || parseInt(q) <= 480) : MAX_QUALITY[env.member];
   const chooseQuality = (q: string) => {
+    if (l3 && !allowed.includes(q) && MAX_QUALITY[env.member].includes(q)) {
+      setMenu(null);
+      return toast('This device supports up to 480p (security level L3)');
+    }
     if (!allowed.includes(q)) {
       setMenu(null);
       return env.sheet({ kind: 'paywall', tier: q === '1080p60' ? 'premium' : 'basic', title: `${q} quality` });
@@ -169,7 +175,21 @@ export function MockPlayer(props: {
         {blocked ? (
           <div className="geo-block" role="alert">
             <Icon name="globe" size={26} />
-            {blocked === 'blackout' ? (
+            {blocked === 'network' ? (
+              <>
+                <b>Playback error</b>
+                <span>We couldn't load this stream. Check your connection and try again. (Error 2001)</span>
+                <button
+                  className="btn btn-gold btn-sm"
+                  onClick={() => {
+                    store.set({ geo: 'ok' });
+                    toast('Reconnected');
+                  }}
+                >
+                  Retry
+                </button>
+              </>
+            ) : blocked === 'blackout' ? (
               <>
                 <b>Not available in your region</b>
                 <span>Broadcast rights limit this live stream in your location. The replay and highlights will be available after the event.</span>
@@ -253,6 +273,9 @@ export function MockPlayer(props: {
           <button className="ctl-q" onClick={() => setMenu((m) => (m === 'quality' ? null : 'quality'))} aria-haspopup="menu" aria-expanded={menu === 'quality'}>
             {quality === 'Auto' ? 'Auto' : quality}
           </button>
+          <button aria-label="Picture in picture" onClick={() => toast('Picture-in-picture (demo)')}>
+            <Icon name="pip" size={17} />
+          </button>
           <button aria-label="Full screen" onClick={() => toast('Full screen (demo)')}>
             <Icon name="full" size={18} />
           </button>
@@ -263,6 +286,7 @@ export function MockPlayer(props: {
             {menu === 'quality' ? (
               <>
                 <p className="q-head">Quality · adaptive {allowed[1] ?? allowed[0]} max</p>
+                {l3 && <p className="q-head q-warn">This device supports up to 480p</p>}
                 {ALL_QUALITIES.map((q) => (
                   <button key={q} role="menuitem" className={q === quality ? 'is-on' : ''} onClick={() => chooseQuality(q)}>
                     {q}
@@ -308,16 +332,18 @@ export function MockPlayer(props: {
       </Art>
       <Note>
         {blocked
-          ? blocked === 'blackout'
-            ? '지역 제한(Geo-fencing/Blackout): 라이브 중계권 지역만 차단 · VOD는 시청 가능'
-            : 'VPN 감지 → 시청 차단 · 여행자는 본국 인증 후 시청 (Traveller support)'
+          ? blocked === 'network'
+            ? 'LIVE-06 재생 오류 · 재시도 UX (네트워크·권한·지역 제한 오류 안내)'
+            : blocked === 'blackout'
+              ? 'DRM-02 지역 제한 · 블랙아웃: 중계권 국가 기준 차단 안내 (데모는 라이브만 차단)'
+              : 'DRM-03 VPN 탐지(MaxMind) · DRM-04 해외 체류 정상 회원 예외 처리'
           : access === 'preview'
-            ? '권한 없는 등급: 10초 미리보기 → 구독 안내 바텀시트'
+            ? 'SUB-04 권한 없음 → 구독 유도 · SUB-05 N초 미리보기(P2 제안, 데모 10초)'
             : access === 'login'
-              ? '비로그인: 재생 시 로그인 유도'
+              ? 'HOME-R2 · AUTH-04 비로그인: 재생 시 로그인 유도'
               : props.live
-                ? '라이브 되감기(DVR 2시간): 일시정지·10초 이동 → Go Live 복귀 · CC: AI 자막/오디오 트랙'
-                : 'ABR 1080p~240p · 등급별 최대 화질 (예시 정책) · CC: AI 자막(포커 용어 사전 반영)'}
+                ? 'LIVE-01 ABR 1080p–240p · LIVE-03 DVR 되감기 → LIVE 복귀 (윈도우 크기는 TTN 최적안 후 확정, 데모 2시간) · VOD-04 자막'
+                : 'VOD-01 재생 · CW-01 이어보기 위치 저장 · VOD-04 자막(포커 용어 사전 반영)' + (l3 ? ' · DRM-05 L3 기기 화질 제한 안내' : '')}
       </Note>
     </div>
   );

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { useStore } from '../../state/store';
+import { toast, toggleAlarm, useStore } from '../../state/store';
+import { MyListButton } from '../MyList';
 import { eventLabel, seriesById, statusOf, useNow, viewersOf } from '../../state/selectors';
 import { fmtCount, fmtDateTime } from '../../lib/time';
 import { MockPlayer } from '../Player';
@@ -67,6 +68,8 @@ export function LivePlayer({ scheduleId }: { scheduleId: string }) {
             <Icon name="eye" size={13} /> {fmtCount(viewersOf(s, now))} watching now
           </p>
         )}
+        {status === 'upcoming' && <UpcomingActions id={s.id} start={s.start} />}
+        {status === 'ended' && <Note side="inline">LIVE-04 · VOD-02 Quick VOD: 라이브 종료 즉시 다시보기로 전환</Note>}
       </div>
 
       {siblings.length > 1 && (
@@ -103,6 +106,29 @@ export function LivePlayer({ scheduleId }: { scheduleId: string }) {
           </ul>
         </section>
       )}
+    </div>
+  );
+}
+
+function UpcomingActions({ id, start }: { id: string; start: string }) {
+  const env = useEnv();
+  const on = useStore((x) => x.alarms.includes(id));
+  return (
+    <div className="detail-actions">
+      <button
+        className={`remind-btn ${on ? 'is-on' : ''}`}
+        aria-pressed={on}
+        onClick={() => {
+          if (env.member === 'guest') return env.sheet({ kind: 'login', reason: 'Log in to get a reminder when this broadcast starts.' });
+          toggleAlarm(id);
+          toast(on ? 'Reminder removed' : `Reminder set · ${fmtDateTime(start, env.tz)}`);
+        }}
+      >
+        <Icon name="bell" size={14} />
+        {on ? 'Reminder set' : 'Remind me'}
+      </button>
+      <MyListButton kind="live" id={id} />
+      <Note side="inline">SCHD-02 알림 신청 → 시작 시 푸시 · CW-03 예정 라이브 워치리스트 담기</Note>
     </div>
   );
 }

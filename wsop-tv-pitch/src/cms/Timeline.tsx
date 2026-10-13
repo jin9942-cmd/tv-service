@@ -13,7 +13,7 @@ const DAY_MS = 86_400_000;
 export function Timeline() {
   const now = useNow(30_000);
   const schedules = useStore((s) => s.schedules);
-  const [view, setView] = useState<'day' | 'week'>('day');
+  const [view, setView] = useState<'day' | 'week' | 'list'>('day');
   const [day, setDay] = useState(() => dateKey(Date.now(), KST));
   const [selected, setSelected] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -52,19 +52,22 @@ export function Timeline() {
           <button className={view === 'week' ? 'is-on' : ''} onClick={() => setView('week')}>
             주
           </button>
+          <button className={view === 'list' ? 'is-on' : ''} onClick={() => setView('list')}>
+            리스트
+          </button>
         </div>
         <div className="tl-nav">
-          <button className="cms-btn cms-btn-sm" onClick={() => setDay(addDays(day, view === 'day' ? -1 : -7))} aria-label="이전">
+          <button className="cms-btn cms-btn-sm" onClick={() => setDay(addDays(day, view === 'week' ? -7 : -1))} aria-label="이전">
             ‹
           </button>
           <button className="cms-btn cms-btn-sm" onClick={() => setDay(dateKey(Date.now(), KST))}>
             오늘
           </button>
-          <button className="cms-btn cms-btn-sm" onClick={() => setDay(addDays(day, view === 'day' ? 1 : 7))} aria-label="다음">
+          <button className="cms-btn cms-btn-sm" onClick={() => setDay(addDays(day, view === 'week' ? 7 : 1))} aria-label="다음">
             ›
           </button>
           <b className="tl-date">
-            {view === 'day' ? koDate(day) : `${koDate(day)} ~ ${koDate(addDays(day, 6))}`}
+            {view === 'week' ? `${koDate(day)} ~ ${koDate(addDays(day, 6))}` : koDate(day)}
           </b>
         </div>
         <div className="tl-legend">
@@ -78,7 +81,9 @@ export function Timeline() {
       </div>
 
       <div className={`tl-wrap ${sel ? 'has-panel' : ''}`}>
-        {view === 'day' ? (
+        {view === 'list' ? (
+          <ListView day={day} now={now} schedules={schedules} selected={selected} onSelect={setSelected} />
+        ) : view === 'day' ? (
           <div className="tl-day" ref={scroller}>
             <div className="tl-grid" style={{ width: 24 * HOUR_PX + 90 }}>
               <div className="tl-hours">
@@ -477,4 +482,64 @@ function ScheduleModal({ day, onClose, onSaved }: { day: string; onClose: () => 
 function safeZoned(date: string, time: string, tz: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) return null;
   return zonedToUtc(date, time, tz);
+}
+
+/** SCH-002 list view: one row per broadcast, SCH-005 schedule state + broadcast state. */
+function ListView({ day, now, schedules, selected, onSelect }: { day: string; now: number; schedules: Schedule[]; selected: string | null; onSelect: (id: string) => void }) {
+  const rows = schedules.filter((s) => dateKey(s.start, KST) === day).sort((a, b) => a.start.localeCompare(b.start) || a.channelId.localeCompare(b.channelId));
+  const stateKo = (s: Schedule) => (!s.visible ? '미노출' : s.originalStart ? '시간 변경' : '확정');
+  const onAir = (s: Schedule) => ({ upcoming: '방송 전', live: '방송 중', ended: '방송 후' })[statusOf(s, now)];
+  return (
+    <div className="card-box tl-list">
+      <table className="tbl">
+        <thead>
+          <tr>
+            <th>편성 ID</th>
+            <th>방송 제목</th>
+            <th>시간 (KST)</th>
+            <th>시리즈 · 이벤트 · 데이</th>
+            <th>구분</th>
+            <th>채널</th>
+            <th>언어</th>
+            <th>권한</th>
+            <th>편성 상태</th>
+            <th>방송</th>
+            <th>매핑 VOD</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((s) => (
+            <tr key={s.id} className={selected === s.id ? 'is-sel' : ''} onClick={() => onSelect(s.id)}>
+              <td className="muted-cell">{s.id.replace('sc-n', 'LIVE-').replace('sc-', 'SC-')}</td>
+              <td>
+                <b>{s.title}</b>
+              </td>
+              <td>
+                {fmtKo(s.start).slice(-5)}~{fmtKo(s.end).slice(-5)}
+              </td>
+              <td className="muted-cell">
+                {seriesById(s.seriesId).name.replace('2026 WSOP ', '')} · {eventLabel(s)}
+              </td>
+              <td>{s.type}</td>
+              <td>{s.channelId}</td>
+              <td>{s.lang}</td>
+              <td>{s.tier}</td>
+              <td>
+                <span className={`st ${s.originalStart ? 'st-wait' : 'st-ok'}`}>{stateKo(s)}</span>
+              </td>
+              <td>{onAir(s)}</td>
+              <td className="muted-cell">{s.vodId ? vodById(s.vodId)?.type ?? s.vodId : '—'}</td>
+            </tr>
+          ))}
+          {!rows.length && (
+            <tr>
+              <td colSpan={11} className="muted-cell">
+                이 날짜에는 편성이 없습니다.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
 }

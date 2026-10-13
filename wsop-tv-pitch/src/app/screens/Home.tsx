@@ -1,11 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { HomeSectionId, Schedule, Tier, Vod } from '../../data/types';
+import type { HomeSectionId, Member, Schedule, Tier, Vod } from '../../data/types';
 import { PLANS, PLAN_ORDER } from '../../data/plans';
-import { banners, curations, notices, players, series, stripBanners } from '../../data/mock';
+import { banners, curations, notices, players, series, stripBanners, vods } from '../../data/mock';
 import { removeContinue, toggleAlarm, toast, useStore } from '../../state/store';
-import { eventLabel, liveNow, nextUpcoming, phaseOf, schedulesOnDay, seriesById, statusOf, useNow, viewersOf, vodById } from '../../state/selectors';
+import { accessFor, eventLabel, liveNow, nextUpcoming, phaseOf, schedulesOnDay, seriesById, statusOf, useNow, viewersOf, vodById } from '../../state/selectors';
 import { addDays, dateKey, fmtCount, fmtCountdown, fmtDate, fmtDuration, fmtTime } from '../../lib/time';
-import { Art, Icon, LiveBadge, Note, ProfileAvatar, SectionHead, TierBadge, useEnv } from '../ui';
+import { Art, Icon, LiveBadge, LockIcon, Note, ProfileAvatar, SectionHead, TierBadge, useEnv } from '../ui';
 
 export function Home() {
   const env = useEnv();
@@ -20,6 +20,7 @@ export function Home() {
     tournaments: () => <TournamentsRow now={now} />,
     strip: () => <Strip />,
     curation: () => <Curations />,
+    popular: () => <PopularVod />,
     plans: () => <PlansSection />,
     continue: () => <ContinueRow />,
     players: () => <PlayersRow />,
@@ -34,7 +35,7 @@ export function Home() {
       {env.notes && (
         <div className="note-banner">
           <Note side="inline">
-            {env.mode === 'season' ? '시즌 구성: LIVE를 가장 먼저 노출' : '비시즌 구성: VOD 섹션을 배너 바로 아래로'} · 섹션 순서/노출은 CMS에서 변경 · 톤: 스포츠 중계 (칩 · 베팅 용어 · 카드 연출 등 사행성 연상 요소 미사용)
+            SCR-02 홈 · {env.mode === 'season' ? '시즌 구성: LIVE 최우선' : 'HOME-R6 비시즌 구성: LIVE NOW 숨김, 큐레이션·인기 VOD 상단'} · HOME-R1 섹션 순서/노출은 CMS 메인 화면 관리에서 변경(앱 배포 없음) · HOME-R4 모든 시각 단말 시간대
           </Note>
         </div>
       )}
@@ -133,7 +134,7 @@ function BannerCarousel() {
           <button key={b.id} className={n === idx ? 'is-on' : ''} aria-label={`Banner ${n + 1}`} onClick={() => setI(n)} />
         ))}
       </div>
-      <Note>최대 8개 · 5초 자동 롤링 · 등급별 타기팅 (구독 유도 배너는 무료 회원만)</Note>
+      <Note>HOME-02 메인 배너 · 최대 8개 · 5초 자동 롤링 · 노출 대상 등급 (구독 유도 배너는 무료 회원만)</Note>
     </section>
   );
 }
@@ -142,17 +143,18 @@ function BannerCarousel() {
 
 function LiveNowSection({ now, schedules }: { now: number; schedules: Schedule[] }) {
   const env = useEnv();
+  const cfg = env.layout.find((x) => x.id === 'liveNow');
   const live = liveNow(schedules, now);
-  const next = nextUpcoming(schedules, now);
+  const next = cfg?.emptyMode === 'hide' ? undefined : nextUpcoming(schedules, now);
   if (!live.length && !next) return null;
 
   return (
     <section className="sec">
-      <SectionHead title={<>LIVE NOW {live.length > 0 && <span className="count">{live.length}</span>}</>} note="시즌 중 LIVE 최우선 노출 · 0건이면 다음 라이브 카운트다운" />
+      <SectionHead title={<>LIVE NOW {live.length > 0 && <span className="count">{live.length}</span>}</>} note={`HOME-03 · 정렬: CMS 우선순위 > 시작 시각 · 0건: ${cfg?.emptyMode === 'hide' ? '섹션 숨김' : '다음 라이브 카운트다운'} · 시청자 수 ${cfg?.showViewers === false ? '숨김' : '노출'} (CMS 설정) · 권한 없는 등급은 잠금`} />
       {live.length ? (
         <div className="hscroll">
           {live.map((s) => (
-            <LiveCard key={s.id} s={s} now={now} />
+            <LiveCard key={s.id} s={s} now={now} viewers={cfg?.showViewers !== false} />
           ))}
         </div>
       ) : (
@@ -171,9 +173,10 @@ function LiveNowSection({ now, schedules }: { now: number; schedules: Schedule[]
   );
 }
 
-export function LiveCard({ s, now, wide }: { s: Schedule; now: number; wide?: boolean }) {
+export function LiveCard({ s, now, wide, viewers = true }: { s: Schedule; now: number; wide?: boolean; viewers?: boolean }) {
   const env = useEnv();
   const se = seriesById(s.seriesId);
+  const locked = env.member !== 'guest' && accessFor(env.member, s.tier) !== 'ok';
   return (
     <button className={`card live-card ${wide ? 'is-wide' : ''}`} onClick={() => env.push({ name: 'live', scheduleId: s.id })}>
       <Art hue={se.hue + (s.lang === 'ES' ? 30 : 0)}>
@@ -183,9 +186,16 @@ export function LiveCard({ s, now, wide }: { s: Schedule; now: number; wide?: bo
         <span className="art-tr">
           <TierBadge tier={s.tier} />
         </span>
-        <span className="art-bl viewers">
-          <Icon name="eye" size={12} /> {fmtCount(viewersOf(s, now))}
-        </span>
+        {viewers && (
+          <span className="art-bl viewers">
+            <Icon name="eye" size={12} /> {fmtCount(viewersOf(s, now))}
+          </span>
+        )}
+        {locked && (
+          <span className="art-br lock" aria-label="Upgrade required">
+            <LockIcon />
+          </span>
+        )}
       </Art>
       <span className="card-title">{s.title}</span>
       <span className="card-meta">
@@ -213,7 +223,7 @@ function TodaySchedule({ now, schedules }: { now: number; schedules: Schedule[] 
 
   return (
     <section className="sec">
-      <SectionHead title="Schedule" action="Full schedule" onAction={() => env.goTab('schedule')} note="편성 = 시간 슬롯 × 송출 채널 · 알림 신청 · 시간 변경 시 Changed" />
+      <SectionHead title="Schedule" action="Full schedule" onAction={() => env.goTab('schedule')} note="HOME-04 오늘의 편성 · 오늘/내일/모레 · 시간순 · 상태(예정/LIVE/종료) · 채널·언어 · 시간 변경 시 Changed · 비로그인 알림 신청 시 로그인 유도" />
       <div className="seg">
         {keys.map((k, n) => (
           <button key={k} className={n === tab ? 'is-on' : ''} onClick={() => setTab(n)}>
@@ -252,6 +262,7 @@ export function ScheduleRow({ s, now }: { s: Schedule; now: number }) {
   const open = () => {
     if (status === 'live') env.push({ name: 'live', scheduleId: s.id });
     else if (status === 'ended' && s.vodId) env.push({ name: 'vod', vodId: s.vodId });
+    else if (status === 'upcoming') env.push({ name: 'live', scheduleId: s.id });
   };
   const bell = () => {
     if (env.member === 'guest') return env.sheet({ kind: 'login', reason: 'Log in to get a reminder when this broadcast starts.' });
@@ -260,7 +271,7 @@ export function ScheduleRow({ s, now }: { s: Schedule; now: number }) {
   };
   return (
     <li className={`sched-row is-${status}`}>
-      <button className="sched-main" onClick={open} disabled={status === 'upcoming'}>
+      <button className="sched-main" onClick={open}>
         <span className="sched-time">
           {fmtTime(s.start, env.tz)}
           {s.originalStart && status === 'upcoming' && <span className="changed">Changed</span>}
@@ -271,11 +282,11 @@ export function ScheduleRow({ s, now }: { s: Schedule; now: number }) {
             {s.title}
           </span>
           <span className="sched-meta">
-            {eventLabel(s)} · {s.lang}
+            {eventLabel(s)} · {s.channelId} · {s.lang}
           </span>
         </span>
         {status === 'live' && <span className="st st-live">LIVE</span>}
-        {status === 'ended' && s.vodId && <span className="st-replay">Replay</span>}
+        {status === 'ended' && <span className="st-replay">{s.vodId ? 'Replay' : 'Ended'}</span>}
       </button>
       {status === 'upcoming' && (
         <button className={`remind-btn ${on ? 'is-on' : ''}`} aria-pressed={on} aria-label={on ? 'Remove reminder' : 'Set reminder'} onClick={bell}>
@@ -292,11 +303,12 @@ export function ScheduleRow({ s, now }: { s: Schedule; now: number }) {
 function TournamentsRow({ now }: { now: number }) {
   const env = useEnv();
   const order = { ongoing: 0, upcoming: 1, ended: 2 } as const;
-  const list = series.filter((x) => phaseOf(x, now) !== 'ended').sort((a, b) => order[phaseOf(a, now)] - order[phaseOf(b, now)]);
+  const list = series.filter((x) => phaseOf(x, now) !== 'ended').sort((a, b) => order[phaseOf(a, now)] - order[phaseOf(b, now)] || a.start.localeCompare(b.start))
+    .slice(0, 10);
   if (!list.length) return null;
   return (
     <section className="sec">
-      <SectionHead title="Tournaments" action="All" onAction={() => env.goTab('tournaments')} note="진행 중 → 예정 순" />
+      <SectionHead title="Tournaments" action="All" onAction={() => env.goTab('tournaments')} note="HOME-05 · 진행 중 > 예정(시작일 빠른 순) · 최대 10개" />
       <div className="hscroll">
         {list.map((x) => (
           <SeriesCard key={x.id} id={x.id} now={now} />
@@ -341,7 +353,7 @@ function Strip() {
         <span>{b.title}</span>
         <b>{b.cta}</b>
       </button>
-      <Note>등급별로 다른 띠배너</Note>
+      <Note>HOME-06 띠배너 · 노출 기간 내 1개 · 등급별로 다른 배너</Note>
     </section>
   );
 }
@@ -351,9 +363,15 @@ function Strip() {
 export function VodCard({ v, width = 'md' }: { v: Vod; width?: 'md' | 'lg' }) {
   const env = useEnv();
   const se = seriesById(v.seriesId);
+  const locked = env.member !== 'guest' && accessFor(env.member, v.tier) !== 'ok';
   return (
     <button className={`card vod-card w-${width}`} onClick={() => env.push({ name: 'vod', vodId: v.id })}>
       <Art hue={se.hue + 20}>
+        {locked && (
+          <span className="art-tl lock" aria-label="Upgrade required">
+            <LockIcon />
+          </span>
+        )}
         <span className="art-tr">
           <TierBadge tier={v.tier} />
         </span>
@@ -373,7 +391,7 @@ function Curations() {
     <>
       {list.map((c, n) => (
         <section className="sec" key={c.id}>
-          <SectionHead title={c.title} note={n === 0 ? '운영자 큐레이션 묶음 (CMS에서 편집)' : undefined} />
+          <SectionHead title={c.title} note={n === 0 ? 'HOME-07 큐레이션 VOD (복수 섹션) · 섹션별 개수·정렬은 CMS 설정 · 권한 없는 등급은 잠금 + 미리보기' : undefined} />
           <div className="hscroll">
             {c.vods.map((v) => (
               <VodCard key={v.id} v={v} />
@@ -382,6 +400,36 @@ function Curations() {
         </section>
       ))}
     </>
+  );
+}
+
+/** HOME-08 Popular VOD: top 10 by views, rank numbers emphasised. Shorts and hidden VOD excluded. */
+function PopularVod() {
+  const env = useEnv();
+  const top = [...vods].filter((v) => v.type !== 'Shorts').sort((a, b) => b.views - a.views).slice(0, 10);
+  if (!top.length) return null;
+  return (
+    <section className="sec">
+      <SectionHead title="Top 10 This Week" note="HOME-08 인기 VOD · 조회수 TOP 10 · 집계 기간(24시간/7일)·대상 타입은 CMS 설정" />
+      <div className="hscroll">
+        {top.map((v, i) => (
+          <button key={v.id} className="card rank-card" onClick={() => env.push({ name: 'vod', vodId: v.id })}>
+            <span className="rank-n" aria-label={`Rank ${i + 1}`}>
+              {i + 1}
+            </span>
+            <span className="rank-body">
+              <Art hue={seriesById(v.seriesId).hue + 20}>
+                <span className="art-tr">
+                  <TierBadge tier={v.tier} />
+                </span>
+                <span className="art-br dur">{fmtDuration(v.durationSec)}</span>
+              </Art>
+              <span className="card-title">{v.title}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -395,7 +443,7 @@ function PlansSection() {
   };
   return (
     <section className="sec">
-      <SectionHead title="Plans" action="Compare" onAction={() => env.push({ name: 'paywall' })} note="요금제 노출 (예시 정책) · 노출 대상 등급은 CMS에서 설정" />
+      <SectionHead title="Plans" action="Compare" onAction={() => env.push({ name: 'paywall' })} note="(선택 섹션) 기획안 홈 구성에는 없음 · 기본 숨김 · 요금제 비교는 SCR-10 페이월" />
       <p className="plans-policy">Example policy · not final</p>
       <div className="hscroll">
         {PLAN_ORDER.map((t) => (
@@ -425,7 +473,12 @@ function ContinueRow() {
   const continueList = useStore((s) => s.continueList);
   const [editing, setEditing] = useState(false);
   if (env.member === 'guest') return null;
-  const items = continueList.map((c) => ({ ...c, v: vodById(c.vodId)! })).filter((c) => c.v);
+  // HOME-09: recent first, max 10, 90%+ watched counts as finished.
+  const items = continueList
+    .filter((c) => c.progress < 0.9)
+    .slice(0, 10)
+    .map((c) => ({ ...c, v: vodById(c.vodId)! }))
+    .filter((c) => c.v);
   if (!items.length) return null;
   return (
     <section className="sec">
@@ -433,7 +486,7 @@ function ContinueRow() {
         title="Continue Watching"
         action={env.preview ? undefined : editing ? 'Done' : 'Edit'}
         onAction={() => setEditing((e) => !e)}
-        note="로그인 회원만 노출 · 진행률 표시 · Edit로 항목 직접 삭제 (모든 기기 동기화)"
+        note="HOME-09 · CW-01·02 · 로그인 회원만 · 최근 시청 순 최대 10개 · 90% 이상 시청 완료 제외 · 기기 간 동기화 · Edit로 수동 삭제"
       />
       <div className="hscroll">
         {items.map(({ v, progress }) => (
@@ -473,7 +526,7 @@ function PlayersRow() {
   const env = useEnv();
   return (
     <section className="sec">
-      <SectionHead title="Players" note="선수 ↔ VOD N:M 매핑" />
+      <SectionHead title="Players" note="HOME-10 추천 선수 · CMS 수동 지정 순서" />
       <div className="hscroll">
         {players.map((p) => (
           <button key={p.id} className="player-chip" onClick={() => env.push({ name: 'player', playerId: p.id })}>
@@ -493,13 +546,21 @@ export function PlayerAvatar({ name, hue, size = 64 }: { name: string; hue: numb
   return <ProfileAvatar name={name} hue={hue} size={size} />;
 }
 
+/** Notices this member can see: tier notices only for that tier, pinned first, then newest (HOME-11, SCR-12). */
+export function visibleNotices(member: Member) {
+  return notices
+    .filter((n) => !n.audiences?.length || n.audiences.includes(member))
+    .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || b.date.localeCompare(a.date));
+}
+
 function NoticeRow() {
   const env = useEnv();
-  const n = notices[0];
+  const n = visibleNotices(env.member)[0];
   if (!n) return null;
   return (
     <section className="sec sec-tight">
-      <button className="notice" onClick={() => env.goTab('my')}>
+      <Note>HOME-11 공지 · 회원 등급에 맞는 공지 중 최신 1건 · 상단 고정 우선</Note>
+      <button className="notice" onClick={() => env.push({ name: 'notice', noticeId: n.id })}>
         <span className="notice-tag">Notice</span>
         <span className="notice-title">{n.title}</span>
         <span className="card-meta">{fmtDate(n.date, env.tz)}</span>

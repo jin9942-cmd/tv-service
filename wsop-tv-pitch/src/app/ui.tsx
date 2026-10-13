@@ -87,11 +87,9 @@ export function Art({ hue, title, sub, ratio = '16/9', children, className = '' 
 // ---- player avatar: initials with a gold ring (bracelet / trophy cue) ----
 
 export function ProfileAvatar({ name, hue, size = 64 }: { name: string; hue: number; size?: number }) {
-  const ini = name
-    .split(/[s-]+/)
-    .slice(0, 2)
-    .map((x) => x[0])
-    .join('');
+  // First letter of the first and last name: "Seo-yeon Han" → "SH".
+  const parts = name.trim().split(/\s+/);
+  const ini = (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
   return (
     <span className="p-avatar" style={{ width: size, height: size, fontSize: size * 0.34, background: `linear-gradient(135deg, hsl(${hue} 45% 42%), hsl(${hue} 50% 18%))` }}>
       {ini}

@@ -5,17 +5,19 @@ import { publishLayout, store, toast, useStore, type Mode } from '../state/store
 import { MEMBER_KO } from '../state/selectors';
 import { AppPhone } from '../app/AppPhone';
 
-const SECTION_LABEL: Record<HomeSectionId, { ko: string; en: string }> = {
-  banner: { ko: '메인 배너', en: 'Main banner' },
-  liveNow: { ko: 'LIVE NOW', en: 'Live now' },
-  todaySchedule: { ko: '스케줄', en: 'Schedule' },
-  tournaments: { ko: '대회', en: 'Tournaments' },
-  strip: { ko: '띠배너', en: 'Promo strip' },
-  curation: { ko: '큐레이션 VOD', en: 'Curated VOD' },
-  plans: { ko: '요금제', en: 'Plans' },
-  continue: { ko: '이어보기', en: 'Continue watching' },
-  players: { ko: '선수', en: 'Players' },
-  notice: { ko: '공지', en: 'Notice' },
+/** Section types (HOM-002) with the service plan's home IDs (3.3). */
+const SECTION_LABEL: Record<HomeSectionId, { ko: string; en: string; code: string }> = {
+  banner: { ko: '메인 배너', en: 'Main banner', code: 'HOME-02' },
+  liveNow: { ko: 'LIVE NOW', en: 'Live now', code: 'HOME-03' },
+  todaySchedule: { ko: '오늘의 편성', en: 'Schedule', code: 'HOME-04' },
+  tournaments: { ko: '대회', en: 'Tournaments', code: 'HOME-05' },
+  strip: { ko: '띠배너', en: 'Promo strip', code: 'HOME-06' },
+  curation: { ko: '큐레이션 VOD', en: 'Curated VOD', code: 'HOME-07' },
+  popular: { ko: '인기 VOD', en: 'Top 10', code: 'HOME-08' },
+  continue: { ko: '이어보기', en: 'Continue watching', code: 'HOME-09' },
+  players: { ko: '선수', en: 'Players', code: 'HOME-10' },
+  notice: { ko: '공지', en: 'Notice', code: 'HOME-11' },
+  plans: { ko: '요금제 (선택)', en: 'Plans', code: '추가' },
 };
 
 /** 메인 화면 관리: edit the season / off-season home sets and publish them to the app instantly. */
@@ -60,7 +62,7 @@ export function HomeManager() {
     <div className="cms-page">
       <div className="cms-page-head">
         <h1>메인 화면 관리</h1>
-        <p className="cms-sub">홈 섹션의 순서 · 노출 · 노출 대상 등급을 관리합니다. 저장하면 앱 배포 없이 바로 반영됩니다. 헤더와 하단 탭바는 고정 영역이라 목록에서 제외됩니다.</p>
+        <p className="cms-sub">HOM-001~004 · 홈 섹션의 순서 · 노출 · 노출 대상 등급 · LIVE NOW 노출 규칙을 관리합니다. 저장하면 앱 배포 없이 바로 반영됩니다(서버 드리븐). 헤더와 하단 탭바는 고정 영역이라 목록에서 제외됩니다.</p>
       </div>
 
       <div className="hm-top">
@@ -120,8 +122,25 @@ export function HomeManager() {
                 </span>
                 <span className="hm-order">{i + 1}</span>
                 <span className="hm-name">
-                  <b>{SECTION_LABEL[s.id].ko}</b>
+                  <b>
+                    {SECTION_LABEL[s.id].ko} <code className="hm-code">{SECTION_LABEL[s.id].code}</code>
+                  </b>
                   <small>{SECTION_LABEL[s.id].en}</small>
+                  {s.id === 'liveNow' && (
+                    <span className="hm-opts">
+                      <label>
+                        0건일 때
+                        <select value={s.emptyMode ?? 'countdown'} onChange={(e) => patch(s.id, { emptyMode: e.target.value as 'hide' | 'countdown' })}>
+                          <option value="countdown">다음 라이브 카운트다운</option>
+                          <option value="hide">섹션 숨김</option>
+                        </select>
+                      </label>
+                      <label>
+                        <input type="checkbox" checked={s.showViewers !== false} onChange={(e) => patch(s.id, { showViewers: e.target.checked })} /> 동시 시청자 수
+                      </label>
+                    </span>
+                  )}
+                  {s.id === 'popular' && <span className="hm-opts">집계 7일 · 조회수순 · 최대 10개 · 쇼츠 제외 (HOM-005)</span>}
                 </span>
                 <span className="hm-aud" role="group" aria-label="노출 대상 등급">
                   {ALL_MEMBERS.map((m) => (

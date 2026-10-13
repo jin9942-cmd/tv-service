@@ -116,8 +116,8 @@ export const vods: Vod[] = [
   V({ id: 'v-06', title: 'Quads vs Full House on Day 1A', type: 'Hand', seriesId: 'ser-paradise', eventId: 'ev-p13', tier: 'free', durationSec: 214, views: 132_000, publishedAt: at(-40), playerIds: ['pl-7', 'pl-5'], description: 'The cooler everyone is talking about.' }),
   V({ id: 'v-07', title: 'Kagami’s River Hero Call', type: 'Hand', seriesId: 'ser-paradise', eventId: 'ev-p10', tier: 'basic', durationSec: 186, views: 88_400, publishedAt: at(-19), playerIds: ['pl-2', 'pl-1'], description: 'Third pair, all the chips.' }),
   V({ id: 'v-08', title: 'High Roller Day 2 Highlights', type: 'Highlight', seriesId: 'ser-paradise', eventId: 'ev-p10', tier: 'free', durationSec: 912, views: 54_300, publishedAt: at(-18), playerIds: ['pl-2', 'pl-7', 'pl-4'], description: 'Best hands of the day.' }),
-  V({ id: 'v-09', title: 'Bounty Envelope Reveal: $250K', type: 'Clip', seriesId: 'ser-paradise', eventId: 'ev-p8', tier: 'free', durationSec: 96, views: 201_000, publishedAt: at(-3), playerIds: ['pl-5'], description: 'The top mystery prize is found.' }),
-  V({ id: 'v-10', title: 'Seo-yeon Han on Her Day 1A Chip Lead', type: 'Interview', seriesId: 'ser-paradise', eventId: 'ev-p13', tier: 'free', durationSec: 340, views: 23_600, publishedAt: at(-30), playerIds: ['pl-4'], description: 'Post-day interview.' }),
+  V({ id: 'v-09', title: 'Bounty Reveal at the Final Table', type: 'Clip', seriesId: 'ser-paradise', eventId: 'ev-p8', tier: 'free', durationSec: 96, views: 201_000, publishedAt: at(-3), playerIds: ['pl-5'], description: 'The top mystery prize is found.' }),
+  V({ id: 'v-10', title: 'Seo-yeon Han on Leading Day 1A', type: 'Interview', seriesId: 'ser-paradise', eventId: 'ev-p13', tier: 'free', durationSec: 340, views: 23_600, publishedAt: at(-30), playerIds: ['pl-4'], description: 'Post-day interview.' }),
   V({ id: 'v-11', title: 'Main Event Day 1A — Full Replay', type: 'Full Replay', seriesId: 'ser-paradise', eventId: 'ev-p13', tier: 'premium', durationSec: 23_400, views: 39_800, publishedAt: at(-44), playerIds: ['pl-4', 'pl-7', 'pl-5'], description: 'Day 1A feature table.' }),
   V({ id: 'v-12', title: 'This Week in Paradise', type: 'Highlight', seriesId: 'ser-paradise', tier: 'free', durationSec: 1_800, views: 77_000, publishedAt: at(-48), playerIds: ['pl-1', 'pl-2', 'pl-7'], description: 'Weekly round-up show.' }),
   V({ id: 'v-13', title: 'Circuit LA Main Event — Final Table', type: 'Full Replay', seriesId: 'ser-la', eventId: 'ev-l10', tier: 'basic', durationSec: 25_200, views: 31_200, publishedAt: at(-24 * 34), playerIds: ['pl-3', 'pl-8'], description: 'Ring event final table.' }),
@@ -128,11 +128,11 @@ export const vods: Vod[] = [
   V({ id: 'v-18', title: 'Las Vegas 2026 — Top 10 Hands', type: 'Highlight', seriesId: 'ser-vegas', tier: 'basic', durationSec: 1_380, views: 152_000, publishedAt: at(-24 * 70), playerIds: ['pl-1', 'pl-2', 'pl-3', 'pl-7'], description: 'Countdown of the summer’s best hands.' }),
   // shorts (9:16)
   V({ id: 'v-19', title: 'The fold of the year?', type: 'Shorts', seriesId: 'ser-paradise', eventId: 'ev-p13', tier: 'free', durationSec: 42, views: 512_000, publishedAt: at(-6), playerIds: ['pl-5'], description: '' }),
-  V({ id: 'v-20', title: 'Bounty envelope: $250K', type: 'Shorts', seriesId: 'ser-paradise', eventId: 'ev-p8', tier: 'free', durationSec: 31, views: 388_000, publishedAt: at(-3), playerIds: ['pl-5'], description: '' }),
+  V({ id: 'v-20', title: 'Final table bounty moment', type: 'Shorts', seriesId: 'ser-paradise', eventId: 'ev-p8', tier: 'free', durationSec: 31, views: 388_000, publishedAt: at(-3), playerIds: ['pl-5'], description: '' }),
   V({ id: 'v-21', title: 'Rail goes wild', type: 'Shorts', seriesId: 'ser-paradise', eventId: 'ev-p10', tier: 'free', durationSec: 27, views: 140_000, publishedAt: at(-18), playerIds: ['pl-2'], description: '' }),
-  V({ id: 'v-22', title: 'Chip race in 30s', type: 'Shorts', seriesId: 'ser-paradise', eventId: 'ev-p13', tier: 'free', durationSec: 30, views: 92_000, publishedAt: at(-22), playerIds: [], description: '' }),
+  V({ id: 'v-22', title: 'Day 2 in 30 seconds', type: 'Shorts', seriesId: 'ser-paradise', eventId: 'ev-p13', tier: 'free', durationSec: 30, views: 92_000, publishedAt: at(-22), playerIds: [], description: '' }),
   V({ id: 'v-23', title: 'Bracelet ceremony', type: 'Shorts', seriesId: 'ser-vegas', eventId: 'ev-v76', tier: 'free', durationSec: 45, views: 260_000, publishedAt: at(-24 * 76), playerIds: ['pl-7'], description: '' }),
-  V({ id: 'v-24', title: 'Premium cam: hole cards only', type: 'Shorts', seriesId: 'ser-paradise', eventId: 'ev-p13', tier: 'premium', durationSec: 58, views: 33_000, publishedAt: at(-8), playerIds: ['pl-1'], description: '' }),
+  V({ id: 'v-24', title: 'Premium cam: player view', type: 'Shorts', seriesId: 'ser-paradise', eventId: 'ev-p13', tier: 'premium', durationSec: 58, views: 33_000, publishedAt: at(-8), playerIds: ['pl-1'], description: '' }),
 ];
 
 export const curations: Curation[] = [
@@ -156,9 +156,38 @@ export const stripBanners: StripBanner[] = [
 ];
 
 export const notices: Notice[] = [
-  { id: 'nt-1', title: 'Main Event Day 2 stream starts 30 min earlier', date: at(-10) },
-  { id: 'nt-2', title: 'New: Spanish commentary on Feature Table', date: at(-50) },
-  { id: 'nt-3', title: 'Scheduled maintenance this Sunday 03:00–05:00 KST', date: at(-120) },
+  {
+    id: 'nt-1',
+    type: 'Event',
+    pinned: true,
+    title: 'Main Event Day 2 stream starts 30 min earlier',
+    date: at(-10),
+    body: 'Due to the field size, Main Event Day 2 coverage on the Feature Table starts 30 minutes earlier than announced. All times in the app are already updated to your time zone.',
+    link: { label: 'Open schedule', route: { name: 'tab', tab: 'schedule' } },
+  },
+  {
+    id: 'nt-2',
+    type: 'Service',
+    title: 'New: Spanish commentary on Feature Table',
+    date: at(-50),
+    body: 'Spanish commentary is now available on the Feature Table. Switch language from the player with “Switch broadcast”.',
+  },
+  {
+    id: 'nt-3',
+    type: 'Maintenance',
+    title: 'Scheduled maintenance this Sunday 03:00–05:00 KST',
+    date: at(-120),
+    body: 'WSOP TV will be unavailable during scheduled maintenance. Live and VOD playback will resume automatically afterwards.',
+    attachment: 'maintenance-notice.pdf',
+  },
+  {
+    id: 'nt-4',
+    type: 'Service',
+    title: 'Premium members: 1080p60 on every final table',
+    date: at(-30),
+    body: 'Final tables are now streamed in 1080p60 for Premium members on supported devices.',
+    audiences: ['premium'],
+  },
 ];
 
 /** Continue-watching progress per signed-in member state (mock). */
@@ -166,6 +195,8 @@ export const continueWatching: { vodId: string; progress: number }[] = [
   { vodId: 'v-01', progress: 0.42 },
   { vodId: 'v-08', progress: 0.77 },
   { vodId: 'v-15', progress: 0.12 },
+  // 90%+ watched → treated as finished and hidden from Continue Watching (HOME-09).
+  { vodId: 'v-02', progress: 0.95 },
 ];
 
 export const popularSearches = ['Main Event', 'Mystery Bounty', 'Seo-yeon Han', 'Final Table', 'Paradise'];
@@ -173,32 +204,38 @@ export const popularSearches = ['Main Event', 'Mystery Bounty', 'Seo-yeon Han', 
 export const ALL_MEMBERS = ['guest', 'free', 'basic', 'premium'] as const;
 
 const ALL = [...ALL_MEMBERS];
-/** Home layouts (managed in CMS). Season: LIVE first. Off-season: VOD sections move up, LIVE NOW hidden. */
+const SIGNED_IN: typeof ALL = ['free', 'basic', 'premium'];
+/**
+ * Home layouts (서비스 기획안 3.3 HOME-02~11, managed in CMS 메인 화면 관리).
+ * Season: LIVE first. Off-season (HOME-R6): LIVE NOW hidden, curated and popular VOD move up.
+ */
 export const defaultSeasonLayout: HomeSection[] = [
   { id: 'banner', visible: true, audiences: ALL },
-  { id: 'liveNow', visible: true, audiences: ALL },
+  { id: 'liveNow', visible: true, audiences: ALL, emptyMode: 'countdown', showViewers: true },
   { id: 'todaySchedule', visible: true, audiences: ALL },
-  { id: 'continue', visible: true, audiences: ['free', 'basic', 'premium'] },
   { id: 'tournaments', visible: true, audiences: ALL },
+  { id: 'strip', visible: true, audiences: ALL },
   { id: 'curation', visible: true, audiences: ALL },
-  { id: 'plans', visible: true, audiences: ['guest', 'free', 'basic'] },
+  { id: 'popular', visible: true, audiences: ALL },
+  { id: 'continue', visible: true, audiences: SIGNED_IN },
   { id: 'players', visible: true, audiences: ALL },
-  { id: 'strip', visible: false, audiences: ALL },
-  { id: 'notice', visible: false, audiences: ALL },
+  { id: 'notice', visible: true, audiences: ALL },
+  // Not in the service plan's home list: kept as an option, off by default.
+  { id: 'plans', visible: false, audiences: ['guest', 'free', 'basic'] },
 ];
 
-// Strip banner and notices start hidden to keep home calm; operators can turn them on in the CMS.
 export const defaultOffSeasonLayout: HomeSection[] = [
   { id: 'banner', visible: true, audiences: ALL },
-  { id: 'continue', visible: true, audiences: ['free', 'basic', 'premium'] },
   { id: 'curation', visible: true, audiences: ALL },
-  { id: 'plans', visible: true, audiences: ['guest', 'free', 'basic'] },
+  { id: 'popular', visible: true, audiences: ALL },
+  { id: 'continue', visible: true, audiences: SIGNED_IN },
   { id: 'todaySchedule', visible: true, audiences: ALL },
   { id: 'tournaments', visible: true, audiences: ALL },
+  { id: 'strip', visible: true, audiences: ALL },
   { id: 'players', visible: true, audiences: ALL },
-  { id: 'liveNow', visible: false, audiences: ALL },
-  { id: 'strip', visible: false, audiences: ALL },
-  { id: 'notice', visible: false, audiences: ALL },
+  { id: 'notice', visible: true, audiences: ALL },
+  { id: 'liveNow', visible: false, audiences: ALL, emptyMode: 'hide', showViewers: true },
+  { id: 'plans', visible: false, audiences: ['guest', 'free', 'basic'] },
 ];
 
 /** CMS dashboard extras. */

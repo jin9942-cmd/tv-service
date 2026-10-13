@@ -7,8 +7,20 @@ import { seedVocab, type VocabTerm } from '../data/vocab';
 import type { DisplayTz } from '../lib/time';
 
 export type Mode = 'season' | 'offseason';
-/** Viewing-location simulation: normal, regional blackout, VPN/proxy detected. */
-export type Geo = 'ok' | 'blackout' | 'vpn';
+/** Playback environment simulation: normal, regional blackout (DRM-02), VPN/proxy (DRM-03), network error (LIVE-06). */
+export type Geo = 'ok' | 'blackout' | 'vpn' | 'network';
+
+/** App version · maintenance · launch popups (CMS 시스템 › 앱 버전 · 점검, HOME-R3). */
+export interface LaunchConfig {
+  latestVersion: string;
+  /** Installed app below this → forced update. */
+  minVersion: string;
+  maintenance: boolean;
+  maintenanceText: string;
+  systemPopup: boolean;
+  imagePopup: boolean;
+}
+export const APP_VERSION = '2.0.0';
 export interface ContinueItem {
   vodId: string;
   progress: number;
@@ -27,6 +39,13 @@ export interface State {
   tz: DisplayTz;
   notes: boolean;
   geo: Geo;
+  /** Widevine L3 device: HD is not allowed, quality capped (DRM-05). */
+  l3Device: boolean;
+  launch: LaunchConfig;
+  /** Bumped by "앱 재실행" to replay the splash → launch checks. */
+  launchKey: number;
+  /** Popups already shown; lower-priority ones appear on the next launch (HOME-R3). */
+  seenPopups: string[];
   /** Paid plan has lapsed: Basic/Premium members fall back to Free until they renew. */
   expired: boolean;
   schedules: Schedule[];
@@ -51,6 +70,17 @@ let state: State = {
   tz: 'Asia/Seoul',
   notes: false,
   geo: 'ok',
+  l3Device: false,
+  launch: {
+    latestVersion: '2.1.0',
+    minVersion: '1.8.0',
+    maintenance: false,
+    maintenanceText: 'Scheduled maintenance 03:00–05:00 KST. Live and VOD playback will be back shortly.',
+    systemPopup: true,
+    imagePopup: true,
+  },
+  launchKey: 0,
+  seenPopups: [],
   expired: false,
   schedules: seedSchedules,
   layouts: { season: defaultSeasonLayout, offseason: defaultOffSeasonLayout },

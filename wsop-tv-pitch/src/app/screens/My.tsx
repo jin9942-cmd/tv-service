@@ -1,7 +1,7 @@
-import { notices } from '../../data/mock';
 import { removeContinue, store, toast, useStore } from '../../state/store';
 import { MEMBER_LABEL, vodById } from '../../state/selectors';
 import { fmtDate, fmtDuration } from '../../lib/time';
+import { APP_VERSION } from '../../state/store';
 import { Icon, Note, useEnv } from '../ui';
 import { AppHeader } from './Home';
 import { SubHead } from './LivePlayer';
@@ -39,6 +39,12 @@ export function MyTab() {
           )}
         </div>
         {!guest && (
+          <button className="row-btn" onClick={() => toast('Payment history: managed in App Store / Google Play (demo)')}>
+            <span>Payment history</span>
+            <Icon name="chevron" size={14} />
+          </button>
+        )}
+        {!guest && (
           <button className="row-btn" onClick={() => env.push({ name: 'paywall' })}>
             <span>Subscription</span>
             <span className="muted">
@@ -46,7 +52,7 @@ export function MyTab() {
             </span>
           </button>
         )}
-        <Note side="inline">계정 · 구독 등급 · My List · 시청 기록 · 알림 설정 · 알림함 · 공지 · 고객센터</Note>
+        <Note side="inline">SCR-11 MY · 계정(GGPass) · 구독 등급·결제 내역 · 워치리스트 · 이어보기 · 알림 설정 · 알림함 · 공지 · 고객센터 · 앱 버전 · 로그아웃·탈퇴</Note>
       </div>
 
       <MyListPreview />
@@ -67,10 +73,10 @@ export function MyTab() {
               </button>
             )}
           </div>
-          <Note>이어보기 직접 삭제(개별 · 전체) · My List와 별개로 관리</Note>
-          {continueList.length ? (
+          <Note>CW-01·02 · 기기 간 동기화 · 90% 이상 시청 시 완료 처리 · 수동 삭제(개별·전체) · 워치리스트와 별개</Note>
+          {continueList.some((c) => c.progress < 0.9) ? (
             <ul className="list">
-              {continueList.map((c) => {
+              {continueList.filter((c) => c.progress < 0.9).map((c) => {
                 const v = vodById(c.vodId)!;
                 return (
                   <li key={c.vodId} className="history-item">
@@ -119,28 +125,24 @@ export function MyTab() {
         </div>
       </section>
 
-      <section className="sec">
-        <div className="sec-head">
-          <h2>Notices</h2>
-        </div>
-        <ul className="list">
-          {notices.map((n) => (
-            <li key={n.id} className="notice-row">
-              <span>{n.title}</span>
-              <small>{fmtDate(n.date, env.tz)}</small>
-            </li>
-          ))}
-        </ul>
-      </section>
-
       <div className="screen-pad my-foot">
+        <button className="row-btn" onClick={() => env.push({ name: 'notices' })}>
+          <span>Notices</span>
+          <Icon name="chevron" size={14} />
+        </button>
+        <button className="row-btn" onClick={() => toast('UI and subtitles in 20+ languages (L10N-01, demo shows English)')}>
+          <span>App language</span>
+          <span className="muted">
+            English <Icon name="chevron" size={14} />
+          </span>
+        </button>
         <button className="row-btn" onClick={() => toast('Help center (demo)')}>
           <span>Help center</span>
           <Icon name="chevron" size={14} />
         </button>
         <div className="row-btn static">
           <span>App version</span>
-          <span className="muted">2.0.0 (demo)</span>
+          <span className="muted">{APP_VERSION} (demo)</span>
         </div>
         {!guest && (
           <button
@@ -151,6 +153,11 @@ export function MyTab() {
             }}
           >
             Log out
+          </button>
+        )}
+        {!guest && (
+          <button className="link-btn" onClick={() => toast('Account deletion is handled through GGPass (AUTH-03, demo)')}>
+            Delete account
           </button>
         )}
       </div>

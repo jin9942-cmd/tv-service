@@ -403,3 +403,25 @@ button {
   font-size: 12px;
   line-height: 1.4;
 }
+
+.panel-relaunch {
+  width: 100%;
+  margin: 4px 0 10px;
+  border: 1px solid #333741;
+  background: #0e0f12;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #e5c158;
+}
+
+.pseg button {
+  white-space: nowrap;
+}
+
+.panel {
+  max-height: calc(100vh - 92px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}

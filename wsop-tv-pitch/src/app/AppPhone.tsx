@@ -13,6 +13,8 @@ import { Paywall } from './screens/Paywall';
 import { MyTab, Inbox } from './screens/My';
 import { LivePlayer } from './screens/LivePlayer';
 import { MyListScreen } from './MyList';
+import { NoticeDetail, NoticeList } from './screens/Notices';
+import { LaunchLayer } from './Launch';
 
 const TABS: { tab: AppTab; label: string; icon: string }[] = [
   { tab: 'home', label: 'Home', icon: 'home' },
@@ -109,6 +111,7 @@ export function AppPhone({ preview }: { preview?: PreviewOverrides }) {
 
         {expiredPlan && <ExpiredBar plan={expiredPlan} onTab={tabRoute} />}
         {sheet && <BottomSheet sheet={sheet} onClose={() => setSheet(null)} />}
+        {!preview && <LaunchLayer />}
         {!preview && <AppToasts />}
       </div>
     </Env.Provider>
@@ -135,6 +138,10 @@ function Screen({ route }: { route: AppRoute }) {
       return <Inbox />;
     case 'mylist':
       return <MyListScreen />;
+    case 'notices':
+      return <NoticeList />;
+    case 'notice':
+      return <NoticeDetail noticeId={route.noticeId} />;
   }
 }
 
@@ -148,7 +155,7 @@ function BottomSheet({ sheet, onClose }: { sheet: NonNullable<SheetKind>; onClos
         <span className="sheet-handle" />
         {sheet.kind === 'login' ? (
           <>
-            <h3>Log in to watch</h3>
+            <h3>Log in with GGPass</h3>
             <p className="muted">{sheet.reason}</p>
             <button
               className="btn btn-gold btn-block"
@@ -159,12 +166,12 @@ function BottomSheet({ sheet, onClose }: { sheet: NonNullable<SheetKind>; onClos
                 sheet.then?.();
               }}
             >
-              Log in (demo)
+              Continue with GGPass (demo)
             </button>
             <button className="btn btn-ghost btn-block" onClick={onClose}>
               Not now
             </button>
-            <p className="fineprint">Demo only — no real account or password.</p>
+            <p className="fineprint">GGPass SSO (AUTH-01) · demo only, no real account.</p>
           </>
         ) : (
           <>

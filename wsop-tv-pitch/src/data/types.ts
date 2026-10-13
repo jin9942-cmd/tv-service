@@ -107,10 +107,19 @@ export interface StripBanner {
   link: AppRoute;
 }
 
+export type NoticeType = 'Service' | 'Event' | 'Maintenance';
 export interface Notice {
   id: string;
+  type: NoticeType;
   title: string;
   date: string;
+  /** Pinned notices are listed first (SCR-12). */
+  pinned?: boolean;
+  body: string;
+  link?: { label: string; route: AppRoute };
+  attachment?: string;
+  /** Tier notice: only these members see it (HOME-11). Empty = everyone. */
+  audiences?: Member[];
 }
 
 export interface Curation {
@@ -126,6 +135,7 @@ export type HomeSectionId =
   | 'tournaments'
   | 'strip'
   | 'curation'
+  | 'popular'
   | 'plans'
   | 'continue'
   | 'players'
@@ -135,6 +145,9 @@ export interface HomeSection {
   id: HomeSectionId;
   visible: boolean;
   audiences: Member[];
+  /** LIVE NOW only (HOME-03): what to show with zero live streams, and whether to show concurrent viewers. */
+  emptyMode?: 'hide' | 'countdown';
+  showViewers?: boolean;
 }
 
 export type AppRoute =
@@ -146,10 +159,12 @@ export type AppRoute =
   | { name: 'search' }
   | { name: 'paywall' }
   | { name: 'inbox' }
-  | { name: 'mylist' };
+  | { name: 'mylist' }
+  | { name: 'notices' }
+  | { name: 'notice'; noticeId: string };
 
-/** My List (favourites): saved videos, players and tournaments. */
-export type MyListKind = 'vod' | 'player' | 'series';
+/** Watchlist (CW-03): saved videos, upcoming live broadcasts, players and tournaments. Independent of Continue Watching. */
+export type MyListKind = 'vod' | 'live' | 'player' | 'series';
 export interface MyListItem {
   kind: MyListKind;
   id: string;

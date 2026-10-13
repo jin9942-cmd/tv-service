@@ -23,8 +23,12 @@ export function DemoPanel() {
         <Toggle on={s.noLive} onChange={(noLive) => store.set({ noLive })} />
       </Field>
 
-      <Field label="시청 환경" hint="지역 제한은 라이브만 차단, VPN 감지는 전체 재생 차단">
-        <Seg<Geo> value={s.geo} options={['ok', 'blackout', 'vpn']} label={(g) => (g === 'ok' ? '정상' : g === 'blackout' ? '지역 제한' : 'VPN 감지')} onChange={(geo) => store.set({ geo })} />
+      <Field label="재생 환경" hint="DRM-02 지역 제한(라이브) · DRM-03 VPN 탐지 · LIVE-06 재생 오류">
+        <Seg<Geo> value={s.geo} options={['ok', 'blackout', 'vpn', 'network']} label={(g) => GEO_KO[g]} onChange={(geo) => store.set({ geo })} />
+      </Field>
+
+      <Field label="Widevine L3 기기" hint="DRM-05 보안 등급이 낮은 기기: 화질 480p 제한 안내">
+        <Toggle on={s.l3Device} onChange={(l3Device) => store.set({ l3Device })} />
       </Field>
 
       <Field label="구독 만료" hint="베이직·프리미엄 회원의 구독이 만료된 상태 (무료로 전환 + 갱신 안내)">
@@ -44,6 +48,10 @@ export function DemoPanel() {
         <Toggle on={s.notes} onChange={(notes) => store.set({ notes })} />
       </Field>
 
+      <button className="panel-relaunch" onClick={relaunch}>
+        ↻ 앱 재실행 (SCR-01 스플래시 · 실행 시 팝업)
+      </button>
+
       <div className="panel-foot">
         <p>
           홈 구성: <b>{s.mode === 'season' ? '시즌' : '비시즌'} 세트</b>
@@ -55,31 +63,35 @@ export function DemoPanel() {
   );
 }
 
-const SCENARIOS = [
-  { n: 1, text: '비로그인 → 홈 → LIVE NOW 카드 → 로그인 유도', set: { member: 'guest' as Member } },
-  { n: 2, text: '무료 → Premium 라이브 → 미리보기 → 구독 안내 → Premium 구독 → 바로 시청', set: { member: 'free' as Member } },
-  { n: 3, text: 'Premium → 라이브 → 다른 언어 방송 전환 → 다음 편성 알림 신청', set: { member: 'premium' as Member } },
-  { n: 4, text: '시즌 → 비시즌 전환: LIVE NOW 숨김, VOD 섹션 위로', set: { mode: 'offseason' as Mode } },
-  { n: 5, text: '라이브 0건 ON → 다음 라이브 카운트다운', set: { noLive: true } },
-  { n: 6, text: 'CMS 메인 화면 관리: 순서 변경/숨김 → 저장 → 앱 즉시 반영', cms: true },
-  { n: 7, text: 'CMS 편성표: 편성 추가 → 앱 편성표·홈 Schedule 반영', cms: true },
-  { n: 8, text: '시간대 변경 → 앱 안의 모든 시각 변환', set: { tz: 'America/Los_Angeles' as DisplayTz } },
-  { n: 9, text: '비로그인 → VOD 상세 “+ My List” → 로그인 → MY 탭 My List에서 확인', set: { member: 'guest' as Member } },
-  { n: 10, text: 'Premium → 라이브 → 일시정지·10초 되감기 → Go Live 복귀 → CC에서 자막·오디오 선택', set: { member: 'premium' as Member, geo: 'ok' as Geo } },
-  { n: 11, text: 'VPN 감지 → 라이브 진입 시 차단 안내 → I’m travelling (여행자 인증) → 시청', set: { member: 'premium' as Member, geo: 'vpn' as Geo } },
-  { n: 12, text: '구독 만료 → 하단 갱신 안내 → Premium 라이브 미리보기 → Renew', set: { member: 'premium' as Member, expired: true } },
-  { n: 13, text: '이어보기 Edit → 항목 삭제 (홈 · MY)', set: { member: 'free' as Member } },
-  { n: 14, text: 'CMS 포커 용어 사전: 대기 용어 배포 → 앱 자막(CC › English) 교정 반영', cms: true },
+const GEO_KO: Record<Geo, string> = { ok: '정상', blackout: '지역 제한', vpn: 'VPN', network: '오류' };
+
+const relaunch = () => store.set((s) => ({ launchKey: s.launchKey + 1 }));
+
+type Scenario = { n: number; group: string; text: string; set?: Parameters<typeof store.set>[0]; cms?: boolean };
+const SCENARIOS: Scenario[] = [
+  { n: 1, group: '홈 · 탐색', text: '비로그인 → 홈 열람 → LIVE NOW 카드 → 로그인 유도 (HOME-R2)', set: { member: 'guest' } },
+  { n: 2, group: '홈 · 탐색', text: '시즌 → 비시즌: LIVE NOW 숨김, 큐레이션·인기 VOD 상단 (HOME-R6)', set: { mode: 'offseason' } },
+  { n: 3, group: '홈 · 탐색', text: '라이브 0건 → 다음 라이브 카운트다운 (HOME-03)', set: { noLive: true } },
+  { n: 4, group: '홈 · 탐색', text: '표시 시간대 변경 → 앱 안의 모든 시각 변환 (HOME-R4)', set: { tz: 'America/Los_Angeles' as DisplayTz } },
+  { n: 5, group: '홈 · 탐색', text: '앱 재실행 → 스플래시 → 권장 업데이트 → 다시 실행하면 다음 팝업 (SCR-01 · HOME-R3)', set: (s) => ({ launchKey: s.launchKey + 1, seenPopups: [] }) },
+  { n: 6, group: '시청 · 권한', text: '무료 → Premium 라이브 → 미리보기 → 구독 → 바로 시청 (SUB-04 · 05)', set: { member: 'free', geo: 'ok', expired: false } },
+  { n: 7, group: '시청 · 권한', text: 'Premium → 라이브 → 언어 방송 전환 · DVR 되감기 → LIVE 복귀 · CC 자막 (LIVE-02 · 03 · VOD-04)', set: { member: 'premium', geo: 'ok', expired: false } },
+  { n: 8, group: '시청 · 권한', text: 'VPN 탐지 → 차단 안내 → 해외 체류 예외 처리 (DRM-03 · 04)', set: { member: 'premium', geo: 'vpn' } },
+  { n: 9, group: '시청 · 권한', text: '재생 오류 → 안내 → 재시도 (LIVE-06)', set: { member: 'premium', geo: 'network' } },
+  { n: 10, group: '시청 · 권한', text: '구독 만료 → 무료로 전환 + 갱신 안내 → Renew (SUB-04)', set: { member: 'premium', expired: true, geo: 'ok' } },
+  { n: 11, group: '개인화', text: '비로그인 → 편성표의 예정 방송 → “+ Watchlist” → 로그인 → MY 워치리스트 (CW-03)', set: { member: 'guest' } },
+  { n: 12, group: '개인화', text: '이어보기 Edit → 수동 삭제 (홈 · MY) · 90% 이상 시청은 제외 (CW-01 · 02)', set: { member: 'free' } },
+  { n: 13, group: 'CMS · 운영', text: '메인 화면 관리: LIVE NOW 0건 처리 · 순서 변경 → 저장 → 앱 반영 (HOM-001 · 004)', cms: true },
+  { n: 14, group: 'CMS · 운영', text: '편성표: 편성 등록 → 라이브 자동 생성 → 앱 편성표·홈 반영 (SCH-003 · 007)', cms: true },
+  { n: 15, group: 'CMS · 운영', text: '포커 용어 사전: Transcribe 반영 → 앱 자막 교정 (VOC-002 · 004)', cms: true },
+  { n: 16, group: 'CMS · 운영', text: '앱 버전 관리: 강제 업데이트 · 점검 모드 → 앱 재실행 (APP-002 · 003)', cms: true },
 ];
 
 export function ScenarioGuide({ onOpenCms }: { onOpenCms: () => void }) {
   return (
     <div className="panel guide">
       <h2 className="panel-title">시연 시나리오</h2>
-      {[
-        { label: '기본 흐름', list: SCENARIOS.filter((sc) => sc.n <= 9) },
-        { label: '제안서(V5) 반영', list: SCENARIOS.filter((sc) => sc.n > 9) },
-      ].map((g) => (
+      {[...new Set(SCENARIOS.map((sc) => sc.group))].map((label) => ({ label, list: SCENARIOS.filter((sc) => sc.group === label) })).map((g) => (
         <div key={g.label} className="guide-group">
           <p className="guide-group-title">{g.label}</p>
           <ol>
@@ -103,7 +115,7 @@ export function ScenarioGuide({ onOpenCms }: { onOpenCms: () => void }) {
       ))}
       <button
         className="guide-reset"
-        onClick={() => store.set({ member: 'guest', mode: 'season', noLive: false, tz: 'Asia/Seoul', geo: 'ok', expired: false })}
+        onClick={() => store.set({ member: 'guest', mode: 'season', noLive: false, tz: 'Asia/Seoul', geo: 'ok', expired: false, l3Device: false })}
       >
         설정 기본값으로
       </button>
