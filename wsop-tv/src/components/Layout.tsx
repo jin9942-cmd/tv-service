@@ -74,14 +74,24 @@ function Header() {
         </nav>
         <div className="header-user">
           {auth.tier === 'guest' ? (
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => gate.requireSignIn({ signInFor: 'continue' })}
-              title="Demo GGPass sign-in — no credentials collected"
-              disabled={gate.isOpen}
-            >
-              Sign in
-            </button>
+            <>
+              <button
+                className="btn btn-ghost btn-sm header-signup"
+                onClick={() => gate.requireSignIn({ signInFor: 'continue', mode: 'signup' })}
+                title="Demo GGPass sign-up — no account is created"
+                disabled={gate.isOpen}
+              >
+                Sign up
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => gate.requireSignIn({ signInFor: 'continue' })}
+                title="Demo GGPass sign-in — no credentials collected"
+                disabled={gate.isOpen}
+              >
+                Sign in
+              </button>
+            </>
           ) : (
             <Link to="/me" className="user-chip" title="My WSOP">
               <span className="user-dot" />

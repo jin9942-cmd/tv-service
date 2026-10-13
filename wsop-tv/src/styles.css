@@ -2389,3 +2389,33 @@ code {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* Header sign up next to sign in */
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-signup {
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+
+.modal-switch {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.modal-switch .link-btn {
+  min-height: 32px;
+  padding: 0 2px;
+}
+
+@media (max-width: 380px) {
+  .header-user .btn-sm {
+    padding: 0 10px;
+  }
+}

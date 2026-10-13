@@ -27,6 +27,8 @@ interface SignInRequest {
   signInFor: string;
   /** Runs once the user is signed in, so they end up exactly where they were. */
   then?: () => void;
+  /** Open on the "create account" step instead of sign-in. */
+  mode?: 'signin' | 'signup';
 }
 
 type GateRequest = PlaybackRequest | SignInRequest;
@@ -91,7 +93,7 @@ export function GateProvider({ children }: { children: ReactNode }) {
     <GateContext.Provider value={api}>
       {children}
       {req && isSignInRequest(req) && (
-        <SignInModal reason={req.signInFor} onClose={() => setReq(null)} onSignIn={() => auth.signIn('free')} />
+        <SignInModal reason={req.signInFor} initialMode={req.mode ?? 'signin'} onClose={() => setReq(null)} onSignIn={() => auth.signIn('free')} />
       )}
       {req && !isSignInRequest(req) && (
         <GateModal req={req} tier={auth.tier} onClose={() => setReq(null)} onSignIn={() => auth.signIn('free')} onUpgrade={auth.setTier} />
@@ -115,7 +117,37 @@ function GGPassButton({ onSignIn }: { onSignIn: () => void }) {
   );
 }
 
-function SignInModal(props: { reason: string; onClose: () => void; onSignIn: () => void }) {
+function SignInModal(props: { reason: string; initialMode: 'signin' | 'signup'; onClose: () => void; onSignIn: () => void }) {
+  const [mode, setMode] = useState(props.initialMode);
+  if (mode === 'signup') {
+    return (
+      <Modal onClose={props.onClose} labelledBy="signin-title" variant="gate">
+        <p className="modal-kicker">Create account</p>
+        <h2 id="signin-title" className="modal-title">
+          Join WSOP TV with GGPass
+        </h2>
+        <p className="modal-body">
+          One GGPass account works across WSOP services. Joining is free — you get a free plan with follows, saved hands and{' '}
+          <strong>My WSOP</strong>. Upgrade to a WSOP+ plan any time.
+        </p>
+        <div className="modal-actions">
+          <button className="btn btn-primary btn-block" onClick={props.onSignIn} autoFocus>
+            Create GGPass account (demo)
+          </button>
+          <p className="fineprint">
+            In the real service this opens GGPass sign-up. This demo creates no account and collects no email, password or other
+            personal data — you are signed in as “Demo Viewer”.
+          </p>
+        </div>
+        <p className="modal-switch">
+          Already have a GGPass account?{' '}
+          <button className="link-btn" onClick={() => setMode('signin')}>
+            Sign in
+          </button>
+        </p>
+      </Modal>
+    );
+  }
   return (
     <Modal onClose={props.onClose} labelledBy="signin-title" variant="gate">
       <p className="modal-kicker">Sign-in required</p>
@@ -127,6 +159,12 @@ function SignInModal(props: { reason: string; onClose: () => void; onSignIn: () 
         signing in.
       </p>
       <GGPassButton onSignIn={props.onSignIn} />
+      <p className="modal-switch">
+        New to WSOP TV?{' '}
+        <button className="link-btn" onClick={() => setMode('signup')}>
+          Create an account
+        </button>
+      </p>
       <button className="btn btn-ghost btn-block" onClick={props.onClose}>
         Not now
       </button>
