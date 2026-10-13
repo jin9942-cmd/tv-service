@@ -213,6 +213,7 @@ export const defaultSeasonLayout: HomeSection[] = [
   { id: 'banner', visible: true, audiences: ALL },
   { id: 'liveNow', visible: true, audiences: ALL, emptyMode: 'countdown', showViewers: true },
   { id: 'todaySchedule', visible: true, audiences: ALL },
+  { id: 'exclusive', visible: true, audiences: ALL },
   { id: 'tournaments', visible: true, audiences: ALL },
   { id: 'strip', visible: true, audiences: ALL },
   { id: 'curation', visible: true, audiences: ALL },
@@ -226,6 +227,7 @@ export const defaultSeasonLayout: HomeSection[] = [
 
 export const defaultOffSeasonLayout: HomeSection[] = [
   { id: 'banner', visible: true, audiences: ALL },
+  { id: 'exclusive', visible: true, audiences: ALL },
   { id: 'curation', visible: true, audiences: ALL },
   { id: 'popular', visible: true, audiences: ALL },
   { id: 'continue', visible: true, audiences: SIGNED_IN },

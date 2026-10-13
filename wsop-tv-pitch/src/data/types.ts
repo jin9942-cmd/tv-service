@@ -135,6 +135,7 @@ export type HomeSectionId =
   | 'tournaments'
   | 'strip'
   | 'curation'
+  | 'exclusive'
   | 'popular'
   | 'plans'
   | 'continue'

@@ -49,6 +49,13 @@ export function viewersOf(s: Schedule, now: number) {
 export const liveNow = (list: Schedule[], now: number) =>
   list.filter((s) => s.visible && statusOf(s, now) === 'live').sort((a, b) => viewersOf(b, now) - viewersOf(a, now));
 
+/**
+ * Content taxonomy: (1) ESPN broadcasts — produced by ESPN, out of scope here; (2) YouTube broadcasts — feature
+ * tables simulcast on YouTube; (3) WSOP TV only — every bracelet final table, auto-produced (RFID → EBS, AI camera/mic, AI commentary).
+ */
+export type ContentSource = 'exclusive' | 'youtube' | 'studio';
+export const sourceOf = (s: Pick<Schedule, 'type'>): ContentSource => (s.type === 'Final Table' ? 'exclusive' : s.type === 'Feature Table' ? 'youtube' : 'studio');
+
 export const nextUpcoming = (list: Schedule[], now: number) =>
   list.filter((s) => s.visible && statusOf(s, now) === 'upcoming').sort((a, b) => a.start.localeCompare(b.start))[0];
 

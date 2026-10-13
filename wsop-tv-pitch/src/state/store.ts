@@ -46,6 +46,10 @@ export interface State {
   launchKey: number;
   /** Popups already shown; lower-priority ones appear on the next launch (HOME-R3). */
   seenPopups: string[];
+  /** WSOP TV-only final tables: AI commentary on/off (CMS › AI 자동 제작). */
+  aiCommentary: boolean;
+  /** Bracelet final tables covered by auto-production this year (goal ~250). */
+  autoCovered: number;
   /** Paid plan has lapsed: Basic/Premium members fall back to Free until they renew. */
   expired: boolean;
   schedules: Schedule[];
@@ -81,6 +85,8 @@ let state: State = {
   },
   launchKey: 0,
   seenPopups: [],
+  aiCommentary: true,
+  autoCovered: 34,
   expired: false,
   schedules: seedSchedules,
   layouts: { season: defaultSeasonLayout, offseason: defaultOffSeasonLayout },

@@ -4,6 +4,7 @@ import { Timeline } from './Timeline';
 import { HomeManager } from './HomeManager';
 import { Vocabulary } from './Vocabulary';
 import { AppVersion } from './AppVersion';
+import { AutoProduction } from './AutoProduction';
 
 type MenuKey = string;
 interface MenuItem {
@@ -34,6 +35,7 @@ const MENU: { group: string; items: MenuItem[] }[] = [
       { key: 'channels', label: '송출 채널 관리', req: 'CHN-001~003', tag: '제안' },
       { key: 'schedule', label: '편성표 관리', req: 'SCH-001~010', live: true },
       { key: 'live', label: '실시간 생중계 관리', req: 'LIV-001~006' },
+      { key: 'autoprod', label: 'AI 자동 제작', req: '신규 제안 · Bracelet 파이널 테이블 1인 운영 (RFID → EBS · AI 카메라·마이크 · AI 해설)', live: true, tag: '제안' },
     ],
   },
   {
@@ -140,6 +142,8 @@ export function Cms({ onOpenApp }: { onOpenApp: () => void }) {
           <HomeManager />
         ) : active === 'vocab' ? (
           <Vocabulary />
+        ) : active === 'autoprod' ? (
+          <AutoProduction />
         ) : active === 'appver' || active === 'maint' ? (
           <AppVersion focus={active === 'maint' ? 'maint' : 'version'} />
         ) : (

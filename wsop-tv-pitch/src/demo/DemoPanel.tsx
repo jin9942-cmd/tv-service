@@ -85,6 +85,8 @@ const SCENARIOS: Scenario[] = [
   { n: 14, group: 'CMS · 운영', text: '편성표: 편성 등록 → 라이브 자동 생성 → 앱 편성표·홈 반영 (SCH-003 · 007)', cms: true },
   { n: 15, group: 'CMS · 운영', text: '포커 용어 사전: Transcribe 반영 → 앱 자막 교정 (VOC-002 · 004)', cms: true },
   { n: 16, group: 'CMS · 운영', text: '앱 버전 관리: 강제 업데이트 · 점검 모드 → 앱 재실행 (APP-002 · 003)', cms: true },
+  { n: 17, group: 'WSOP TV 전용 · 자동 제작', text: '홈 “Only on WSOP TV” → 파이널 테이블 라이브 → AI 해설 오디오 · CC 자막', set: { member: 'free', geo: 'ok', noLive: false } },
+  { n: 18, group: 'WSOP TV 전용 · 자동 제작', text: 'CMS AI 자동 제작: 파이프라인 경고 → 수동 샷 지정 · AI 해설 OFF → 앱 오디오 반영', cms: true },
 ];
 
 export function ScenarioGuide({ onOpenCms }: { onOpenCms: () => void }) {

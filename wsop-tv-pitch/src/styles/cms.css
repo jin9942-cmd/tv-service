@@ -1330,3 +1330,182 @@ button.kpi:hover {
 .tl-list tr.is-sel td {
   background: #eef3ff;
 }
+
+/* AI auto-production */
+.ap-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ap-head h2 {
+  margin: 0;
+}
+
+.ap-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.ap-box {
+  overflow-x: auto;
+  margin-bottom: 14px;
+}
+
+.ap-tbl th small {
+  display: block;
+  font-weight: 500;
+  font-size: 10.5px;
+}
+
+.ap-sub {
+  display: block;
+  font-size: 11px;
+}
+
+.ap-manual {
+  margin-left: 4px;
+}
+
+.ap-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ap-dot::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ap-ok {
+  color: #1c7a3e;
+}
+
+.ap-warn {
+  color: #c77700;
+}
+
+.ap-wait {
+  color: #9aa3b2;
+}
+
+.ap-off {
+  color: #b42318;
+}
+
+.ap-done {
+  color: #3557d6;
+}
+
+.ap-grid {
+  margin-bottom: 14px;
+}
+
+.ap-alerts {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.ap-alerts li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f2f6;
+}
+
+.ap-alerts li > span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-size: 12.5px;
+}
+
+.ap-alerts small {
+  color: #c77700;
+}
+
+.ap-tax {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ap-tax li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--c-line);
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+
+.ap-tax li span {
+  color: var(--c-muted);
+}
+
+.ap-tax li.is-key {
+  border-color: var(--c-primary);
+  background: #f3f6ff;
+}
+
+.ap-road {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ap-step {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--c-line);
+  border-radius: 10px;
+  font-size: 12.5px;
+}
+
+.ap-step span:last-child {
+  color: var(--c-muted);
+}
+
+.ap-step-n {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--c-primary);
+}
+
+.ap-step-n small {
+  color: var(--c-muted);
+  font-weight: 600;
+}
+
+.ap-step.is-goal {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.ap-step.is-goal .ap-step-n {
+  color: #f0cf72;
+}
+
+.ap-step.is-goal span:last-child {
+  color: #c9ccd3;
+}

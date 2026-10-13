@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { toast, toggleAlarm, useStore } from '../../state/store';
 import { MyListButton } from '../MyList';
-import { eventLabel, seriesById, statusOf, useNow, viewersOf } from '../../state/selectors';
+import { eventLabel, seriesById, sourceOf, statusOf, useNow, viewersOf } from '../../state/selectors';
 import { fmtCount, fmtDateTime } from '../../lib/time';
 import { MockPlayer } from '../Player';
 import { Icon, Note, TierBadge, useEnv } from '../ui';
@@ -11,10 +11,13 @@ export function LivePlayer({ scheduleId }: { scheduleId: string }) {
   const env = useEnv();
   const now = useNow(1000);
   const schedules = useStore((s) => s.schedules);
+  const aiCommentary = useStore((s) => s.aiCommentary);
   const s = schedules.find((x) => x.id === scheduleId);
   if (!s) return <Missing />;
   const se = seriesById(s.seriesId);
   const status = statusOf(s, now);
+  const source = sourceOf(s);
+  const ai = source === 'exclusive' && aiCommentary;
 
   // Same event, other channels / languages on air at the same time.
   const siblings = schedules
@@ -37,6 +40,9 @@ export function LivePlayer({ scheduleId }: { scheduleId: string }) {
           tier={s.tier}
           contentTitle={s.title}
           viewers={`${fmtCount(viewersOf(s, now))} watching`}
+          auto={source === 'exclusive'}
+          ai={ai}
+          key={ai ? 'ai' : 'no-ai'}
         />
       ) : (
         <div className="player">
@@ -68,6 +74,14 @@ export function LivePlayer({ scheduleId }: { scheduleId: string }) {
             <Icon name="eye" size={13} /> {fmtCount(viewersOf(s, now))} watching now
           </p>
         )}
+        {source === 'exclusive' && (
+          <div className="excl-info">
+            <b>Only on WSOP TV</b>
+            <span>Every bracelet final table, produced automatically with AI cameras{ai ? ' and AI commentary' : ''}.</span>
+            <Note side="inline">③ WSOP TV 전용: RFID 업체 연동으로 카드·칩 데이터를 EBS가 자동 수신 → AI 카메라·마이크가 화면·오디오 구성 → AI 해설 · 운영자 1명이 전체 파이널 테이블 관제</Note>
+          </div>
+        )}
+        {source === 'youtube' && <p className="detail-meta muted">Also streaming on the WSOP YouTube channel</p>}
         {status === 'upcoming' && <UpcomingActions id={s.id} start={s.start} />}
         {status === 'ended' && <Note side="inline">LIVE-04 · VOD-02 Quick VOD: 라이브 종료 즉시 다시보기로 전환</Note>}
       </div>

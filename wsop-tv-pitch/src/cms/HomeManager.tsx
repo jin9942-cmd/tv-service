@@ -13,6 +13,7 @@ const SECTION_LABEL: Record<HomeSectionId, { ko: string; en: string; code: strin
   tournaments: { ko: '대회', en: 'Tournaments', code: 'HOME-05' },
   strip: { ko: '띠배너', en: 'Promo strip', code: 'HOME-06' },
   curation: { ko: '큐레이션 VOD', en: 'Curated VOD', code: 'HOME-07' },
+  exclusive: { ko: 'WSOP TV 전용 파이널 테이블', en: 'Only on WSOP TV', code: '추가' },
   popular: { ko: '인기 VOD', en: 'Top 10', code: 'HOME-08' },
   continue: { ko: '이어보기', en: 'Continue watching', code: 'HOME-09' },
   players: { ko: '선수', en: 'Players', code: 'HOME-10' },

@@ -13,6 +13,8 @@ const SKIP = 10;
 const ALL_QUALITIES = ['Auto', '1080p60', '1080p', '720p', '480p', '360p', '240p'];
 const SUBTITLES = ['Off', 'English (AI)', 'Español (AI)', 'Português (AI)', '한국어 (AI)'];
 const AUDIO_LIVE = ['English commentary', 'Español commentary', 'Table sound only'];
+// WSOP TV-only final tables are auto-produced: commentary comes from the AI commentator.
+const AUDIO_AI = ['AI commentary · English', 'AI commentary · Español', 'Table sound only'];
 const AUDIO_VOD = ['English commentary', 'Table sound only'];
 
 // Caption translations for the demo (the English line is built from the CMS vocabulary).
@@ -42,6 +44,10 @@ export function MockPlayer(props: {
   /** Jump request from outside (key moments). `n` changes on every request. */
   seek?: { t: number; n: number };
   markers?: number[];
+  /** Auto-produced final table (no human commentary). */
+  auto?: boolean;
+  /** AI commentary available on this auto-produced stream. */
+  ai?: boolean;
 }) {
   const env = useEnv();
   const geo = useStore((s) => s.geo);
@@ -58,7 +64,7 @@ export function MockPlayer(props: {
   const [menu, setMenu] = useState<Panel | null>(null);
   const [quality, setQuality] = useState('Auto');
   const [subtitle, setSubtitle] = useState('Off');
-  const [audio, setAudio] = useState('English commentary');
+  const [audio, setAudio] = useState(props.ai ? AUDIO_AI[0] : props.auto ? 'Table sound only' : 'English commentary');
   const [tick, setTick] = useState(0);
   const paywallShown = useRef(false);
   const previewEnded = access === 'preview' && previewElapsed >= PREVIEW_SECONDS;
@@ -149,7 +155,7 @@ export function MockPlayer(props: {
 
   const captionIdx = Math.floor(tick / 4) % CAPTION_LINES.length;
   const showCaption = subtitle !== 'Off' && playing && canPlay;
-  const audioOptions = props.live ? AUDIO_LIVE : AUDIO_VOD;
+  const audioOptions = props.ai ? AUDIO_AI : props.auto ? ['Table sound only'] : props.live ? AUDIO_LIVE : AUDIO_VOD;
 
   return (
     <div className="player">
@@ -162,6 +168,7 @@ export function MockPlayer(props: {
                 <Icon name="eye" size={12} /> {props.viewers}
               </span>
             )}
+            {props.ai && audio.startsWith('AI') && <span className="ai-chip">AI commentary</span>}
           </span>
         )}
 

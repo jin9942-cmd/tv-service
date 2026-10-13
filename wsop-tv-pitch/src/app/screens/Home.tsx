@@ -3,7 +3,7 @@ import type { HomeSectionId, Member, Schedule, Tier, Vod } from '../../data/type
 import { PLANS, PLAN_ORDER } from '../../data/plans';
 import { banners, curations, notices, players, series, stripBanners, vods } from '../../data/mock';
 import { removeContinue, toggleAlarm, toast, useStore } from '../../state/store';
-import { accessFor, eventLabel, liveNow, nextUpcoming, phaseOf, schedulesOnDay, seriesById, statusOf, useNow, viewersOf, vodById } from '../../state/selectors';
+import { accessFor, eventLabel, liveNow, sourceOf, nextUpcoming, phaseOf, schedulesOnDay, seriesById, statusOf, useNow, viewersOf, vodById } from '../../state/selectors';
 import { addDays, dateKey, fmtCount, fmtCountdown, fmtDate, fmtDuration, fmtTime } from '../../lib/time';
 import { Art, Icon, LiveBadge, LockIcon, Note, ProfileAvatar, SectionHead, TierBadge, useEnv } from '../ui';
 
@@ -20,6 +20,7 @@ export function Home() {
     tournaments: () => <TournamentsRow now={now} />,
     strip: () => <Strip />,
     curation: () => <Curations />,
+    exclusive: () => <ExclusiveSection now={now} schedules={schedules} />,
     popular: () => <PopularVod />,
     plans: () => <PlansSection />,
     continue: () => <ContinueRow />,
@@ -182,6 +183,7 @@ export function LiveCard({ s, now, wide, viewers = true }: { s: Schedule; now: n
       <Art hue={se.hue + (s.lang === 'ES' ? 30 : 0)}>
         <span className="art-tl">
           <LiveBadge small />
+          {sourceOf(s) === 'exclusive' && <span className="excl-tag">Only on WSOP TV</span>}
         </span>
         <span className="art-tr">
           <TierBadge tier={s.tier} />
@@ -279,6 +281,7 @@ export function ScheduleRow({ s, now }: { s: Schedule; now: number }) {
         <span className="sched-body">
           <span className="sched-title">
             {s.id.startsWith('sc-n') && <span className="new-tag">New</span>}
+            {sourceOf(s) === 'exclusive' && <span className="excl-dot" title="Only on WSOP TV" aria-label="Only on WSOP TV" />}
             {s.title}
           </span>
           <span className="sched-meta">
@@ -295,6 +298,63 @@ export function ScheduleRow({ s, now }: { s: Schedule; now: number }) {
         </button>
       )}
     </li>
+  );
+}
+
+// ---- only on WSOP TV: every bracelet final table -------------------------------------------
+
+/** Content group (3): bracelet final tables streamed only on WSOP TV, auto-produced with AI. Live → upcoming → replays. */
+function ExclusiveSection({ now, schedules }: { now: number; schedules: Schedule[] }) {
+  const env = useEnv();
+  const covered = useStore((s) => s.autoCovered);
+  const ai = useStore((s) => s.aiCommentary);
+  const fts = schedules.filter((s) => s.visible && sourceOf(s) === 'exclusive' && s.lang === 'EN');
+  const live = fts.filter((s) => statusOf(s, now) === 'live');
+  const upcoming = fts.filter((s) => statusOf(s, now) === 'upcoming').sort((a, b) => a.start.localeCompare(b.start)).slice(0, 3);
+  const replays = fts
+    .filter((s) => statusOf(s, now) === 'ended' && s.vodId)
+    .sort((a, b) => b.start.localeCompare(a.start))
+    .slice(0, 3);
+  if (!live.length && !upcoming.length && !replays.length) return null;
+  return (
+    <section className="sec excl-sec">
+      <SectionHead title="Only on WSOP TV" note="콘텐츠 3분류 중 ③ WSOP TV 전용 · 모든 Bracelet 파이널 테이블 (연 ~250개) · RFID→EBS · AI 카메라·마이크 · AI 해설로 자동 제작" />
+      <p className="excl-lead">
+        Every bracelet final table, live and on demand.{' '}
+        <span className="muted">
+          Final table {covered} of ~250 this year{ai ? ' · AI commentary' : ''}
+        </span>
+      </p>
+      <div className="hscroll">
+        {live.map((s) => (
+          <LiveCard key={s.id} s={s} now={now} />
+        ))}
+        {upcoming.map((s) => (
+          <button key={s.id} className="card excl-card" onClick={() => env.push({ name: 'live', scheduleId: s.id })}>
+            <Art hue={seriesById(s.seriesId).hue}>
+              <span className="art-tl excl-time">{fmtTime(s.start, env.tz)}</span>
+              <span className="art-tr">
+                <TierBadge tier={s.tier} />
+              </span>
+            </Art>
+            <span className="card-title">{s.title}</span>
+            <span className="card-meta">{fmtDate(s.start, env.tz)} · Upcoming</span>
+          </button>
+        ))}
+        {replays.map((s) => (
+          <button key={s.id} className="card excl-card" onClick={() => env.push({ name: 'vod', vodId: s.vodId! })}>
+            <Art hue={seriesById(s.seriesId).hue + 20}>
+              <span className="art-tl excl-time">Replay</span>
+              <span className="art-tr">
+                <TierBadge tier={s.tier} />
+              </span>
+            </Art>
+            <span className="card-title">{s.title}</span>
+            <span className="card-meta">{eventLabel(s)}</span>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
