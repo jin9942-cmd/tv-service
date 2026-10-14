@@ -32,7 +32,7 @@ export function Button({ variant = 'secondary', size = 'md', className, ...rest 
 // ---- status badges -----------------------------------------------------------------------
 
 export function StatusBadge({ status, delayMin = 30, size = 'md' }: { status: StreamStatus; delayMin?: number; size?: 'sm' | 'md' }) {
-  const base = cx('label inline-flex items-center gap-1.5 rounded-[4px] tnum', size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1');
+  const base = cx('label inline-flex shrink-0 items-center gap-1.5 rounded-[4px] whitespace-nowrap tnum', size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1');
   if (status === 'live')
     return (
       <span className={cx(base, 'bg-live text-white')}>
