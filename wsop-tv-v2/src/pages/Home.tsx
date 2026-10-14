@@ -1,11 +1,9 @@
 import { Link } from 'react-router-dom';
-import { archive, dayById, events, hands, players, series } from '../data/mock';
-import { count } from '../lib/format';
-import { dayKey, fmtTime } from '../lib/time';
+import { archive, dayById, events, hands, series } from '../data/mock';
 import { useApp } from '../state/app';
-import { ArchiveCard, Art, BroadcastCard, HandCard, useDayStatus } from '../components/cards';
+import { ArchiveCard, Art, BroadcastCard, HandCard } from '../components/cards';
 import { Billboard, UpcomingCard } from '../components/Billboard';
-import { Avatar, BraceletIcon, CountryCode, EmptyState, Page, SectionHeader, StatusBadge } from '../components/ui';
+import { BraceletIcon, EmptyState, Page, SectionHeader } from '../components/ui';
 
 export function Home() {
   const { state, signedIn } = useApp();
@@ -28,7 +26,7 @@ export function Home() {
     <>
       <Billboard />
       <Page className="space-y-10">
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-10">
           <div className="min-w-0 space-y-10">
             {signedIn && continueItems.length > 0 && (
               <Row title="Continue Watching">
@@ -104,10 +102,6 @@ export function Home() {
             </Row>
           </div>
 
-          <aside className="space-y-6">
-            <RankingWidget />
-            <TodayWidget />
-          </aside>
         </div>
       </Page>
     </>
@@ -121,66 +115,4 @@ function Row({ title, kicker, action, children }: { title: string; kicker?: stri
       <div className="hscroll">{children}</div>
     </section>
   );
-}
-
-function RankingWidget() {
-  const top = [...players].sort((a, b) => b.poyPoints - a.poyPoints).slice(0, 5);
-  return (
-    <section className="rounded-panel border border-line bg-surface p-4">
-      <SectionHeader kicker="2026 season" title="Player of the Year" />
-      <ol className="space-y-2">
-        {top.map((p, i) => (
-          <li key={p.id}>
-            <Link to={`/players/${p.id}`} className="flex items-center gap-3 rounded-chip p-1.5 hover:bg-surface-2">
-              <span className="w-5 text-center text-sm font-black text-subtle tnum">{i + 1}</span>
-              <Avatar name={p.name} hue={p.hue} size={30} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">{p.name}</span>
-                <CountryCode cc={p.cc} />
-              </span>
-              <span className="text-sm font-bold tnum">{count(p.poyPoints)}</span>
-            </Link>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function TodayWidget() {
-  const { state } = useApp();
-  const today = dayKey(Date.now(), state.tz);
-  const list = events
-    .flatMap((e) => e.days.map((d) => ({ e, d })))
-    .filter((x) => dayKey(x.d.start, state.tz) === today || x.d.status === 'live' || x.d.status === 'delayed')
-    .sort((a, b) => a.d.start.localeCompare(b.d.start));
-  return (
-    <section className="rounded-panel border border-line bg-surface p-4">
-      <SectionHeader kicker="Today" title="Schedule" action={<Link to="/schedule" className="text-xs font-semibold text-muted hover:text-text">Full →</Link>} />
-      {list.length ? (
-        <ul className="space-y-1">
-          {list.map(({ e, d }) => (
-            <li key={d.id}>
-              <Link to={`/watch/${d.id}`} className="flex items-start gap-3 rounded-chip p-2 hover:bg-surface-2">
-                <span className="w-16 pt-0.5 text-xs font-semibold text-muted tnum">{fmtTime(d.start, state.tz)}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">{e.name}</span>
-                  <span className="text-xs text-muted">{d.label}</span>
-                </span>
-                <TodayBadge dayId={d.id} />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted">No broadcasts today.</p>
-      )}
-    </section>
-  );
-}
-
-function TodayBadge({ dayId }: { dayId: string }) {
-  const ref = dayById(dayId)!;
-  const status = useDayStatus(ref.day);
-  return <StatusBadge status={status} size="sm" />;
 }
