@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
+import { frameFrom } from '../lib/media';
 import type { Day, TourEvent } from '../data/types';
 import { eventById, events, hands, playerById, series, seriesById } from '../data/mock';
 import { count, money } from '../lib/format';
@@ -188,7 +189,7 @@ function DayRow({ e, d }: { e: TourEvent; d: Day }) {
   return (
     <li>
       <Link to={`/watch/${d.id}`} className="group flex items-center gap-4 rounded-card border border-line bg-surface p-3 transition-colors duration-150 hover:border-line-strong">
-        <Art hue={200 + e.number * 3} className="w-32 shrink-0 sm:w-40">
+        <Art hue={200 + e.number * 3} image={frameFrom(e.number + e.days.indexOf(d) * 3)} className="w-32 shrink-0 sm:w-40">
           <span className="absolute inset-0 flex items-center justify-center" aria-hidden>
             <Icon name="play" size={22} className="text-white/70" />
           </span>

@@ -66,7 +66,7 @@ function LiveScreen({ dayId, startAt = null, clipId = null }: { dayId?: string; 
             </Link>
           </div>
           <div className="hscroll" role="tablist" aria-label="Tournaments">
-            {entries.map((x) => (
+            {entries.map((x) => (forced && x.e.id === forced.event.id ? { e: forced.event, d: forced.day, status: st(forced.day) } : x)).map((x) => (
               <TournamentChip key={x.e.id} x={x} on={x.e.id === selected.e.id} onClick={() => pickEvent(x)} />
             ))}
           </div>
@@ -139,7 +139,13 @@ function StreamCard({ x, t, i, on, onClick }: { x: Entry; t: TableFeed; i: numbe
   const delay = st === 'delayed' ? tableDelay(t, x.status) : 0;
   const access = tableAccess(x.d, i);
   const locked = gateForAccess(access, state.scenario) !== 'ok';
-  const seats = i === 0 ? finalTableSeats.length : Math.max(2, 4 - i);
+  // Final table = one table filmed by several cameras; earlier days = several tables.
+  const finalTable = x.d.label === 'Final Table';
+  const desc = finalTable
+    ? ({ 'Main Feed': `Main broadcast · commentary + graphics · ${finalTableSeats.length} players`, 'Clean Feed': 'Same table · no graphics · natural sound', 'Player Cam': 'Isolated player camera', 'Overhead Cam': 'Bird’s-eye view of the table' } as Record<string, string>)[t.name] ?? 'Camera feed'
+    : i === 0
+      ? 'Main stream · commentary + graphics'
+      : 'Outer table · natural sound';
   return (
     <button
       onClick={onClick}
@@ -152,7 +158,7 @@ function StreamCard({ x, t, i, on, onClick }: { x: Entry; t: TableFeed; i: numbe
       </span>
       <span className="mt-2 block text-[15px] font-bold">{t.name}</span>
       <span className="block text-xs text-muted">
-        {i === 0 ? `Main stream · commentary · ${seats} featured players` : st === 'late' || st === 'interrupted' ? `Additional · ${t.name.replace('Outer ', '')} · natural sound` : `Additional · ${seats} featured players · natural sound`}
+        {desc}
       </span>
       {on && <span className="label mt-1.5 block text-[10px] text-live">Now watching</span>}
     </button>

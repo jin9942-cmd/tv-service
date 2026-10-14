@@ -1,5 +1,6 @@
 // Content cards shared by Home, Live, Hands, Players and Archive.
 import { Link, useNavigate } from 'react-router-dom';
+import { frameFrom } from '../lib/media';
 import type { ArchiveItem, Day, Hand, Player, TourEvent } from '../data/types';
 import { HERO_DAY_ID, eventById, playerById, seriesById } from '../data/mock';
 import { chips, compact, duration } from '../lib/format';
@@ -9,11 +10,19 @@ import { HAND_META, HandGlyph } from '../features/player/markers';
 import { AccessBadge, Avatar, Icon, Spoiler, StatusBadge, cx } from './ui';
 
 /** Abstract artwork for a broadcast (no images): stage gradient + event number. */
-export function Art({ hue = 220, label, children, className }: { hue?: number; label?: string; children?: React.ReactNode; className?: string }) {
+/** Card artwork: a real still from the CC footage when `image` is given, otherwise a neutral stage. */
+export function Art({ hue = 220, label, children, className, image }: { hue?: number; label?: string; children?: React.ReactNode; className?: string; image?: string }) {
   return (
     <div className={cx('stage relative aspect-video overflow-hidden rounded-card', className)} style={{ ['--stage-a' as string]: `hsl(${hue} 16% 17%)`, ['--stage-b' as string]: `hsl(${hue} 20% 7%)` }}>
-      <div className="absolute top-[24%] left-[18%] h-[52%] w-[64%] rounded-[50%] border border-white/10" aria-hidden />
-      {label && <span className="absolute right-3 bottom-2 text-4xl font-black text-white/[0.07] tnum select-none">{label}</span>}
+      {image ? (
+        <>
+          <img src={image} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/25" aria-hidden />
+        </>
+      ) : (
+        <div className="absolute top-[24%] left-[18%] h-[52%] w-[64%] rounded-[50%] border border-white/10" aria-hidden />
+      )}
+      {label && !image && <span className="absolute right-3 bottom-2 text-4xl font-black text-white/[0.07] tnum select-none">{label}</span>}
       {children}
     </div>
   );
@@ -29,7 +38,7 @@ export function BroadcastCard({ event, day, wide, progress }: { event: TourEvent
   const status = useDayStatus(day);
   return (
     <Link to={`/watch/${day.id}`} className={cx('group block', wide ? 'w-80 sm:w-96' : 'w-64 sm:w-72')}>
-      <Art hue={200 + event.number * 3} label={`#${event.number}`} className="transition-transform duration-200 group-hover:scale-[1.015]">
+      <Art hue={200 + event.number * 3} image={frameFrom(event.number + event.days.indexOf(day) * 3)} className="transition-transform duration-200 group-hover:scale-[1.015]">
         <span className="absolute top-2 left-2">
           <StatusBadge status={status} size="sm" />
         </span>
@@ -60,7 +69,7 @@ export function HandCard({ hand, className }: { hand: Hand; className?: string }
     <div className={cx('group rounded-card border border-line bg-surface p-3 transition-colors duration-150 hover:border-line-strong', className)}>
       {/* clip=… lets the player open just this hand when the full broadcast is locked (free highlights). */}
       <Link to={`/watch/${hand.dayId}?t=${hand.t}&clip=${hand.id}`} className="block rounded-card">
-      <Art hue={210 + ev.number * 5}>
+      <Art hue={210 + ev.number * 5} image={frameFrom(Number(hand.id.slice(1)) * 5)}>
         <span className="absolute top-2 left-2 flex items-center gap-1.5 rounded-[4px] bg-black/70 px-1.5 py-1">
           <HandGlyph type={hand.type} size={14} />
           <span className="label text-[10px]">{m.label}</span>
@@ -124,7 +133,7 @@ export function ArchiveCard({ item }: { item: ArchiveItem }) {
   return (
     <div className="group w-72">
       <button onClick={play} className="block w-full rounded-card text-left">
-      <Art hue={item.hue} label={String(item.year)}>
+      <Art hue={item.hue} image={frameFrom(item.year)}>
         <span className="label absolute top-2 left-2 rounded-[3px] bg-black/70 px-1.5 py-0.5 text-[10px]">Classic · {item.year}</span>
         <span className="absolute top-2 right-2">
           <AccessBadge access={item.access} locked={!canWatch(item.access, state.scenario)} />

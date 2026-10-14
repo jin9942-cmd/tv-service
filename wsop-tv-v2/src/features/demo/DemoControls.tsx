@@ -16,7 +16,8 @@ const SCENARIOS: { v: AccountScenario; label: string }[] = [
 
 export function DemoControls() {
   const { state, set } = useApp();
-  const [open, setOpen] = useState(true);
+  // Collapsed by default so the product UI is what people see first.
+  const [open, setOpen] = useState(false);
 
   return (
     <div className="fixed right-3 bottom-20 z-[58] w-[19rem] font-mono text-[12px] md:bottom-4">

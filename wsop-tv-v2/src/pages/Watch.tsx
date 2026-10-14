@@ -222,7 +222,9 @@ export function WatchInner({
   const delays = [...new Set(day.tables.map((t) => tableDelay(t, status)))];
   const multiAvailable = Math.min(caps.multiview, day.tables.length);
 
-  const panel = <SidePanel stacks={stacks} phase={phase} tables={day.tables} dayStatus={status} mainTable={mainTable} onSelectTable={(id) => (setMainTable(id), setAudioTable(id))} spoilerKey={dayId} />;
+  const panel = <SidePanel stacks={stacks} phase={phase} tables={day.tables} dayStatus={status} mainTable={mainTable} onSelectTable={(id) => (setMainTable(id), setAudioTable(id))} spoilerKey={dayId} bb={isLive ? event.blinds?.bb : undefined} />;
+  // Broadcast bug: event · level · blinds/ante · players left (live only — replays show the event and day).
+  const stageInfo = { event: event.name.replace(' World Championship', ''), day: day.label, level: isLive ? event.level : undefined, blinds: isLive ? event.blinds : undefined, left: isLive ? event.remaining : undefined };
 
   return (
     <Page className="max-w-[96rem] py-4 sm:py-6">
@@ -309,6 +311,7 @@ export function WatchInner({
                             compact={views > 1}
                             hue={220 + i * 25}
                             muted={muted || (views > 1 && audioTable !== t.id)}
+                            info={stageInfo}
                             media={(() => {
                               // Real footage (v1): one moving video in single view, stills in multiview tiles.
                               const ti = day.tables.indexOf(t);
@@ -646,12 +649,17 @@ function Overview({ eventId, dayId, delayMin, status }: { eventId: string; dayId
   const { event, day } = dayById(dayId)!;
   const se = seriesById(event.seriesId);
   const started = event.entrants > 0;
+  const live = status === 'live' || status === 'delayed';
   const cells: [string, ReactNode][] = [
+    ['Game', event.game],
     ['Buy-in', event.buyIn ? money(event.buyIn) : 'Invitational'],
     ['Entries', started ? event.entrants.toLocaleString('en-US') : '—'],
     ['Prize pool', started ? money(event.prizePool) : 'TBD'],
+    ['First prize', started ? money(event.firstPrize) : 'TBD'],
     ['Players left', started ? event.remaining.toLocaleString('en-US') : '—'],
     ['Level', started ? `Level ${event.level}` : '—'],
+    ['Blinds', live && event.blinds ? `${chips(event.blinds.sb)} / ${chips(event.blinds.bb)} · ${chips(event.blinds.ante)} BB ante` : '—'],
+    ['Chips in play', started ? `${chips(event.entrants * event.startingStack)} (${chips(event.startingStack)} start)` : `${chips(event.startingStack)} starting stack`],
     [
       'Started',
       <>

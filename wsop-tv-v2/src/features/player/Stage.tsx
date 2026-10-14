@@ -1,4 +1,9 @@
-// Player mock: a charcoal "stage" with a table outline and broadcast overlays. No video files, no felt, no props.
+// Player picture with broadcast graphics, laid out the way poker TV does it:
+//  - top right: event bug (event · level · blinds/ante · players left)
+//  - bottom left: the hand box — the two players in the hand with stacks (Pro adds hole cards and equity)
+//  - bottom right: pot (Pro adds the board)
+//  - Pro only, left: chip-count leaderboard in big blinds
+// Off shows the clean picture. Real footage (or a neutral stage) sits underneath.
 import type { OverlayLevel } from '../../data/types';
 import { playerById } from '../../data/mock';
 import { chips } from '../../lib/format';
@@ -6,7 +11,7 @@ import { cx } from '../../components/ui';
 import type { SeatStack } from '../../state/stacks';
 import { EQUITY } from '../../state/stacks';
 
-/** The hand currently being played on the feature table (drives Basic/Pro overlays and the Current Hand tab). */
+/** The hand currently being played on the feature table (drives the overlays and the Current Hand tab). */
 export const CURRENT_HAND = {
   number: 214,
   a: 'p04',
@@ -14,26 +19,36 @@ export const CURRENT_HAND = {
   aCards: 'A♠ K♠',
   bCards: 'Q♥ Q♦',
   board: ['K♦', '9♠', '4♣', '2♥', 'J♠'],
-  pots: [12_400_000, 31_800_000, 64_500_000],
+  // Blinds 1.5M / 3M, 3M big-blind ante. Pot at the start of each street: flop, turn, river.
+  pots: [47_500_000, 77_500_000, 129_500_000],
   actions: [
-    'Han raises to 4.8M from the cutoff',
-    'Whitfield three-bets to 12.4M',
-    'Han calls',
-    'Flop K♦ 9♠ 4♣ — Whitfield bets 9.6M, Han calls',
-    'Turn 2♥ — Whitfield checks, Han bets 16.4M, Whitfield calls',
-    'River J♠ — action on Whitfield',
+    'Han raises to 7.5M from the cutoff',
+    'Whitfield three-bets to 20M on the button',
+    'Blinds fold — Han calls',
+    'Flop K♦ 9♠ 4♣ — Han checks, Whitfield bets 15M, Han calls',
+    'Turn 2♥ — Han leads for 26M, Whitfield calls',
+    'River J♠ — Han checks, action on Whitfield',
   ],
 };
 
-const SEAT_POS = [
-  [50, 79],
-  [20, 72],
-  [12, 44],
-  [34, 13],
-  [50, 10],
-  [76, 16],
-  [88, 44],
-];
+export interface StageInfo {
+  event: string;
+  day: string;
+  level?: number;
+  blinds?: { sb: number; bb: number; ante: number };
+  left?: number;
+}
+
+const lastName = (id: string) => playerById(id).name.split(' ').slice(-1)[0];
+const isRed = (card: string) => card.includes('♥') || card.includes('♦');
+
+function Card({ c, size = 'sm' }: { c: string; size?: 'sm' | 'md' }) {
+  return (
+    <span className={cx('inline-flex items-center justify-center rounded-[3px] bg-white font-bold tnum', size === 'md' ? 'h-6 w-[18px] text-[11px] sm:h-7 sm:w-5 sm:text-xs' : 'h-5 w-4 text-[10px]', isRed(c) ? 'text-[#c0262d]' : 'text-ink')}>
+      {c}
+    </span>
+  );
+}
 
 export function Stage({
   overlay,
@@ -46,6 +61,7 @@ export function Stage({
   hue = 220,
   muted,
   media,
+  info,
 }: {
   overlay: OverlayLevel;
   tableName: string;
@@ -57,13 +73,18 @@ export function Stage({
   compact?: boolean;
   hue?: number;
   muted?: boolean;
-  /** Real footage behind the overlays (v1 look): a still, and a looping muted video while it plays. */
+  /** Real footage behind the graphics: a still, and a looping muted video while it plays. */
   media?: { poster: string; video?: string; start?: number };
+  /** Event context for the bug (top right). */
+  info?: StageInfo;
 }) {
   const h = CURRENT_HAND;
   const eq = EQUITY[phase];
   const shownBoard = h.board.slice(0, phase === 0 ? 3 : phase === 1 ? 4 : 5);
-  const seatOrder = [...seats].sort((x, y) => x.playerId.localeCompare(y.playerId));
+  const stackOf = (id: string) => seats.find((s) => s.playerId === id)?.stack ?? 0;
+  const bb = info?.blinds?.bb;
+  const inBb = (n: number) => (bb ? `${Math.round(n / bb)} bb` : '');
+  const leaders = [...seats].sort((x, y) => y.stack - x.stack);
 
   return (
     <div className="stage relative size-full overflow-hidden" style={{ ['--stage-a' as string]: `hsl(${hue} 14% 15%)`, ['--stage-b' as string]: `hsl(${hue} 18% 6%)` }}>
@@ -71,99 +92,98 @@ export function Stage({
         <>
           <img src={media.poster} alt="" className="absolute inset-0 size-full object-cover" />
           {media.video && playing && <video key={media.video} className="absolute inset-0 size-full object-cover" src={`${media.video}#t=${media.start ?? 0}`} poster={media.poster} autoPlay loop muted playsInline />}
-          {/* keep overlays readable over real footage */}
-          <div className={cx('absolute inset-0', overlay === 'off' ? 'bg-black/5' : 'bg-gradient-to-b from-black/45 via-black/15 to-black/55')} />
         </>
       ) : (
-        /* table outline */
         <div className="absolute top-[22%] left-[17%] h-[56%] w-[66%] rounded-[50%] border border-white/12 shadow-[inset_0_0_80px_rgb(0_0_0/0.6)]">
           <div className="absolute inset-[7%] rounded-[50%] border border-gold/20" />
         </div>
       )}
-      {!compact && <span className="label absolute top-3 left-1/2 -translate-x-1/2 text-[10px] text-white/45">{tableName}</span>}
 
-      {/* playback pulse (shows the mock is "running") */}
-      {playing && (
-        <span className="absolute right-3 bottom-3 flex items-end gap-0.5" aria-hidden>
-          {[0, 1, 2].map((i) => (
-            <i key={i} className="live-dot block w-1 rounded-sm bg-white/40" style={{ height: 6 + i * 4, animationDelay: `${i * 0.2}s` }} />
-          ))}
-        </span>
+      {muted && !compact && <span className="label absolute top-3 right-3 rounded-[3px] bg-black/60 px-1.5 py-0.5 text-[10px] text-white/70">Muted</span>}
+
+      {/* Multiview tiles: just the feed name and pot */}
+      {compact && overlay !== 'off' && (
+        <span className="absolute right-1.5 bottom-1.5 rounded-[3px] bg-black/75 px-1.5 py-0.5 text-[9px] font-bold tnum">Pot {chips(h.pots[phase])}</span>
       )}
-      {muted && !compact && <span className="label absolute right-3 bottom-3 text-[10px] text-white/50">Muted</span>}
 
-      {overlay !== 'off' && (
+      {!compact && overlay !== 'off' && (
         <>
-          {/* pot */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-            <p className={cx('label text-white/60', compact ? 'text-[8px]' : 'text-[10px]')}>Pot</p>
-            <p className={cx('font-black tnum', compact ? 'text-sm' : 'text-lg sm:text-2xl')}>{chips(h.pots[phase])}</p>
-            {overlay === 'pro' && !compact && (
-              <p className="mt-1 flex justify-center gap-1 tnum">
-                {shownBoard.map((c) => (
-                  <span key={c} className="rounded-[3px] bg-white/90 px-1 text-[11px] font-bold text-ink">
-                    {c}
+          {/* event bug */}
+          {info && (
+            <div className="absolute top-3 right-3 hidden overflow-hidden rounded-[4px] text-right shadow-lg sm:block">
+              <p className="bg-gold px-2.5 py-1 text-[10px] font-black tracking-wide text-ink uppercase">
+                {info.event} · {info.day}
+              </p>
+              <p className="bg-black/80 px-2.5 py-1 text-[10px] font-semibold text-white/90 tnum">
+                {info.level ? `Level ${info.level}` : tableName}
+                {info.blinds && ` · ${chips(info.blinds.sb)}/${chips(info.blinds.bb)} (${chips(info.blinds.ante)} ante)`}
+                {info.left ? ` · ${info.left} left` : ''}
+              </p>
+            </div>
+          )}
+
+          {/* Pro: chip counts in big blinds */}
+          {overlay === 'pro' && (
+            <div className="absolute top-12 left-3 hidden w-[24%] max-w-56 overflow-hidden rounded-[4px] bg-black/75 shadow-lg md:block">
+              <p className="label bg-white/10 px-2 py-1 text-[9px] text-gold-strong">Chip counts</p>
+              <ol className="px-2 py-1">
+                {leaders.map((s, i) => (
+                  <li key={s.playerId} className={cx('flex items-center gap-1.5 py-[3px] text-[10px] tnum', (s.playerId === h.a || s.playerId === h.b) && 'text-gold-strong')}>
+                    <span className="w-3 text-white/50">{i + 1}</span>
+                    <span className="min-w-0 flex-1 truncate font-semibold">{lastName(s.playerId)}</span>
+                    <span>{chips(s.stack)}</span>
+                    {bb && <span className="w-9 text-right text-white/55">{inBb(s.stack)}</span>}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {/* hand box: the two players in the hand */}
+          <div className="absolute bottom-3 left-3 w-[46%] max-w-80 overflow-hidden rounded-[4px] shadow-lg sm:bottom-[19%]">
+            {[
+              { id: h.a, cards: h.aCards, eq: eq.a },
+              { id: h.b, cards: h.bCards, eq: eq.b },
+            ].map((row) => (
+              <div key={row.id} className="flex items-center gap-2 border-b border-white/10 bg-black/80 px-2 py-1 last:border-0 sm:py-1.5">
+                {overlay === 'pro' && (
+                  <span className="flex gap-0.5">
+                    {row.cards.split(' ').map((c) => (
+                      <Card key={c} c={c} size="md" />
+                    ))}
                   </span>
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[11px] font-bold sm:text-[13px]">{playerById(row.id).name}</span>
+                  <span className="block text-[10px] text-white/65 tnum">
+                    {chips(stackOf(row.id))}
+                    {bb && ` · ${inBb(stackOf(row.id))}`}
+                  </span>
+                </span>
+                {overlay === 'pro' && <span className={cx('text-sm font-black tnum sm:text-base', row.eq >= 50 ? 'text-gold-strong' : 'text-white/80')}>{row.eq}%</span>}
+              </div>
+            ))}
+          </div>
+
+          {/* pot (+ board on Pro) */}
+          <div className="absolute right-3 bottom-3 overflow-hidden rounded-[4px] text-right shadow-lg sm:bottom-[19%]">
+            {overlay === 'pro' && (
+              <p className="flex justify-end gap-0.5 bg-black/80 px-2 pt-1.5 pb-1">
+                {shownBoard.map((c) => (
+                  <Card key={c} c={c} />
                 ))}
               </p>
             )}
+            <p className="bg-black/80 px-2.5 py-1">
+              <span className="label mr-1.5 text-[9px] text-white/60">Pot</span>
+              <span className="text-sm font-black tnum sm:text-base">{chips(h.pots[phase])}</span>
+            </p>
           </div>
-
-          {/* seats */}
-          {seatOrder.map((s, i) => {
-            const p = playerById(s.playerId);
-            const inHand = s.playerId === h.a || s.playerId === h.b;
-            const [x, y] = SEAT_POS[i % SEAT_POS.length];
-            return (
-              <div
-                key={s.playerId}
-                className={cx('absolute -translate-x-1/2 -translate-y-1/2 rounded-chip border text-center backdrop-blur-sm', compact ? 'px-1 py-0.5' : 'px-1.5 py-0.5 sm:px-2 sm:py-1', inHand ? 'border-gold/70 bg-black/70' : 'border-white/10 bg-black/55')}
-                style={{ left: `${x}%`, top: `${y}%` }}
-              >
-                <p className={cx('font-semibold whitespace-nowrap', compact ? 'text-[8px]' : 'text-[9px] sm:text-[11px]')}>{compact ? p.name.split(' ').slice(-1)[0] : p.name}</p>
-                {overlay === 'pro' && !compact && (
-                  <>
-                    <p className="hidden text-[10px] text-white/70 tnum sm:block">{chips(s.stack)}</p>
-                    {inHand && <p className="text-[10px] font-bold text-gold-strong tnum">{s.playerId === h.a ? h.aCards : h.bCards}</p>}
-                  </>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Pro: equity bar + hand history */}
-          {overlay === 'pro' && !compact && (
-            <>
-              <div className="absolute top-[27%] left-1/2 w-[40%] -translate-x-1/2" aria-label={`Equity: ${playerById(h.a).name} ${eq.a}%, ${playerById(h.b).name} ${eq.b}%`}>
-                <div className="flex justify-between text-[10px] font-semibold tnum">
-                  <span>
-                    {playerById(h.a).name.split(' ').slice(-1)} {eq.a}%
-                  </span>
-                  <span className="text-white/60">{eq.phase}</span>
-                  <span>
-                    {eq.b}% {playerById(h.b).name.split(' ').slice(-1)}
-                  </span>
-                </div>
-                <div className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-white/15">
-                  <i className="block bg-gold transition-[width] duration-500" style={{ width: `${eq.a}%` }} />
-                  <i className="block flex-1 bg-white/55" />
-                </div>
-              </div>
-              <div className="absolute top-12 left-3 hidden w-[22%] rounded-chip border border-white/10 bg-black/65 p-2 md:block">
-                <p className="label mb-1 text-[9px] text-gold">Hand #{h.number}</p>
-                <ul className="space-y-0.5 text-[10px] leading-snug text-white/80">
-                  {h.actions.slice(0, 3 + phase).slice(-3).map((a) => (
-                    <li key={a}>{a}</li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          )}
         </>
       )}
 
       {caption && !compact && (
-        <p className="absolute bottom-[31%] left-1/2 max-w-[80%] -translate-x-1/2 rounded-[3px] bg-black/80 px-2 py-0.5 text-center text-[13px] leading-snug">{caption}</p>
+        <p className="absolute bottom-[38%] left-1/2 max-w-[80%] -translate-x-1/2 rounded-[3px] bg-black/80 px-2 py-0.5 text-center text-[13px] leading-snug sm:bottom-[42%]">{caption}</p>
       )}
     </div>
   );

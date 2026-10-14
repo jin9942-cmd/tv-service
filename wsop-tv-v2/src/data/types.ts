@@ -72,6 +72,12 @@ export interface TourEvent {
   firstPrize: number;
   level: number;
   remaining: number;
+  /** Game played (shown with the event). */
+  game: 'No-Limit Hold’em' | 'Pot-Limit Omaha' | 'Mixed Games';
+  /** Starting stack (chips) — total chips in play = entrants × starting stack. */
+  startingStack: number;
+  /** Current blinds while the event is running (big-blind ante format). */
+  blinds?: { sb: number; bb: number; ante: number };
   /** Chip leader (spoiler). */
   leaderId?: string;
   /** Winner (spoiler) once the event has finished. */

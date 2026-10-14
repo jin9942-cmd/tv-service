@@ -34,8 +34,9 @@ export function useLiveStacks(intervalMs = 3500) {
 }
 
 /** Simple equity split for the Pro overlay (two players in the current hand). */
+// A♠K♠ vs Q♥Q♦ on K♦ 9♠ 4♣ → 2♥ → J♠ (queens have two outs after the flop).
 export const EQUITY = [
-  { phase: 'Flop', a: 64, b: 36 },
-  { phase: 'Turn', a: 71, b: 29 },
+  { phase: 'Flop', a: 91, b: 9 },
+  { phase: 'Turn', a: 95, b: 5 },
   { phase: 'River', a: 100, b: 0 },
 ];

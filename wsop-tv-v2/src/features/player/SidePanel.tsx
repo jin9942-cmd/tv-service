@@ -20,6 +20,7 @@ export function SidePanel({
   mainTable,
   onSelectTable,
   spoilerKey,
+  bb,
 }: {
   stacks: SeatStack[];
   phase: number;
@@ -28,6 +29,8 @@ export function SidePanel({
   mainTable: string;
   onSelectTable: (id: string) => void;
   spoilerKey: string;
+  /** Current big blind, to show stacks in big blinds. */
+  bb?: number;
 }) {
   const [tab, setTab] = useState<Tab>('chips');
   return (
@@ -45,7 +48,7 @@ export function SidePanel({
         />
       </div>
       <div className="flex-1 overflow-y-auto p-3" role="tabpanel">
-        {tab === 'chips' && <ChipCounts stacks={stacks} spoilerKey={spoilerKey} />}
+        {tab === 'chips' && <ChipCounts stacks={stacks} spoilerKey={spoilerKey} bb={bb} />}
         {tab === 'hand' && <CurrentHand phase={phase} />}
         {tab === 'tables' && <Tables tables={tables} dayStatus={dayStatus} mainTable={mainTable} onSelect={onSelectTable} />}
       </div>
@@ -53,7 +56,7 @@ export function SidePanel({
   );
 }
 
-function ChipCounts({ stacks, spoilerKey }: { stacks: SeatStack[]; spoilerKey: string }) {
+function ChipCounts({ stacks, spoilerKey, bb }: { stacks: SeatStack[]; spoilerKey: string; bb?: number }) {
   const max = stacks[0]?.stack ?? 1;
   return (
     <div>
@@ -78,7 +81,10 @@ function ChipCounts({ stacks, spoilerKey }: { stacks: SeatStack[]; spoilerKey: s
                     <CountryCode cc={p.cc} />
                   </span>
                   <span className="text-right">
-                    <span className="block text-sm font-bold tnum">{chips(s.stack)}</span>
+                    <span className="block text-sm font-bold tnum">
+                      {chips(s.stack)}
+                      {bb && <span className="ml-1.5 text-xs font-semibold text-muted">{Math.round(s.stack / bb)} bb</span>}
+                    </span>
                     {s.delta !== 0 && <span className={cx('block text-[11px] tnum', s.delta > 0 ? 'text-ok' : 'text-muted')}>{s.delta > 0 ? '▲' : '▼'} {chips(Math.abs(s.delta))}</span>}
                   </span>
                 </div>
