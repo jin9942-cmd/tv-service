@@ -1,8 +1,10 @@
 // Remote-control focus engine for the TV preview.
 // Keyboard → remote: Arrow keys = D-pad, Enter = OK, Backspace = Back.
-// The screen is described as a side menu (vertical) plus content rows (each a horizontal list).
-// Focus moves predictably: up/down change row (keeping the column when possible), left/right move within a row,
-// left from the first item enters the menu, right from the menu returns to the last content position.
+// The screen is a menu plus content rows (each a horizontal list). The menu is either on the side (vertical) or on
+// top (horizontal tab bar); the key mapping is identical everywhere, only the geometry differs:
+//  - side menu: left from the first item enters the menu, right returns to the last content position
+//  - top tabs:  up from the first row enters the tab bar, down returns to the last content position
+// Up/down between rows keeps the column when possible.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface FocusItem {
@@ -18,6 +20,7 @@ export interface FocusModel {
   menu?: FocusItem[];
   rows: FocusRow[];
   onBack?: () => void;
+  menuPlacement?: 'side' | 'top';
 }
 
 export type FocusPos = { zone: 'menu'; index: number } | { zone: 'content'; row: number; col: number };
@@ -30,6 +33,8 @@ export function useRemoteFocus(model: FocusModel, screenKey: string) {
   modelRef.current = model;
   const posRef = useRef(pos);
   posRef.current = pos;
+  /** Menu item to land on when entering the menu (the active one). */
+  const menuIndex = useRef(0);
 
   // New screen → focus its first content item.
   useEffect(() => {
@@ -50,22 +55,26 @@ export function useRemoteFocus(model: FocusModel, screenKey: string) {
     (dir: 'up' | 'down' | 'left' | 'right') => {
       setPos((p) => {
         const m = modelRef.current;
+        const top = m.menuPlacement === 'top';
         if (p.zone === 'menu') {
-          if (dir === 'up') return clamp({ zone: 'menu', index: p.index - 1 });
-          if (dir === 'down') return clamp({ zone: 'menu', index: p.index + 1 });
-          if (dir === 'right') return clamp({ zone: 'content', ...lastContent.current });
+          const [prev, nextKey, exit] = top ? (['left', 'right', 'down'] as const) : (['up', 'down', 'right'] as const);
+          if (dir === prev) return clamp({ zone: 'menu', index: p.index - 1 });
+          if (dir === nextKey) return clamp({ zone: 'menu', index: p.index + 1 });
+          if (dir === exit) return clamp({ zone: 'content', ...lastContent.current });
           return p;
         }
         let next: FocusPos = p;
-        if (dir === 'left') next = p.col === 0 && m.menu?.length ? { zone: 'menu', index: 0 } : { ...p, col: p.col - 1 };
+        if (dir === 'left') next = !top && p.col === 0 && m.menu?.length ? { zone: 'menu', index: menuIndex.current } : { ...p, col: p.col - 1 };
         if (dir === 'right') next = { ...p, col: p.col + 1 };
-        if (dir === 'up' || dir === 'down') {
+        if (dir === 'up' && top && p.row === 0 && m.menu?.length) next = { zone: 'menu', index: menuIndex.current };
+        else if (dir === 'up' || dir === 'down') {
           colMemory.current[p.row] = p.col;
           const row = p.row + (dir === 'up' ? -1 : 1);
           next = { zone: 'content', row, col: colMemory.current[row] ?? Math.min(p.col, (m.rows[row]?.items.length ?? 1) - 1) };
         }
         const c = clamp(next);
         if (c.zone === 'content') lastContent.current = { row: c.row, col: c.col };
+        else menuIndex.current = c.index;
         return c;
       });
     },
@@ -99,11 +108,12 @@ export function useRemoteFocus(model: FocusModel, screenKey: string) {
     return () => window.removeEventListener('keydown', onKey);
   }, [move, select]);
 
+  const setMenuIndex = (i: number) => (menuIndex.current = i);
   const isFocused = (id: string) => {
     const m = model;
     if (pos.zone === 'menu') return m.menu?.[pos.index]?.id === id;
     return m.rows[pos.row]?.items[pos.col]?.id === id;
   };
   const focusedRow = pos.zone === 'content' ? pos.row : -1;
-  return { pos, isFocused, focusedRow, setPos };
+  return { pos, isFocused, focusedRow, setPos, setMenuIndex, inMenu: pos.zone === 'menu' };
 }

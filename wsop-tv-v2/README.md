@@ -54,7 +54,23 @@ Open with **TV Preview** (header) or Demo Controls. The TV UI is a 1920×1080 ca
 | Backspace | Back |
 | Esc | Close the preview |
 
-Screens: TV Home (side menu + rows), event detail, player (hand marker jump, overlay cycle, multiview where supported), **TV sign-in** (6-digit code + QR mock, "Go to ggpass.example/activate", auto-authorizes after ~5 s). Platform dropdown (Apple TV / Android TV / Fire TV / Roku / Samsung / LG) drives the **feature parity panel** — e.g. Roku: no multiview, overlay up to Basic. Optional 5% overscan safe-area guide.
+Screens (shared by every platform): Home, event detail, player, **TV sign-in** (6-digit code + QR mock, "Go to ggpass.example/activate", auto-authorizes after ~5 s). Optional 5% overscan safe-area guide.
+
+### Platform UI shells
+
+Switching the platform dropdown swaps the whole UI shell immediately (the current screen is kept so platforms can be compared). Design tokens, data and screen structure stay common; only the chrome and focus language change.
+
+| Platform | Shell | Focus | Player |
+| --- | --- | --- | --- |
+| Apple TV | Top tab bar, large 2:3 poster cards | Lift + scale + soft shadow (parallax feel) | Multiview 1/2/4, overlay Off/Basic/Pro, hand-marker jump |
+| Roku | Fixed left menu, uniform 16:9 grid | Thick square white border, almost no scaling | Multiview item disabled ("Not available on Roku"), overlay up to Basic (Pro disabled), simple trick-play bar |
+| Android TV / Fire TV | Collapsible left rail (icons → labels when focused) + content rows | Scale + bright border | Multiview up to 2 (4 disabled), all overlay levels |
+| Samsung / LG | Android TV shell + top system bar + colour-key hints (A/B/C/D) | Same as Android TV | Per parity matrix |
+
+Unsupported features are never hidden — they stay in place, disabled, with the reason ("Not available on Roku"). The arrow / Enter / Backspace mapping is identical on every shell (top tabs: ↑ from the first row enters the tab bar; side menus: ← from the first column).
+
+- Shell + focus tokens: `src/features/tv/tvTokens.ts` (one file)
+- Focus engine: `src/features/tv/focus.ts` · shells & screens: `src/features/tv/TvApp.tsx` · frame + parity panel: `src/features/tv/TvPreview.tsx`
 
 ## Design
 

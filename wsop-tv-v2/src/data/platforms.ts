@@ -20,7 +20,7 @@ export const PLATFORMS: Record<Platform, PlatformCaps> = {
   ios: { label: 'iOS', kind: 'mobile', multiview: 2, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: true, signIn: 'ggpass-web' },
   android: { label: 'Android', kind: 'mobile', multiview: 2, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: true, signIn: 'ggpass-web' },
   appletv: { label: 'Apple TV', kind: 'tv', multiview: 4, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: false, signIn: 'device-code' },
-  androidtv: { label: 'Android TV', kind: 'tv', multiview: 4, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: false, signIn: 'device-code' },
+  androidtv: { label: 'Android TV', kind: 'tv', multiview: 2, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: false, signIn: 'device-code' },
   firetv: { label: 'Fire TV', kind: 'tv', multiview: 2, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: false, signIn: 'device-code' },
   roku: { label: 'Roku', kind: 'tv', multiview: 1, overlayMax: 'basic', handMarkers: true, audioTracks: true, captions: true, pip: false, signIn: 'device-code' },
   samsung: { label: 'Samsung (Tizen)', kind: 'tv', multiview: 2, overlayMax: 'basic', handMarkers: true, audioTracks: true, captions: true, pip: false, signIn: 'device-code' },
