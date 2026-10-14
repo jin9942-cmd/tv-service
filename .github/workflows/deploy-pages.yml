@@ -1,6 +1,7 @@
 # Builds both demos and publishes them to GitHub Pages on every push to main:
 #   /<repo>/        → wsop-tv (viewer demo)
 #   /<repo>/pitch/  → wsop-tv-pitch (app + CMS demo for internal reporting)
+#   /<repo>/v2/     → wsop-tv-v2 (WSOP TV working-title demo)
 # One-time setup: repository Settings → Pages → Source: "GitHub Actions".
 name: Deploy demo to GitHub Pages
 
@@ -30,6 +31,7 @@ jobs:
           cache-dependency-path: |
             wsop-tv/package-lock.json
             wsop-tv-pitch/package-lock.json
+            wsop-tv-v2/package-lock.json
       - name: Build viewer demo (wsop-tv)
         working-directory: wsop-tv
         run: npm ci && npm run build
@@ -43,6 +45,13 @@ jobs:
         env:
           BASE_PATH: /${{ github.event.repository.name }}/pitch/
       - run: cp -r wsop-tv-pitch/dist wsop-tv/dist/pitch
+      # Fresh v2 build replaces the copy committed under wsop-tv/public/v2 (that copy serves the Vercel site).
+      - name: Build v2 demo (wsop-tv-v2) into /v2
+        working-directory: wsop-tv-v2
+        run: npm ci && npm run build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/v2/
+      - run: rm -rf wsop-tv/dist/v2 && cp -r wsop-tv-v2/dist wsop-tv/dist/v2
       - uses: actions/upload-pages-artifact@v3
         with:
           path: wsop-tv/dist

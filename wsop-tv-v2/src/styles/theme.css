@@ -1,0 +1,73 @@
+/*
+ * Design tokens — the single source of truth for colour, type, spacing, radius, motion and focus.
+ * Tailwind v4 turns every token in @theme into utilities (bg-surface, text-muted, rounded-card, duration-base …).
+ *
+ * Direction: sports OTT (DAZN / F1 TV / UFC Fight Pass), not a casino.
+ *  - Near-black charcoal base, one restrained gold accent, status colours only for LIVE (red) and DELAYED (amber).
+ *  - No felt green, no red/gold mix, no chip/card/dice decoration.
+ * Contrast (WCAG AA): text #f2f2f3 on bg 17.9:1 · muted #a7abb3 on bg 8.4:1 · subtle #8a8f98 on surface 5.3:1 · gold on bg 8.9:1.
+ */
+@theme {
+  /* surfaces */
+  --color-bg: #0b0c0e;
+  --color-surface: #131418;
+  --color-surface-2: #1a1c21;
+  --color-surface-3: #23262d;
+  --color-line: #2a2d34;
+  --color-line-strong: #3b3f48;
+
+  /* text */
+  --color-text: #f2f2f3;
+  --color-muted: #a7abb3;
+  --color-subtle: #8a8f98;
+  --color-ink: #0b0c0e; /* text on gold */
+
+  /* accent (one) */
+  --color-gold: #c9a961;
+  --color-gold-strong: #dcc07e;
+  --color-gold-dim: #c9a96126;
+
+  /* status */
+  --color-live: #e5484d;
+  --color-delayed: #f5a524;
+  --color-vod: #a7abb3;
+  --color-ok: #4cc38a;
+
+  /* GGPASS mock (external domain) — deliberately a different, light tone */
+  --color-ext-bg: #f4f5f7;
+  --color-ext-ink: #14161a;
+  --color-ext-brand: #2b59c3;
+
+  /* type */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --text-display: 3.25rem;
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 1.75rem;
+  --text-title--line-height: 1.15;
+  --text-label: 0.6875rem;
+  --text-label--letter-spacing: 0.08em;
+
+  /* radius */
+  --radius-chip: 6px;
+  --radius-card: 12px;
+  --radius-panel: 16px;
+
+  /* motion: restrained micro-interactions (150–250ms) */
+  --default-transition-duration: 180ms;
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* layout */
+  --spacing-gutter: 1rem;
+  --spacing-header: 3.75rem;
+  --container-content: 80rem;
+
+  /* focus ring */
+  --color-focus: #dcc07e;
+}
+
+:root {
+  --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-focus);
+  --tv-focus-ring: 0 0 0 4px var(--color-bg), 0 0 0 8px var(--color-focus);
+}

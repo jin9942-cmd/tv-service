@@ -1,0 +1,102 @@
+// Data model: Series → Event (bracelet event) → Day (1A, 1B, 2, 3, Final Table) → Broadcast (stream).
+// Players ↔ hands/events are many-to-many. All names and results are fictional.
+
+export type StreamStatus = 'live' | 'delayed' | 'vod' | 'upcoming';
+export type DayLabel = 'Day 1A' | 'Day 1B' | 'Day 2' | 'Day 3' | 'Final Table';
+export type HandType = 'allin' | 'bigpot' | 'bluff' | 'badbeat' | 'herofold';
+
+export interface Player {
+  id: string;
+  name: string;
+  country: string;
+  /** ISO 3166-1 alpha-2, shown as a text code (no flag images). */
+  cc: string;
+  bracelets: number;
+  earnings: number;
+  poyPoints: number;
+  /** Most recent finishes: event id + place. */
+  recent: { eventId: string; place: number; prize: number }[];
+  hue: number;
+}
+
+export interface Series {
+  id: string;
+  name: string;
+  venue: string;
+  city: string;
+  /** Local time zone of the venue. */
+  tz: string;
+  start: string;
+  end: string;
+}
+
+export interface Day {
+  id: string;
+  label: DayLabel;
+  /** ISO UTC start. */
+  start: string;
+  durationMin: number;
+  status: StreamStatus;
+  /** Streams for this day (main feature table + outer tables). */
+  tables: TableFeed[];
+}
+
+export interface TableFeed {
+  id: string;
+  name: string;
+  /** Main stream carries commentary; outer tables are natural sound. */
+  main?: boolean;
+  /** Simulated feed failure for the error state demo. */
+  failing?: boolean;
+}
+
+export interface TourEvent {
+  id: string;
+  seriesId: string;
+  number: number;
+  name: string;
+  buyIn: number;
+  entrants: number;
+  prizePool: number;
+  firstPrize: number;
+  level: number;
+  remaining: number;
+  /** Chip leader (spoiler). */
+  leaderId?: string;
+  /** Winner (spoiler) once the event has finished. */
+  winnerId?: string;
+  featured?: boolean;
+  days: Day[];
+}
+
+export interface Hand {
+  id: string;
+  title: string;
+  type: HandType;
+  eventId: string;
+  dayId: string;
+  playerIds: string[];
+  pot: number;
+  /** Position on the day's timeline, seconds. */
+  t: number;
+  /** Result text — hidden in spoiler-free mode. */
+  result: string;
+  winnerId: string;
+  views: number;
+  durationSec: number;
+}
+
+export interface ArchiveItem {
+  id: string;
+  title: string;
+  year: number;
+  subtitle: string;
+  durationSec: number;
+  winnerId: string;
+  hue: number;
+}
+
+export type AccountScenario = 'guest' | 'noSub' | 'active' | 'unlinked' | 'restricted' | 'deviceLimit';
+export type Platform = 'web' | 'ios' | 'android' | 'appletv' | 'androidtv' | 'firetv' | 'roku' | 'samsung' | 'lg';
+export type OverlayLevel = 'off' | 'basic' | 'pro';
+export type AudioTrack = 'en' | 'natural' | 'es';

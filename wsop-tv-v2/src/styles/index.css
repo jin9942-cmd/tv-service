@@ -1,0 +1,102 @@
+@import 'tailwindcss';
+@import './theme.css';
+
+@layer base {
+  html {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    min-height: 100dvh;
+  }
+  /* One visible focus style everywhere (keyboard only). */
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-chip);
+  }
+  button,
+  [role='button'] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  ::selection {
+    background: var(--color-gold-dim);
+  }
+}
+
+@layer components {
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+  .label {
+    font-size: var(--text-label);
+    letter-spacing: var(--text-label--letter-spacing);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .hscroll {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-bottom: 0.25rem;
+  }
+  .hscroll::-webkit-scrollbar {
+    display: none;
+  }
+  .hscroll > * {
+    scroll-snap-align: start;
+    flex: none;
+  }
+  /* Player placeholder: charcoal stage with a soft spotlight and a fine grid — no felt, no props. */
+  .stage {
+    background:
+      radial-gradient(ellipse 60% 55% at 50% 42%, rgb(255 255 255 / 0.07), transparent 70%),
+      linear-gradient(rgb(255 255 255 / 0.025) 1px, transparent 1px) 0 0 / 28px 28px,
+      linear-gradient(90deg, rgb(255 255 255 / 0.025) 1px, transparent 1px) 0 0 / 28px 28px,
+      linear-gradient(160deg, var(--stage-a, #1c1f26), var(--stage-b, #0c0d10));
+  }
+  .skeleton {
+    background: linear-gradient(90deg, var(--color-surface-2), var(--color-surface-3), var(--color-surface-2));
+    background-size: 200% 100%;
+    animation: shimmer 1.2s linear infinite;
+    border-radius: var(--radius-card);
+  }
+  .spoiler {
+    filter: blur(7px);
+    user-select: none;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes pulse-dot {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.live-dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
