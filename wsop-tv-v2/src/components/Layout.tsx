@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Button, Icon, cx } from './ui';
+import { WSOP_LOGO } from '../lib/brand';
 import { LoginModal } from '../features/auth/LoginModal';
 import { DemoControls } from '../features/demo/DemoControls';
 import { TvPreview } from '../features/tv/TvPreview';
@@ -21,8 +22,8 @@ const MOBILE_NAV = ['/', '/live', '/schedule', '/hands'];
 
 export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (
-    <span className={cx('inline-flex items-baseline gap-1.5 font-black tracking-tight', size === 'lg' ? 'text-3xl' : 'text-lg')}>
-      <span>WSOP</span>
+    <span className={cx('inline-flex items-center gap-1.5 font-black tracking-tight', size === 'lg' ? 'text-3xl' : 'text-lg')}>
+      <img src={WSOP_LOGO} alt="WSOP" width={216} height={80} className={cx('w-auto', size === 'lg' ? 'h-12' : 'h-9')} />
       <span className="text-gold">TV</span>
       <span className="label ml-1 self-center rounded-[3px] border border-line-strong px-1 py-px text-[9px] font-bold text-muted">Working title</span>
     </span>

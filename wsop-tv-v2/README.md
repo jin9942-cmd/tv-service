@@ -4,7 +4,7 @@ A clickable demo of a sports-OTT style viewing platform for championship poker, 
 React + TypeScript + Tailwind CSS (v4), client-side routing, local mock data only. No backend, payments or real video.
 
 - Live: https://jin9942-cmd.github.io/tv-service/v2/ · https://tv-service-keig.vercel.app/v2/
-- All players, events and results are fictional. No official logos or copyrighted assets.
+- All players, events and results are fictional. The WSOP logo (`public/wsop-logo.webp`) is used at the WSOP team's request; it replaces the text wordmark in the header, footer, sign-in dialog and TV shells.
 
 ```bash
 cd wsop-tv-v2

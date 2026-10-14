@@ -14,6 +14,7 @@ import { HAND_META, HandGlyph } from '../player/markers';
 import { useRemoteFocus, type FocusItem, type FocusModel } from './focus';
 import { SHELLS, SHELL_OF, TV_FOCUS, notAvailable, type ShellFamily, type ShellSpec } from './tvTokens';
 import { QrMock } from './QrMock';
+import { WSOP_LOGO } from '../../lib/brand';
 
 type Screen = { name: 'home' } | { name: 'event'; eventId: string } | { name: 'player'; dayId: string } | { name: 'login'; after?: Screen };
 
@@ -200,8 +201,9 @@ type MenuItem = FocusItem & { label: string; icon: string };
 
 function TvLogo({ size = 40 }: { size?: number }) {
   return (
-    <p className="font-black tracking-tight" style={{ fontSize: size }}>
-      WSOP <span className="text-gold">TV</span>
+    <p className="flex items-center gap-2 font-black tracking-tight" style={{ fontSize: size }}>
+      <img src={WSOP_LOGO} alt="WSOP" style={{ height: size * 1.6, width: 'auto' }} />
+      <span className="text-gold">TV</span>
     </p>
   );
 }
