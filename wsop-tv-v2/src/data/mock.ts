@@ -57,9 +57,21 @@ const feeds = (prefix: string, n: number, failing?: number): TableFeed[] =>
     failing: failing === i,
   }));
 
+/** Upcoming broadcasts get realistic start times: today → next :00/:30, later days → noon Las Vegas time. */
+const LA = 'America/Los_Angeles';
+const laHour = (ms: number) => Number(new Intl.DateTimeFormat('en-US', { timeZone: LA, hour: 'numeric', hourCycle: 'h23' }).format(ms));
+function upcomingStart(startH: number) {
+  const at = T0 + startH * H;
+  if (startH < 12) return new Date(Math.ceil(at / (30 * 60_000)) * 30 * 60_000).toISOString();
+  const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone: LA, year: 'numeric', month: '2-digit', day: '2-digit' }).format(at).split('-').map(Number);
+  let noon = Date.UTC(y, m - 1, d, 19); // 12:00 PDT; corrected below when PST applies
+  noon += (12 - laHour(noon)) * H;
+  return new Date(noon).toISOString();
+}
+
 const day = (eventId: string, label: DayLabel, startH: number, durationMin: number, status: StreamStatus, tables = 1, failing?: number): Day => {
   const id = `${eventId}-${label.replace(/\s+/g, '').toLowerCase()}`;
-  return { id, label, start: iso(startH), durationMin, status, tables: feeds(id, tables, failing) };
+  return { id, label, start: status === 'upcoming' ? upcomingStart(startH) : iso(startH), durationMin, status, tables: feeds(id, tables, failing) };
 };
 
 export const events: TourEvent[] = [

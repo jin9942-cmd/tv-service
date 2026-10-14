@@ -4,6 +4,7 @@ A clickable demo of a sports-OTT style viewing platform for championship poker, 
 React + TypeScript + Tailwind CSS (v4), client-side routing, local mock data only. No backend, payments or real video.
 
 - Live: https://jin9942-cmd.github.io/tv-service/v2/ · https://tv-service-keig.vercel.app/v2/
+- Video: real poker footage under Creative Commons, streamed from Wikimedia Commons, with stills in `public/media` (see `public/media/CREDITS.md`) — not WSOP footage.
 - All players, events and results are fictional. The WSOP logo (`public/wsop-logo.webp`) is used at the WSOP team's request; it replaces the text wordmark in the header, footer, sign-in dialog and TV shells.
 
 ```bash
@@ -19,14 +20,13 @@ npm run publish:vercel   # build with relative paths and copy into ../wsop-tv/pu
 | Route | Screen | Highlights |
 | --- | --- | --- |
 | `#/watch/:dayId` | **Watch** | 16:9 player mock, LIVE / DELAYED / LATE START / INTERRUPTED / VOD badge, **per-table delay** (feature table 30 min, outer tables 15 min — the live edge and the "showing play from about …" note follow the table on screen), tables on hold (late start / interrupted) with a switch-back button, timeline with **hand markers** (All-in, Big Pot, Bluff, Bad Beat, Hero Fold — distinct glyph + tone) and tooltips, previous/next hand, **Jump to Live**, **overlay Off / Basic / Pro** (Pro adds stacks, hole cards, equity bar, hand history), audio tracks (English Commentary / Natural Sound / Spanish Commentary), CC, quality, volume, full screen, **multiview 1 / 2 / 4** with one audio source, side panel **Chip Counts / Current Hand / Tables** (bottom sheet on mobile; Tables shows each table's delay or state), spoiler blur + Reveal. `?clip=<handId>` opens a **free highlight** (single hand, own short timeline, end card with sign-in / plans CTA) when the full broadcast is locked |
-| `#/` | Home | Live hero (or countdown when nothing is live; late start / interrupted messages), Continue Watching, **Free highlights (no account needed)**, Followed Players' Latest Hands, Featured Series, Trending Hands, Archive Classics, POY top 5, today's schedule; "Continue with GGPASS" bar for guests |
+| `#/` | Home | **v1-style featured player** (full-width real CC footage, muted autoplay, poster when reduced motion) with the **Live channels** band (one card per table: LIVE / Delayed / Late start / Interrupted + access), **Coming up** cards with a large date and Las Vegas time, Continue Watching, Free highlights, Followed Players' Latest Hands, Featured Series, Trending Hands, Archive Classics, POY top 5, today's schedule |
 | `#/live` | Live | Now streaming (with per-table chips: delay / late start / interrupted) + coming up |
-| `#/schedule` | Schedule | Day strip, time-zone selector (browser zone default + PT/MT/CT/ET/UTC…), Las Vegas time alongside, Remind me, Add to calendar (mock) |
+| `#/schedule` | Schedule | **v1 layout**: venue-calendar date strip with dots for days that have broadcasts, Las Vegas (PT) start time with your time underneath, status + #event · day · buy-in, status note, Watch / Details / View; Today also lists anything still on air; empty state with "Next day with broadcasts"; Remind me, Add to calendar (mock), your-time-zone selector |
 | `#/series`, `#/events/:id` | Series & Events | Series → bracelet event → Day 1A/1B/2/3/Final Table, scoreboard (entrants, prize pool, first prize, level, players left, chip leader, champion), day list with status |
 | `#/players`, `#/players/:id` | Players | Search + nationality filter (empty state), profile with earnings, bracelets (SVG), recent results, highlight hands, Follow + alerts toggle |
 | `#/hands` | Hands & Clips | Filter chips, sort, skeleton loader |
 | `#/archive` | Archive | Classics + replays (guests see part of it) |
-| `#/rankings` | Rankings | Player of the Year / all-time earnings tabs |
 | `#/account` | Account | GGPASS connection, subscription, devices (sign out one / all), Spoiler-Free Mode, default overlay/audio/captions, notifications, privacy requests, Responsible Gaming |
 | `#/auth/ggpass` | GGPASS mock | External-domain look (light theme, fake address bar): sign-in → consent (email + nickname only) → redirect back |
 | `#/plans`, `#/devices` | Plans / Devices | Monthly / Annual placeholders ("handled according to platform policy"); stream-limit device management |

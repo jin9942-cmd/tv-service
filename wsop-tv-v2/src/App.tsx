@@ -9,7 +9,6 @@ import { SeriesList, EventDetail } from './pages/Series';
 import { Players, PlayerProfile } from './pages/Players';
 import { Hands } from './pages/Hands';
 import { Archive } from './pages/Archive';
-import { Rankings } from './pages/Rankings';
 import { Account } from './pages/Account';
 import { NotFound } from './pages/NotFound';
 import { GGPassFlow } from './features/auth/GGPassFlow';
@@ -35,7 +34,6 @@ export default function App() {
             <Route path="players/:playerId" element={<PlayerProfile />} />
             <Route path="hands" element={<Hands />} />
             <Route path="archive" element={<Archive />} />
-            <Route path="rankings" element={<Rankings />} />
             <Route path="account" element={<Account />} />
             <Route path="plans" element={<Plans />} />
             <Route path="devices" element={<Devices />} />

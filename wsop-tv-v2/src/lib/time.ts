@@ -51,3 +51,18 @@ export const countdown = (ms: number) => {
   const m = Math.floor((s % 3600) / 60);
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 };
+
+/** "in 3h 20m", "in 2 days", "started 40m ago". */
+export const relative = (at: string | number, now = Date.now()) => {
+  const ms = new Date(at).getTime() - now;
+  const abs = Math.abs(ms);
+  const m = Math.round(abs / 60_000);
+  const h = Math.floor(m / 60);
+  const d = Math.floor(h / 24);
+  const txt = d >= 2 ? `${d} days` : h >= 1 ? `${h}h${m % 60 ? ` ${m % 60}m` : ''}` : `${m}m`;
+  return ms >= 0 ? `in ${txt}` : `${txt} ago`;
+};
+
+/** Big date label for cards, e.g. "THU, OCT 15". */
+export const fmtCardDate = (at: string | number, tz: string) =>
+  new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(at)).toUpperCase();

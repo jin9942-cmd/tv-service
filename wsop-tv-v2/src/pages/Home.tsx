@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
-import { HERO_DAY_ID, HERO_EXPECTED_START, archive, dayById, events, hands, playerById, players, series } from '../data/mock';
-import { isBroadcasting } from '../lib/broadcast';
-import { count, money } from '../lib/format';
-import { countdown, dayKey, fmtDateTime, fmtTime } from '../lib/time';
-import { useApp, useTick } from '../state/app';
+import { archive, dayById, events, hands, players, series } from '../data/mock';
+import { count } from '../lib/format';
+import { dayKey, fmtTime } from '../lib/time';
+import { useApp } from '../state/app';
 import { ArchiveCard, Art, BroadcastCard, HandCard, useDayStatus } from '../components/cards';
-import { Avatar, BraceletIcon, Button, CountryCode, EmptyState, Icon, Page, SectionHeader, Spoiler, StatusBadge } from '../components/ui';
+import { Billboard, UpcomingCard } from '../components/Billboard';
+import { Avatar, BraceletIcon, CountryCode, EmptyState, Page, SectionHeader, StatusBadge } from '../components/ui';
 
 export function Home() {
   const { state, signedIn } = useApp();
@@ -13,13 +13,20 @@ export function Home() {
   const followedHands = hands.filter((h) => h.playerIds.some((p) => followed.includes(p))).slice(0, 10);
   const trending = [...hands].sort((a, b) => b.views - a.views).slice(0, 10);
   const freeHands = [...hands].filter((h) => h.access === 'free').sort((a, b) => b.views - a.views);
+  const upcoming = events
+    .flatMap((e) => e.days.map((d) => ({ e, d })))
+    .filter((x) => x.d.status === 'upcoming')
+    .sort((a, b) => a.d.start.localeCompare(b.d.start))
+    // one card per event: its next broadcast day
+    .filter((x, i, arr) => arr.findIndex((y) => y.e.id === x.e.id) === i)
+    .slice(0, 8);
   const continueItems = Object.entries(state.progress)
     .map(([id, sec]) => ({ ref: dayById(id)!, sec }))
     .filter((x) => x.ref);
 
   return (
     <>
-      <Hero />
+      <Billboard />
       <Page className="space-y-10">
         <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="min-w-0 space-y-10">
@@ -30,6 +37,18 @@ export function Home() {
                 ))}
               </Row>
             )}
+            <Row
+              title="Coming up"
+              action={
+                <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
+                  Full schedule →
+                </Link>
+              }
+            >
+              {upcoming.map(({ e, d }) => (
+                <UpcomingCard key={d.id} e={e} d={d} />
+              ))}
+            </Row>
             <Row
               title="Free highlights"
               kicker="No account needed"
@@ -104,100 +123,11 @@ function Row({ title, kicker, action, children }: { title: string; kicker?: stri
   );
 }
 
-function Hero() {
-  const { state } = useApp();
-  const now = useTick(1000);
-  const hero = dayById(HERO_DAY_ID)!;
-  const status = useDayStatus(hero.day);
-  // Hero stays on the featured broadcast while it's scheduled now — including a late start or an interruption.
-  const live = isBroadcasting(status);
-  const next = events.flatMap((e) => e.days.map((d) => ({ e, d }))).filter((x) => x.d.status === 'upcoming').sort((a, b) => a.d.start.localeCompare(b.d.start))[0];
-  const ev = live ? hero.event : next.e;
-  const day = live ? hero.day : next.d;
-
-  return (
-    <section className="relative overflow-hidden border-b border-line" aria-label="Featured">
-      <div className="stage absolute inset-0 opacity-90" style={{ ['--stage-a' as string]: 'hsl(220 18% 14%)', ['--stage-b' as string]: 'hsl(220 22% 5%)' }} aria-hidden />
-      <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/85 to-transparent" aria-hidden />
-      <div className="relative mx-auto grid max-w-content gap-8 px-gutter py-10 sm:px-6 md:py-14 lg:grid-cols-[1.25fr_1fr] lg:px-8">
-        <div>
-          <div className="flex items-center gap-2">
-            {live ? <StatusBadge status={status} /> : <StatusBadge status="upcoming" />}
-            <span className="label flex items-center gap-1.5 text-gold">
-              <BraceletIcon size={14} /> Bracelet event #{ev.number}
-            </span>
-          </div>
-          <h1 className="mt-4 text-[2.25rem] leading-[1.02] font-black tracking-[-0.02em] sm:text-display">
-            {ev.name}
-            <span className="block text-muted">{day.label}</span>
-          </h1>
-          {live ? (
-            <dl className="mt-6 grid max-w-xl grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
-              <Stat k="Players left" v={count(ev.remaining)} />
-              <Stat k="Level" v={String(ev.level)} />
-              <Stat k="First prize" v={money(ev.firstPrize)} />
-              <div>
-                <dt className="label text-subtle">Chip leader</dt>
-                <dd className="mt-1 text-lg font-bold">
-                  <Spoiler k={`leader-${ev.id}`} inline label="Chip leader hidden">
-                    <span>{playerById(ev.leaderId!).name}</span>
-                  </Spoiler>
-                </dd>
-              </div>
-            </dl>
-          ) : (
-            <div className="mt-6">
-              <p className="label text-subtle">Starts in</p>
-              <p className="mt-1 text-5xl font-black tnum">{countdown(Date.parse(day.start) - now)}</p>
-              <p className="mt-2 text-sm text-muted">
-                {fmtDateTime(day.start, state.tz)} your time · {fmtTime(day.start, 'America/Los_Angeles')} Las Vegas (PT)
-              </p>
-            </div>
-          )}
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to={`/watch/${day.id}`}>
-              <Button variant="primary" size="lg" tabIndex={-1}>
-                <Icon name="play" size={18} /> {status === 'late' || status === 'interrupted' ? 'Open broadcast' : live ? 'Watch now' : 'Preview & remind me'}
-              </Button>
-            </Link>
-            <Link to={`/events/${ev.id}`}>
-              <Button variant="outline" size="lg" tabIndex={-1}>
-                Event details
-              </Button>
-            </Link>
-          </div>
-          {status === 'delayed' && <p className="mt-4 max-w-lg text-xs text-subtle">Final tables are broadcast on a 30-minute delay to protect competition integrity (outer tables 15 minutes).</p>}
-          {status === 'late' && (
-            <p className="mt-4 max-w-lg text-sm text-delayed">
-              Coverage is starting late — now expected around {fmtTime(HERO_EXPECTED_START, state.tz)} your time.
-            </p>
-          )}
-          {status === 'interrupted' && <p className="mt-4 max-w-lg text-sm text-live">The broadcast is temporarily off air. It resumes automatically — catch up on the key hands meanwhile.</p>}
-        </div>
-        <div className="hidden lg:block">
-          <Art hue={220} label={`#${ev.number}`} className="shadow-2xl ring-1 ring-line">
-            <span className="absolute top-3 left-3">{live ? <StatusBadge status={status} /> : <StatusBadge status="upcoming" />}</span>
-          </Art>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Stat({ k, v }: { k: string; v: string }) {
-  return (
-    <div>
-      <dt className="label text-subtle">{k}</dt>
-      <dd className="mt-1 text-lg font-bold tnum">{v}</dd>
-    </div>
-  );
-}
-
 function RankingWidget() {
   const top = [...players].sort((a, b) => b.poyPoints - a.poyPoints).slice(0, 5);
   return (
     <section className="rounded-panel border border-line bg-surface p-4">
-      <SectionHeader kicker="2026 season" title="Player of the Year" action={<Link to="/rankings" className="text-xs font-semibold text-muted hover:text-text">Full →</Link>} />
+      <SectionHeader kicker="2026 season" title="Player of the Year" />
       <ol className="space-y-2">
         {top.map((p, i) => (
           <li key={p.id}>
