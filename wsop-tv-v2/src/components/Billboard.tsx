@@ -65,11 +65,11 @@ export function Billboard() {
                 </>
               )}
             </p>
-            <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-text/80">
-              {live
-                ? `${day.label} of the ${ev.name}. The feature table carries the main stream with commentary; subscribers can switch to the outer tables.`
-                : `Starts in ${countdown(Date.parse(day.start) - now)} — ${fmtTime(day.start, state.tz)} your time, ${fmtTime(day.start, VENUE_TZ)} in Las Vegas.`}
-            </p>
+            {!live && (
+              <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-text/80">
+                Starts in {countdown(Date.parse(day.start) - now)} — {fmtTime(day.start, state.tz)} your time, {fmtTime(day.start, VENUE_TZ)} in Las Vegas.
+              </p>
+            )}
             {status === 'late' && <p className="mt-2 text-sm text-delayed">Coverage is starting late — now expected around {fmtTime(HERO_EXPECTED_START, state.tz)} your time.</p>}
             {status === 'interrupted' && <p className="mt-2 text-sm text-live">The broadcast is temporarily off air and resumes automatically.</p>}
             <div className="mt-7 flex flex-wrap gap-3">
