@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { frameFrom, tableFrame, tableVideo } from '../lib/media';
+import { money } from '../lib/format';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { AudioTrack, Hand, OverlayLevel, TableFeed } from '../data/types';
 import { HERO_DAY_ID, HERO_EXPECTED_START, dayById, hands, playerById, seriesById } from '../data/mock';
@@ -31,7 +33,27 @@ export function Watch() {
   return <WatchInner key={`${dayId}:${clip ?? ''}`} dayId={dayId} startAt={params.get('t')} clipId={clip} />;
 }
 
-function WatchInner({ dayId, startAt, clipId }: { dayId: string; startAt: string | null; clipId: string | null }) {
+/**
+ * The full player screen. `variant="live"` is the Live page (v1 layout): no title on top, event info + overview under
+ * the player, the table selection controlled by the page, and extra content (the Streams list) at the top of the aside.
+ */
+export function WatchInner({
+  dayId,
+  startAt,
+  clipId,
+  variant = 'default',
+  tableId,
+  onTable,
+  asideTop,
+}: {
+  dayId: string;
+  startAt: string | null;
+  clipId: string | null;
+  variant?: 'default' | 'live';
+  tableId?: string | null;
+  onTable?: (id: string) => void;
+  asideTop?: ReactNode;
+}) {
   const { state, set, toast } = useApp();
   const { event, day } = dayById(dayId)!;
   const se = seriesById(event.seriesId);
@@ -42,7 +64,10 @@ function WatchInner({ dayId, startAt, clipId }: { dayId: string; startAt: string
   const status = dayId === HERO_DAY_ID ? state.streamMode : day.status;
   const isLive = isOnAir(status);
   const fullLen = day.durationMin * 60;
-  const [mainTable, setMainTable] = useState(day.tables[0].id);
+  // The Live page controls which table is on screen; the standalone player keeps it locally.
+  const [localTable, setLocalTable] = useState(tableId ?? day.tables[0].id);
+  const mainTable = tableId ?? localTable;
+  const setMainTable = (id: string) => (onTable ? onTable(id) : setLocalTable(id));
   const main = day.tables.find((t) => t.id === mainTable) ?? day.tables[0];
   // Each table can run its own delay (feature 30 min, outer tables 15 min): the live edge follows the table on screen.
   const delayMin = tableDelay(main, status);
@@ -68,7 +93,8 @@ function WatchInner({ dayId, startAt, clipId }: { dayId: string; startAt: string
   const [quality, setQuality] = useState('Auto');
   const [overlay, setOverlay] = useState<OverlayLevel>(overlayAllowed(state.platform, state.overlayDefault) ? state.overlayDefault : caps.overlayMax);
   const [views, setViews] = useState<1 | 2 | 4>(1);
-  const [audioTable, setAudioTable] = useState(day.tables[0].id);
+  const [audioTable, setAudioTable] = useState(mainTable);
+  useEffect(() => setAudioTable(mainTable), [mainTable]);
   const [clipEnded, setClipEnded] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -210,7 +236,8 @@ function WatchInner({ dayId, startAt, clipId }: { dayId: string; startAt: string
 
   return (
     <Page className="max-w-[96rem] py-4 sm:py-6">
-      {/* title */}
+      {/* title (the Live page shows it under the player instead) */}
+      {variant !== 'live' && (
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="label flex items-center gap-1.5 text-subtle">
@@ -228,6 +255,7 @@ function WatchInner({ dayId, startAt, clipId }: { dayId: string; startAt: string
           </Link>
         </div>
       </div>
+      )}
 
       {clipMode && clipHand && !blocked && (
         <div className="mb-3 flex flex-wrap items-center gap-3 rounded-card border border-ok/40 bg-surface px-4 py-3">
@@ -291,6 +319,12 @@ function WatchInner({ dayId, startAt, clipId }: { dayId: string; startAt: string
                             compact={views > 1}
                             hue={220 + i * 25}
                             muted={muted || (views > 1 && audioTable !== t.id)}
+                            media={(() => {
+                              // Real footage (v1): one moving video in single view, stills in multiview tiles.
+                              const ti = day.tables.indexOf(t);
+                              const v = tableVideo(ti);
+                              return { poster: tableFrame(ti, event.number % 3), video: shownViews === 1 ? v.url : undefined, start: v.start };
+                            })()}
                           />
                         )}
                         {shownViews > 1 && (
@@ -419,6 +453,20 @@ function WatchInner({ dayId, startAt, clipId }: { dayId: string; startAt: string
             </div>
           )}
 
+          {/* Live page (v1 layout): stream + event info under the player */}
+          {variant === 'live' && (
+            <div className="mt-4">
+              <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                <StatusBadge status={tableStatus(main, status)} size="sm" delayMin={delayMin || 30} />
+                <span>
+                  {se.name} · Event #{event.number} · {day.label} · {main.name}
+                </span>
+                <AccessBadge access={dayAccess} locked={dayGate !== 'ok'} />
+              </p>
+              <h1 className="mt-1.5 text-2xl font-black tracking-tight sm:text-[28px]">{event.name}</h1>
+            </div>
+          )}
+
           {/* delay note: what the stream is showing vs the tournament floor */}
           {!blocked && !clipMode && status === 'delayed' && (
             <p className="mt-2 text-xs text-subtle">
@@ -426,6 +474,8 @@ function WatchInner({ dayId, startAt, clipId }: { dayId: string; startAt: string
               {delays.length > 1 && <> Delay by table: {day.tables.map((t) => `${shortTableName(t.name)} ${tableDelay(t, status)} min`).join(' · ')}.</>}
             </p>
           )}
+
+          {variant === 'live' && <Overview eventId={event.id} dayId={dayId} delayMin={delayMin} status={status} />}
 
           {/* hands in this broadcast */}
           {!blocked && !clipMode && markers.length > 0 && (
@@ -456,7 +506,15 @@ function WatchInner({ dayId, startAt, clipId }: { dayId: string; startAt: string
           )}
         </div>
 
-        <aside className="hidden lg:block">{!blocked && !clipMode && <div className="sticky top-20 h-[calc(100dvh-7rem)] max-h-[44rem]">{panel}</div>}</aside>
+        {variant === 'live' ? (
+          <aside className="min-w-0 space-y-6">
+            {asideTop}
+            {!blocked && !clipMode && <div className="hidden h-[32rem] lg:block">{panel}</div>}
+            <EventHandReplays eventId={event.id} />
+          </aside>
+        ) : (
+          <aside className="hidden lg:block">{!blocked && !clipMode && <div className="sticky top-20 h-[calc(100dvh-7rem)] max-h-[44rem]">{panel}</div>}</aside>
+        )}
       </div>
 
       {/* mobile/tablet bottom sheet */}
@@ -589,5 +647,76 @@ function Upcoming({ dayId, start }: { dayId: string; start: string }) {
         <Icon name="bell" size={16} /> {on ? 'Reminder set' : 'Remind me'}
       </Button>
     </div>
+  );
+}
+
+/** v1 "Overview": tournament figures for the event on the Live page. */
+function Overview({ eventId, dayId, delayMin, status }: { eventId: string; dayId: string; delayMin: number; status: string }) {
+  const { state } = useApp();
+  const { event, day } = dayById(dayId)!;
+  const se = seriesById(event.seriesId);
+  const started = event.entrants > 0;
+  const cells: [string, ReactNode][] = [
+    ['Buy-in', event.buyIn ? money(event.buyIn) : 'Invitational'],
+    ['Entries', started ? event.entrants.toLocaleString('en-US') : '—'],
+    ['Prize pool', started ? money(event.prizePool) : 'TBD'],
+    ['Players left', started ? event.remaining.toLocaleString('en-US') : '—'],
+    ['Level', started ? `Level ${event.level}` : '—'],
+    [
+      'Started',
+      <>
+        {fmtDateTime(day.start, VENUE_TZ)} PT
+        <span className="block text-muted">{fmtTime(day.start, state.tz)} your time</span>
+      </>,
+    ],
+    ['Broadcast delay', status === 'delayed' ? `${delayMin}-minute delay` : status === 'live' ? 'Real time' : '—'],
+    ['Venue', `${se.venue}, ${se.city}`],
+  ];
+  return (
+    <section className="mt-5" aria-label="Overview" data-event={eventId}>
+      <h2 className="mb-2 text-base font-bold">Overview</h2>
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {cells.map(([k, v]) => (
+          <div key={k} className="rounded-card border border-line bg-surface px-3 py-2.5">
+            <dt className="label text-[10px] text-subtle">{k}</dt>
+            <dd className="mt-1 text-sm font-bold tnum">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-2 flex items-center gap-2 text-[11px] text-subtle">
+        <span className="label rounded-[3px] border border-line-strong px-1 text-[9px]">Sample</span> Tournament figures are sample data, not an EBS / live-reporting feed.
+      </p>
+    </section>
+  );
+}
+
+/** v1 "Hand replays from this event" for the Live page aside. */
+function EventHandReplays({ eventId }: { eventId: string }) {
+  const { state } = useApp();
+  const list = hands.filter((h) => h.eventId === eventId).slice(0, 5);
+  if (!list.length) return null;
+  return (
+    <section aria-label="Hand replays from this event">
+      <p className="label mb-3 text-text/80">Hand replays from this event</p>
+      <ul className="space-y-2">
+        {list.map((h, i) => (
+          <li key={h.id}>
+            <Link to={`/watch/${h.dayId}?t=${h.t}&clip=${h.id}`} className="flex gap-3 rounded-card border border-line bg-surface p-2 transition-colors duration-150 hover:border-line-strong">
+              <span className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-[6px]">
+                <img src={frameFrom(i * 2 + h.title.length)} alt="" loading="lazy" className="size-full object-cover" />
+                <span className="absolute right-1 bottom-1 rounded-[3px] bg-black/75 px-1 text-[10px] font-semibold tnum">{duration(h.durationSec)}</span>
+              </span>
+              <span className="min-w-0 py-0.5">
+                <AccessBadge access={h.access} locked={!canWatch(h.access, state.scenario)} />
+                <span className="mt-1 line-clamp-2 block text-sm leading-snug font-bold">{h.title}</span>
+                <span className="block truncate text-xs text-muted">
+                  {HAND_META[h.type].label} · Pot {chips(h.pot)}
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

@@ -52,3 +52,9 @@ export function frameFrom(n: number): string {
   const all = [...FOOTAGE.ft.frames, ...FOOTAGE.mtl.frames, ...FOOTAGE.int.frames, ...FOOTAGE.deal.frames];
   return all[Math.abs(n) % all.length].src;
 }
+
+/** Video for a table feed (feature table = final-table footage), and where in the clip to start. */
+export function tableVideo(tableIndex: number): { url: string; start: number; credit: string } {
+  const f = [FOOTAGE.ft, FOOTAGE.mtl, FOOTAGE.int, FOOTAGE.deal][tableIndex % 4];
+  return { url: f.url, start: tableIndex === 0 ? 110 : 20, credit: f.credit };
+}

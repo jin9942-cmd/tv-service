@@ -45,6 +45,7 @@ export function Stage({
   compact,
   hue = 220,
   muted,
+  media,
 }: {
   overlay: OverlayLevel;
   tableName: string;
@@ -56,6 +57,8 @@ export function Stage({
   compact?: boolean;
   hue?: number;
   muted?: boolean;
+  /** Real footage behind the overlays (v1 look): a still, and a looping muted video while it plays. */
+  media?: { poster: string; video?: string; start?: number };
 }) {
   const h = CURRENT_HAND;
   const eq = EQUITY[phase];
@@ -64,10 +67,19 @@ export function Stage({
 
   return (
     <div className="stage relative size-full overflow-hidden" style={{ ['--stage-a' as string]: `hsl(${hue} 14% 15%)`, ['--stage-b' as string]: `hsl(${hue} 18% 6%)` }}>
-      {/* table outline */}
-      <div className="absolute top-[22%] left-[17%] h-[56%] w-[66%] rounded-[50%] border border-white/12 shadow-[inset_0_0_80px_rgb(0_0_0/0.6)]">
-        <div className="absolute inset-[7%] rounded-[50%] border border-gold/20" />
-      </div>
+      {media ? (
+        <>
+          <img src={media.poster} alt="" className="absolute inset-0 size-full object-cover" />
+          {media.video && playing && <video key={media.video} className="absolute inset-0 size-full object-cover" src={`${media.video}#t=${media.start ?? 0}`} poster={media.poster} autoPlay loop muted playsInline />}
+          {/* keep overlays readable over real footage */}
+          <div className={cx('absolute inset-0', overlay === 'off' ? 'bg-black/5' : 'bg-gradient-to-b from-black/45 via-black/15 to-black/55')} />
+        </>
+      ) : (
+        /* table outline */
+        <div className="absolute top-[22%] left-[17%] h-[56%] w-[66%] rounded-[50%] border border-white/12 shadow-[inset_0_0_80px_rgb(0_0_0/0.6)]">
+          <div className="absolute inset-[7%] rounded-[50%] border border-gold/20" />
+        </div>
+      )}
       {!compact && <span className="label absolute top-3 left-1/2 -translate-x-1/2 text-[10px] text-white/45">{tableName}</span>}
 
       {/* playback pulse (shows the mock is "running") */}
