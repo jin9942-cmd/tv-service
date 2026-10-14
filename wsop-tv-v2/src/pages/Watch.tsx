@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { frameFrom, tableFrame, tableVideo } from '../lib/media';
 import { money } from '../lib/format';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { AudioTrack, Hand, OverlayLevel, TableFeed } from '../data/types';
 import { HERO_DAY_ID, HERO_EXPECTED_START, dayById, hands, playerById, seriesById } from '../data/mock';
 import { PLATFORMS, overlayAllowed } from '../data/platforms';
@@ -16,22 +16,12 @@ import { AUDIO_LABEL, Controls } from '../features/player/Controls';
 import { SidePanel } from '../features/player/SidePanel';
 import { HAND_META, HandGlyph } from '../features/player/markers';
 import { PlaybackGate, RegionBlocked } from '../features/auth/Gates';
-import { NotFound } from './NotFound';
 
 const CAPTIONS: Record<AudioTrack, string[]> = {
   en: ['Han has been patient all level — this is the spot she was waiting for.', 'Whitfield takes his time. Seven-time champion, never rushed.', 'The crowd in Las Vegas is completely silent.'],
   es: ['Han ha sido paciente todo el nivel.', 'Whitfield se toma su tiempo.', 'Silencio absoluto en Las Vegas.'],
   natural: ['[Crowd murmurs]', '[Dealer: "Action is on you, sir."]', '[Applause from the rail]'],
 };
-
-export function Watch() {
-  const { dayId = '' } = useParams();
-  const [params] = useSearchParams();
-  const ref = dayById(dayId);
-  if (!ref) return <NotFound />;
-  const clip = params.get('clip');
-  return <WatchInner key={`${dayId}:${clip ?? ''}`} dayId={dayId} startAt={params.get('t')} clipId={clip} />;
-}
 
 /**
  * The full player screen. `variant="live"` is the Live page (v1 layout): no title on top, event info + overview under

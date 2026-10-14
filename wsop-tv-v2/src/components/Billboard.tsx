@@ -35,15 +35,16 @@ export function Billboard() {
 
   return (
     <>
-      <section className="relative isolate overflow-hidden" aria-label="Featured">
-        <div className="absolute inset-0 -z-10" aria-hidden>
-          <img src={HERO_POSTER} alt="" className="size-full object-cover object-[center_35%]" />
-          {!reduceMotion && <video key={FOOTAGE.ft.id} className="absolute inset-0 size-full object-cover object-[center_35%]" src={`${FOOTAGE.ft.url}#t=110`} poster={HERO_POSTER} muted autoPlay loop playsInline preload="metadata" />}
-          <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/80 to-bg/10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/10 to-transparent" />
+      {/* As in v1: the footage keeps its own 16:9 frame, centred on the content column (never stretched across a wide
+          screen), and all four edges fade into the page colour so there is no hard frame line. */}
+      <section className="relative isolate flex flex-col justify-end overflow-hidden" style={{ minHeight: 'min(680px, max(30rem, calc(min(100vw, 80rem) * 0.5625)))' }} aria-label="Featured">
+        <div className="hero-frame absolute top-0 left-1/2 -z-10 aspect-video w-full max-w-content -translate-x-1/2" aria-hidden>
+          <img src={HERO_POSTER} alt="" className="absolute inset-0 size-full object-cover object-center" />
+          {!reduceMotion && <video key={FOOTAGE.ft.id} className="absolute inset-0 size-full object-cover object-center" src={`${FOOTAGE.ft.url}#t=110`} poster={HERO_POSTER} muted autoPlay loop playsInline preload="metadata" />}
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(11_12_14/0.94)_0%,rgb(11_12_14/0.86)_28%,rgb(11_12_14/0.4)_48%,transparent_64%),linear-gradient(0deg,rgb(11_12_14/0.6)_0%,transparent_40%)]" />
         </div>
 
-        <div className="mx-auto flex min-h-[30rem] max-w-content flex-col justify-end px-gutter pt-16 pb-12 sm:min-h-[34rem] sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-content flex-col justify-end px-gutter pt-16 pb-12 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <p className="flex flex-wrap items-center gap-2">
               {live ? <StatusBadge status={status} /> : <StatusBadge status="upcoming" />}
