@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import { archive, dayById, events, hands, series } from '../data/mock';
+import { archive, dayById, events, hands, players, series } from '../data/mock';
 import { useApp } from '../state/app';
-import { ArchiveCard, Art, BroadcastCard, HandCard } from '../components/cards';
+import { ArchiveCard, Art, BroadcastCard, HandCard, PlayerTile } from '../components/cards';
 import { Billboard, UpcomingCard } from '../components/Billboard';
 import { BraceletIcon, EmptyState, Page, SectionHeader } from '../components/ui';
 
@@ -18,6 +18,7 @@ export function Home() {
     // one card per event: its next broadcast day
     .filter((x, i, arr) => arr.findIndex((y) => y.e.id === x.e.id) === i)
     .slice(0, 8);
+  const featuredPlayers = [...players].sort((a, b) => b.poyPoints - a.poyPoints).slice(0, 10);
   const continueItems = Object.entries(state.progress)
     .map(([id, sec]) => ({ ref: dayById(id)!, sec }))
     .filter((x) => x.ref);
@@ -93,6 +94,11 @@ export function Home() {
             <Row title="Trending Hands" action={<Link to="/hands" className="text-sm font-semibold text-muted hover:text-text">All hands →</Link>}>
               {trending.map((h) => (
                 <HandCard key={h.id} hand={h} className="w-72" />
+              ))}
+            </Row>
+            <Row title="Featured players" action={<Link to="/players" className="text-sm font-semibold text-muted hover:text-text">All players →</Link>}>
+              {featuredPlayers.map((p) => (
+                <PlayerTile key={p.id} player={p} />
               ))}
             </Row>
             <Row title="Archive Classics" action={<Link to="/archive" className="text-sm font-semibold text-muted hover:text-text">Archive →</Link>}>

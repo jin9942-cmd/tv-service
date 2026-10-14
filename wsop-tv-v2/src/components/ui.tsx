@@ -158,11 +158,21 @@ export function Icon({ name, size = 20, className }: { name: keyof typeof PATHS 
 
 // ---- avatar (initials, no photos) ------------------------------------------------------------
 
-export function Avatar({ name, hue, size = 48, ring }: { name: string; hue: number; size?: number; ring?: boolean }) {
+/** Initials avatar. `vivid` = solid player colour with a thin outer ring (v1 "Featured players" look). */
+export function Avatar({ name, hue, size = 48, ring, vivid }: { name: string; hue: number; size?: number; ring?: boolean; vivid?: boolean }) {
   return (
     <span
-      className={cx('inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white/90 select-none', ring && 'ring-2 ring-gold ring-offset-2 ring-offset-bg')}
-      style={{ width: size, height: size, fontSize: size * 0.36, background: `linear-gradient(140deg, hsl(${hue} 22% 34%), hsl(${hue} 18% 16%))` }}
+      className={cx(
+        'inline-flex shrink-0 items-center justify-center rounded-full font-bold select-none',
+        vivid ? 'text-white shadow-[0_0_0_3px_var(--color-bg),0_0_0_4px_var(--color-line-strong)]' : 'text-white/90',
+        ring && 'ring-2 ring-gold ring-offset-2 ring-offset-bg',
+      )}
+      style={{
+        width: size,
+        height: size,
+        fontSize: size * (vivid ? 0.38 : 0.36),
+        background: vivid ? `hsl(${hue} 48% 52%)` : `linear-gradient(140deg, hsl(${hue} 22% 34%), hsl(${hue} 18% 16%))`,
+      }}
       aria-hidden
     >
       {initials(name)}

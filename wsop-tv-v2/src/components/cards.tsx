@@ -2,11 +2,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import type { ArchiveItem, Day, Hand, Player, TourEvent } from '../data/types';
 import { HERO_DAY_ID, eventById, playerById, seriesById } from '../data/mock';
-import { chips, compact, duration, moneyShort } from '../lib/format';
+import { chips, compact, duration } from '../lib/format';
 import { fmtDateTime } from '../lib/time';
 import { canWatch, gateForAccess, useApp } from '../state/app';
 import { HAND_META, HandGlyph } from '../features/player/markers';
-import { AccessBadge, Avatar, BraceletCount, CountryCode, Icon, Spoiler, StatusBadge, cx } from './ui';
+import { AccessBadge, Avatar, Icon, Spoiler, StatusBadge, cx } from './ui';
 
 /** Abstract artwork for a broadcast (no images): stage gradient + event number. */
 export function Art({ hue = 220, label, children, className }: { hue?: number; label?: string; children?: React.ReactNode; className?: string }) {
@@ -93,16 +93,17 @@ export function HandCard({ hand, className }: { hand: Hand; className?: string }
   );
 }
 
-export function PlayerCard({ player, rank }: { player: Player; rank?: number }) {
+/** v1-style player tile: large round avatar, name, country code · bracelets. */
+export function PlayerTile({ player, className }: { player: Player; className?: string }) {
   return (
-    <Link to={`/players/${player.id}`} className="group flex w-44 flex-col items-center gap-2 rounded-card border border-line bg-surface p-4 text-center transition-colors duration-150 hover:border-line-strong">
-      {rank && <span className="label self-start text-subtle tnum">#{rank}</span>}
-      <Avatar name={player.name} hue={player.hue} size={64} />
-      <span className="text-sm font-semibold group-hover:text-gold-strong">{player.name}</span>
-      <span className="flex items-center gap-2 text-xs text-muted">
-        <CountryCode cc={player.cc} /> <BraceletCount n={player.bracelets} size={14} />
+    <Link to={`/players/${player.id}`} className={cx('group flex w-36 flex-col items-center gap-1.5 rounded-card px-1 py-2 text-center sm:w-40', className)}>
+      <span className="mb-1.5 transition-transform duration-200 group-hover:scale-105">
+        <Avatar name={player.name} hue={player.hue} size={88} vivid />
       </span>
-      <span className="text-xs text-muted tnum">{moneyShort(player.earnings)} earnings</span>
+      <span className="line-clamp-2 text-sm leading-snug font-bold group-hover:text-gold-strong">{player.name}</span>
+      <span className="text-xs text-muted tnum">
+        {player.cc} · {player.bracelets} bracelet{player.bracelets === 1 ? '' : 's'}
+      </span>
     </Link>
   );
 }

@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { eventById, hands, players } from '../data/mock';
 import { count, money, ordinal } from '../lib/format';
 import { useApp } from '../state/app';
-import { HandCard, PlayerCard } from '../components/cards';
+import { HandCard, PlayerTile } from '../components/cards';
 import { Avatar, BraceletCount, Button, CountryCode, EmptyState, Icon, Page, SectionHeader, Switch } from '../components/ui';
 import { NotFound } from './NotFound';
 
@@ -38,9 +38,9 @@ export function Players() {
       </div>
       <div className="mt-6">
         {list.length ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 [&>a]:w-auto">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 [&>a]:w-auto">
             {list.map((p) => (
-              <PlayerCard key={p.id} player={p} />
+              <PlayerTile key={p.id} player={p} />
             ))}
           </div>
         ) : (
