@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { HERO_DAY_ID, archive, dayById, events, hands, playerById, players, series } from '../data/mock';
+import { HERO_DAY_ID, HERO_EXPECTED_START, archive, dayById, events, hands, playerById, players, series } from '../data/mock';
+import { isBroadcasting } from '../lib/broadcast';
 import { count, money } from '../lib/format';
 import { countdown, dayKey, fmtDateTime, fmtTime } from '../lib/time';
 import { useApp, useTick } from '../state/app';
@@ -11,6 +12,7 @@ export function Home() {
   const followed = Object.keys(state.followed);
   const followedHands = hands.filter((h) => h.playerIds.some((p) => followed.includes(p))).slice(0, 10);
   const trending = [...hands].sort((a, b) => b.views - a.views).slice(0, 10);
+  const freeHands = [...hands].filter((h) => h.access === 'free').sort((a, b) => b.views - a.views);
   const continueItems = Object.entries(state.progress)
     .map(([id, sec]) => ({ ref: dayById(id)!, sec }))
     .filter((x) => x.ref);
@@ -28,6 +30,19 @@ export function Home() {
                 ))}
               </Row>
             )}
+            <Row
+              title="Free highlights"
+              kicker="No account needed"
+              action={
+                <Link to="/hands" className="text-sm font-semibold text-muted hover:text-text">
+                  All hands →
+                </Link>
+              }
+            >
+              {freeHands.map((h) => (
+                <HandCard key={h.id} hand={h} className="w-72" />
+              ))}
+            </Row>
             <section>
               <SectionHeader title="Followed Players' Latest Hands" action={<Link to="/players" className="text-sm font-semibold text-muted hover:text-text">Follow players →</Link>} />
               {followedHands.length ? (
@@ -80,10 +95,10 @@ export function Home() {
   );
 }
 
-function Row({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function Row({ title, kicker, action, children }: { title: string; kicker?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section>
-      <SectionHeader title={title} action={action} />
+      <SectionHeader title={title} kicker={kicker} action={action} />
       <div className="hscroll">{children}</div>
     </section>
   );
@@ -94,7 +109,8 @@ function Hero() {
   const now = useTick(1000);
   const hero = dayById(HERO_DAY_ID)!;
   const status = useDayStatus(hero.day);
-  const live = status === 'live' || status === 'delayed';
+  // Hero stays on the featured broadcast while it's scheduled now — including a late start or an interruption.
+  const live = isBroadcasting(status);
   const next = events.flatMap((e) => e.days.map((d) => ({ e, d }))).filter((x) => x.d.status === 'upcoming').sort((a, b) => a.d.start.localeCompare(b.d.start))[0];
   const ev = live ? hero.event : next.e;
   const day = live ? hero.day : next.d;
@@ -141,7 +157,7 @@ function Hero() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to={`/watch/${day.id}`}>
               <Button variant="primary" size="lg" tabIndex={-1}>
-                <Icon name="play" size={18} /> {live ? 'Watch now' : 'Preview & remind me'}
+                <Icon name="play" size={18} /> {status === 'late' || status === 'interrupted' ? 'Open broadcast' : live ? 'Watch now' : 'Preview & remind me'}
               </Button>
             </Link>
             <Link to={`/events/${ev.id}`}>
@@ -150,7 +166,13 @@ function Hero() {
               </Button>
             </Link>
           </div>
-          {status === 'delayed' && <p className="mt-4 max-w-lg text-xs text-subtle">Final tables are broadcast on a 30-minute delay to protect competition integrity.</p>}
+          {status === 'delayed' && <p className="mt-4 max-w-lg text-xs text-subtle">Final tables are broadcast on a 30-minute delay to protect competition integrity (outer tables 15 minutes).</p>}
+          {status === 'late' && (
+            <p className="mt-4 max-w-lg text-sm text-delayed">
+              Coverage is starting late — now expected around {fmtTime(HERO_EXPECTED_START, state.tz)} your time.
+            </p>
+          )}
+          {status === 'interrupted' && <p className="mt-4 max-w-lg text-sm text-live">The broadcast is temporarily off air. It resumes automatically — catch up on the key hands meanwhile.</p>}
         </div>
         <div className="hidden lg:block">
           <Art hue={220} label={`#${ev.number}`} className="shadow-2xl ring-1 ring-line">

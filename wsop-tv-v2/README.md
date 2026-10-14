@@ -18,9 +18,9 @@ npm run publish:vercel   # build with relative paths and copy into ../wsop-tv/pu
 
 | Route | Screen | Highlights |
 | --- | --- | --- |
-| `#/watch/:dayId` | **Watch** | 16:9 player mock, LIVE / DELAYED (30 min) / VOD badge, timeline with **hand markers** (All-in, Big Pot, Bluff, Bad Beat, Hero Fold — distinct glyph + tone) and tooltips, previous/next hand, **Jump to Live**, **overlay Off / Basic / Pro** (Pro adds stacks, hole cards, equity bar, hand history), audio tracks (English Commentary / Natural Sound / Spanish Commentary), CC, quality, volume, full screen, **multiview 1 / 2 / 4** with one audio source, side panel **Chip Counts / Current Hand / Tables** (bottom sheet on mobile), spoiler blur + Reveal |
-| `#/` | Home | Live hero (or countdown when nothing is live), Continue Watching, Followed Players' Latest Hands, Featured Series, Trending Hands, Archive Classics, POY top 5, today's schedule; "Continue with GGPASS" bar for guests |
-| `#/live` | Live | Now streaming + coming up |
+| `#/watch/:dayId` | **Watch** | 16:9 player mock, LIVE / DELAYED / LATE START / INTERRUPTED / VOD badge, **per-table delay** (feature table 30 min, outer tables 15 min — the live edge and the "showing play from about …" note follow the table on screen), tables on hold (late start / interrupted) with a switch-back button, timeline with **hand markers** (All-in, Big Pot, Bluff, Bad Beat, Hero Fold — distinct glyph + tone) and tooltips, previous/next hand, **Jump to Live**, **overlay Off / Basic / Pro** (Pro adds stacks, hole cards, equity bar, hand history), audio tracks (English Commentary / Natural Sound / Spanish Commentary), CC, quality, volume, full screen, **multiview 1 / 2 / 4** with one audio source, side panel **Chip Counts / Current Hand / Tables** (bottom sheet on mobile; Tables shows each table's delay or state), spoiler blur + Reveal. `?clip=<handId>` opens a **free highlight** (single hand, own short timeline, end card with sign-in / plans CTA) when the full broadcast is locked |
+| `#/` | Home | Live hero (or countdown when nothing is live; late start / interrupted messages), Continue Watching, **Free highlights (no account needed)**, Followed Players' Latest Hands, Featured Series, Trending Hands, Archive Classics, POY top 5, today's schedule; "Continue with GGPASS" bar for guests |
+| `#/live` | Live | Now streaming (with per-table chips: delay / late start / interrupted) + coming up |
 | `#/schedule` | Schedule | Day strip, time-zone selector (browser zone default + PT/MT/CT/ET/UTC…), Las Vegas time alongside, Remind me, Add to calendar (mock) |
 | `#/series`, `#/events/:id` | Series & Events | Series → bracelet event → Day 1A/1B/2/3/Final Table, scoreboard (entrants, prize pool, first prize, level, players left, chip leader, champion), day list with status |
 | `#/players`, `#/players/:id` | Players | Search + nationality filter (empty state), profile with earnings, bracelets (SVG), recent results, highlight hands, Follow + alerts toggle |
@@ -31,14 +31,26 @@ npm run publish:vercel   # build with relative paths and copy into ../wsop-tv/pu
 | `#/auth/ggpass` | GGPASS mock | External-domain look (light theme, fake address bar): sign-in → consent (email + nickname only) → redirect back |
 | `#/plans`, `#/devices` | Plans / Devices | Monthly / Annual placeholders ("handled according to platform policy"); stream-limit device management |
 
-States covered: empty (player search, followed hands), loading (skeletons on Watch and Hands), error (outer table feed in Tables tab / multiview, with Retry).
+States covered: empty (player search, followed hands), loading (skeletons on Watch and Hands), error (High Roller outer table feed in Tables tab / multiview, with Retry), broadcast states (Main Event Final Table: Outer Table 3 late start, Outer Table 4 interrupted).
+
+### Content access badges
+
+Every card and the Watch header carry an access badge, with a lock when the current viewer can't play it yet:
+
+| Badge | Who can watch | Examples in the demo |
+| --- | --- | --- |
+| **Free** | Anyone, no account (not counted against the stream limit) | A quarter of the hands — the Home "Free highlights" row |
+| **Sign in** | Any GGPASS account in good standing (no subscription) | Some hands, the 2019 / 2024 classics, Main Event Day 1A replay |
+| **Subscribers** | Active subscription (paywall states 2–6 apply) | Live tables, other replays, most hands |
+
+Access policy: `canWatch` / `gateForAccess` in `src/state/app.tsx`; per-item levels in `src/data/mock.ts`.
 
 ## Demo Controls (bottom-right, collapsible)
 
 Visually separate from the product (dashed blue, monospace).
 
 - **Account state:** 1 not signed in · 2 GGPASS, no subscription (plan picker at play) · 3 active · 4 subscribed but GGPASS not linked (link screen) · 5 GGPASS restricted (support link) · 6 too many devices (device management)
-- **Featured stream:** LIVE / DELAYED / VOD for the Main Event Final Table (switching to VOD turns the Home hero into a countdown)
+- **Featured stream:** LIVE / DELAYED / VOD / LATE START / INTERRUPTED for the Main Event Final Table (VOD turns the Home hero into a countdown; late start and interrupted show their own Home and Watch messages)
 - **Region restricted:** "This event isn't available in your region" + alternatives + Notify me
 - **Platform:** web / mobile / TV devices — limits overlay level and multiview per the parity matrix
 - **Spoiler-Free Mode** shortcut
@@ -83,7 +95,9 @@ Accessibility: keyboard-reachable controls with a visible focus ring, skip link,
 
 - **GGPASS SSO:** OAuth 2.0 / OIDC authorization-code flow with a consent screen; WSOP TV receives only email and nickname. New SSO users have no subscription until they pick a plan. TV uses a device-code flow (code + QR) at `ggpass.example/activate`.
 - **Account states** 4–6 (unlinked subscription, restricted GGPASS account, stream limit) are assumed product policies; the stream limit is 2 concurrent streams.
-- **Delay:** final tables are broadcast 30 minutes behind real time; the timeline's live edge is the delayed edge.
+- **Delay:** set per table — the feature table at a final table runs 30 minutes behind real time, outer tables 15; the timeline's live edge is the delayed edge of the table on screen, and chip counts / hands follow the stream.
+- **Broadcast states:** *late start* (scheduled time passed, expected start shown) and *interrupted* (temporarily off air, resumes automatically) can apply to a whole broadcast or a single table.
+- **Access levels:** free / sign-in / subscriber per content item; free clips play without an account.
 - **Platform capabilities** in the parity matrix are placeholders to be confirmed per platform SDK.
 - **Prices** are placeholders; billing follows the store/platform policy.
 - Hand types, chip counts and equity are presented as competition data, in line with the spec.

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import type { AudioTrack, Hand, OverlayLevel } from '../data/types';
-import { HERO_DAY_ID, dayById, hands, playerById, seriesById } from '../data/mock';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import type { AudioTrack, Hand, OverlayLevel, TableFeed } from '../data/types';
+import { HERO_DAY_ID, HERO_EXPECTED_START, dayById, hands, playerById, seriesById } from '../data/mock';
 import { PLATFORMS, overlayAllowed } from '../data/platforms';
 import { chips, duration } from '../lib/format';
-import { countdown, fmtDateTime } from '../lib/time';
-import { gateFor, useApp, useTick } from '../state/app';
+import { VENUE_TZ, countdown, fmtDateTime, fmtTime } from '../lib/time';
+import { isOnAir, shortTableName, tableDelay, tableStatus } from '../lib/broadcast';
+import { canWatch, gateForAccess, useApp, useTick, type Gate } from '../state/app';
 import { useLiveStacks } from '../state/stacks';
-import { BraceletIcon, Button, Icon, Page, Segmented, Skeleton, Spoiler, StatusBadge, cx } from '../components/ui';
+import { AccessBadge, BraceletIcon, Button, Icon, Page, Segmented, Skeleton, Spoiler, StatusBadge, cx } from '../components/ui';
 import { Stage } from '../features/player/Stage';
 import { AUDIO_LABEL, Controls } from '../features/player/Controls';
 import { SidePanel } from '../features/player/SidePanel';
@@ -26,10 +27,11 @@ export function Watch() {
   const [params] = useSearchParams();
   const ref = dayById(dayId);
   if (!ref) return <NotFound />;
-  return <WatchInner key={dayId} dayId={dayId} startAt={params.get('t')} />;
+  const clip = params.get('clip');
+  return <WatchInner key={`${dayId}:${clip ?? ''}`} dayId={dayId} startAt={params.get('t')} clipId={clip} />;
 }
 
-function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null }) {
+function WatchInner({ dayId, startAt, clipId }: { dayId: string; startAt: string | null; clipId: string | null }) {
   const { state, set, toast } = useApp();
   const { event, day } = dayById(dayId)!;
   const se = seriesById(event.seriesId);
@@ -38,12 +40,22 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
   const stacks = useLiveStacks();
 
   const status = dayId === HERO_DAY_ID ? state.streamMode : day.status;
-  const isLive = status === 'live' || status === 'delayed';
+  const isLive = isOnAir(status);
   const fullLen = day.durationMin * 60;
-  const delaySec = status === 'delayed' ? 30 * 60 : 0;
+  const [mainTable, setMainTable] = useState(day.tables[0].id);
+  const main = day.tables.find((t) => t.id === mainTable) ?? day.tables[0];
+  // Each table can run its own delay (feature 30 min, outer tables 15 min): the live edge follows the table on screen.
+  const delayMin = tableDelay(main, status);
+  const delaySec = delayMin * 60;
   const elapsed = (now - Date.parse(day.start)) / 1000;
   /** VOD: full length · live: the (possibly delayed) live edge. */
   const end = status === 'vod' ? fullLen : Math.max(120, Math.min(fullLen, elapsed - delaySec));
+
+  // Content access: the day's level, or a single free/sign-in hand opened as a highlight clip.
+  const dayAccess = day.access ?? 'subscriber';
+  const dayGate = gateForAccess(dayAccess, state.scenario);
+  const clipHand = clipId ? hands.find((h) => h.id === clipId && h.dayId === dayId) : undefined;
+  const clipMode = dayGate !== 'ok' && !!clipHand && canWatch(clipHand.access, state.scenario) && (isLive || status === 'vod');
 
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(true);
@@ -56,8 +68,8 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
   const [quality, setQuality] = useState('Auto');
   const [overlay, setOverlay] = useState<OverlayLevel>(overlayAllowed(state.platform, state.overlayDefault) ? state.overlayDefault : caps.overlayMax);
   const [views, setViews] = useState<1 | 2 | 4>(1);
-  const [mainTable, setMainTable] = useState(day.tables[0].id);
   const [audioTable, setAudioTable] = useState(day.tables[0].id);
+  const [clipEnded, setClipEnded] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [sheet, setSheet] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -73,15 +85,48 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
     if (views > caps.multiview) setViews(caps.multiview);
   }, [state.platform, caps, overlay, views]);
 
-  // Clock: live follows the edge; VOD advances while playing.
+  // Hand markers. Live: scale into what has aired so far so the timeline is always populated.
+  const markers: Hand[] = useMemo(
+    () =>
+      hands
+        .filter((h) => h.dayId === dayId)
+        .map((h) => (isLive ? { ...h, t: Math.round((h.t / fullLen) * end * 0.96) } : h))
+        .sort((a, b) => a.t - b.t),
+    [dayId, isLive, fullLen, end],
+  );
+  const clipMarker = clipHand ? markers.find((m) => m.id === clipHand.id) : undefined;
+  const clipStart = clipMarker?.t ?? 0;
+  const clipEnd = clipHand ? Math.min(end, clipStart + clipHand.durationSec) : end;
+
+  // Clock: live follows the edge; VOD advances while playing; a highlight clip stops at its end.
   useEffect(() => {
     if (!playing) return;
+    if (clipMode) {
+      // Out of range (initial ?t= from the card, or after a mode switch) → snap to the hand.
+      if (position < clipStart || position > clipEnd) return setPosition(clipStart);
+      if (position + 1 >= clipEnd) {
+        setPosition(clipEnd);
+        setPlaying(false);
+        setClipEnded(true);
+      } else setPosition(position + 1);
+      return;
+    }
     if (isLive && follow) setPosition(end);
     else setPosition((p) => Math.min(end, p + 1));
   }, [now]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Highlight clip: start at the hand, never follow the live edge.
+  useEffect(() => {
+    if (!clipMode) return;
+    setFollow(false);
+    setPosition(clipStart);
+    setClipEnded(false);
+    setPlaying(true);
+  }, [clipMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Mode switch from the demo panel (LIVE / DELAYED / VOD) → reposition sensibly.
   useEffect(() => {
+    if (clipMode) return;
     setFollow(isLive);
     setPosition((p) => (isLive ? end : Math.min(p, fullLen)));
   }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -93,28 +138,25 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
 
   const seek = useCallback(
     (t: number) => {
-      const c = Math.max(0, Math.min(end, t));
+      const lo = clipMode ? clipStart : 0;
+      const hi = clipMode ? clipEnd : end;
+      const c = Math.max(lo, Math.min(hi, t));
       setPosition(c);
-      setFollow(isLive && end - c < 5);
+      setFollow(!clipMode && isLive && end - c < 5);
+      if (clipMode && c < clipEnd) setClipEnded(false);
     },
-    [end, isLive],
+    [end, isLive, clipMode, clipStart, clipEnd],
   );
 
-  // Hand markers. Live: scale into what has aired so far so the timeline is always populated.
-  const markers: Hand[] = useMemo(
-    () =>
-      hands
-        .filter((h) => h.dayId === dayId)
-        .map((h) => (isLive ? { ...h, t: Math.round((h.t / fullLen) * end * 0.96) } : h))
-        .sort((a, b) => a.t - b.t),
-    [dayId, isLive, fullLen, end],
-  );
+  const clipNudge = () => toast(dayGate === 'login' ? 'Sign in to watch the full broadcast' : 'The full broadcast is included with a subscription');
   const prevHand = () => {
+    if (clipMode) return clipNudge();
     const h = [...markers].reverse().find((m) => m.t < position - 3);
     if (h) seek(h.t);
     else toast('This is the first hand of the broadcast');
   };
   const nextHand = () => {
+    if (clipMode) return clipNudge();
     const h = markers.find((m) => m.t > position + 3);
     if (h) seek(h.t);
     else toast(isLive ? 'You are at the latest hand' : 'No more hands in this broadcast');
@@ -135,9 +177,14 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
   const phase = Math.floor(now / 6000) % 3;
   const captionLine = cc ? CAPTIONS[audio][Math.floor(now / 5000) % 3] : null;
 
-  // Access checks happen at play time (soft paywall).
-  const gate = gateFor(state.scenario);
-  const blocked = state.regionBlocked ? 'region' : status === 'upcoming' ? 'upcoming' : gate !== 'ok' ? gate : null;
+  // Access checks happen at play time (soft paywall). Free highlight clips skip the account gate.
+  const blocked = state.regionBlocked
+    ? 'region'
+    : status === 'upcoming' || status === 'late' || status === 'interrupted'
+      ? status
+      : clipMode || dayGate === 'ok'
+        ? null
+        : dayGate;
 
   const onKey = (e: React.KeyboardEvent) => {
     if (blocked || (e.target as HTMLElement).closest('input, [role="menu"], [role="slider"]')) return;
@@ -150,13 +197,16 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
     if (k === 'f') toggleFullscreen();
   };
 
+  const shownViews = clipMode ? 1 : views;
   const tiles = (() => {
-    const ordered = [day.tables.find((t) => t.id === mainTable)!, ...day.tables.filter((t) => t.id !== mainTable)];
-    return ordered.slice(0, views);
+    const ordered = [main, ...day.tables.filter((t) => t.id !== main.id)];
+    return ordered.slice(0, shownViews);
   })();
+  const firstOnAir = day.tables.find((t) => !t.state) ?? day.tables[0];
+  const delays = [...new Set(day.tables.map((t) => tableDelay(t, status)))];
   const multiAvailable = Math.min(caps.multiview, day.tables.length);
 
-  const panel = <SidePanel stacks={stacks} phase={phase} tables={day.tables} mainTable={mainTable} onSelectTable={(id) => (setMainTable(id), setAudioTable(id))} spoilerKey={dayId} />;
+  const panel = <SidePanel stacks={stacks} phase={phase} tables={day.tables} dayStatus={status} mainTable={mainTable} onSelectTable={(id) => (setMainTable(id), setAudioTable(id))} spoilerKey={dayId} />;
 
   return (
     <Page className="max-w-[96rem] py-4 sm:py-6">
@@ -171,12 +221,26 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <StatusBadge status={status} />
+          <StatusBadge status={status} delayMin={tableDelay(day.tables[0], status) || 30} />
+          <AccessBadge access={clipMode && clipHand ? clipHand.access : dayAccess} locked={!clipMode && dayGate !== 'ok'} size="md" />
           <Link to={`/events/${event.id}`} className="text-sm font-semibold text-muted hover:text-text">
             Event details →
           </Link>
         </div>
       </div>
+
+      {clipMode && clipHand && !blocked && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-card border border-ok/40 bg-surface px-4 py-3">
+          <AccessBadge access={clipHand.access} size="md" />
+          <p className="min-w-0 flex-1 text-sm">
+            <b>Highlight · {clipHand.title}</b>{' '}
+            <span className="text-muted">
+              ({duration(clipHand.durationSec)}) — the full broadcast is {dayAccess === 'signin' ? 'free with a GGPASS account' : 'included with a subscription'}.
+            </span>
+          </p>
+          <ClipCta gate={dayGate} returnTo={`/watch/${dayId}`} />
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0">
@@ -195,13 +259,16 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
                 <RegionBlocked />
               ) : blocked === 'upcoming' ? (
                 <Upcoming dayId={dayId} start={day.start} />
+              ) : blocked === 'late' || blocked === 'interrupted' ? (
+                <BroadcastHold kind={blocked} start={day.start} eventId={event.id} />
               ) : blocked ? (
                 <PlaybackGate gate={blocked} returnTo={`/watch/${dayId}`} />
               ) : (
                 <>
-                  <div className={cx('grid size-full gap-0.5 bg-black', views === 2 && 'grid-cols-2', views === 4 && 'grid-cols-2 grid-rows-2')}>
+                  <div className={cx('grid size-full gap-0.5 bg-black', shownViews === 2 && 'grid-cols-2', shownViews === 4 && 'grid-cols-2 grid-rows-2')}>
                     {tiles.map((t, i) => {
                       const Tile = views > 1 ? 'button' : 'div';
+                      const tStatus = tableStatus(t, status);
                       return (
                       <Tile
                         key={t.id}
@@ -209,7 +276,9 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
                         className={cx('relative min-h-0 text-left', views > 1 && 'cursor-pointer', views > 1 && audioTable === t.id && 'outline-2 -outline-offset-2 outline-gold')}
                         aria-label={views > 1 ? `${t.name}${audioTable === t.id ? ', audio on' : ', select to hear this table'}` : undefined}
                       >
-                        {t.failing && views > 1 ? (
+                        {tStatus === 'late' || tStatus === 'interrupted' ? (
+                          <TableHold table={t} kind={tStatus} compact={shownViews > 1} onSwitch={shownViews > 1 ? undefined : () => (setMainTable(firstOnAir.id), setAudioTable(firstOnAir.id))} switchLabel={firstOnAir.name} />
+                        ) : t.failing && views > 1 ? (
                           <div className="stage flex size-full items-center justify-center text-xs text-muted">{t.name} · feed unavailable</div>
                         ) : (
                           <Stage
@@ -224,9 +293,12 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
                             muted={muted || (views > 1 && audioTable !== t.id)}
                           />
                         )}
-                        {views > 1 && (
+                        {shownViews > 1 && (
                           <span className="label absolute top-1.5 left-1.5 flex items-center gap-1 rounded-[3px] bg-black/70 px-1.5 py-0.5 text-[9px]">
                             {t.name}
+                            {tStatus === 'delayed' && <span className="text-delayed">· {tableDelay(t, status)}m delay</span>}
+                            {tStatus === 'late' && <span className="text-delayed">· Late start</span>}
+                            {tStatus === 'interrupted' && <span className="text-live">· Interrupted</span>}
                             {audioTable === t.id && <Icon name="volume" size={11} className="text-gold" />}
                           </span>
                         )}
@@ -234,11 +306,24 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
                       );
                     })}
                   </div>
+                  {clipMode && clipEnded && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 p-6 text-center">
+                      <p className="label text-ok">Highlight ended</p>
+                      <p className="text-lg font-bold sm:text-xl">Keep watching the full broadcast</p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        <ClipCta gate={dayGate} returnTo={`/watch/${dayId}`} size="md" />
+                        <Button variant="secondary" onClick={() => (seek(clipStart), setPlaying(true))}>
+                          Replay highlight
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   <div className="pointer-events-none absolute top-3 left-3 hidden items-center gap-2 sm:flex">
-                    <StatusBadge status={status} />
+                    {/* multiview tiles carry their own labels */}
+                    {shownViews === 1 && <StatusBadge status={clipMode ? 'vod' : tableStatus(main, status)} delayMin={delayMin || 30} />}
                     {quality !== 'Auto' && <span className="label rounded-[3px] bg-black/60 px-1.5 py-0.5 text-[10px]">{quality}</span>}
                   </div>
-                  {!playing && (
+                  {!playing && !(clipMode && clipEnded) && (
                     <button onClick={() => setPlaying(true)} className="absolute top-1/2 left-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/60 text-white hover:border-gold" aria-label="Play">
                       <Icon name="play" size={30} />
                     </button>
@@ -249,17 +334,18 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
             {!loading && !blocked && (
               // Phones: control bar sits under the picture; larger screens: overlaid on it.
               <div className={cx(fullscreen ? 'absolute inset-x-0 bottom-0' : 'relative bg-black sm:absolute sm:inset-x-0 sm:bottom-0 sm:bg-transparent')}>
+                {/* A highlight clip gets its own short timeline (0 → clip length) instead of the live edge. */}
                 <Controls
-                  status={status}
+                  status={clipMode ? 'vod' : status}
                   playing={playing}
-                  onTogglePlay={() => (setPlaying((p) => !p), setFollow(false))}
-                  position={position}
-                  end={end}
-                  onSeek={seek}
-                  markers={markers}
+                  onTogglePlay={() => (clipMode && clipEnded ? (seek(clipStart), setPlaying(true)) : (setPlaying((p) => !p), setFollow(false)))}
+                  position={clipMode ? position - clipStart : position}
+                  end={clipMode ? Math.max(1, clipEnd - clipStart) : end}
+                  onSeek={clipMode ? (t) => seek(clipStart + t) : seek}
+                  markers={clipMode ? (clipMarker ? [{ ...clipMarker, t: 0 }] : []) : markers}
                   onPrevHand={prevHand}
                   onNextHand={nextHand}
-                  onJumpLive={() => (seek(end), setPlaying(true))}
+                  onJumpLive={() => (clipMode ? clipNudge() : (seek(end), setPlaying(true)))}
                   volume={volume}
                   muted={muted}
                   onVolume={(v) => (setVolume(v), setMuted(v === 0))}
@@ -296,6 +382,7 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
                   }))}
                 />
               </div>
+              {!clipMode && (
               <div className="flex items-center gap-2">
                 <span className="label text-subtle">Multiview</span>
                 <Segmented<'1' | '2' | '4'>
@@ -311,6 +398,7 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
                   }))}
                 />
               </div>
+              )}
               <span className="text-xs text-muted">
                 Audio: <b className="text-text">{AUDIO_LABEL[audio]}</b>
                 {views > 1 && <> · from {day.tables.find((t) => t.id === audioTable)?.name}</>}
@@ -323,14 +411,24 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
                   <Icon name="next" size={14} />
                 </Button>
               </div>
-              <Button size="sm" variant="outline" className="lg:hidden" onClick={() => setSheet(true)}>
-                Chip counts & tables
-              </Button>
+              {!clipMode && (
+                <Button size="sm" variant="outline" className="lg:hidden" onClick={() => setSheet(true)}>
+                  Chip counts & tables
+                </Button>
+              )}
             </div>
           )}
 
+          {/* delay note: what the stream is showing vs the tournament floor */}
+          {!blocked && !clipMode && status === 'delayed' && (
+            <p className="mt-2 text-xs text-subtle">
+              <b className="text-muted">{main.name}</b> runs {delayMin} min behind the tournament floor — showing play from about {fmtTime(now - delaySec * 1000, state.tz)} your time ({fmtTime(now - delaySec * 1000, VENUE_TZ)} Las Vegas). Chip counts and hands follow the stream.
+              {delays.length > 1 && <> Delay by table: {day.tables.map((t) => `${shortTableName(t.name)} ${tableDelay(t, status)} min`).join(' · ')}.</>}
+            </p>
+          )}
+
           {/* hands in this broadcast */}
-          {!blocked && markers.length > 0 && (
+          {!blocked && !clipMode && markers.length > 0 && (
             <section className="mt-6" aria-label="Hands in this broadcast">
               <h2 className="mb-2 text-base font-bold">Hands in this broadcast</h2>
               <ul className="divide-y divide-line rounded-panel border border-line bg-surface">
@@ -358,7 +456,7 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
           )}
         </div>
 
-        <aside className="hidden lg:block">{!blocked && <div className="sticky top-20 h-[calc(100dvh-7rem)] max-h-[44rem]">{panel}</div>}</aside>
+        <aside className="hidden lg:block">{!blocked && !clipMode && <div className="sticky top-20 h-[calc(100dvh-7rem)] max-h-[44rem]">{panel}</div>}</aside>
       </div>
 
       {/* mobile/tablet bottom sheet */}
@@ -378,6 +476,96 @@ function WatchInner({ dayId, startAt }: { dayId: string; startAt: string | null 
         </div>
       )}
     </Page>
+  );
+}
+
+/** Call to action from a free highlight to the full broadcast, by what the viewer still needs. */
+function ClipCta({ gate, returnTo, size = 'sm' }: { gate: Gate; returnTo: string; size?: 'sm' | 'md' }) {
+  const { requireLogin, set, toast } = useApp();
+  const nav = useNavigate();
+  if (gate === 'login')
+    return (
+      <Button variant="primary" size={size} onClick={() => requireLogin({ reason: 'Sign in to keep watching the full broadcast.', returnTo })}>
+        Continue with GGPASS
+      </Button>
+    );
+  if (gate === 'plans')
+    return (
+      <Button variant="primary" size={size} onClick={() => nav('/plans', { state: { returnTo } })}>
+        See plans
+      </Button>
+    );
+  if (gate === 'link')
+    return (
+      <Button variant="primary" size={size} onClick={() => (set({ scenario: 'active' }), toast('GGPASS linked (demo)'))}>
+        Link GGPASS account
+      </Button>
+    );
+  if (gate === 'devices')
+    return (
+      <Button variant="outline" size={size} onClick={() => nav('/devices', { state: { returnTo } })}>
+        Manage devices
+      </Button>
+    );
+  return null;
+}
+
+/** Whole broadcast starting late or interrupted (demo override on the hero broadcast). */
+function BroadcastHold({ kind, start, eventId }: { kind: 'late' | 'interrupted'; start: string; eventId: string }) {
+  const { state, toast } = useApp();
+  const now = useTick(1000);
+  return (
+    <div className="stage flex size-full flex-col items-center justify-center gap-3 p-6 text-center" role="status">
+      <StatusBadge status={kind} />
+      {kind === 'late' ? (
+        <>
+          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Coverage is starting late</h2>
+          <p className="max-w-md text-sm text-muted">
+            Scheduled for {fmtTime(start, state.tz)} · now expected around <b className="text-text">{fmtTime(HERO_EXPECTED_START, state.tz)}</b> your time. The player starts automatically when the feed is up.
+          </p>
+          <p className="text-3xl font-black tnum sm:text-4xl">{countdown(Date.parse(HERO_EXPECTED_START) - now)}</p>
+        </>
+      ) : (
+        <>
+          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">The broadcast is temporarily off air</h2>
+          <p className="max-w-md text-sm text-muted">The feed from the venue has paused. Playback resumes here automatically — no need to refresh.</p>
+        </>
+      )}
+      <div className="flex flex-wrap justify-center gap-2">
+        <Button variant="primary" onClick={() => toast(kind === 'late' ? 'We’ll notify you when coverage starts' : 'We’ll notify you when the broadcast is back')}>
+          <Icon name="bell" size={16} /> Notify me
+        </Button>
+        <Link to={`/events/${eventId}`}>
+          <Button variant="outline" tabIndex={-1}>
+            Catch up on key hands
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/** One table on hold while the rest of the broadcast is on air (late start / interrupted). */
+function TableHold({ table, kind, compact, onSwitch, switchLabel }: { table: TableFeed; kind: 'late' | 'interrupted'; compact?: boolean; onSwitch?: () => void; switchLabel: string }) {
+  const { state } = useApp();
+  return (
+    <div className="stage flex size-full flex-col items-center justify-center gap-2 p-4 text-center" role="status">
+      <StatusBadge status={kind} size={compact ? 'sm' : 'md'} />
+      <p className={cx('font-semibold', compact ? 'text-[11px]' : 'text-base')}>
+        {kind === 'late' ? `${table.name} hasn't started yet` : `${table.name} is temporarily off air`}
+      </p>
+      {!compact && (
+        <p className="max-w-sm text-sm text-muted">
+          {kind === 'late' && table.expected ? `Expected around ${fmtTime(table.expected, state.tz)} your time. ` : ''}
+          {kind === 'interrupted' ? 'The production team is on it — other tables are unaffected.' : 'Other tables are on air now.'}
+        </p>
+      )}
+      {onSwitch && (
+        <Button size="sm" variant="secondary" onClick={onSwitch}>
+          Watch {switchLabel}
+        </Button>
+      )}
+    </div>
   );
 }
 

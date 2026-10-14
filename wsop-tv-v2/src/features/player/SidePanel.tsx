@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import type { TableFeed } from '../../data/types';
+import type { StreamStatus, TableFeed } from '../../data/types';
 import { playerById } from '../../data/mock';
 import { chips } from '../../lib/format';
-import { Avatar, CountryCode, ErrorState, Icon, Skeleton, Spoiler, Tabs, cx } from '../../components/ui';
+import { fmtTime } from '../../lib/time';
+import { tableDelay, tableStatus } from '../../lib/broadcast';
+import { useApp } from '../../state/app';
+import { Avatar, CountryCode, ErrorState, Icon, Skeleton, Spoiler, StatusBadge, Tabs, cx } from '../../components/ui';
 import type { SeatStack } from '../../state/stacks';
 import { EQUITY } from '../../state/stacks';
 import { CURRENT_HAND } from './Stage';
@@ -13,6 +16,7 @@ export function SidePanel({
   stacks,
   phase,
   tables,
+  dayStatus,
   mainTable,
   onSelectTable,
   spoilerKey,
@@ -20,6 +24,7 @@ export function SidePanel({
   stacks: SeatStack[];
   phase: number;
   tables: TableFeed[];
+  dayStatus: StreamStatus;
   mainTable: string;
   onSelectTable: (id: string) => void;
   spoilerKey: string;
@@ -42,7 +47,7 @@ export function SidePanel({
       <div className="flex-1 overflow-y-auto p-3" role="tabpanel">
         {tab === 'chips' && <ChipCounts stacks={stacks} spoilerKey={spoilerKey} />}
         {tab === 'hand' && <CurrentHand phase={phase} />}
-        {tab === 'tables' && <Tables tables={tables} mainTable={mainTable} onSelect={onSelectTable} />}
+        {tab === 'tables' && <Tables tables={tables} dayStatus={dayStatus} mainTable={mainTable} onSelect={onSelectTable} />}
       </div>
     </section>
   );
@@ -134,7 +139,8 @@ function CurrentHand({ phase }: { phase: number }) {
   );
 }
 
-function Tables({ tables, mainTable, onSelect }: { tables: TableFeed[]; mainTable: string; onSelect: (id: string) => void }) {
+function Tables({ tables, dayStatus, mainTable, onSelect }: { tables: TableFeed[]; dayStatus: StreamStatus; mainTable: string; onSelect: (id: string) => void }) {
+  const { state } = useApp();
   const [retrying, setRetrying] = useState<string | null>(null);
   const [recovered, setRecovered] = useState<string[]>([]);
   return (
@@ -161,11 +167,22 @@ function Tables({ tables, mainTable, onSelect }: { tables: TableFeed[]; mainTabl
                 className={cx('flex w-full items-center gap-3 rounded-chip border p-3 text-left transition-colors duration-150', t.id === mainTable ? 'border-gold bg-gold-dim' : 'border-line hover:border-line-strong')}
               >
                 <Icon name="tv" size={18} className="text-muted" />
-                <span className="flex-1">
+                <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold">{t.name}</span>
-                  <span className="text-xs text-muted">{t.main ? 'Commentary · English / Spanish' : 'Natural sound'}</span>
+                  <span className="block text-xs text-muted">
+                    {tableStatus(t, dayStatus) === 'late'
+                      ? `Late start${t.expected ? ` · expected ${fmtTime(t.expected, state.tz)}` : ''}`
+                      : tableStatus(t, dayStatus) === 'interrupted'
+                        ? 'Temporarily off air'
+                        : t.main
+                          ? 'Commentary · English / Spanish'
+                          : 'Natural sound'}
+                  </span>
                 </span>
-                {t.id === mainTable && <span className="label text-[10px] text-gold">Main</span>}
+                <span className="flex flex-col items-end gap-1">
+                  <StatusBadge status={tableStatus(t, dayStatus)} delayMin={tableDelay(t, dayStatus) || 30} size="sm" />
+                  {t.id === mainTable && <span className="label text-[10px] text-gold">Main</span>}
+                </span>
               </button>
             )}
           </li>

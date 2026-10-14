@@ -1,5 +1,5 @@
 // Fictional demo data. Times are relative to page load so the demo always has something live.
-import type { ArchiveItem, Day, DayLabel, Hand, HandType, Player, Series, StreamStatus, TableFeed, TourEvent } from './types';
+import type { Access, ArchiveItem, Day, DayLabel, Hand, HandType, Player, Series, StreamStatus, TableFeed, TourEvent } from './types';
 
 export const T0 = Date.now();
 const H = 3_600_000;
@@ -81,8 +81,8 @@ export const events: TourEvent[] = [
       day('lv-main', 'Day 1B', -24 * 5, 600, 'vod'),
       day('lv-main', 'Day 2', -24 * 4, 660, 'vod', 2),
       day('lv-main', 'Day 3', -24 * 2, 660, 'vod', 4),
-      // The hero broadcast: on air now with a 30-minute delay; four tables for multiview, one outer feed fails (error state demo).
-      day('lv-main', 'Final Table', -1.5, 540, 'delayed', 4, 3),
+      // The hero broadcast: on air now; four tables for multiview. Per-table delays and states are set below.
+      day('lv-main', 'Final Table', -1.5, 540, 'delayed', 4),
     ],
   },
   {
@@ -97,7 +97,8 @@ export const events: TourEvent[] = [
     level: 29,
     remaining: 4,
     leaderId: 'p19',
-    days: [day('lv-hr', 'Day 1A', -24 * 2, 540, 'vod'), day('lv-hr', 'Day 2', -24, 540, 'vod', 2), day('lv-hr', 'Final Table', -0.75, 420, 'live', 2)],
+    // Live without delay; the outer feed fails on the client (error state demo with Retry).
+    days: [day('lv-hr', 'Day 1A', -24 * 2, 540, 'vod'), day('lv-hr', 'Day 2', -24, 540, 'vod', 2), day('lv-hr', 'Final Table', -0.75, 420, 'live', 2, 1)],
   },
   {
     id: 'lv-ppc',
@@ -200,6 +201,22 @@ export const events: TourEvent[] = [
   },
 ];
 
+// Hero Final Table: each table runs its own delay (feature 30 min, outer tables 15 min), and two outer tables
+// show broadcast states — one starts late, one is temporarily interrupted.
+{
+  const ft = events[0].days[4];
+  ft.tables = [
+    { id: `${ft.id}-t1`, name: 'Feature Table', main: true, delayMin: 30 },
+    { id: `${ft.id}-t2`, name: 'Outer Table 2', delayMin: 15 },
+    { id: `${ft.id}-t3`, name: 'Outer Table 3', delayMin: 15, state: 'late', expected: iso(0.4) },
+    { id: `${ft.id}-t4`, name: 'Outer Table 4', delayMin: 15, state: 'interrupted' },
+  ];
+  // One replay is open to any signed-in account (no subscription needed).
+  events[0].days[0].access = 'signin';
+}
+/** Demo override "Late start" for the whole hero broadcast: expected start shown to viewers. */
+export const HERO_EXPECTED_START = iso(0.35);
+
 // Recent finishes for player profiles.
 const finishes: [string, string, number, number][] = [
   ['p09', 'lv-mm', 1, 1_500_000],
@@ -282,18 +299,20 @@ export const hands: Hand[] = seq.map((type, i) => {
     winnerId: winner.id,
     views: 12_000 + ((i * 7919) % 480_000),
     durationSec: 70 + ((i * 53) % 240),
+    // A mix of access levels: free clips (no account), free with sign-in, subscribers only.
+    access: (i % 4 === 0 ? 'free' : i % 4 === 1 ? 'signin' : 'subscriber') as Access,
   };
 });
 
 // ---- archive classics (6) ---------------------------------------------------------------------
 
 export const archive: ArchiveItem[] = [
-  { id: 'a1', title: 'Main Event Final Table', year: 2019, subtitle: 'The longest heads-up in championship history', durationSec: 9 * 3600 + 1200, winnerId: 'p19', hue: 215 },
-  { id: 'a2', title: "Players' Championship", year: 2021, subtitle: 'Eight disciplines, one champion', durationSec: 7 * 3600, winnerId: 'p07', hue: 0 },
-  { id: 'a3', title: 'High Roller Final Table', year: 2022, subtitle: 'A record field for the summer high roller', durationSec: 6 * 3600 + 900, winnerId: 'p14', hue: 230 },
-  { id: 'a4', title: 'Main Event Day 7', year: 2023, subtitle: 'From 35 players to the final nine', durationSec: 10 * 3600, winnerId: 'p17', hue: 260 },
-  { id: 'a5', title: 'Tournament of Champions', year: 2024, subtitle: 'Bracelet winners only', durationSec: 5 * 3600 + 1800, winnerId: 'p01', hue: 210 },
-  { id: 'a6', title: 'Main Event Final Table', year: 2025, subtitle: 'The comeback from one big blind', durationSec: 8 * 3600 + 2400, winnerId: 'p04', hue: 270 },
+  { id: 'a1', title: 'Main Event Final Table', year: 2019, subtitle: 'The longest heads-up in championship history', durationSec: 9 * 3600 + 1200, winnerId: 'p19', hue: 215, access: 'signin' },
+  { id: 'a2', title: "Players' Championship", year: 2021, subtitle: 'Eight disciplines, one champion', durationSec: 7 * 3600, winnerId: 'p07', hue: 0, access: 'subscriber' },
+  { id: 'a3', title: 'High Roller Final Table', year: 2022, subtitle: 'A record field for the summer high roller', durationSec: 6 * 3600 + 900, winnerId: 'p14', hue: 230, access: 'subscriber' },
+  { id: 'a4', title: 'Main Event Day 7', year: 2023, subtitle: 'From 35 players to the final nine', durationSec: 10 * 3600, winnerId: 'p17', hue: 260, access: 'subscriber' },
+  { id: 'a5', title: 'Tournament of Champions', year: 2024, subtitle: 'Bracelet winners only', durationSec: 5 * 3600 + 1800, winnerId: 'p01', hue: 210, access: 'signin' },
+  { id: 'a6', title: 'Main Event Final Table', year: 2025, subtitle: 'The comeback from one big blind', durationSec: 8 * 3600 + 2400, winnerId: 'p04', hue: 270, access: 'subscriber' },
 ];
 
 // ---- lookups -----------------------------------------------------------------------------------

@@ -1,7 +1,8 @@
 import { events } from '../data/mock';
 import { BroadcastCard, useDayStatus } from '../components/cards';
-import { EmptyState, Page, SectionHeader } from '../components/ui';
+import { EmptyState, Page, SectionHeader, cx } from '../components/ui';
 import type { Day, TourEvent } from '../data/types';
+import { isOnAir, shortTableName, tableDelay, tableStatus } from '../lib/broadcast';
 
 export function Live() {
   const all = events.flatMap((e) => e.days.map((d) => ({ e, d })));
@@ -11,7 +12,7 @@ export function Live() {
       <header>
         <p className="label text-gold">On air</p>
         <h1 className="mt-1 text-title font-black">Live</h1>
-        <p className="mt-1 text-sm text-muted">Every table that's broadcasting right now. Final tables run on a 30-minute delay.</p>
+        <p className="mt-1 text-sm text-muted">Every table that's broadcasting right now. Delays are set per table — feature tables at final tables run 30 minutes behind, outer tables 15.</p>
       </header>
       <OnAir all={all} />
       <section>
@@ -47,5 +48,28 @@ function OnAir({ all }: { all: { e: TourEvent; d: Day }[] }) {
 
 function LiveItem({ e, d }: { e: TourEvent; d: Day }) {
   const status = useDayStatus(d);
-  return <div className={status === 'vod' ? 'opacity-70' : ''}><BroadcastCard event={e} day={d} wide /></div>;
+  return (
+    <div className={status === 'vod' ? 'opacity-70' : ''}>
+      <BroadcastCard event={e} day={d} wide />
+      {/* per-table state: delay, late start, interrupted */}
+      {isOnAir(status) && d.tables.length > 1 && (
+        <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Tables">
+          {d.tables.map((t) => {
+            const st = tableStatus(t, status);
+            return (
+              <li
+                key={t.id}
+                className={cx(
+                  'rounded-[4px] border px-1.5 py-0.5 text-[11px] font-semibold tnum',
+                  st === 'late' ? 'border-delayed/60 text-delayed' : st === 'interrupted' ? 'border-live/60 text-live' : 'border-line text-muted',
+                )}
+              >
+                {shortTableName(t.name)} · {st === 'late' ? 'Late start' : st === 'interrupted' ? 'Interrupted' : st === 'delayed' ? `${tableDelay(t, status)}m delay` : 'Live'}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
 }

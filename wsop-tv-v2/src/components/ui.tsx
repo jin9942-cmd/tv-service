@@ -1,6 +1,6 @@
 // Reusable UI primitives. All colours come from the design tokens in styles/theme.css.
 import { useEffect, useId, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import type { StreamStatus } from '../data/types';
+import type { Access, StreamStatus } from '../data/types';
 import { initials } from '../lib/format';
 import { useApp } from '../state/app';
 
@@ -46,7 +46,47 @@ export function StatusBadge({ status, delayMin = 30, size = 'md' }: { status: St
       </span>
     );
   if (status === 'upcoming') return <span className={cx(base, 'border border-line-strong text-muted')}>Upcoming</span>;
+  if (status === 'late')
+    return (
+      <span className={cx(base, 'border border-delayed bg-black/50 text-delayed')} title="The broadcast hasn't started at its scheduled time">
+        Late start
+      </span>
+    );
+  if (status === 'interrupted')
+    return (
+      <span className={cx(base, 'border border-live bg-black/50 text-live')} title="The broadcast is temporarily off air">
+        Interrupted
+      </span>
+    );
   return <span className={cx(base, 'bg-surface-3 text-muted')}>VOD</span>;
+}
+
+// ---- access badges (who can play this) -------------------------------------------------------
+
+const ACCESS_LABEL: Record<Access, string> = { free: 'Free', signin: 'Sign in', subscriber: 'Subscribers' };
+const ACCESS_TITLE: Record<Access, string> = {
+  free: 'Free to watch — no account needed',
+  signin: 'Free with a GGPASS account',
+  subscriber: 'Included with a subscription',
+};
+
+/** Content-level access badge. `locked` adds a lock when the current viewer can't play it yet. */
+export function AccessBadge({ access, locked, size = 'sm' }: { access: Access; locked?: boolean; size?: 'sm' | 'md' }) {
+  return (
+    <span
+      title={ACCESS_TITLE[access]}
+      className={cx(
+        'label inline-flex items-center gap-1 rounded-[4px] border bg-black/70',
+        size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1',
+        access === 'free' && 'border-ok/60 text-ok',
+        access === 'signin' && 'border-line-strong text-text',
+        access === 'subscriber' && 'border-gold/60 text-gold-strong',
+      )}
+    >
+      {locked && access !== 'free' && <Icon name="lock" size={size === 'sm' ? 10 : 12} />}
+      {ACCESS_LABEL[access]}
+    </span>
+  );
 }
 
 // ---- bracelet (hand-drawn SVG, not an emoji) ---------------------------------------------------

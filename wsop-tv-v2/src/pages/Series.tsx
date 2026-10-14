@@ -3,9 +3,9 @@ import type { Day, TourEvent } from '../data/types';
 import { eventById, events, hands, playerById, series, seriesById } from '../data/mock';
 import { count, money } from '../lib/format';
 import { fmtDate, fmtDateTime } from '../lib/time';
-import { useApp } from '../state/app';
+import { canWatch, useApp } from '../state/app';
 import { Art, HandCard, useDayStatus } from '../components/cards';
-import { BraceletIcon, Icon, Page, SectionHeader, Spoiler, StatusBadge, cx } from '../components/ui';
+import { AccessBadge, BraceletIcon, Icon, Page, SectionHeader, Spoiler, StatusBadge, cx } from '../components/ui';
 import { NotFound } from './NotFound';
 
 export function SeriesList() {
@@ -47,6 +47,8 @@ function eventStatus(e: TourEvent, override: (d: Day) => string) {
   const s = e.days.map(override);
   if (s.includes('live')) return 'live';
   if (s.includes('delayed')) return 'delayed';
+  if (s.includes('interrupted')) return 'interrupted';
+  if (s.includes('late')) return 'late';
   if (s.every((x) => x === 'upcoming')) return 'upcoming';
   return 'vod';
 }
@@ -77,7 +79,7 @@ function EventRow({ e }: { e: TourEvent }) {
 function DayPill({ d }: { d: Day }) {
   const st = useDayStatus(d);
   return (
-    <span className={cx('rounded-[4px] border px-1.5 py-0.5 text-[11px] font-semibold', st === 'live' ? 'border-live text-live' : st === 'delayed' ? 'border-delayed text-delayed' : st === 'upcoming' ? 'border-line text-subtle' : 'border-line-strong text-muted')}>
+    <span className={cx('rounded-[4px] border px-1.5 py-0.5 text-[11px] font-semibold', st === 'live' || st === 'interrupted' ? 'border-live text-live' : st === 'delayed' || st === 'late' ? 'border-delayed text-delayed' : st === 'upcoming' ? 'border-line text-subtle' : 'border-line-strong text-muted')}>
       {d.label}
     </span>
   );
@@ -197,7 +199,10 @@ function DayRow({ e, d }: { e: TourEvent; d: Day }) {
             {fmtDateTime(d.start, state.tz)} · {Math.round(d.durationMin / 60)}h · {d.tables.length} {d.tables.length > 1 ? 'tables' : 'table'}
           </p>
         </div>
-        <StatusBadge status={st} size="sm" />
+        <span className="flex flex-col items-end gap-1 sm:flex-row sm:items-center">
+          <AccessBadge access={d.access ?? 'subscriber'} locked={!canWatch(d.access ?? 'subscriber', state.scenario)} />
+          <StatusBadge status={st} size="sm" />
+        </span>
       </Link>
     </li>
   );

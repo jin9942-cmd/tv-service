@@ -1,6 +1,6 @@
 // Global demo state. React state only — nothing is written to localStorage / sessionStorage / IndexedDB.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { AccountScenario, AudioTrack, OverlayLevel, Platform, StreamStatus } from '../data/types';
+import type { Access, AccountScenario, AudioTrack, OverlayLevel, Platform, StreamStatus } from '../data/types';
 import { browserTz } from '../lib/time';
 
 export interface Device {
@@ -79,6 +79,19 @@ export type Gate = 'ok' | 'login' | 'plans' | 'link' | 'restricted' | 'devices';
 /** What happens when a viewer presses play (soft paywall). */
 export const gateFor = (s: AccountScenario): Gate =>
   ({ guest: 'login', noSub: 'plans', active: 'ok', unlinked: 'link', restricted: 'restricted', deviceLimit: 'devices' })[s] as Gate;
+
+/**
+ * Content-level access. Free clips play for anyone (no account, not counted against the stream limit);
+ * 'signin' content needs any GGPASS account in good standing; subscriber content follows the paywall above.
+ */
+export const canWatch = (access: Access, s: AccountScenario) =>
+  access === 'free' ? true : access === 'signin' ? s !== 'guest' && s !== 'restricted' : s === 'active';
+
+export const gateForAccess = (access: Access, s: AccountScenario): Gate => {
+  if (canWatch(access, s)) return 'ok';
+  if (access === 'signin') return s === 'restricted' ? 'restricted' : 'login';
+  return gateFor(s);
+};
 
 interface Api {
   state: AppState;

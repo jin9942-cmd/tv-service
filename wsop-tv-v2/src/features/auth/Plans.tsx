@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../../state/app';
-import { Button, Icon, Page, cx } from '../../components/ui';
+import { AccessBadge, Button, Icon, Page, cx } from '../../components/ui';
 
 const PERKS = ['Every live table, including delayed final tables', 'Full archive and hand-by-hand replays', 'Basic & Pro data overlays', 'Multiview on supported devices', 'Watch on web, mobile and TV'];
 
@@ -58,6 +58,21 @@ export function Plans() {
           </li>
         ))}
       </ul>
+
+      <div className="mt-6 rounded-panel border border-line bg-surface p-4">
+        <p className="label text-subtle">Free without a subscription</p>
+        <ul className="mt-2 space-y-1.5 text-sm">
+          <li className="flex items-center gap-2">
+            <AccessBadge access="free" /> Highlight clips — no account needed
+          </li>
+          <li className="flex items-center gap-2">
+            <AccessBadge access="signin" /> Selected classics, replays and hands with a free GGPASS account
+          </li>
+          <li className="flex items-center gap-2">
+            <AccessBadge access="subscriber" /> Everything else, including every live table
+          </li>
+        </ul>
+      </div>
 
       <Button variant="primary" size="lg" className="mt-8 w-full sm:w-auto" onClick={subscribe}>
         Continue with {plan === 'annual' ? 'Annual' : 'Monthly'}

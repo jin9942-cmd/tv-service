@@ -1,12 +1,12 @@
 // Content cards shared by Home, Live, Hands, Players and Archive.
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { ArchiveItem, Day, Hand, Player, TourEvent } from '../data/types';
 import { HERO_DAY_ID, eventById, playerById, seriesById } from '../data/mock';
 import { chips, compact, duration, moneyShort } from '../lib/format';
 import { fmtDateTime } from '../lib/time';
-import { useApp } from '../state/app';
+import { canWatch, gateForAccess, useApp } from '../state/app';
 import { HAND_META, HandGlyph } from '../features/player/markers';
-import { Avatar, BraceletCount, CountryCode, Icon, Spoiler, StatusBadge, cx } from './ui';
+import { AccessBadge, Avatar, BraceletCount, CountryCode, Icon, Spoiler, StatusBadge, cx } from './ui';
 
 /** Abstract artwork for a broadcast (no images): stage gradient + event number. */
 export function Art({ hue = 220, label, children, className }: { hue?: number; label?: string; children?: React.ReactNode; className?: string }) {
@@ -33,6 +33,9 @@ export function BroadcastCard({ event, day, wide, progress }: { event: TourEvent
         <span className="absolute top-2 left-2">
           <StatusBadge status={status} size="sm" />
         </span>
+        <span className="absolute top-2 right-2">
+          <AccessBadge access={day.access ?? 'subscriber'} locked={!canWatch(day.access ?? 'subscriber', state.scenario)} />
+        </span>
         {progress !== undefined && (
           <span className="absolute inset-x-0 bottom-0 h-1 bg-white/15">
             <i className="block h-full bg-gold" style={{ width: `${Math.round(progress * 100)}%` }} />
@@ -50,15 +53,20 @@ export function BroadcastCard({ event, day, wide, progress }: { event: TourEvent
 }
 
 export function HandCard({ hand, className }: { hand: Hand; className?: string }) {
+  const { state } = useApp();
   const ev = eventById(hand.eventId)!;
   const m = HAND_META[hand.type];
   return (
     <div className={cx('group rounded-card border border-line bg-surface p-3 transition-colors duration-150 hover:border-line-strong', className)}>
-      <Link to={`/watch/${hand.dayId}?t=${hand.t}`} className="block rounded-card">
+      {/* clip=… lets the player open just this hand when the full broadcast is locked (free highlights). */}
+      <Link to={`/watch/${hand.dayId}?t=${hand.t}&clip=${hand.id}`} className="block rounded-card">
       <Art hue={210 + ev.number * 5}>
         <span className="absolute top-2 left-2 flex items-center gap-1.5 rounded-[4px] bg-black/70 px-1.5 py-1">
           <HandGlyph type={hand.type} size={14} />
           <span className="label text-[10px]">{m.label}</span>
+        </span>
+        <span className="absolute top-2 right-2">
+          <AccessBadge access={hand.access} locked={!canWatch(hand.access, state.scenario)} />
         </span>
         <span className="absolute right-2 bottom-2 rounded-[3px] bg-black/70 px-1.5 text-[11px] font-semibold tnum">{duration(hand.durationSec)}</span>
         <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden>
@@ -100,13 +108,26 @@ export function PlayerCard({ player, rank }: { player: Player; rank?: number }) 
 }
 
 export function ArchiveCard({ item }: { item: ArchiveItem }) {
-  const { toast } = useApp();
+  const { state, toast, requireLogin } = useApp();
+  const nav = useNavigate();
   const w = playerById(item.winnerId);
+  const play = () => {
+    const gate = gateForAccess(item.access, state.scenario);
+    if (gate === 'ok') return toast('Archive playback opens the same player (demo)');
+    if (gate === 'login') return requireLogin({ reason: item.access === 'signin' ? 'Sign in free with GGPASS to watch this classic.' : 'Sign in to watch this classic.' });
+    if (gate === 'plans') return nav('/plans', { state: { returnTo: '/archive' } });
+    if (gate === 'link') return toast('Link your GGPASS account to watch (see Account)');
+    if (gate === 'restricted') return toast('Viewing isn’t available on this account');
+    return nav('/devices', { state: { returnTo: '/archive' } });
+  };
   return (
     <div className="group w-72">
-      <button onClick={() => toast('Archive playback opens the same player (demo)')} className="block w-full rounded-card text-left">
+      <button onClick={play} className="block w-full rounded-card text-left">
       <Art hue={item.hue} label={String(item.year)}>
         <span className="label absolute top-2 left-2 rounded-[3px] bg-black/70 px-1.5 py-0.5 text-[10px]">Classic · {item.year}</span>
+        <span className="absolute top-2 right-2">
+          <AccessBadge access={item.access} locked={!canWatch(item.access, state.scenario)} />
+        </span>
         <span className="absolute right-2 bottom-2 rounded-[3px] bg-black/70 px-1.5 text-[11px] font-semibold tnum">{duration(item.durationSec)}</span>
       </Art>
       <p className="mt-2 text-[15px] font-semibold group-hover:text-gold-strong">

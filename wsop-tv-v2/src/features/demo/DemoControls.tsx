@@ -47,13 +47,22 @@ export function DemoControls() {
           </Group>
 
           <Group label="Featured stream (Main Event FT)">
-            <div className="flex gap-1" role="radiogroup" aria-label="Stream state">
-              {(['live', 'delayed', 'vod'] as Exclude<StreamStatus, 'upcoming'>[]).map((m) => (
-                <button key={m} role="radio" aria-checked={state.streamMode === m} onClick={() => set({ streamMode: m })} className={cx('flex-1 rounded px-2 py-1 uppercase', state.streamMode === m ? 'bg-sky-400/25 text-white' : 'text-sky-200/80 hover:bg-sky-400/10')}>
-                  {m}
+            <div className="grid grid-cols-3 gap-1" role="radiogroup" aria-label="Stream state">
+              {(
+                [
+                  ['live', 'Live'],
+                  ['delayed', 'Delayed'],
+                  ['vod', 'VOD'],
+                  ['late', 'Late start'],
+                  ['interrupted', 'Interrupted'],
+                ] as [Exclude<StreamStatus, 'upcoming'>, string][]
+              ).map(([m, label]) => (
+                <button key={m} role="radio" aria-checked={state.streamMode === m} onClick={() => set({ streamMode: m })} className={cx('rounded px-1.5 py-1 text-[11px] uppercase', state.streamMode === m ? 'bg-sky-400/25 text-white' : 'text-sky-200/80 hover:bg-sky-400/10')}>
+                  {label}
                 </button>
               ))}
             </div>
+            <p className="mt-1 text-[10.5px] text-sky-200/60">Delayed: feature table 30 min, outer tables 15 min · Outer Table 3 starts late, Outer Table 4 is interrupted (Tables panel).</p>
           </Group>
 
           <Group label="Region">

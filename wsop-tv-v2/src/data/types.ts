@@ -1,7 +1,10 @@
 // Data model: Series → Event (bracelet event) → Day (1A, 1B, 2, 3, Final Table) → Broadcast (stream).
 // Players ↔ hands/events are many-to-many. All names and results are fictional.
 
-export type StreamStatus = 'live' | 'delayed' | 'vod' | 'upcoming';
+// late = the broadcast hasn't started at its scheduled time · interrupted = temporarily off air (production side).
+export type StreamStatus = 'live' | 'delayed' | 'vod' | 'upcoming' | 'late' | 'interrupted';
+/** Who can play a piece of content: anyone, any signed-in GGPASS account, or subscribers only. */
+export type Access = 'free' | 'signin' | 'subscriber';
 export type DayLabel = 'Day 1A' | 'Day 1B' | 'Day 2' | 'Day 3' | 'Final Table';
 export type HandType = 'allin' | 'bigpot' | 'bluff' | 'badbeat' | 'herofold';
 
@@ -39,6 +42,8 @@ export interface Day {
   status: StreamStatus;
   /** Streams for this day (main feature table + outer tables). */
   tables: TableFeed[];
+  /** Defaults to subscribers only. */
+  access?: Access;
 }
 
 export interface TableFeed {
@@ -48,6 +53,12 @@ export interface TableFeed {
   main?: boolean;
   /** Simulated feed failure for the error state demo. */
   failing?: boolean;
+  /** Broadcast delay in minutes while the day is delayed (default 30). Each table can run its own delay. */
+  delayMin?: number;
+  /** Table-level broadcast state while the rest of the day is on air. */
+  state?: 'late' | 'interrupted';
+  /** Late start: expected start (ISO UTC). */
+  expected?: string;
 }
 
 export interface TourEvent {
@@ -84,6 +95,7 @@ export interface Hand {
   winnerId: string;
   views: number;
   durationSec: number;
+  access: Access;
 }
 
 export interface ArchiveItem {
@@ -94,6 +106,7 @@ export interface ArchiveItem {
   durationSec: number;
   winnerId: string;
   hue: number;
+  access: Access;
 }
 
 export type AccountScenario = 'guest' | 'noSub' | 'active' | 'unlinked' | 'restricted' | 'deviceLimit';
