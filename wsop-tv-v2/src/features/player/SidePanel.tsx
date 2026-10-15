@@ -8,7 +8,7 @@ import { useApp } from '../../state/app';
 import { Avatar, CountryCode, ErrorState, Icon, Skeleton, Spoiler, StatusBadge, Tabs, cx } from '../../components/ui';
 import type { SeatStack } from '../../state/stacks';
 import { EQUITY } from '../../state/stacks';
-import { CURRENT_HAND } from './Stage';
+import type { CurrentHand } from './hand';
 
 type Tab = 'chips' | 'hand' | 'tables';
 
@@ -21,6 +21,8 @@ export function SidePanel({
   onSelectTable,
   spoilerKey,
   bb,
+  hand,
+  live = true,
 }: {
   stacks: SeatStack[];
   phase: number;
@@ -31,6 +33,9 @@ export function SidePanel({
   spoilerKey: string;
   /** Current big blind, to show stacks in big blinds. */
   bb?: number;
+  hand: CurrentHand;
+  /** Replays show the counts at that point of the broadcast (no live updates). */
+  live?: boolean;
 }) {
   const [tab, setTab] = useState<Tab>('chips');
   return (
@@ -48,23 +53,25 @@ export function SidePanel({
         />
       </div>
       <div className="flex-1 overflow-y-auto p-3" role="tabpanel">
-        {tab === 'chips' && <ChipCounts stacks={stacks} spoilerKey={spoilerKey} bb={bb} />}
-        {tab === 'hand' && <CurrentHand phase={phase} />}
+        {tab === 'chips' && <ChipCounts stacks={stacks} spoilerKey={spoilerKey} bb={bb} live={live} />}
+        {tab === 'hand' && <CurrentHandTab phase={phase} hand={hand} />}
         {tab === 'tables' && <Tables tables={tables} dayStatus={dayStatus} mainTable={mainTable} onSelect={onSelectTable} />}
       </div>
     </section>
   );
 }
 
-function ChipCounts({ stacks, spoilerKey, bb }: { stacks: SeatStack[]; spoilerKey: string; bb?: number }) {
+function ChipCounts({ stacks, spoilerKey, bb, live }: { stacks: SeatStack[]; spoilerKey: string; bb?: number; live?: boolean }) {
   const max = stacks[0]?.stack ?? 1;
   return (
     <div>
       <p className="mb-2 flex items-center justify-between text-xs text-muted">
-        <span>{stacks.length} players remaining</span>
-        <span className="inline-flex items-center gap-1">
-          <i className="live-dot size-1.5 rounded-full bg-live" aria-hidden /> Updating
-        </span>
+        <span>{live ? `${stacks.length} players at the table` : 'Chip counts at this point of the replay'}</span>
+        {live && (
+          <span className="inline-flex items-center gap-1">
+            <i className="live-dot size-1.5 rounded-full bg-live" aria-hidden /> Updating
+          </span>
+        )}
       </p>
       <Spoiler k={`${spoilerKey}-chips`} label="Chip standings hidden">
         <ol className="space-y-1.5">
@@ -97,8 +104,8 @@ function ChipCounts({ stacks, spoilerKey, bb }: { stacks: SeatStack[]; spoilerKe
   );
 }
 
-function CurrentHand({ phase }: { phase: number }) {
-  const h = CURRENT_HAND;
+function CurrentHandTab({ phase, hand }: { phase: number; hand: CurrentHand }) {
+  const h = hand;
   const eq = EQUITY[phase];
   const a = playerById(h.a);
   const b = playerById(h.b);

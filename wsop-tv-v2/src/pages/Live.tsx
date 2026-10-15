@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { Access, Day, StreamStatus, TableFeed, TourEvent } from '../data/types';
-import { HERO_DAY_ID, dayById, events, finalTableSeats } from '../data/mock';
+import { HERO_DAY_ID, dayById, events, finalTableSeats, seriesById } from '../data/mock';
 import { isBroadcasting, isOnAir, tableDelay, tableStatus } from '../lib/broadcast';
 import { VENUE_TZ, fmtDate, fmtTime, tzAbbr } from '../lib/time';
 import { gateForAccess, useApp } from '../state/app';
@@ -53,6 +53,45 @@ function LiveScreen({ dayId, startAt = null, clipId = null }: { dayId?: string; 
   const tableIdx = Math.max(0, selected.d.tables.findIndex((t) => t.id === tableId));
   const pickEvent = (x: Entry) => (dayId ? nav(`/watch/${x.d.id}`) : setParams({ event: x.e.id }, { replace: true }));
   const pickTable = (id: string) => setParams(dayId ? { table: id } : { event: selected.e.id, table: id }, { replace: true });
+
+  // Replays get their own screen: no live strip or stream list — the event's episodes instead.
+  if (selected.status === 'vod') {
+    const se = seriesById(selected.e.seriesId);
+    return (
+      <div>
+        <section className="border-b border-line bg-surface/60" aria-label="Replay">
+          <div className="mx-auto flex max-w-[96rem] flex-wrap items-center justify-between gap-3 px-gutter py-4 sm:px-6 lg:px-8">
+            <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-sm text-muted">
+              <Link to="/archive" className="hover:text-text">
+                Archive
+              </Link>
+              <span aria-hidden>›</span>
+              <Link to="/series" className="hover:text-text">
+                {se.name}
+              </Link>
+              <span aria-hidden>›</span>
+              <Link to={`/events/${selected.e.id}`} className="font-semibold text-text hover:text-gold-strong">
+                #{selected.e.number} {selected.e.name.replace(' World Championship', '')}
+              </Link>
+            </nav>
+            <Link to="/live" className="inline-flex items-center gap-2 text-sm font-semibold text-muted hover:text-text">
+              <i className="live-dot size-1.5 rounded-full bg-live" aria-hidden /> What's live now →
+            </Link>
+          </div>
+        </section>
+        <WatchInner
+          key={`${selected.d.id}:${clipId ?? ''}`}
+          dayId={selected.d.id}
+          startAt={startAt}
+          clipId={clipId}
+          variant="vod"
+          tableId={selected.d.tables[tableIdx].id}
+          onTable={pickTable}
+          asideTop={<Episodes e={selected.e} current={selected.d.id} />}
+        />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -162,5 +201,47 @@ function StreamCard({ x, t, i, on, onClick }: { x: Entry; t: TableFeed; i: numbe
       </span>
       {on && <span className="label mt-1.5 block text-[10px] text-live">Now watching</span>}
     </button>
+  );
+}
+
+/** Replay screen: every broadcast day of the event, like episodes. */
+function Episodes({ e, current }: { e: TourEvent; current: string }) {
+  const { state } = useApp();
+  return (
+    <section aria-label="Episodes">
+      <p className="label mb-3 text-text/80">
+        Broadcast days · <span className="tnum">{e.days.length}</span>
+      </p>
+      <ol className="space-y-2">
+        {e.days.map((d) => {
+          const st = d.id === HERO_DAY_ID ? state.streamMode : d.status;
+          const on = d.id === current;
+          const watched = state.progress[d.id] ? Math.min(1, state.progress[d.id] / (d.durationMin * 60)) : 0;
+          return (
+            <li key={d.id}>
+              <Link
+                to={`/watch/${d.id}`}
+                aria-current={on || undefined}
+                className={cx('block overflow-hidden rounded-card border p-3 transition-colors duration-150', on ? 'border-gold bg-gold-dim' : 'border-line bg-surface hover:border-line-strong')}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[15px] font-bold">{d.label}</span>
+                  {st === 'vod' ? <span className="text-xs text-muted tnum">{Math.round(d.durationMin / 60)}h</span> : <StatusBadge status={st} size="sm" />}
+                </span>
+                <span className="block text-xs text-muted">
+                  {fmtDate(d.start, VENUE_TZ)} · {d.tables.length} {d.label === 'Final Table' ? (d.tables.length > 1 ? 'camera feeds' : 'feed') : d.tables.length > 1 ? 'tables' : 'table'}
+                </span>
+                {on && <span className="label mt-1.5 block text-[10px] text-gold">Now playing</span>}
+                {watched > 0 && !on && (
+                  <span className="mt-2 block h-1 rounded-full bg-white/10">
+                    <i className="block h-full rounded-full bg-gold" style={{ width: `${watched * 100}%` }} />
+                  </span>
+                )}
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }

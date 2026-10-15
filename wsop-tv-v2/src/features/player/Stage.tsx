@@ -10,26 +10,10 @@ import { chips } from '../../lib/format';
 import { cx } from '../../components/ui';
 import type { SeatStack } from '../../state/stacks';
 import { EQUITY } from '../../state/stacks';
+import { HERO_DAY_ID } from '../../data/mock';
+import { handFor, type CurrentHand } from './hand';
 
-/** The hand currently being played on the feature table (drives the overlays and the Current Hand tab). */
-export const CURRENT_HAND = {
-  number: 214,
-  a: 'p04',
-  b: 'p07',
-  aCards: 'A♠ K♠',
-  bCards: 'Q♥ Q♦',
-  board: ['K♦', '9♠', '4♣', '2♥', 'J♠'],
-  // Blinds 1.5M / 3M, 3M big-blind ante. Pot at the start of each street: flop, turn, river.
-  pots: [47_500_000, 77_500_000, 129_500_000],
-  actions: [
-    'Han raises to 7.5M from the cutoff',
-    'Whitfield three-bets to 20M on the button',
-    'Blinds fold — Han calls',
-    'Flop K♦ 9♠ 4♣ — Han checks, Whitfield bets 15M, Han calls',
-    'Turn 2♥ — Han leads for 26M, Whitfield calls',
-    'River J♠ — Han checks, action on Whitfield',
-  ],
-};
+const HERO_HAND = handFor(HERO_DAY_ID);
 
 export interface StageInfo {
   event: string;
@@ -62,6 +46,7 @@ export function Stage({
   muted,
   media,
   info,
+  hand = HERO_HAND,
 }: {
   overlay: OverlayLevel;
   tableName: string;
@@ -77,8 +62,10 @@ export function Stage({
   media?: { poster: string; video?: string; start?: number };
   /** Event context for the bug (top right). */
   info?: StageInfo;
+  /** The hand in progress on this broadcast. */
+  hand?: CurrentHand;
 }) {
-  const h = CURRENT_HAND;
+  const h = hand;
   const eq = EQUITY[phase];
   const shownBoard = h.board.slice(0, phase === 0 ? 3 : phase === 1 ? 4 : 5);
   const stackOf = (id: string) => seats.find((s) => s.playerId === id)?.stack ?? 0;
@@ -155,7 +142,7 @@ export function Stage({
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[11px] font-bold sm:text-[13px]">{playerById(row.id).name}</span>
-                  <span className="block text-[10px] text-white/65 tnum">
+                  <span className="hidden text-[10px] text-white/65 tnum sm:block">
                     {chips(stackOf(row.id))}
                     {bb && ` · ${inBb(stackOf(row.id))}`}
                   </span>

@@ -2,12 +2,14 @@
 // Shared: data, screens (Home / Event / Player / Login), key mapping. Per platform: the UI shell and focus language.
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { OverlayLevel, Platform } from '../../data/types';
-import { HERO_DAY_ID, archive, dayById, eventById, events, hands, playerById } from '../../data/mock';
+import { HERO_DAY_ID, archive, dayById, eventById, events, hands, playerById, seatsFor } from '../../data/mock';
+import { handFor } from '../player/hand';
 import { PLATFORMS, overlayAllowed } from '../../data/platforms';
 import { chips, duration, money } from '../../lib/format';
 import { fmtDateTime, fmtTime } from '../../lib/time';
 import { gateFor, useApp, useTick } from '../../state/app';
 import { useLiveStacks } from '../../state/stacks';
+import { isOnAir } from '../../lib/broadcast';
 import { BraceletIcon, Icon, StatusBadge, cx } from '../../components/ui';
 import { Stage } from '../player/Stage';
 import { HAND_META, HandGlyph } from '../player/markers';
@@ -477,10 +479,12 @@ function TvEvent({ eventId }: { eventId: string }) {
 function TvPlayer({ dayId, platform, overlay, views, playing, handIdx, scrub }: { dayId: string; platform: Platform; overlay: OverlayLevel; views: 1 | 2 | 4; playing: boolean; handIdx: number | null; scrub: number }) {
   const { state } = useApp();
   const { spec, label, click, family } = useTv();
-  const stacks = useLiveStacks();
+  const seatBase = useMemo(() => seatsFor(dayId), [dayId]);
+  const hand = useMemo(() => handFor(dayId), [dayId]);
   const now = useTick(1000);
   const { event, day } = dayById(dayId)!;
   const status = dayId === HERO_DAY_ID ? state.streamMode : day.status;
+  const stacks = useLiveStacks(seatBase, isOnAir(status));
   const caps = PLATFORMS[platform];
   const dayHands = hands.filter((h) => h.dayId === dayId);
   const current = handIdx === null ? null : dayHands[handIdx];
@@ -520,7 +524,7 @@ function TvPlayer({ dayId, platform, overlay, views, playing, handIdx, scrub }: 
           .concat(day.tables)
           .slice(0, views)
           .map((t, i) => (
-            <Stage key={`${t.id}-${i}`} overlay={overlay} tableName={t.name} seats={stacks} playing={playing} phase={Math.floor(now / 6000) % 3} compact={views > 1} hue={220 + i * 25} />
+            <Stage key={`${t.id}-${i}`} hand={hand} overlay={overlay} tableName={t.name} seats={stacks} playing={playing} phase={Math.floor(now / 6000) % 3} compact={views > 1} hue={220 + i * 25} />
           ))}
       </div>
       <div className="absolute top-10 left-[80px] flex items-center gap-5">

@@ -386,3 +386,28 @@ export const dayById = (id: string) => {
 };
 /** The hero broadcast: Main Event Final Table. */
 export const HERO_DAY_ID = 'lv-main-finaltable';
+
+// ---- per-broadcast table state (drives overlays, chip counts and the current hand) ----------------
+
+/** Big blind in play on a broadcast day — final tables per event; earlier days scale with the starting stack. */
+const FT_BB: Record<string, number> = { 'lv-main': 3_000_000, 'lv-hr': 500_000, 'lv-mm': 600_000, 'lv-plo': 250_000, 'lv-ladies': 60_000, 'lv-tc': 80_000 };
+const DAY_BB: Record<string, number> = { 'Day 1A': 400, 'Day 1B': 400, 'Day 2': 3_000, 'Day 3': 12_000 };
+export function bbFor(dayId: string): number {
+  const ref = dayById(dayId);
+  if (!ref) return 3_000_000;
+  const { event, day } = ref;
+  if (day.label === 'Final Table') return event.blinds?.bb ?? FT_BB[event.id] ?? 100_000;
+  return Math.round(((DAY_BB[day.label] ?? 3_000) * event.startingStack) / 60_000 / 100) * 100 || 100;
+}
+
+/** Players at the featured table on a day, with stacks (final tables: the real field; earlier days: a featured table). */
+export function seatsFor(dayId: string): { playerId: string; stack: number }[] {
+  if (dayId === HERO_DAY_ID) return finalTableSeats;
+  const ref = dayById(dayId);
+  if (!ref) return finalTableSeats;
+  const bb = bbFor(dayId);
+  const depth = [118, 92, 76, 61, 50, 39, 30, 21];
+  const field = FIELD[dayId] ?? Array.from({ length: 8 }, (_, i) => players[(ref.event.number * 3 + i * 7) % players.length].id).filter((id, i, a) => a.indexOf(id) === i);
+  const round = (n: number) => Math.max(bb, Math.round(n / (bb / 4)) * (bb / 4));
+  return field.map((playerId, i) => ({ playerId, stack: round(bb * depth[i % depth.length]) }));
+}

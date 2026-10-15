@@ -3,10 +3,11 @@ import { frameFrom, tableFrame, tableVideo } from '../lib/media';
 import { money } from '../lib/format';
 import { Link, useNavigate } from 'react-router-dom';
 import type { AudioTrack, Hand, OverlayLevel, TableFeed } from '../data/types';
-import { HERO_DAY_ID, HERO_EXPECTED_START, dayById, hands, playerById, seriesById } from '../data/mock';
+import { HERO_DAY_ID, HERO_EXPECTED_START, bbFor, dayById, hands, playerById, seatsFor, seriesById } from '../data/mock';
+import { handFor } from '../features/player/hand';
 import { PLATFORMS, overlayAllowed } from '../data/platforms';
 import { chips, duration } from '../lib/format';
-import { VENUE_TZ, countdown, fmtDateTime, fmtTime } from '../lib/time';
+import { VENUE_TZ, countdown, fmtDate, fmtDateTime, fmtTime } from '../lib/time';
 import { isOnAir, shortTableName, tableDelay, tableStatus } from '../lib/broadcast';
 import { canWatch, gateForAccess, useApp, useTick, type Gate } from '../state/app';
 import { useLiveStacks } from '../state/stacks';
@@ -39,7 +40,8 @@ export function WatchInner({
   dayId: string;
   startAt: string | null;
   clipId: string | null;
-  variant?: 'default' | 'live';
+  /** live = Live screen · vod = replay screen (both use the v1 frame); default = bare player. */
+  variant?: 'default' | 'live' | 'vod';
   tableId?: string | null;
   onTable?: (id: string) => void;
   asideTop?: ReactNode;
@@ -49,10 +51,14 @@ export function WatchInner({
   const se = seriesById(event.seriesId);
   const caps = PLATFORMS[state.platform];
   const now = useTick(1000);
-  const stacks = useLiveStacks();
+  // Featured-table state for THIS broadcast: its players, stacks and blinds.
+  const seatBase = useMemo(() => seatsFor(dayId), [dayId]);
+  const hand = useMemo(() => handFor(dayId), [dayId]);
+  const bb = bbFor(dayId);
 
   const status = dayId === HERO_DAY_ID ? state.streamMode : day.status;
   const isLive = isOnAir(status);
+  const stacks = useLiveStacks(seatBase, isLive);
   const fullLen = day.durationMin * 60;
   // The Live page controls which table is on screen; the standalone player keeps it locally.
   const [localTable, setLocalTable] = useState(tableId ?? day.tables[0].id);
@@ -222,14 +228,14 @@ export function WatchInner({
   const delays = [...new Set(day.tables.map((t) => tableDelay(t, status)))];
   const multiAvailable = Math.min(caps.multiview, day.tables.length);
 
-  const panel = <SidePanel stacks={stacks} phase={phase} tables={day.tables} dayStatus={status} mainTable={mainTable} onSelectTable={(id) => (setMainTable(id), setAudioTable(id))} spoilerKey={dayId} bb={isLive ? event.blinds?.bb : undefined} />;
+  const panel = <SidePanel stacks={stacks} phase={phase} tables={day.tables} dayStatus={status} mainTable={mainTable} onSelectTable={(id) => (setMainTable(id), setAudioTable(id))} spoilerKey={dayId} bb={bb} hand={hand} live={isLive} />;
   // Broadcast bug: event · level · blinds/ante · players left (live only — replays show the event and day).
-  const stageInfo = { event: event.name.replace(' World Championship', ''), day: day.label, level: isLive ? event.level : undefined, blinds: isLive ? event.blinds : undefined, left: isLive ? event.remaining : undefined };
+  const stageInfo = { event: event.name.replace(' World Championship', ''), day: day.label, level: isLive && day.label === 'Final Table' ? event.level : undefined, blinds: { sb: bb / 2, bb, ante: bb }, left: isLive && day.label === 'Final Table' ? event.remaining : undefined };
 
   return (
     <Page className="max-w-[96rem] py-4 sm:py-6">
       {/* title (the Live page shows it under the player instead) */}
-      {variant !== 'live' && (
+      {variant === 'default' && (
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="label flex items-center gap-1.5 text-subtle">
@@ -312,6 +318,7 @@ export function WatchInner({
                             hue={220 + i * 25}
                             muted={muted || (views > 1 && audioTable !== t.id)}
                             info={stageInfo}
+                            hand={hand}
                             media={(() => {
                               // Real footage (v1): one moving video in single view, stills in multiview tiles.
                               const ti = day.tables.indexOf(t);
@@ -446,7 +453,7 @@ export function WatchInner({
             </div>
           )}
 
-          {/* Live page (v1 layout): stream + event info under the player */}
+          {/* Live / replay screens (v1 layout): stream + event info under the player */}
           {variant === 'live' && (
             <div className="mt-4">
               <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
@@ -459,6 +466,21 @@ export function WatchInner({
               <h1 className="mt-1.5 text-2xl font-black tracking-tight sm:text-[28px]">{event.name}</h1>
             </div>
           )}
+          {variant === 'vod' && (
+            <div className="mt-4">
+              <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                <span className="label rounded-[4px] bg-surface-3 px-1.5 py-0.5 text-[10px] text-text">Full replay</span>
+                <span>
+                  {se.name} · Event #{event.number} · {fmtDate(day.start, VENUE_TZ)} · {duration(fullLen)}
+                </span>
+                <AccessBadge access={dayAccess} locked={dayGate !== 'ok'} />
+              </p>
+              <h1 className="mt-1.5 text-2xl font-black tracking-tight sm:text-[28px]">
+                {event.name} <span className="text-muted">· {day.label}</span>
+              </h1>
+              <p className="mt-1 text-xs text-subtle">On-demand replay of the full broadcast. Chapters jump to every key hand; chip counts follow the playback position.</p>
+            </div>
+          )}
 
           {/* delay note: what the stream is showing vs the tournament floor */}
           {!blocked && !clipMode && status === 'delayed' && (
@@ -468,12 +490,12 @@ export function WatchInner({
             </p>
           )}
 
-          {variant === 'live' && <Overview eventId={event.id} dayId={dayId} delayMin={delayMin} status={status} />}
+          {variant !== 'default' && <Overview eventId={event.id} dayId={dayId} delayMin={delayMin} status={status} />}
 
           {/* hands in this broadcast */}
           {!blocked && !clipMode && markers.length > 0 && (
             <section className="mt-6" aria-label="Hands in this broadcast">
-              <h2 className="mb-2 text-base font-bold">Hands in this broadcast</h2>
+              <h2 className="mb-2 text-base font-bold">{status === 'vod' ? 'Chapters · key hands' : 'Hands in this broadcast'}</h2>
               <ul className="divide-y divide-line rounded-panel border border-line bg-surface">
                 {markers.map((h) => (
                   <li key={h.id} className={cx('flex items-center transition-colors duration-150 hover:bg-surface-2', Math.abs(position - h.t) < 30 && 'bg-gold-dim')}>
@@ -499,7 +521,7 @@ export function WatchInner({
           )}
         </div>
 
-        {variant === 'live' ? (
+        {variant !== 'default' ? (
           <aside className="min-w-0 space-y-6">
             {asideTop}
             {!blocked && !clipMode && <div className="hidden h-[32rem] lg:block">{panel}</div>}
@@ -656,7 +678,9 @@ function Overview({ eventId, dayId, delayMin, status }: { eventId: string; dayId
     ['Entries', started ? event.entrants.toLocaleString('en-US') : '—'],
     ['Prize pool', started ? money(event.prizePool) : 'TBD'],
     ['First prize', started ? money(event.firstPrize) : 'TBD'],
-    ['Players left', started ? event.remaining.toLocaleString('en-US') : '—'],
+    event.winnerId
+      ? ['Champion', <Spoiler key="champ" k={`winner-${event.id}`} inline label="Champion hidden"><span>{playerById(event.winnerId).name}</span></Spoiler>]
+      : ['Players left', started ? event.remaining.toLocaleString('en-US') : '—'],
     ['Level', started ? `Level ${event.level}` : '—'],
     ['Blinds', live && event.blinds ? `${chips(event.blinds.sb)} / ${chips(event.blinds.bb)} · ${chips(event.blinds.ante)} BB ante` : '—'],
     ['Chips in play', started ? `${chips(event.entrants * event.startingStack)} (${chips(event.startingStack)} start)` : `${chips(event.startingStack)} starting stack`],
@@ -667,7 +691,9 @@ function Overview({ eventId, dayId, delayMin, status }: { eventId: string; dayId
         <span className="block text-muted">{fmtTime(day.start, state.tz)} your time</span>
       </>,
     ],
-    ['Broadcast delay', status === 'delayed' ? `${delayMin}-minute delay` : status === 'live' ? 'Real time' : '—'],
+    status === 'vod'
+      ? ['Broadcast length', duration(day.durationMin * 60)]
+      : ['Broadcast delay', status === 'delayed' ? `${delayMin}-minute delay` : status === 'live' ? 'Real time' : '—'],
     ['Venue', `${se.venue}, ${se.city}`],
   ];
   return (

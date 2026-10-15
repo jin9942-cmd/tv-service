@@ -3,7 +3,7 @@ import { archive, dayById, events, hands, players } from '../data/mock';
 import { useApp } from '../state/app';
 import { ArchiveCard, BroadcastCard, HandCard, PlayerTile } from '../components/cards';
 import { Billboard, UpcomingCard } from '../components/Billboard';
-import { Page, SectionHeader } from '../components/ui';
+import { Page, SectionHeader, cx } from '../components/ui';
 
 export function Home() {
   const { state, signedIn } = useApp();
@@ -30,7 +30,7 @@ export function Home() {
           <div className="min-w-0 space-y-10">
             {signedIn && continueItems.length > 0 && (
               <Row title="Continue Watching">
-                {continueItems.map(({ ref, sec }) => (
+                {continueItems.slice(0, 4).map(({ ref, sec }) => (
                   <BroadcastCard key={ref.day.id} event={ref.event} day={ref.day} progress={sec / (ref.day.durationMin * 60)} />
                 ))}
               </Row>
@@ -43,7 +43,7 @@ export function Home() {
                 </Link>
               }
             >
-              {upcoming.map(({ e, d }) => (
+              {upcoming.slice(0, 4).map(({ e, d }) => (
                 <UpcomingCard key={d.id} e={e} d={d} />
               ))}
             </Row>
@@ -56,23 +56,23 @@ export function Home() {
                 </Link>
               }
             >
-              {freeHands.map((h) => (
-                <HandCard key={h.id} hand={h} className="w-72" />
+              {freeHands.slice(0, 4).map((h) => (
+                <HandCard key={h.id} hand={h} />
               ))}
             </Row>
             {signedIn && followedHands.length > 0 && (
               <Row title="From players you follow" action={<Link to="/players" className="text-sm font-semibold text-muted hover:text-text">Players →</Link>}>
-                {followedHands.map((h) => (
-                  <HandCard key={h.id} hand={h} className="w-72" />
+                {followedHands.slice(0, 4).map((h) => (
+                  <HandCard key={h.id} hand={h} />
                 ))}
               </Row>
             )}
-            <Row title="Featured players" action={<Link to="/players" className="text-sm font-semibold text-muted hover:text-text">All players →</Link>}>
+            <Row cols={5} title="Featured players" action={<Link to="/players" className="text-sm font-semibold text-muted hover:text-text">All players →</Link>}>
               {featuredPlayers.map((p) => (
                 <PlayerTile key={p.id} player={p} />
               ))}
             </Row>
-            <Row title="Relive the finals" action={<Link to="/archive" className="text-sm font-semibold text-muted hover:text-text">Archive →</Link>}>
+            <Row cols={3} title="Relive the finals" action={<Link to="/archive" className="text-sm font-semibold text-muted hover:text-text">Archive →</Link>}>
               {archive.map((a) => (
                 <ArchiveCard key={a.id} item={a} />
               ))}
@@ -85,11 +85,24 @@ export function Home() {
   );
 }
 
-function Row({ title, kicker, action, children }: { title: string; kicker?: string; action?: React.ReactNode; children: React.ReactNode }) {
+/**
+ * A home section as a grid that always shows whole cards (no half-cut thumbnail at the edge).
+ * `cols` = how many cards per row on large screens; fewer on smaller screens.
+ */
+function Row({ title, kicker, action, children, cols = 4 }: { title: string; kicker?: string; action?: React.ReactNode; children: React.ReactNode; cols?: 3 | 4 | 5 }) {
   return (
     <section>
       <SectionHeader title={title} kicker={kicker} action={action} />
-      <div className="hscroll">{children}</div>
+      <div
+        className={cx(
+          'grid gap-x-4 gap-y-6 [&>*]:w-auto! [&>*]:min-w-0',
+          cols === 3 && 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+          cols === 4 && 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+          cols === 5 && 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5',
+        )}
+      >
+        {children}
+      </div>
     </section>
   );
 }

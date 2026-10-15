@@ -101,8 +101,8 @@ function LiveChannels() {
       <div className="mx-auto max-w-content px-gutter py-5 sm:px-6 lg:px-8">
         <p className="label mb-3 text-text/80">{ordered.length ? 'Live channels' : 'Schedule'}</p>
         {ordered.length ? (
-          <div className="hscroll">
-            {ordered.map(({ e, d, t, i }) => (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-6 [&>*]:w-auto!">
+            {ordered.slice(0, 6).map(({ e, d, t, i }) => (
               <ChannelCard key={t.id} e={e} d={d} tableIndex={i} />
             ))}
           </div>
