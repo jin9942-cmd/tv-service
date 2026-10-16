@@ -48,7 +48,7 @@ export function SidePanel({
           tabs={[
             { value: 'chips', label: 'Chip Counts' },
             { value: 'hand', label: 'Current Hand' },
-            { value: 'tables', label: 'Tables' },
+            ...(live ? [{ value: 'tables' as Tab, label: 'Tables' }] : []),
           ]}
         />
       </div>

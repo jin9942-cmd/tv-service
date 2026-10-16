@@ -7,6 +7,8 @@ import { HAND_META, HandGlyph } from './markers';
 
 export const AUDIO_LABEL: Record<AudioTrack, string> = { en: 'English Commentary', natural: 'Natural Sound', es: 'Spanish Commentary' };
 const QUALITIES = ['Auto', '1080p', '720p', '480p'];
+const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
+export const SUBTITLES = ['Off', 'English', 'Español', '한국어', '日本語'];
 
 export interface ControlsProps {
   status: StreamStatus;
@@ -33,11 +35,19 @@ export interface ControlsProps {
   onQuality: (q: string) => void;
   onFullscreen: () => void;
   fullscreen: boolean;
+  /** Replays only: playback speed, resume point, scrub previews and subtitle languages. */
+  speed?: number;
+  onSpeed?: (s: number) => void;
+  resumeAt?: number;
+  previewAt?: (t: number) => string;
+  subtitle?: string;
+  onSubtitle?: (s: string) => void;
 }
 
 export function Controls(p: ControlsProps) {
-  const [menu, setMenu] = useState<'audio' | 'quality' | null>(null);
+  const [menu, setMenu] = useState<'audio' | 'quality' | 'speed' | 'subs' | null>(null);
   const isLive = p.status === 'live' || p.status === 'delayed';
+  const isVod = p.status === 'vod' && !!p.onSpeed;
   const atEdge = isLive && p.end - p.position < 5;
   const pct = (t: number) => `${Math.min(100, Math.max(0, (t / Math.max(1, p.end)) * 100))}%`;
 
@@ -98,9 +108,42 @@ export function Controls(p: ControlsProps) {
         )}
 
         <div className="ml-auto flex items-center gap-1">
-          <CtlButton label={p.cc ? 'Turn captions off' : 'Turn captions on'} onClick={p.onCc} pressed={p.cc}>
-            <span className={cx('rounded-[3px] border px-1 text-[11px] font-black', p.cc ? 'border-white bg-white text-ink' : 'border-white/70')}>CC</span>
-          </CtlButton>
+          {isVod && (
+            <div className="relative">
+              <CtlButton label={`Playback speed ${p.speed}x`} onClick={() => setMenu(menu === 'speed' ? null : 'speed')} pressed={menu === 'speed'}>
+                <span className="text-[12px] font-bold tnum">{p.speed}x</span>
+              </CtlButton>
+              {menu === 'speed' && (
+                <Menu title="Speed" onClose={() => setMenu(null)}>
+                  {SPEEDS.map((s) => (
+                    <MenuItem key={s} on={p.speed === s} onClick={() => (p.onSpeed!(s), setMenu(null))}>
+                      {s === 1 ? 'Normal' : `${s}x`}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              )}
+            </div>
+          )}
+          {isVod && p.onSubtitle ? (
+            <div className="relative">
+              <CtlButton label="Subtitles" onClick={() => setMenu(menu === 'subs' ? null : 'subs')} pressed={menu === 'subs'}>
+                <span className={cx('rounded-[3px] border px-1 text-[11px] font-black', p.cc ? 'border-white bg-white text-ink' : 'border-white/70')}>CC</span>
+              </CtlButton>
+              {menu === 'subs' && (
+                <Menu title="Subtitles" onClose={() => setMenu(null)}>
+                  {SUBTITLES.map((s) => (
+                    <MenuItem key={s} on={p.subtitle === s} onClick={() => (p.onSubtitle!(s), setMenu(null))}>
+                      {s}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              )}
+            </div>
+          ) : (
+            <CtlButton label={p.cc ? 'Turn captions off' : 'Turn captions on'} onClick={p.onCc} pressed={p.cc}>
+              <span className={cx('rounded-[3px] border px-1 text-[11px] font-black', p.cc ? 'border-white bg-white text-ink' : 'border-white/70')}>CC</span>
+            </CtlButton>
+          )}
           <div className="relative">
             <CtlButton label="Audio track" onClick={() => setMenu(menu === 'audio' ? null : 'audio')} pressed={menu === 'audio'}>
               <Icon name="audio" />
@@ -139,9 +182,10 @@ export function Controls(p: ControlsProps) {
   );
 }
 
-function Timeline({ status, position, end, onSeek, markers, pct }: ControlsProps & { pct: (t: number) => string }) {
+function Timeline({ status, position, end, onSeek, markers, pct, resumeAt, previewAt }: ControlsProps & { pct: (t: number) => string }) {
   const track = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<string | null>(null);
+  const [scrub, setScrub] = useState<number | null>(null);
   const isLive = status === 'live' || status === 'delayed';
   const seekFromEvent = (clientX: number) => {
     const r = track.current!.getBoundingClientRect();
@@ -159,6 +203,11 @@ function Timeline({ status, position, end, onSeek, markers, pct }: ControlsProps
         aria-valuenow={Math.round(position)}
         aria-valuetext={isLive ? `${duration(end - position)} behind live` : `${duration(position)} of ${duration(end)}`}
         onClick={(e) => seekFromEvent(e.clientX)}
+        onMouseMove={previewAt ? (e) => {
+          const r = track.current!.getBoundingClientRect();
+          setScrub(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * end);
+        } : undefined}
+        onMouseLeave={() => setScrub(null)}
         onKeyDown={(e) => {
           if (e.key === 'ArrowLeft') (e.preventDefault(), onSeek(position - 10));
           if (e.key === 'ArrowRight') (e.preventDefault(), onSeek(position + 10));
@@ -167,7 +216,17 @@ function Timeline({ status, position, end, onSeek, markers, pct }: ControlsProps
       >
         <div className={cx('h-full rounded-full', isLive ? 'bg-live' : 'bg-gold')} style={{ width: pct(position) }} />
         <span className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow" style={{ left: pct(position) }} />
+        {/* where this viewer left off last time */}
+        {!!resumeAt && resumeAt > 60 && <i title={`Resume point · ${duration(resumeAt)}`} className="absolute -top-1 h-[calc(100%+8px)] w-0.5 -translate-x-1/2 rounded bg-white/70" style={{ left: pct(resumeAt) }} />}
       </div>
+      {previewAt && scrub !== null && !hover && (
+        <div className="pointer-events-none absolute bottom-6 z-20 w-40 -translate-x-1/2" style={{ left: `clamp(80px, ${pct(scrub)}, calc(100% - 80px))` }}>
+          <div className="overflow-hidden rounded-[6px] border border-white/30 bg-black shadow-2xl">
+            <img src={previewAt(scrub)} alt="" className="aspect-video w-full object-cover" />
+            <p className="px-2 py-1 text-center text-xs font-semibold tnum">{duration(scrub)}</p>
+          </div>
+        </div>
+      )}
       {markers.map((h) => {
         const m = HAND_META[h.type];
         const show = hover === h.id;

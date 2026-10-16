@@ -132,7 +132,7 @@ function ChannelCard({ e, d, tableIndex }: { e: TourEvent; d: Day; tableIndex: n
         <span className="absolute top-2 left-2">
           <StatusBadge status={st} size="sm" delayMin={delay || 30} />
         </span>
-        <span className="absolute top-2 right-2">
+        <span className="absolute right-2 bottom-2">
           <AccessBadge access={access} locked={locked} />
         </span>
       </div>

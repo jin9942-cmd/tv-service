@@ -42,7 +42,7 @@ export function BroadcastCard({ event, day, wide, progress }: { event: TourEvent
         <span className="absolute top-2 left-2">
           <StatusBadge status={status} size="sm" />
         </span>
-        <span className="absolute top-2 right-2">
+        <span className={cx('absolute right-2', progress !== undefined ? 'bottom-3' : 'bottom-2')}>
           <AccessBadge access={day.access ?? 'subscriber'} locked={!canWatch(day.access ?? 'subscriber', state.scenario)} />
         </span>
         {progress !== undefined && (
@@ -74,7 +74,7 @@ export function HandCard({ hand, className }: { hand: Hand; className?: string }
           <HandGlyph type={hand.type} size={14} />
           <span className="label text-[10px]">{m.label}</span>
         </span>
-        <span className="absolute top-2 right-2">
+        <span className="absolute bottom-2 left-2">
           <AccessBadge access={hand.access} locked={!canWatch(hand.access, state.scenario)} />
         </span>
         <span className="absolute right-2 bottom-2 rounded-[3px] bg-black/70 px-1.5 text-[11px] font-semibold tnum">{duration(hand.durationSec)}</span>
@@ -135,7 +135,7 @@ export function ArchiveCard({ item }: { item: ArchiveItem }) {
       <button onClick={play} className="block w-full rounded-card text-left">
       <Art hue={item.hue} image={frameFrom(item.year)}>
         <span className="label absolute top-2 left-2 rounded-[3px] bg-black/70 px-1.5 py-0.5 text-[10px]">Classic · {item.year}</span>
-        <span className="absolute top-2 right-2">
+        <span className="absolute bottom-2 left-2">
           <AccessBadge access={item.access} locked={!canWatch(item.access, state.scenario)} />
         </span>
         <span className="absolute right-2 bottom-2 rounded-[3px] bg-black/70 px-1.5 text-[11px] font-semibold tnum">{duration(item.durationSec)}</span>

@@ -3,7 +3,7 @@ import { frameFrom, tableFrame, tableVideo } from '../lib/media';
 import { money } from '../lib/format';
 import { Link, useNavigate } from 'react-router-dom';
 import type { AudioTrack, Hand, OverlayLevel, TableFeed } from '../data/types';
-import { HERO_DAY_ID, HERO_EXPECTED_START, bbFor, dayById, hands, playerById, seatsFor, seriesById } from '../data/mock';
+import { HERO_DAY_ID, HERO_EXPECTED_START, bbFor, dayById, events, hands, playerById, seatsFor, seriesById } from '../data/mock';
 import { handFor } from '../features/player/hand';
 import { PLATFORMS, overlayAllowed } from '../data/platforms';
 import { chips, duration } from '../lib/format';
@@ -47,6 +47,7 @@ export function WatchInner({
   asideTop?: ReactNode;
 }) {
   const { state, set, toast } = useApp();
+  const nav = useNavigate();
   const { event, day } = dayById(dayId)!;
   const se = seriesById(event.seriesId);
   const caps = PLATFORMS[state.platform];
@@ -81,7 +82,9 @@ export function WatchInner({
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(true);
   const [follow, setFollow] = useState(isLive && !startAt);
-  const [position, setPosition] = useState(() => (startAt ? Number(startAt) : isLive ? end : (state.progress[dayId] ?? 0)));
+  // A replay watched to the end starts over next time.
+  const saved = (state.progress[dayId] ?? 0) < fullLen - 60 ? (state.progress[dayId] ?? 0) : 0;
+  const [position, setPosition] = useState(() => (startAt ? Number(startAt) : isLive ? end : saved));
   const [volume, setVolume] = useState(80);
   const [muted, setMuted] = useState(false);
   const [cc, setCc] = useState(state.ccDefault);
@@ -95,6 +98,18 @@ export function WatchInner({
   const [fullscreen, setFullscreen] = useState(false);
   const [sheet, setSheet] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+  // Replay-only player state.
+  const isVod = status === 'vod' && !clipMode;
+  const [speed, setSpeed] = useState(1);
+  const [subtitle, setSubtitle] = useState(state.ccDefault ? 'English' : 'Off');
+  const [resumeAt] = useState(() => (startAt ? 0 : saved));
+  const [resumeNote, setResumeNote] = useState(resumeAt > 60);
+  const [ended, setEnded] = useState(false);
+  useEffect(() => {
+    if (!resumeNote) return;
+    const t = window.setTimeout(() => setResumeNote(false), 8000);
+    return () => window.clearTimeout(t);
+  }, [resumeNote]);
 
   useEffect(() => {
     const t = window.setTimeout(() => setLoading(false), 450);
@@ -134,8 +149,13 @@ export function WatchInner({
       return;
     }
     if (isLive && follow) setPosition(end);
-    else setPosition((p) => Math.min(end, p + 1));
+    else setPosition((p) => Math.min(end, p + (isVod ? speed : 1)));
   }, [now]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Replay reached the end → stop and offer the next broadcast day.
+  useEffect(() => {
+    if (isVod && !ended && position >= end) (setPlaying(false), setEnded(true));
+  }, [position]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Highlight clip: start at the hand, never follow the live edge.
   useEffect(() => {
@@ -164,6 +184,7 @@ export function WatchInner({
       const hi = clipMode ? clipEnd : end;
       const c = Math.max(lo, Math.min(hi, t));
       setPosition(c);
+      if (c < hi) setEnded(false);
       setFollow(!clipMode && isLive && end - c < 5);
       if (clipMode && c < clipEnd) setClipEnded(false);
     },
@@ -197,6 +218,14 @@ export function WatchInner({
   }, []);
 
   const phase = Math.floor(now / 6000) % 3;
+  // Replay extras: current chapter, the next broadcast day, and how long the replay stays available.
+  const chapterIdx = markers.reduce((acc, m, i) => (m.t <= position + 1 ? i : acc), -1);
+  const chapter = chapterIdx >= 0 ? markers[chapterIdx] : undefined;
+  const nextDay = event.days.slice(event.days.indexOf(day) + 1).find((d) => d.status !== 'upcoming');
+  const nextLive = !!nextDay && isOnAir(nextDay.id === HERO_DAY_ID ? state.streamMode : nextDay.status);
+  const published = Date.parse(day.start) + day.durationMin * 60_000;
+  const availableUntil = published + 180 * 86_400_000;
+  const daysLeft = Math.ceil((availableUntil - now) / 86_400_000);
   const captionLine = cc ? CAPTIONS[audio][Math.floor(now / 5000) % 3] : null;
 
   // Access checks happen at play time (soft paywall). Free highlight clips skip the account gate.
@@ -354,10 +383,33 @@ export function WatchInner({
                   )}
                   <div className="pointer-events-none absolute top-3 left-3 hidden items-center gap-2 sm:flex">
                     {/* multiview tiles carry their own labels */}
-                    {shownViews === 1 && <StatusBadge status={clipMode ? 'vod' : tableStatus(main, status)} delayMin={delayMin || 30} />}
+                    {shownViews === 1 && !isVod && <StatusBadge status={clipMode ? 'vod' : tableStatus(main, status)} delayMin={delayMin || 30} />}
+                    {isVod && (
+                      <>
+                        <span className="label rounded-[4px] bg-black/75 px-2 py-1 text-[10px] text-white/90">
+                          {chapter ? <>Chapter {chapterIdx + 1} · <span className="normal-case">{chapter.title}</span></> : 'Full replay'}
+                        </span>
+                        {chapterIdx < markers.length - 1 && (
+                          <button onClick={nextHand} className="label pointer-events-auto rounded-[4px] border border-white/25 bg-black/75 px-2 py-1 text-[10px] text-white hover:border-gold">
+                            Next hand ›
+                          </button>
+                        )}
+                      </>
+                    )}
                     {quality !== 'Auto' && <span className="label rounded-[3px] bg-black/60 px-1.5 py-0.5 text-[10px]">{quality}</span>}
                   </div>
-                  {!playing && !(clipMode && clipEnded) && (
+                  {isVod && resumeNote && !ended && (
+                    <div className="absolute bottom-24 left-3 hidden items-center gap-3 rounded-card border border-white/15 bg-black/85 px-3 py-2 text-sm sm:flex">
+                      <span>
+                        Resumed at <b className="tnum">{duration(resumeAt)}</b>
+                      </span>
+                      <button onClick={() => (seek(0), setResumeNote(false))} className="font-semibold text-gold-strong hover:underline">
+                        Start over
+                      </button>
+                    </div>
+                  )}
+                  {isVod && ended && <UpNext next={nextDay} live={nextLive} eventId={event.id} onPlay={(id) => nav(`/watch/${id}`)} onReplay={() => (seek(0), setPlaying(true))} />}
+                  {!playing && !(clipMode && clipEnded) && !(isVod && ended) && (
                     <button onClick={() => setPlaying(true)} className="absolute top-1/2 left-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/60 text-white hover:border-gold" aria-label="Play">
                       <Icon name="play" size={30} />
                     </button>
@@ -393,6 +445,16 @@ export function WatchInner({
                   onQuality={setQuality}
                   onFullscreen={toggleFullscreen}
                   fullscreen={fullscreen}
+                  {...(isVod
+                    ? {
+                        speed,
+                        onSpeed: (v: number) => (setSpeed(v), toast(v === 1 ? 'Normal speed' : `Speed ${v}x`)),
+                        resumeAt,
+                        previewAt: (t: number) => frameFrom(Math.floor(t / 900) + event.number),
+                        subtitle,
+                        onSubtitle: (v: string) => (setSubtitle(v), setCc(v !== 'Off')),
+                      }
+                    : {})}
                 />
               </div>
             )}
@@ -416,7 +478,7 @@ export function WatchInner({
                   }))}
                 />
               </div>
-              {!clipMode && (
+              {!clipMode && !isVod && (
               <div className="flex items-center gap-2">
                 <span className="label text-subtle">Multiview</span>
                 <Segmented<'1' | '2' | '4'>
@@ -435,6 +497,7 @@ export function WatchInner({
               )}
               <span className="text-xs text-muted">
                 Audio: <b className="text-text">{AUDIO_LABEL[audio]}</b>
+                {isVod && <> · Subtitles: <b className="text-text">{subtitle}</b>{speed !== 1 && <> · <b className="text-text tnum">{speed}x</b></>}</>}
                 {views > 1 && <> · from {day.tables.find((t) => t.id === audioTable)?.name}</>}
               </span>
               <div className="ml-auto flex gap-1 sm:hidden">
@@ -471,14 +534,16 @@ export function WatchInner({
               <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
                 <span className="label rounded-[4px] bg-surface-3 px-1.5 py-0.5 text-[10px] text-text">Full replay</span>
                 <span>
-                  {se.name} · Event #{event.number} · {fmtDate(day.start, VENUE_TZ)} · {duration(fullLen)}
+                  {se.name} · Event #{event.number} · {duration(fullLen)} · Published {fmtDate(published, VENUE_TZ)}
                 </span>
                 <AccessBadge access={dayAccess} locked={dayGate !== 'ok'} />
               </p>
               <h1 className="mt-1.5 text-2xl font-black tracking-tight sm:text-[28px]">
                 {event.name} <span className="text-muted">· {day.label}</span>
               </h1>
-              <p className="mt-1 text-xs text-subtle">On-demand replay of the full broadcast. Chapters jump to every key hand; chip counts follow the playback position.</p>
+              <p className={cx('mt-1.5 inline-flex items-center gap-1.5 text-xs', daysLeft <= 14 ? 'text-delayed' : 'text-subtle')}>
+                {daysLeft <= 14 ? <>Leaving in {daysLeft} day{daysLeft === 1 ? '' : 's'} · available until {fmtDate(availableUntil, VENUE_TZ)}</> : <>Replay available until {fmtDate(availableUntil, VENUE_TZ)}</>}
+              </p>
             </div>
           )}
 
@@ -526,6 +591,7 @@ export function WatchInner({
             {asideTop}
             {!blocked && !clipMode && <div className="hidden h-[32rem] lg:block">{panel}</div>}
             <EventHandReplays eventId={event.id} />
+            {variant === 'vod' && <RelatedReplays eventId={event.id} />}
           </aside>
         ) : (
           <aside className="hidden lg:block">{!blocked && !clipMode && <div className="sticky top-20 h-[calc(100dvh-7rem)] max-h-[44rem]">{panel}</div>}</aside>
@@ -736,6 +802,91 @@ function EventHandReplays({ eventId }: { eventId: string }) {
                 <span className="block truncate text-xs text-muted">
                   {HAND_META[h.type].label} · Pot {chips(h.pot)}
                 </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** End of a replay: the next broadcast day plays on its own after a short countdown. */
+function UpNext({ next, live, eventId, onPlay, onReplay }: { next?: { id: string; label: string }; live?: boolean; eventId: string; onPlay: (id: string) => void; onReplay: () => void }) {
+  const [left, setLeft] = useState(8);
+  const [cancelled, setCancelled] = useState(false);
+  useEffect(() => {
+    // Never auto-jump into a live broadcast; only the next replay plays on its own.
+    if (!next || cancelled || live) return;
+    if (left <= 0) return onPlay(next.id);
+    const t = window.setTimeout(() => setLeft((n) => n - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [left, cancelled, next]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ev = next ? dayById(next.id)?.event : undefined;
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-4">
+      {next ? (
+        <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:items-center">
+          <img src={frameFrom(next.label.length * 3 + (ev?.number ?? 0))} alt="" className="hidden aspect-video w-44 rounded-[8px] object-cover sm:block" />
+          <div className="min-w-0 flex-1">
+            <p className={cx('label text-[10px]', live ? 'text-live' : 'text-gold')}>{live ? 'On air now' : cancelled ? 'Up next' : `Up next in ${left}s`}</p>
+            <p className="mt-1 text-lg leading-tight font-bold">{next.label}</p>
+            <p className="text-xs text-muted">{ev?.name}</p>
+            <div className="mt-3 flex gap-2">
+              <Button size="sm" variant="primary" onClick={() => onPlay(next.id)}>
+                <Icon name="play" size={14} /> {live ? 'Watch live' : 'Play now'}
+              </Button>
+              {!cancelled && !live && (
+                <Button size="sm" variant="secondary" onClick={() => setCancelled(true)}>
+                  Cancel
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center">
+          <p className="label text-[10px] text-gold">End of the event</p>
+          <p className="mt-1 text-lg font-bold">That was the last broadcast day</p>
+          <div className="mt-3 flex justify-center gap-2">
+            <Button size="sm" variant="secondary" onClick={onReplay}>
+              Watch again
+            </Button>
+            <Link to={`/events/${eventId}`}>
+              <Button size="sm" variant="primary" tabIndex={-1}>
+                Event results
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Replay aside: other events' replays. */
+function RelatedReplays({ eventId }: { eventId: string }) {
+  const list = events
+    .filter((e) => e.id !== eventId)
+    .flatMap((e) => e.days.filter((d) => d.status === 'vod').slice(-1).map((d) => ({ e, d })))
+    .slice(0, 4);
+  if (!list.length) return null;
+  return (
+    <section aria-label="More replays">
+      <p className="label mb-3 text-text/80">More replays</p>
+      <ul className="space-y-2">
+        {list.map(({ e, d }) => (
+          <li key={d.id}>
+            <Link to={`/watch/${d.id}`} className="flex gap-3 rounded-card border border-line bg-surface p-2 transition-colors duration-150 hover:border-line-strong">
+              <span className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-[6px]">
+                <img src={frameFrom(e.number * 3 + d.label.length)} alt="" loading="lazy" className="size-full object-cover" />
+                <span className="absolute right-1 bottom-1 rounded-[3px] bg-black/75 px-1 text-[10px] font-semibold tnum">{duration(d.durationMin * 60)}</span>
+              </span>
+              <span className="min-w-0 py-0.5">
+                <span className="line-clamp-2 block text-sm leading-snug font-bold">
+                  #{e.number} {e.name.replace(' World Championship', '')}
+                </span>
+                <span className="block truncate text-xs text-muted">{d.label}</span>
               </span>
             </Link>
           </li>
