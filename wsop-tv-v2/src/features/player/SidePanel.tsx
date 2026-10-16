@@ -61,7 +61,7 @@ export function SidePanel({
   );
 }
 
-function ChipCounts({ stacks, spoilerKey, bb, live }: { stacks: SeatStack[]; spoilerKey: string; bb?: number; live?: boolean }) {
+export function ChipCounts({ stacks, spoilerKey, bb, live }: { stacks: SeatStack[]; spoilerKey: string; bb?: number; live?: boolean }) {
   const max = stacks[0]?.stack ?? 1;
   return (
     <div>

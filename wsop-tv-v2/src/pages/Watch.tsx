@@ -17,6 +17,7 @@ import { AUDIO_LABEL, Controls } from '../features/player/Controls';
 import { SidePanel } from '../features/player/SidePanel';
 import { HAND_META, HandGlyph } from '../features/player/markers';
 import { PlaybackGate, RegionBlocked } from '../features/auth/Gates';
+import { DayResults, HandList, VodPanel, maskHand, neutralTitle, useRevealed } from '../features/player/VodPanel';
 
 const CAPTIONS: Record<AudioTrack, string[]> = {
   en: ['Han has been patient all level — this is the spot she was waiting for.', 'Whitfield takes his time. Seven-time champion, never rushed.', 'The crowd in Las Vegas is completely silent.'],
@@ -105,6 +106,11 @@ export function WatchInner({
   const [resumeAt] = useState(() => (startAt ? 0 : saved));
   const [resumeNote, setResumeNote] = useState(resumeAt > 60);
   const [ended, setEnded] = useState(false);
+  const [handsOnly, setHandsOnly] = useState(false);
+  // Hands that actually played through on this visit open their title and type; skipping past keeps them neutral.
+  const [watched, setWatched] = useState<string[]>([]);
+  const revealed = useRevealed();
+  const isOpen = (h: Hand) => watched.includes(h.id) || revealed(h);
   useEffect(() => {
     if (!resumeNote) return;
     const t = window.setTimeout(() => setResumeNote(false), 8000);
@@ -148,8 +154,18 @@ export function WatchInner({
       } else setPosition(position + 1);
       return;
     }
+    if (isVod) {
+      const playingHand = markers.find((m) => position >= m.t && position < m.t + m.durationSec);
+      if (playingHand && position + speed >= playingHand.t + playingHand.durationSec - 1 && !watched.includes(playingHand.id)) setWatched((w) => [...w, playingHand.id]);
+    }
     if (isLive && follow) setPosition(end);
-    else setPosition((p) => Math.min(end, p + (isVod ? speed : 1)));
+    else if (isVod && handsOnly && markers.length) {
+      const inHand = markers.find((m) => position >= m.t && position < m.t + m.durationSec);
+      const next = markers.find((m) => m.t > position);
+      if (inHand && position + speed < inHand.t + inHand.durationSec) setPosition(position + speed);
+      else if (next) setPosition(next.t);
+      else setPosition(end);
+    } else setPosition((p) => Math.min(end, p + (isVod ? speed : 1)));
   }, [now]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Replay reached the end → stop and offer the next broadcast day.
@@ -221,6 +237,7 @@ export function WatchInner({
   // Replay extras: current chapter, the next broadcast day, and how long the replay stays available.
   const chapterIdx = markers.reduce((acc, m, i) => (m.t <= position + 1 ? i : acc), -1);
   const chapter = chapterIdx >= 0 ? markers[chapterIdx] : undefined;
+  const nextAnyDay = event.days[event.days.indexOf(day) + 1];
   const nextDay = event.days.slice(event.days.indexOf(day) + 1).find((d) => d.status !== 'upcoming');
   const nextLive = !!nextDay && isOnAir(nextDay.id === HERO_DAY_ID ? state.streamMode : nextDay.status);
   const published = Date.parse(day.start) + day.durationMin * 60_000;
@@ -257,7 +274,9 @@ export function WatchInner({
   const delays = [...new Set(day.tables.map((t) => tableDelay(t, status)))];
   const multiAvailable = Math.min(caps.multiview, day.tables.length);
 
-  const panel = <SidePanel stacks={stacks} phase={phase} tables={day.tables} dayStatus={status} mainTable={mainTable} onSelectTable={(id) => (setMainTable(id), setAudioTable(id))} spoilerKey={dayId} bb={bb} hand={hand} live={isLive} />;
+  const panel = isVod ? (
+    <VodPanel markers={markers} position={position} onSeek={(t) => (seek(t), setPlaying(true))} handsOnly={handsOnly} onHandsOnly={(v) => (setHandsOnly(v), v && toast('Hands only: skipping the folds between key hands'))} stacks={stacks} bb={bb} spoilerKey={dayId} isOpen={isOpen} />
+  ) : <SidePanel stacks={stacks} phase={phase} tables={day.tables} dayStatus={status} mainTable={mainTable} onSelectTable={(id) => (setMainTable(id), setAudioTable(id))} spoilerKey={dayId} bb={bb} hand={hand} live={isLive} />;
   // Broadcast bug: event · level · blinds/ante · players left (live only — replays show the event and day).
   const stageInfo = { event: event.name.replace(' World Championship', ''), day: day.label, level: isLive && day.label === 'Final Table' ? event.level : undefined, blinds: { sb: bb / 2, bb, ante: bb }, left: isLive && day.label === 'Final Table' ? event.remaining : undefined };
 
@@ -387,7 +406,7 @@ export function WatchInner({
                     {isVod && (
                       <>
                         <span className="label rounded-[4px] bg-black/75 px-2 py-1 text-[10px] text-white/90">
-                          {chapter ? <>Chapter {chapterIdx + 1} · <span className="normal-case">{chapter.title}</span></> : 'Full replay'}
+                          {handsOnly ? <>Hands only · {Math.max(1, chapterIdx + 1)} / {markers.length}{chapter && <> · <span className="normal-case">{isOpen(chapter) ? chapter.title : neutralTitle(chapter)}</span></>}</> : chapter ? <>Hand {chapterIdx + 1} · <span className="normal-case">{isOpen(chapter) ? chapter.title : neutralTitle(chapter)}</span></> : 'Full replay'}
                         </span>
                         {chapterIdx < markers.length - 1 && (
                           <button onClick={nextHand} className="label pointer-events-auto rounded-[4px] border border-white/25 bg-black/75 px-2 py-1 text-[10px] text-white hover:border-gold">
@@ -428,7 +447,7 @@ export function WatchInner({
                   position={clipMode ? position - clipStart : position}
                   end={clipMode ? Math.max(1, clipEnd - clipStart) : end}
                   onSeek={clipMode ? (t) => seek(clipStart + t) : seek}
-                  markers={clipMode ? (clipMarker ? [{ ...clipMarker, t: 0 }] : []) : markers}
+                  markers={clipMode ? (clipMarker ? [{ ...clipMarker, t: 0 }] : []) : isVod ? markers.map((h) => (isOpen(h) ? h : maskHand(h))) : markers}
                   onPrevHand={prevHand}
                   onNextHand={nextHand}
                   onJumpLive={() => (clipMode ? clipNudge() : (seek(end), setPlaying(true)))}
@@ -495,6 +514,21 @@ export function WatchInner({
                 />
               </div>
               )}
+              {isVod && markers.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="label text-subtle">Watch</span>
+                  <Segmented<'all' | 'hands'>
+                    label="Playback"
+                    size="sm"
+                    value={handsOnly ? 'hands' : 'all'}
+                    onChange={(v) => setHandsOnly(v === 'hands')}
+                    options={[
+                      { value: 'all', label: 'Full broadcast' },
+                      { value: 'hands', label: `Hands only · ${markers.length}` },
+                    ]}
+                  />
+                </div>
+              )}
               <span className="text-xs text-muted">
                 Audio: <b className="text-text">{AUDIO_LABEL[audio]}</b>
                 {isVod && <> · Subtitles: <b className="text-text">{subtitle}</b>{speed !== 1 && <> · <b className="text-text tnum">{speed}x</b></>}</>}
@@ -510,7 +544,7 @@ export function WatchInner({
               </div>
               {!clipMode && (
                 <Button size="sm" variant="outline" className="lg:hidden" onClick={() => setSheet(true)}>
-                  Chip counts & tables
+                  {isVod ? 'Hands, chips & players' : 'Chip counts & tables'}
                 </Button>
               )}
             </div>
@@ -555,10 +589,18 @@ export function WatchInner({
             </p>
           )}
 
-          {variant !== 'default' && <Overview eventId={event.id} dayId={dayId} delayMin={delayMin} status={status} />}
+          {variant !== 'default' && (isVod ? <DayResults event={event} day={day} stacks={stacks} watchedToEnd={ended} nextDay={nextAnyDay} /> : <Overview eventId={event.id} dayId={dayId} delayMin={delayMin} status={status} />)}
 
           {/* hands in this broadcast */}
-          {!blocked && !clipMode && markers.length > 0 && (
+          {!blocked && isVod && markers.length > 0 && (
+            <section className="mt-6 lg:hidden" aria-label="Hands in this broadcast">
+              <h2 className="mb-2 text-base font-bold">Hands · {markers.length}</h2>
+              <div className="rounded-panel border border-line bg-surface px-3">
+                <HandList markers={markers} position={position} onSeek={(t) => (seek(t), setPlaying(true))} isOpen={isOpen} />
+              </div>
+            </section>
+          )}
+          {!blocked && !clipMode && !isVod && markers.length > 0 && (
             <section className="mt-6" aria-label="Hands in this broadcast">
               <h2 className="mb-2 text-base font-bold">{status === 'vod' ? 'Chapters · key hands' : 'Hands in this broadcast'}</h2>
               <ul className="divide-y divide-line rounded-panel border border-line bg-surface">
@@ -588,9 +630,11 @@ export function WatchInner({
 
         {variant !== 'default' ? (
           <aside className="min-w-0 space-y-6">
-            {asideTop}
+            {/* Replays lead with the hand list; live leads with the streams. */}
+            {!isVod && asideTop}
             {!blocked && !clipMode && <div className="hidden h-[32rem] lg:block">{panel}</div>}
-            <EventHandReplays eventId={event.id} />
+            {isVod && asideTop}
+            <EventHandReplays eventId={event.id} safe={isVod} />
             {variant === 'vod' && <RelatedReplays eventId={event.id} />}
           </aside>
         ) : (
@@ -781,8 +825,9 @@ function Overview({ eventId, dayId, delayMin, status }: { eventId: string; dayId
 }
 
 /** v1 "Hand replays from this event" for the Live page aside. */
-function EventHandReplays({ eventId }: { eventId: string }) {
+function EventHandReplays({ eventId, safe }: { eventId: string; safe?: boolean }) {
   const { state } = useApp();
+  const open = useRevealed();
   const list = hands.filter((h) => h.eventId === eventId).slice(0, 5);
   if (!list.length) return null;
   return (
@@ -798,9 +843,9 @@ function EventHandReplays({ eventId }: { eventId: string }) {
               </span>
               <span className="min-w-0 py-0.5">
                 <AccessBadge access={h.access} locked={!canWatch(h.access, state.scenario)} />
-                <span className="mt-1 line-clamp-2 block text-sm leading-snug font-bold">{h.title}</span>
+                <span className="mt-1 line-clamp-2 block text-sm leading-snug font-bold">{safe && !open(h) ? neutralTitle(h) : h.title}</span>
                 <span className="block truncate text-xs text-muted">
-                  {HAND_META[h.type].label} · Pot {chips(h.pot)}
+                  {safe && !open(h) ? `${dayById(h.dayId)?.day.label ?? ''} · ${duration(h.durationSec)} clip` : `${HAND_META[h.type].label} · Pot ${chips(h.pot)}`}
                 </span>
               </span>
             </Link>

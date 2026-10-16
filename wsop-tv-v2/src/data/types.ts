@@ -101,6 +101,8 @@ export interface Hand {
   winnerId: string;
   views: number;
   durationSec: number;
+  /** Replays: shown neutrally (no type, title or result) until watched. */
+  masked?: boolean;
   access: Access;
 }
 

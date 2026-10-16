@@ -238,10 +238,10 @@ function Timeline({ status, position, end, onSeek, markers, pct, resumeAt, previ
               onMouseLeave={() => setHover((x) => (x === h.id ? null : x))}
               onFocus={() => setHover(h.id)}
               onBlur={() => setHover((x) => (x === h.id ? null : x))}
-              aria-label={`${m.label} hand at ${duration(h.t)}: ${h.title}`}
+              aria-label={`${h.masked ? 'Key' : m.label} hand at ${duration(h.t)}: ${h.title}`}
               className="block rounded-full transition-transform duration-150 hover:scale-125 focus-visible:scale-125"
             >
-              <HandGlyph type={h.type} size={16} />
+              {h.masked ? <span className="block size-3 rounded-full border-2 border-white/80 bg-black/60" /> : <HandGlyph type={h.type} size={16} />}
             </button>
             {show && <MarkerTip hand={h} align={h.t / Math.max(1, end) < 0.2 ? 'left' : h.t / Math.max(1, end) > 0.8 ? 'right' : 'center'} />}
           </div>
@@ -258,7 +258,7 @@ function MarkerTip({ hand, align }: { hand: Hand; align: 'left' | 'center' | 'ri
     <div role="tooltip" className={cx('absolute bottom-6 w-60', align === 'left' ? '-left-2' : align === 'right' ? '-right-2' : 'left-1/2 -translate-x-1/2')}>
       <div className="rounded-card border border-line-strong bg-surface p-3 text-left shadow-2xl">
       <p className="label flex items-center gap-1.5 text-[10px] text-gold">
-        <HandGlyph type={hand.type} size={13} /> {m.label} · {duration(hand.t)}
+        {hand.masked ? 'Key hand' : <><HandGlyph type={hand.type} size={13} /> {m.label}</>} · {duration(hand.t)}
       </p>
       <p className="mt-1 text-[13px] font-semibold leading-snug">{hand.title}</p>
       <p className="mt-1 text-xs text-muted">{hand.playerIds.map((id) => playerById(id).name).join(' vs ')}</p>
@@ -266,9 +266,13 @@ function MarkerTip({ hand, align }: { hand: Hand; align: 'left' | 'center' | 'ri
         Pot <b>{chips(hand.pot)}</b>
       </p>
       <div className="mt-1.5 text-xs">
-        <Spoiler k={`hand-${hand.id}`} inline label="Hand result hidden">
-          <span className="font-semibold text-text">{hand.result}</span>
-        </Spoiler>
+        {hand.masked ? (
+          <span className="text-subtle">Watch the hand to see how it plays out</span>
+        ) : (
+          <Spoiler k={`hand-${hand.id}`} inline label="Hand result hidden">
+            <span className="font-semibold text-text">{hand.result}</span>
+          </Spoiler>
+        )}
       </div>
       </div>
     </div>
