@@ -177,7 +177,7 @@ function StreamCard({ x, t, i, on, onClick }: { x: Entry; t: TableFeed; i: numbe
   const st = tableStatus(t, x.status);
   const delay = st === 'delayed' ? tableDelay(t, x.status) : 0;
   const access = tableAccess(x.d, i);
-  const locked = gateForAccess(access, state.scenario) !== 'ok';
+  const locked = gateForAccess(access, state, isOnAir(x.status)) !== 'ok';
   // Final table = one table filmed by several cameras; earlier days = several tables.
   const finalTable = x.d.label === 'Final Table';
   const desc = finalTable
@@ -193,7 +193,7 @@ function StreamCard({ x, t, i, on, onClick }: { x: Entry; t: TableFeed; i: numbe
     >
       <span className="flex items-center justify-between gap-2">
         <StatusBadge status={st} size="sm" delayMin={delay || 30} />
-        <AccessBadge access={access} locked={locked} />
+        <AccessBadge access={access} live={isOnAir(x.status)} locked={locked} />
       </span>
       <span className="mt-2 block text-[15px] font-bold">{t.name}</span>
       <span className="block text-xs text-muted">

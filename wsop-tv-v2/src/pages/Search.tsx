@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import type { Access } from '../data/types';
+import { TIER_BADGE, requiredTier, type Tier } from '../data/policy';
+import { isOnAir } from '../lib/broadcast';
 import { archive, events, hands, players, series } from '../data/mock';
 import { buildIndex, search, suggest, KIND_LABEL, type SearchItem, type SearchKind, type SearchStatus } from '../lib/search';
 import { canWatch, useApp } from '../state/app';
@@ -11,7 +12,8 @@ type Tab = 'all' | 'events' | 'hands' | 'players' | 'archive';
 const TAB_KINDS: Record<Tab, SearchKind[]> = { all: ['event', 'day', 'hand', 'player', 'archive'], events: ['event', 'day'], hands: ['hand'], players: ['player'], archive: ['archive'] };
 const TAB_LABEL: Record<Tab, string> = { all: 'All', events: 'Events', hands: 'Hands & Clips', players: 'Players', archive: 'Archive' };
 const STATUS_LABEL: Record<SearchStatus, string> = { live: 'Live', upcoming: 'Upcoming', vod: 'VOD' };
-const ACCESS_LABEL: Record<Access, string> = { free: 'Free', signin: 'Sign in', subscriber: 'Subscribers' };
+const TIERS: Tier[] = ['free', 'wsopFree', 'basic', 'premium'];
+const liveOf = (it: SearchItem) => !!it.badge && isOnAir(it.badge);
 
 export function Search() {
   const { state, set } = useApp();
@@ -24,7 +26,7 @@ export function Search() {
   const [tab, setTab] = useState<Tab>('all');
   const [statuses, setStatuses] = useState<SearchStatus[]>([]);
   const [seriesId, setSeriesId] = useState('');
-  const [access, setAccess] = useState<Access[]>([]);
+  const [access, setAccess] = useState<Tier[]>([]);
   const input = useRef<HTMLInputElement>(null);
   const listId = useId();
 
@@ -38,7 +40,8 @@ export function Search() {
     (r) =>
       (!statuses.length || (r.status && statuses.includes(r.status))) &&
       (!seriesId || r.seriesId === seriesId) &&
-      (!access.length || (r.access && access.includes(r.access))),
+      // Access filter = the WSOP+ tier the item needs under the current "included from" setting.
+      (!access.length || (r.access && access.includes(requiredTier(r.access, state.includedFrom, liveOf(r))))),
   );
   const ofTab = (t: Tab) => filtered.filter((r) => TAB_KINDS[t].includes(r.kind));
   const filtersOn = statuses.length + access.length + (seriesId ? 1 : 0);
@@ -150,9 +153,9 @@ export function Search() {
               </FilterChip>
             ))}
             <span className="label ml-2 text-[10px] text-subtle">Access</span>
-            {(Object.keys(ACCESS_LABEL) as Access[]).map((a) => (
+            {TIERS.map((a) => (
               <FilterChip key={a} on={access.includes(a)} onClick={() => setAccess((x) => (x.includes(a) ? x.filter((y) => y !== a) : [...x, a]))}>
-                {ACCESS_LABEL[a]}
+                {TIER_BADGE[a]}
               </FilterChip>
             ))}
             <label className="ml-2 flex items-center gap-2">
@@ -251,7 +254,7 @@ function ResultRow({ it }: { it: SearchItem }) {
         <span className="flex items-center gap-1.5">
           {it.badge && <StatusBadge status={it.badge} size="sm" />}
           {!it.badge && it.status === 'upcoming' && <StatusBadge status="upcoming" size="sm" />}
-          {it.access && <AccessBadge access={it.access} locked={!canWatch(it.access, state.scenario)} />}
+          {it.access && <AccessBadge access={it.access} live={liveOf(it)} locked={!canWatch(it.access, state, liveOf(it))} />}
         </span>
         {/* outcomes stay behind a reveal in spoiler-free mode */}
         {h && (

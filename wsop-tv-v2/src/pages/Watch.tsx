@@ -17,7 +17,7 @@ import { AUDIO_LABEL, Controls } from '../features/player/Controls';
 import { SidePanel } from '../features/player/SidePanel';
 import { HAND_META, HandGlyph } from '../features/player/markers';
 import { PlaybackGate, RegionBlocked, VpnBlocked } from '../features/auth/Gates';
-import { TRAVEL_UNAVAILABLE_EVENTS } from '../data/policy';
+import { TRAVEL_UNAVAILABLE_EVENTS, requiredTier, tierFull, type Tier } from '../data/policy';
 import { MyListButton } from '../features/library/listActions';
 import { DayResults, HandList, VodPanel, maskHand, neutralTitle, useRevealed } from '../features/player/VodPanel';
 
@@ -78,9 +78,10 @@ export function WatchInner({
 
   // Content access: the day's level, or a single free/sign-in hand opened as a highlight clip.
   const dayAccess = day.access ?? 'subscriber';
-  const dayGate = gateForAccess(dayAccess, state.scenario);
+  const dayGate = gateForAccess(dayAccess, state, isLive);
+  const dayRequired = requiredTier(dayAccess, state.includedFrom, isLive);
   const clipHand = clipId ? hands.find((h) => h.id === clipId && h.dayId === dayId) : undefined;
-  const clipMode = dayGate !== 'ok' && !!clipHand && canWatch(clipHand.access, state.scenario) && (isLive || status === 'vod');
+  const clipMode = dayGate !== 'ok' && !!clipHand && canWatch(clipHand.access, state) && (isLive || status === 'vod');
 
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(true);
@@ -209,7 +210,7 @@ export function WatchInner({
     [end, isLive, clipMode, clipStart, clipEnd],
   );
 
-  const clipNudge = () => toast(dayGate === 'login' ? 'Sign in to watch the full broadcast' : 'The full broadcast is included with a subscription');
+  const clipNudge = () => toast(dayGate === 'login' ? 'Sign in to watch the full broadcast' : `The full broadcast needs ${dayRequired === 'free' ? 'no account' : tierFull(dayRequired)}`);
   const prevHand = () => {
     if (clipMode) return clipNudge();
     const h = [...markers].reverse().find((m) => m.t < position - 3);
@@ -300,7 +301,7 @@ export function WatchInner({
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={status} delayMin={tableDelay(day.tables[0], status) || 30} />
-          <AccessBadge access={clipMode && clipHand ? clipHand.access : dayAccess} locked={!clipMode && dayGate !== 'ok'} size="md" />
+          <AccessBadge access={clipMode && clipHand ? clipHand.access : dayAccess} live={!clipMode && isLive} locked={!clipMode && dayGate !== 'ok'} size="md" />
           <MyListButton kind="day" id={dayId} />
           <Link to={`/events/${event.id}`} className="text-sm font-semibold text-muted hover:text-text">
             Event details →
@@ -315,10 +316,10 @@ export function WatchInner({
           <p className="min-w-0 flex-1 text-sm">
             <b>Highlight · {clipHand.title}</b>{' '}
             <span className="text-muted">
-              ({duration(clipHand.durationSec)}) — the full broadcast is {dayAccess === 'signin' ? 'free with a GGPASS account' : 'included with a subscription'}.
+              ({duration(clipHand.durationSec)}) — the full broadcast is included with {dayRequired === 'wsopFree' ? 'WSOP+ Free — every GGPass account' : dayRequired === 'free' ? 'everyone' : tierFull(dayRequired)}.
             </span>
           </p>
-          <ClipCta gate={dayGate} returnTo={`/watch/${dayId}`} />
+          <ClipCta gate={dayGate} required={dayRequired} returnTo={`/watch/${dayId}`} />
         </div>
       )}
 
@@ -344,7 +345,7 @@ export function WatchInner({
               ) : blocked === 'late' || blocked === 'interrupted' ? (
                 <BroadcastHold kind={blocked} start={day.start} eventId={event.id} />
               ) : blocked ? (
-                <PlaybackGate gate={blocked} returnTo={`/watch/${dayId}`} />
+                <PlaybackGate gate={blocked} required={dayRequired} returnTo={`/watch/${dayId}`} />
               ) : (
                 <>
                   <div className={cx('grid size-full gap-0.5 bg-black', shownViews === 2 && 'grid-cols-2', shownViews === 4 && 'grid-cols-2 grid-rows-2')}>
@@ -401,7 +402,7 @@ export function WatchInner({
                       <p className="label text-ok">Highlight ended</p>
                       <p className="text-lg font-bold sm:text-xl">Keep watching the full broadcast</p>
                       <div className="flex flex-wrap justify-center gap-2">
-                        <ClipCta gate={dayGate} returnTo={`/watch/${dayId}`} size="md" />
+                        <ClipCta gate={dayGate} required={dayRequired} returnTo={`/watch/${dayId}`} size="md" />
                         <Button variant="secondary" onClick={() => (seek(clipStart), setPlaying(true))}>
                           Replay highlight
                         </Button>
@@ -566,7 +567,7 @@ export function WatchInner({
                 <span>
                   {se.name} · Event #{event.number} · {day.label} · {main.name}
                 </span>
-                <AccessBadge access={dayAccess} locked={dayGate !== 'ok'} />
+                <AccessBadge access={dayAccess} live={isLive} locked={dayGate !== 'ok'} />
               </p>
               <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-black tracking-tight sm:text-[28px]">{event.name}</h1>
@@ -581,7 +582,7 @@ export function WatchInner({
                 <span>
                   {se.name} · Event #{event.number} · {duration(fullLen)} · Published {fmtDate(published, VENUE_TZ)}
                 </span>
-                <AccessBadge access={dayAccess} locked={dayGate !== 'ok'} />
+                <AccessBadge access={dayAccess} live={isLive} locked={dayGate !== 'ok'} />
               </p>
               <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-black tracking-tight sm:text-[28px]">
@@ -677,8 +678,8 @@ export function WatchInner({
 }
 
 /** Call to action from a free highlight to the full broadcast, by what the viewer still needs. */
-function ClipCta({ gate, returnTo, size = 'sm' }: { gate: Gate; returnTo: string; size?: 'sm' | 'md' }) {
-  const { requireLogin, set, toast } = useApp();
+function ClipCta({ gate, required, returnTo, size = 'sm' }: { gate: Gate; required: Tier; returnTo: string; size?: 'sm' | 'md' }) {
+  const { state, requireLogin, set, toast } = useApp();
   const nav = useNavigate();
   if (gate === 'login')
     return (
@@ -688,19 +689,19 @@ function ClipCta({ gate, returnTo, size = 'sm' }: { gate: Gate; returnTo: string
     );
   if (gate === 'plans')
     return (
-      <Button variant="primary" size={size} onClick={() => nav('/plans', { state: { returnTo } })}>
-        See plans
+      <Button variant="primary" size={size} onClick={() => nav('/plans', { state: { returnTo, required } })}>
+        See WSOP+ plans
       </Button>
     );
   if (gate === 'expired')
     return (
-      <Button variant="primary" size={size} onClick={() => nav('/plans', { state: { returnTo } })}>
-        Renew
+      <Button variant="primary" size={size} onClick={() => nav(`/wsop-plus/join?${new URLSearchParams({ tier: state.paidTier, return: returnTo })}`)}>
+        Renew in WSOP+
       </Button>
     );
   if (gate === 'link')
     return (
-      <Button variant="primary" size={size} onClick={() => (set({ scenario: 'active' }), toast('GGPASS linked (demo)'))}>
+      <Button variant="primary" size={size} onClick={() => (set((s) => ({ scenario: s.paidTier })), toast('GGPASS linked (demo)'))}>
         Link GGPASS account
       </Button>
     );
@@ -862,7 +863,7 @@ function EventHandReplays({ eventId, safe }: { eventId: string; safe?: boolean }
                 <span className="absolute right-1 bottom-1 rounded-[3px] bg-black/75 px-1 text-[10px] font-semibold tnum">{duration(h.durationSec)}</span>
               </span>
               <span className="min-w-0 py-0.5">
-                <AccessBadge access={h.access} locked={!canWatch(h.access, state.scenario)} />
+                <AccessBadge access={h.access} locked={!canWatch(h.access, state)} />
                 <span className="mt-1 line-clamp-2 block text-sm leading-snug font-bold">{safe && !open(h) ? neutralTitle(h) : h.title}</span>
                 <span className="block truncate text-xs text-muted">
                   {safe && !open(h) ? `${dayById(h.dayId)?.day.label ?? ''} · ${duration(h.durationSec)} clip` : `${HAND_META[h.type].label} · Pot ${chips(h.pot)}`}

@@ -29,6 +29,9 @@ export function LoginModal() {
         Sign in to WSOP TV
       </h2>
       <p className="mt-1 text-sm text-muted">{login.reason}</p>
+      <p className="mt-3 rounded-chip border border-line bg-surface-2 px-3 py-2 text-xs text-muted">
+        Sign in with GGPass — <b className="text-text">WSOP+ Free</b> is included with every GGPass account.
+      </p>
 
       <Button variant="primary" size="lg" className="mt-6 w-full" onClick={() => go('signin')}>
         <GGPassMark /> Continue with GGPASS

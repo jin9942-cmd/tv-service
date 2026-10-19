@@ -6,6 +6,7 @@ import { HERO_DAY_ID, eventById, playerById, seriesById } from '../data/mock';
 import { chips, compact, duration } from '../lib/format';
 import { fmtDateTime } from '../lib/time';
 import { canWatch, gateForAccess, useApp } from '../state/app';
+import { isOnAir } from '../lib/broadcast';
 import { HAND_META, HandGlyph } from '../features/player/markers';
 import { AccessBadge, Avatar, Icon, Spoiler, StatusBadge, cx } from './ui';
 import { CardMenu, useListAction, useLongPress, type MenuAction } from '../features/library/listActions';
@@ -47,7 +48,7 @@ export function BroadcastCard({ event, day, wide, progress, extraActions }: { ev
           <StatusBadge status={status} size="sm" />
         </span>
         <span className={cx('absolute right-2', progress !== undefined ? 'bottom-3' : 'bottom-2')}>
-          <AccessBadge access={day.access ?? 'subscriber'} locked={!canWatch(day.access ?? 'subscriber', state.scenario)} />
+          <AccessBadge access={day.access ?? 'subscriber'} live={isOnAir(status)} locked={!canWatch(day.access ?? 'subscriber', state, isOnAir(status))} />
         </span>
         {progress !== undefined && (
           <span className="absolute inset-x-0 bottom-0 h-1 bg-white/15">
@@ -84,7 +85,7 @@ export function HandCard({ hand, className }: { hand: Hand; className?: string }
           <span className="label text-[10px]">{m.label}</span>
         </span>
         <span className="absolute bottom-2 left-2">
-          <AccessBadge access={hand.access} locked={!canWatch(hand.access, state.scenario)} />
+          <AccessBadge access={hand.access} locked={!canWatch(hand.access, state)} />
         </span>
         <span className="absolute right-2 bottom-2 rounded-[3px] bg-black/70 px-1.5 text-[11px] font-semibold tnum">{duration(hand.durationSec)}</span>
         <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden>
@@ -131,10 +132,10 @@ export function ArchiveCard({ item }: { item: ArchiveItem }) {
   const nav = useNavigate();
   const w = playerById(item.winnerId);
   const play = () => {
-    const gate = gateForAccess(item.access, state.scenario);
+    const gate = gateForAccess(item.access, state);
     if (gate === 'ok') return toast('Archive playback opens the same player (demo)');
     if (gate === 'login') return requireLogin({ reason: item.access === 'signin' ? 'Sign in free with GGPASS to watch this classic.' : 'Sign in to watch this classic.' });
-    if (gate === 'plans' || gate === 'expired') return nav('/plans', { state: { returnTo: '/archive' } });
+    if (gate === 'plans' || gate === 'expired') return nav('/plans', { state: { returnTo: '/archive', access: item.access } });
     if (gate === 'link') return toast('Link your GGPASS account to watch (see Account)');
     if (gate === 'restricted') return toast('Viewing isn’t available on this account');
     return nav('/devices', { state: { returnTo: '/archive' } });
@@ -148,7 +149,7 @@ export function ArchiveCard({ item }: { item: ArchiveItem }) {
       <Art hue={item.hue} image={frameFrom(item.year)}>
         <span className="label absolute top-2 left-2 rounded-[3px] bg-black/70 px-1.5 py-0.5 text-[10px]">Classic · {item.year}</span>
         <span className="absolute bottom-2 left-2">
-          <AccessBadge access={item.access} locked={!canWatch(item.access, state.scenario)} />
+          <AccessBadge access={item.access} locked={!canWatch(item.access, state)} />
         </span>
         <span className="absolute right-2 bottom-2 rounded-[3px] bg-black/70 px-1.5 text-[11px] font-semibold tnum">{duration(item.durationSec)}</span>
       </Art>

@@ -17,8 +17,8 @@ export function GGPassFlow() {
   useEffect(() => {
     if (step !== 'return') return;
     const t = window.setTimeout(() => {
-      // New SSO users arrive without a subscription → the plan picker appears at play time.
-      set((s) => ({ scenario: s.scenario === 'guest' ? 'noSub' : s.scenario }));
+      // Every GGPass account comes with WSOP+ Free; paid tiers are joined in WSOP+.
+      set((s) => ({ scenario: s.scenario === 'guest' ? 'free' : s.scenario }));
       toast('Signed in with GGPASS');
       nav(returnTo, { replace: true });
     }, 1400);

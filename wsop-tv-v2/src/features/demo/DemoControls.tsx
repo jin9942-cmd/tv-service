@@ -4,16 +4,18 @@ import type { AccountScenario, Platform, StreamStatus } from '../../data/types';
 import { PLATFORMS } from '../../data/platforms';
 import { useApp } from '../../state/app';
 import { cx } from '../../components/ui';
+import { INCLUDED_FROM_LABEL, type IncludedFrom } from '../../data/policy';
 
 const SCENARIOS: { v: AccountScenario; label: string }[] = [
   { v: 'guest', label: '1 · Not signed in' },
-  { v: 'noSub', label: '2 · GGPASS, no subscription' },
-  { v: 'active', label: '3 · GGPASS + active subscription' },
-  { v: 'unlinked', label: '4 · Subscribed, GGPASS not linked' },
-  { v: 'restricted', label: '5 · GGPASS account restricted' },
-  { v: 'deviceLimit', label: '6 · Too many devices' },
-  { v: 'expired', label: '7 · Subscription expired' },
-  { v: 'grace', label: '8 · Payment issue (grace period)' },
+  { v: 'free', label: '2 · GGPass · WSOP+ Free' },
+  { v: 'basic', label: '3 · GGPass · WSOP+ Basic' },
+  { v: 'premium', label: '4 · GGPass · WSOP+ Premium' },
+  { v: 'unlinked', label: '5 · WSOP+ member, GGPass not linked (TBD)' },
+  { v: 'restricted', label: '6 · GGPass account restricted' },
+  { v: 'deviceLimit', label: '7 · Too many devices' },
+  { v: 'expired', label: '8 · WSOP+ membership ended' },
+  { v: 'grace', label: '9 · WSOP+ payment issue' },
 ];
 
 export function DemoControls() {
@@ -40,13 +42,27 @@ export function DemoControls() {
                   key={s.v}
                   role="radio"
                   aria-checked={state.scenario === s.v}
-                  onClick={() => set({ scenario: s.v })}
+                  // Basic / Premium also set the tier that states 5, 7, 8, 9 hold.
+                  onClick={() => set(s.v === 'basic' || s.v === 'premium' ? { scenario: s.v, paidTier: s.v } : { scenario: s.v })}
                   className={cx('block w-full rounded px-2 py-1 text-left', state.scenario === s.v ? 'bg-sky-400/20 text-white' : 'text-sky-200/80 hover:bg-sky-400/10')}
                 >
                   {s.label}
                 </button>
               ))}
             </div>
+          </Group>
+
+          <Group label="WSOP TV included from">
+            <div className="grid grid-cols-3 gap-1" role="radiogroup" aria-label="WSOP TV included from">
+              {(['basic', 'premium', 'split'] as IncludedFrom[]).map((v) => (
+                <button key={v} role="radio" aria-checked={state.includedFrom === v} onClick={() => set({ includedFrom: v })} className={cx('rounded px-1.5 py-1 text-[11px] leading-tight', state.includedFrom === v ? 'bg-sky-400/25 text-white' : 'text-sky-200/80 hover:bg-sky-400/10')}>
+                  {INCLUDED_FROM_LABEL[v]}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-[10.5px] text-sky-200/60">
+              Paid content needs this tier. Split: live/delayed → Premium; replays, archive, paid clips → Basic. States 5/7/8/9 hold WSOP+ {state.paidTier === 'basic' ? 'Basic' : 'Premium'}.
+            </p>
           </Group>
 
           <Group label="Featured stream (Main Event FT)">
@@ -109,21 +125,8 @@ export function DemoControls() {
             </label>
           </Group>
 
-          <Group label="Billing">
-            <p className="mb-1 text-[10.5px] text-sky-200/70">Billing mode</p>
-            <div className="grid grid-cols-2 gap-1" role="radiogroup" aria-label="Billing mode">
-              {(
-                [
-                  ['web', 'Web checkout (WSOP+)'],
-                  ['iap', 'In-app purchase (platform)'],
-                ] as const
-              ).map(([v, label]) => (
-                <button key={v} role="radio" aria-checked={state.billingMode === v} onClick={() => set({ billingMode: v })} className={cx('rounded px-1.5 py-1 text-left text-[11px] leading-tight', state.billingMode === v ? 'bg-sky-400/25 text-white' : 'text-sky-200/80 hover:bg-sky-400/10')}>
-                  {label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 mb-1 text-[10.5px] text-sky-200/70">Payment result</p>
+          <Group label="WSOP+ page result">
+            <p className="mb-1 text-[10.5px] text-sky-200/70">Payment result</p>
             <div className="grid grid-cols-3 gap-1" role="radiogroup" aria-label="Payment result">
               {(['success', 'fail', 'cancel'] as const).map((v) => (
                 <button key={v} role="radio" aria-checked={state.paymentResult === v} onClick={() => set({ paymentResult: v })} className={cx('rounded px-1.5 py-1 text-[11px] capitalize', state.paymentResult === v ? 'bg-sky-400/25 text-white' : 'text-sky-200/80 hover:bg-sky-400/10')}>

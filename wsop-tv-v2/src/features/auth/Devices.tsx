@@ -23,7 +23,7 @@ export function DeviceList({ returnTo }: { returnTo?: string }) {
   const limit = state.scenario === 'deviceLimit';
 
   const signOut = (d: Device) => {
-    set((s) => ({ devices: s.devices.filter((x) => x.id !== d.id), scenario: s.scenario === 'deviceLimit' && d.streaming ? 'active' : s.scenario }));
+    set((s) => ({ devices: s.devices.filter((x) => x.id !== d.id), scenario: s.scenario === 'deviceLimit' && d.streaming ? s.paidTier : s.scenario }));
     toast(`Signed out of ${d.name}`);
   };
 
@@ -65,7 +65,7 @@ export function DeviceList({ returnTo }: { returnTo?: string }) {
         <Button
           variant="ghost"
           onClick={() => {
-            set((s) => ({ devices: s.devices.filter((d) => d.current), scenario: s.scenario === 'deviceLimit' ? 'active' : s.scenario }));
+            set((s) => ({ devices: s.devices.filter((d) => d.current), scenario: s.scenario === 'deviceLimit' ? s.paidTier : s.scenario }));
             toast('Signed out of all other devices');
           }}
         >

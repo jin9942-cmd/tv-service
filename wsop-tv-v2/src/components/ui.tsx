@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, type ButtonHTMLAttributes, type ReactNode } f
 import type { Access, StreamStatus } from '../data/types';
 import { initials } from '../lib/format';
 import { useApp } from '../state/app';
+import { TIER_BADGE, requiredTier, type Tier } from '../data/policy';
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 export { cx };
@@ -63,28 +64,34 @@ export function StatusBadge({ status, delayMin = 30, size = 'md' }: { status: St
 
 // ---- access badges (who can play this) -------------------------------------------------------
 
-const ACCESS_LABEL: Record<Access, string> = { free: 'Free', signin: 'Sign in', subscriber: 'Subscribers' };
-const ACCESS_TITLE: Record<Access, string> = {
+const TIER_TITLE: Record<Tier, string> = {
   free: 'Free to watch — no account needed',
-  signin: 'Free with a GGPASS account',
-  subscriber: 'Included with a subscription',
+  wsopFree: 'Included with WSOP+ Free — every GGPass account',
+  basic: 'Included with WSOP+ Basic and above',
+  premium: 'Included with WSOP+ Premium',
 };
 
-/** Content-level access badge. `locked` adds a lock when the current viewer can't play it yet. */
-export function AccessBadge({ access, locked, size = 'sm' }: { access: Access; locked?: boolean; size?: 'sm' | 'md' }) {
+/**
+ * Content-level access badge: the WSOP+ tier this content needs (depends on the "WSOP TV included from" setting;
+ * `live` matters for the Split setting). `locked` adds a lock when the current viewer can't play it yet.
+ */
+export function AccessBadge({ access, locked, size = 'sm', live }: { access: Access; locked?: boolean; size?: 'sm' | 'md'; live?: boolean }) {
+  const { state } = useApp();
+  const tier = requiredTier(access, state.includedFrom, live);
   return (
     <span
-      title={ACCESS_TITLE[access]}
+      title={TIER_TITLE[tier]}
       className={cx(
-        'label inline-flex items-center gap-1 rounded-[4px] border bg-black/70',
+        'label inline-flex items-center gap-1 rounded-[4px] border bg-black/70 whitespace-nowrap',
         size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1',
-        access === 'free' && 'border-ok/60 text-ok',
-        access === 'signin' && 'border-line-strong text-text',
-        access === 'subscriber' && 'border-gold/60 text-gold-strong',
+        tier === 'free' && 'border-ok/60 text-ok',
+        tier === 'wsopFree' && 'border-line-strong text-text',
+        tier === 'basic' && 'border-gold/60 text-gold-strong',
+        tier === 'premium' && 'border-gold bg-gold/20 text-gold-strong',
       )}
     >
-      {locked && access !== 'free' && <Icon name="lock" size={size === 'sm' ? 10 : 12} />}
-      {ACCESS_LABEL[access]}
+      {locked && tier !== 'free' && <Icon name="lock" size={size === 'sm' ? 10 : 12} />}
+      {TIER_BADGE[tier]}
     </span>
   );
 }

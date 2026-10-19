@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Button, Icon, cx } from './ui';
 import { WSOP_LOGO } from '../lib/brand';
 import { LoginModal } from '../features/auth/LoginModal';
 import { DemoControls } from '../features/demo/DemoControls';
 import { TvPreview } from '../features/tv/TvPreview';
-import { GRACE_DAYS, STORE_NAME, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
+import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
 
 
 export const NAV = [
@@ -33,7 +33,6 @@ export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
 
 export function Layout() {
   const { state, set, toast, signedIn, requireLogin, login, toasts } = useApp();
-  const nav = useNavigate();
   const [menu, setMenu] = useState(false);
   const loc = useLocation();
   useEffect(() => {
@@ -51,7 +50,7 @@ export function Layout() {
         <div className="border-b border-line bg-surface">
           <div className="mx-auto flex max-w-content items-center justify-between gap-3 px-gutter py-2 sm:px-6 lg:px-8">
             <p className="text-[13px] text-muted">
-              <span className="hidden sm:inline">Watch every bracelet event live and on demand. </span>One account with GGPASS.
+              <span className="hidden sm:inline">Watch every bracelet event live and on demand. </span>WSOP TV is included with WSOP+ — free with every GGPass account.
             </p>
             <Button size="sm" variant="primary" onClick={() => requireLogin({ reason: 'Sign in to watch live coverage and keep your progress.' })}>
               Continue with GGPASS
@@ -65,18 +64,10 @@ export function Layout() {
         <div className="border-b border-delayed/40 bg-delayed/10" role="status">
           <div className="mx-auto flex max-w-content flex-wrap items-center justify-between gap-x-4 gap-y-2 px-gutter py-2 sm:px-6 lg:px-8">
             <p className="text-[13px]">
-              <b>Update your payment method to keep watching.</b> <span className="text-muted">Your access continues until {fmtBillingDate(daysFromNow(GRACE_DAYS))}.</span>
+              <b>Update your payment method in WSOP+.</b> <span className="text-muted">Your WSOP+ membership — and WSOP TV — continues until {fmtBillingDate(daysFromNow(GRACE_DAYS))}.</span>
             </p>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                state.billingMode === 'web'
-                  ? nav(`/pay/wsop-plus?${new URLSearchParams({ plan: state.plan ?? 'annual', method: 'change', return: loc.pathname })}`)
-                  : toast(`Opens ${STORE_NAME[state.platform]} subscriptions (demo)`)
-              }
-            >
-              Update payment
+            <Button size="sm" variant="outline" onClick={() => toast('Opens WSOP+ payment settings (demo)')}>
+              Go to WSOP+
             </Button>
           </div>
         </div>

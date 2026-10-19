@@ -5,6 +5,7 @@ import { eventById, events, hands, playerById, series, seriesById } from '../dat
 import { count, money } from '../lib/format';
 import { fmtDate, fmtDateTime } from '../lib/time';
 import { canWatch, useApp } from '../state/app';
+import { isOnAir } from '../lib/broadcast';
 import { Art, HandCard, useDayStatus } from '../components/cards';
 import { AccessBadge, BraceletIcon, Icon, Page, SectionHeader, Spoiler, StatusBadge, cx } from '../components/ui';
 import { NotFound } from './NotFound';
@@ -203,7 +204,7 @@ function DayRow({ e, d }: { e: TourEvent; d: Day }) {
           </p>
         </div>
         <span className="flex flex-col items-end gap-1 sm:flex-row sm:items-center">
-          <AccessBadge access={d.access ?? 'subscriber'} locked={!canWatch(d.access ?? 'subscriber', state.scenario)} />
+          <AccessBadge access={d.access ?? 'subscriber'} live={isOnAir(st)} locked={!canWatch(d.access ?? 'subscriber', state, isOnAir(st))} />
           <StatusBadge status={st} size="sm" />
         </span>
       </Link>

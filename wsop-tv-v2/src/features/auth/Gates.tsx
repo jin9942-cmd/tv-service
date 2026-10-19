@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { archive } from '../../data/mock';
 import { Button, Icon } from '../../components/ui';
-import { MAX_STREAMS, useApp, type Gate } from '../../state/app';
-import { EXPIRED_DAYS_AGO, daysFromNow, fmtBillingDate } from '../../data/policy';
+import { MAX_STREAMS, memberTier, useApp, type Gate } from '../../state/app';
+import { tierFull, type Tier } from '../../data/policy';
 
 
 function Panel({ kicker, title, body, children, icon = 'lock' }: { kicker: string; title: string; body: ReactNode; children?: ReactNode; icon?: string }) {
@@ -23,8 +23,10 @@ function Panel({ kicker, title, body, children, icon = 'lock' }: { kicker: strin
   );
 }
 
-export function PlaybackGate({ gate, returnTo }: { gate: Exclude<Gate, 'ok'>; returnTo: string }) {
-  const { requireLogin, set, toast } = useApp();
+export function PlaybackGate({ gate, returnTo, required = 'basic' }: { gate: Exclude<Gate, 'ok'>; returnTo: string; required?: Tier }) {
+  const { state, requireLogin, set, toast } = useApp();
+  const need = required === 'free' || required === 'wsopFree' ? 'basic' : required;
+  const have = memberTier(state);
   const nav = useNavigate();
   switch (gate) {
     case 'login':
@@ -37,20 +39,28 @@ export function PlaybackGate({ gate, returnTo }: { gate: Exclude<Gate, 'ok'>; re
       );
     case 'plans':
       return (
-        <Panel kicker="Subscription required" title="Choose a plan to start watching" body="You're signed in with GGPASS. Pick a plan to unlock live coverage, the full archive and hand-by-hand replays.">
-          <Button variant="primary" size="lg" onClick={() => nav('/plans', { state: { returnTo } })}>
-            See plans
+        <Panel
+          kicker="WSOP+ membership"
+          title={`${tierFull(need)} required`}
+          body={
+            <>
+              You’re on <b className="text-text">{have === 'free' ? 'no membership' : tierFull(have)}</b>. WSOP TV is included with WSOP+ — join or upgrade in WSOP+ and come straight back here.
+            </>
+          }
+        >
+          <Button variant="primary" size="lg" onClick={() => nav('/plans', { state: { returnTo, required: need } })}>
+            See WSOP+ plans
           </Button>
         </Panel>
       );
     case 'link':
       return (
-        <Panel kicker="Account linking" title="Link your GGPASS account" body="Your subscription is active, but it isn't connected to a GGPASS account yet. Link once to watch on every device." icon="user">
+        <Panel kicker="Account linking" title="Link your GGPASS account" body="Your WSOP+ membership is active, but it isn't connected to a GGPass account yet. Link once to watch on every device." icon="user">
           <Button
             variant="primary"
             size="lg"
             onClick={() => {
-              set({ scenario: 'active' });
+              set((s) => ({ scenario: s.paidTier }));
               toast('GGPASS linked (demo) — enjoy the broadcast');
             }}
           >
@@ -71,9 +81,9 @@ export function PlaybackGate({ gate, returnTo }: { gate: Exclude<Gate, 'ok'>; re
       );
     case 'expired':
       return (
-        <Panel kicker="Subscription ended" title={`Your subscription ended on ${fmtBillingDate(daysFromNow(-EXPIRED_DAYS_AGO))}`} body="Renew to keep watching live tables and the full archive. Free highlights and sign-in content are still available.">
-          <Button variant="primary" size="lg" onClick={() => nav('/plans', { state: { returnTo } })}>
-            Renew
+        <Panel kicker="WSOP+ membership" title={`Your ${tierFull(state.paidTier)} membership ended`} body="Renew in WSOP+ to keep watching. Free highlights and WSOP+ Free content are still available.">
+          <Button variant="primary" size="lg" onClick={() => nav(`/wsop-plus/join?${new URLSearchParams({ tier: state.paidTier, return: returnTo })}`)}>
+            Renew in WSOP+
           </Button>
         </Panel>
       );

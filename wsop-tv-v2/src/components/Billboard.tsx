@@ -8,7 +8,7 @@ import { isBroadcasting, isOnAir, tableDelay, tableStatus } from '../lib/broadca
 import { count } from '../lib/format';
 import { FOOTAGE, HERO_POSTER, frameFrom, tableFrame } from '../lib/media';
 import { VENUE_TZ, countdown, fmtCardDate, fmtTime, relative, tzAbbr } from '../lib/time';
-import { gateFor, useApp, useTick } from '../state/app';
+import { canWatch, useApp, useTick } from '../state/app';
 import { useDayStatus } from './cards';
 import { AccessBadge, BraceletIcon, Icon, StatusBadge, cx } from './ui';
 import { CardMenu, useListAction, useLongPress } from '../features/library/listActions';
@@ -124,7 +124,7 @@ function ChannelCard({ e, d, tableIndex }: { e: TourEvent; d: Day; tableIndex: n
   const st = tableStatus(t, dayStatus);
   const offline = st === 'late' || st === 'interrupted';
   const access = d.access ?? 'subscriber';
-  const locked = gateFor(state.scenario) !== 'ok' && access !== 'free';
+  const locked = !canWatch(access, state, isOnAir(dayStatus));
   const delay = st === 'delayed' ? tableDelay(t, dayStatus) : 0;
   return (
     <Link to={`/watch/${d.id}`} className="group block w-56 sm:w-60">
@@ -134,7 +134,7 @@ function ChannelCard({ e, d, tableIndex }: { e: TourEvent; d: Day; tableIndex: n
           <StatusBadge status={st} size="sm" delayMin={delay || 30} />
         </span>
         <span className="absolute right-2 bottom-2">
-          <AccessBadge access={access} locked={locked} />
+          <AccessBadge access={access} live={isOnAir(dayStatus)} locked={locked} />
         </span>
       </div>
       <p className="mt-2 truncate text-sm font-semibold group-hover:text-gold-strong">{e.name.replace(' World Championship', '')}</p>

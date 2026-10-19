@@ -7,7 +7,7 @@ import { handFor } from '../player/hand';
 import { PLATFORMS, overlayAllowed } from '../../data/platforms';
 import { chips, duration, money } from '../../lib/format';
 import { fmtDateTime, fmtTime } from '../../lib/time';
-import { gateFor, useApp, useTick } from '../../state/app';
+import { gateForAccess, useApp, useTick } from '../../state/app';
 import { useLiveStacks } from '../../state/stacks';
 import { isOnAir } from '../../lib/broadcast';
 import { BraceletIcon, Icon, StatusBadge, cx } from '../../components/ui';
@@ -211,11 +211,12 @@ export function TvApp({ platform }: { platform: Platform }) {
     }
     if (screen.name === 'player') {
       const dayHands = hands.filter((h) => h.dayId === screen.dayId);
-      const gate = gateFor(state.scenario);
+      const pd = dayById(screen.dayId)!;
+      const gate = gateForAccess(pd.day.access ?? 'subscriber', state, isOnAir(screen.dayId === HERO_DAY_ID ? state.streamMode : pd.day.status));
       if (gate !== 'ok')
         return {
           onBack: back,
-          rows: [{ id: 'gate', items: [{ id: 'gate-signin', onSelect: () => (gate === 'login' ? replace({ name: 'login', after: screen }) : set({ scenario: 'active' })) }, { id: 'gate-back', onSelect: back }] }],
+          rows: [{ id: 'gate', items: [{ id: 'gate-signin', onSelect: () => (gate === 'login' ? replace({ name: 'login', after: screen }) : set((s) => ({ scenario: s.scenario === 'expired' || s.scenario === 'free' ? 'premium' : s.paidTier }))) }, { id: 'gate-back', onSelect: back }] }],
         };
       const levels: OverlayLevel[] = ['off', 'basic', 'pro'];
       return {
@@ -622,7 +623,7 @@ function TvPlayer({ dayId, platform, overlay, views, playing, handIdx, scrub }: 
   const caps = PLATFORMS[platform];
   const dayHands = hands.filter((h) => h.dayId === dayId);
   const current = handIdx === null ? null : dayHands[handIdx];
-  const gate = gateFor(state.scenario);
+  const gate = gateForAccess(day.access ?? 'subscriber', state, isOnAir(status));
   const shape = family === 'roku' ? 'rounded-[4px]' : family === 'apple' ? 'rounded-[16px]' : 'rounded-full';
 
   if (gate !== 'ok') {
@@ -757,7 +758,7 @@ function TvLogin({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     const a = window.setTimeout(() => {
       setAuthorized(true);
-      set((s) => ({ scenario: s.scenario === 'guest' || s.scenario === 'noSub' ? 'active' : s.scenario }));
+      set((s) => ({ scenario: s.scenario === 'guest' ? 'free' : s.scenario }));
       toast('TV authorized with GGPASS (demo)');
     }, 5000);
     const b = window.setTimeout(onDone, 6800);

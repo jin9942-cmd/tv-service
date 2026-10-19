@@ -117,7 +117,12 @@ export interface ArchiveItem {
   access: Access;
 }
 
-export type AccountScenario = 'guest' | 'noSub' | 'active' | 'unlinked' | 'restricted' | 'deviceLimit' | 'expired' | 'grace';
+/**
+ * Viewer account state. Members are GGPass accounts; paid access comes from the WSOP+ membership tier
+ * (free = WSOP+ Free, automatic with every GGPass account). unlinked / deviceLimit / expired / grace keep
+ * the paid tier in AppState.paidTier.
+ */
+export type AccountScenario = 'guest' | 'free' | 'basic' | 'premium' | 'unlinked' | 'restricted' | 'deviceLimit' | 'expired' | 'grace';
 export type Platform = 'web' | 'ios' | 'android' | 'ipados' | 'androidtablet' | 'appletv' | 'androidtv' | 'roku' | 'samsung' | 'lg';
 export type OverlayLevel = 'off' | 'basic' | 'pro';
 export type AudioTrack = 'en' | 'natural' | 'es';

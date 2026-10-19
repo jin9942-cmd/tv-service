@@ -1,25 +1,14 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { AudioTrack, OverlayLevel } from '../data/types';
-import { useApp } from '../state/app';
+import { memberTier, useApp } from '../state/app';
 import { AUDIO_LABEL } from '../features/player/Controls';
 import { DeviceList } from '../features/auth/Devices';
 import { GGPassMark } from '../features/auth/LoginModal';
 import { useState } from 'react';
 import { Button, Modal, Page, Placeholder, Segmented, Switch } from '../components/ui';
-import { COMPLETE_THRESHOLD, EXPIRED_DAYS_AGO, GRACE_DAYS, STORE_NAME, daysFromNow, fmtBillingDate, renewalDate } from '../data/policy';
+import { COMPLETE_THRESHOLD, GRACE_DAYS, NEXT_PAYMENT_DAYS, daysFromNow, fmtBillingDate, tierFull } from '../data/policy';
 
 import { dayById } from '../data/mock';
-
-const SCENARIO_TEXT = {
-  guest: 'Not signed in',
-  noSub: 'No active subscription',
-  active: 'Active',
-  unlinked: 'Active · GGPASS not linked',
-  restricted: 'Restricted',
-  deviceLimit: 'Active · stream limit reached',
-  expired: 'Expired',
-  grace: 'Active · payment issue',
-} as const;
 
 export function Account() {
   const { state, set, toast, signedIn, requireLogin } = useApp();
@@ -37,7 +26,6 @@ export function Account() {
     );
 
   const linked = state.scenario !== 'unlinked';
-  const subActive = state.scenario !== 'noSub' && state.scenario !== 'restricted' && state.scenario !== 'expired';
 
   return (
     <Page className="max-w-4xl space-y-8">
@@ -54,20 +42,21 @@ export function Account() {
             <div className="flex-1">
               <p className="font-semibold">{linked ? 'Connected' : 'Not connected'}</p>
               <p className="text-xs text-muted">{state.scenario === 'restricted' ? 'Account restricted — contact GGPASS support' : 'Shared with WSOP TV: email, nickname'}</p>
+              <p className="mt-1 text-xs text-muted">Your GGPass account includes WSOP+ Free.</p>
             </div>
             {linked ? (
               <Button size="sm" variant="ghost" onClick={() => toast('Manage connected apps on GGPASS (demo)')}>
                 Manage
               </Button>
             ) : (
-              <Button size="sm" variant="primary" onClick={() => (set({ scenario: 'active' }), toast('GGPASS linked (demo)'))}>
+              <Button size="sm" variant="primary" onClick={() => (set((x) => ({ scenario: x.paidTier })), toast('GGPASS linked (demo)'))}>
                 Link
               </Button>
             )}
           </div>
         </Card>
-        <Card title="Subscription">
-          <SubscriptionStatus subActive={subActive} />
+        <Card title="WSOP+ membership">
+          <Membership />
         </Card>
       </div>
 
@@ -176,54 +165,56 @@ function ViewingHistory() {
   );
 }
 
-/** Subscription status incl. scheduled cancellation, expiry and payment issues, and where to manage it. */
-function SubscriptionStatus({ subActive }: { subActive: boolean }) {
-  const { state, set, toast } = useApp();
-  const plan = state.plan ?? 'annual';
-  const ends = fmtBillingDate(renewalDate(plan));
-  const store = STORE_NAME[state.platform];
-  const status =
-    state.scenario === 'expired'
-      ? { title: 'Expired', sub: `Your subscription ended on ${fmtBillingDate(daysFromNow(-EXPIRED_DAYS_AGO))}` }
-      : state.scenario === 'grace'
-        ? { title: 'Payment issue', sub: `Update your payment method by ${fmtBillingDate(daysFromNow(GRACE_DAYS))} to keep watching` }
-        : subActive && state.cancelScheduled
-          ? { title: 'Cancellation scheduled', sub: `Ends on ${ends} · you can keep watching until then` }
-          : { title: SCENARIO_TEXT[state.scenario], sub: subActive ? `${plan === 'monthly' ? 'Monthly' : 'Annual'} plan · renews ${ends}` : 'Choose a plan to watch live coverage' };
+/** WSOP+ membership as WSOP TV reads it. Joining, upgrading, billing and cancelling all happen in WSOP+. */
+function Membership() {
+  const { state, toast } = useApp();
+  const nav = useNavigate();
+  const tier = memberTier(state);
+  const paid = tier === 'basic' || tier === 'premium';
+  const next = tier === 'basic' ? 'premium' : tier === 'wsopFree' ? 'basic' : null;
+  const manage = (
+    <button onClick={() => toast('Opens your WSOP+ membership (demo)')} className="text-sm font-semibold text-gold hover:underline">
+      Manage in WSOP+
+    </button>
+  );
+  if (state.scenario === 'expired')
+    return (
+      <>
+        <p className="font-semibold">Your {tierFull(state.paidTier)} membership ended</p>
+        <p className="text-xs text-muted">You still have WSOP+ Free with your GGPass account.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Button size="sm" variant="primary" onClick={() => nav(`/wsop-plus/join?${new URLSearchParams({ tier: state.paidTier, return: '/account' })}`)}>
+            Renew in WSOP+
+          </Button>
+          {manage}
+        </div>
+      </>
+    );
   return (
     <>
-      <p className="font-semibold">{status.title}</p>
-      <p className="text-xs text-muted">{status.sub}</p>
+      <p className="flex items-center gap-2 font-semibold">
+        {tier === 'free' ? 'No WSOP+ membership' : tierFull(tier)}
+        {state.scenario === 'grace' && <span className="label rounded-[3px] border border-delayed px-1 text-[9px] text-delayed">Payment issue</span>}
+      </p>
+      <p className="text-xs text-muted">
+        {state.scenario === 'grace' ? (
+          <>Update your payment method in WSOP+ by {fmtBillingDate(daysFromNow(GRACE_DAYS))} to keep watching.</>
+        ) : paid ? (
+          <>
+            Next payment {fmtBillingDate(daysFromNow(NEXT_PAYMENT_DAYS))} <Placeholder /> · billed by WSOP+
+          </>
+        ) : (
+          'Included with your GGPass account'
+        )}
+      </p>
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Link to="/plans" className="text-sm font-semibold text-gold hover:underline">
-          {state.scenario === 'expired' ? 'Renew' : subActive ? 'Change plan' : 'See plans'}
-        </Link>
-        {subActive &&
-          (state.cancelScheduled ? (
-            <Button size="sm" variant="outline" onClick={() => (set({ cancelScheduled: false }), toast('Subscription resumed'))}>
-              Resume
-            </Button>
-          ) : (
-            <button onClick={() => (set({ cancelScheduled: true }), toast(`Cancellation scheduled · access until ${ends} (demo)`))} className="text-sm font-semibold text-muted hover:text-text">
-              Cancel subscription
-            </button>
-          ))}
+        {next && (
+          <Button size="sm" variant="primary" onClick={() => nav('/plans')}>
+            {next === 'premium' ? 'Upgrade to Premium' : 'See WSOP+ plans'}
+          </Button>
+        )}
+        {manage}
       </div>
-      {(subActive || state.scenario === 'expired') && (
-        <p className="mt-3 border-t border-line pt-3 text-xs text-muted">
-          <b className="text-text">Manage subscription:</b>{' '}
-          {state.billingMode === 'web' ? (
-            <>
-              billing is handled by WSOP+.{' '}
-              <button onClick={() => toast('Opens your WSOP+ account (demo)')} className="font-semibold text-gold hover:underline">
-                Manage on WSOP+
-              </button>
-            </>
-          ) : (
-            <>billing is handled by the platform you subscribed on — manage it in your {store} subscriptions.</>
-          )}
-        </p>
-      )}
     </>
   );
 }

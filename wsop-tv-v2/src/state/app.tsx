@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Access, AccountScenario, AudioTrack, OverlayLevel, Platform, StreamStatus } from '../data/types';
 import { browserTz } from '../lib/time';
+import { atLeast, requiredTier, type IncludedFrom, type PaidTier, type Tier } from '../data/policy';
 
 export interface Device {
   id: string;
@@ -52,17 +53,20 @@ export interface AppState {
   devices: Device[];
   /** Day id → seconds watched. */
   progress: Record<string, number>;
-  plan: 'monthly' | 'annual' | null;
+  /** WSOP+ paid tier held (or last held, for "ended") — used by the paid scenarios. */
+  paidTier: PaidTier;
+  /** Which WSOP+ tier includes WSOP TV's paid content (decision pending). */
+  includedFrom: IncludedFrom;
+  /** Mock of WSOP+'s own record: set when the WSOP+ page completes; WSOP TV re-reads it on return. */
+  wsopPlusRecord: PaidTier | null;
   revealed: string[];
   // ---- added: search, My List, billing, subscription lifecycle, travel ----
   recentSearches: string[];
   myList: ListItem[];
   /** A My List save started by a guest; finished once they come back signed in. */
   pendingListAdd: Omit<ListItem, 'addedAt'> | null;
-  billingMode: 'web' | 'iap';
+  /** Outcome of the WSOP+ mock page (demo). */
   paymentResult: 'success' | 'fail' | 'cancel';
-  /** Cancellation scheduled: the subscription stays active until the renewal date. */
-  cancelScheduled: boolean;
   vpnDetected: boolean;
   abroad: boolean;
   abroadDismissed: boolean;
@@ -90,14 +94,14 @@ const INITIAL: AppState = {
     { id: 'd4', name: 'Pixel 8', kind: 'mobile', lastActive: '3 days ago' },
   ],
   progress: { 'lv-main-day3': 0.62 * 660 * 60, 'lv-mm-finaltable': 0.31 * 480 * 60, 'lv-main-day2': 0.88 * 660 * 60 },
-  plan: null,
+  paidTier: 'basic',
+  includedFrom: 'basic',
+  wsopPlusRecord: null,
   revealed: [],
   recentSearches: ['Han', 'final table', 'bluff'],
   myList: [],
   pendingListAdd: null,
-  billingMode: 'web',
   paymentResult: 'success',
-  cancelScheduled: false,
   vpnDetected: false,
   abroad: false,
   abroadDismissed: false,
@@ -107,23 +111,45 @@ const INITIAL: AppState = {
 export const MAX_STREAMS = 2;
 
 export type Gate = 'ok' | 'login' | 'plans' | 'link' | 'restricted' | 'devices' | 'expired';
-/** What happens when a viewer presses play (soft paywall). */
-export const gateFor = (s: AccountScenario): Gate =>
-  ({ guest: 'login', noSub: 'plans', active: 'ok', unlinked: 'link', restricted: 'restricted', deviceLimit: 'devices', expired: 'expired', grace: 'ok' })[s] as Gate;
+
+/** The viewer's WSOP+ level as WSOP TV reads it. A payment issue keeps the tier; an ended membership falls back to Free. */
+export function memberTier(s: Pick<AppState, 'scenario' | 'paidTier'>): Tier {
+  switch (s.scenario) {
+    case 'guest':
+    case 'restricted':
+      return 'free';
+    case 'free':
+    case 'expired':
+      return 'wsopFree';
+    case 'basic':
+    case 'premium':
+      return s.scenario;
+    default:
+      return s.paidTier;
+  }
+}
 
 /**
- * Content-level access. Free clips play for anyone (no account, not counted against the stream limit);
- * 'signin' content needs any GGPASS account in good standing; subscriber content follows the paywall above.
+ * The one access check used by web, mobile and TV: play when the member's tier ≥ the content's required tier
+ * (free < WSOP+ Free < Basic < Premium). `live` matters for the Split setting (live/delayed need Premium).
  */
-export const canWatch = (access: Access, s: AccountScenario) =>
-  // A payment issue (grace period) keeps the subscription working; an expired one falls back to free + sign-in content.
-  access === 'free' ? true : access === 'signin' ? s !== 'guest' && s !== 'restricted' : s === 'active' || s === 'grace';
+export function gateForAccess(access: Access, s: Pick<AppState, 'scenario' | 'paidTier' | 'includedFrom'>, live = false): Gate {
+  const need = requiredTier(access, s.includedFrom, live);
+  if (need === 'free') return 'ok';
+  if (s.scenario === 'guest') return 'login';
+  if (s.scenario === 'restricted') return 'restricted';
+  if (need === 'wsopFree') return 'ok';
+  // Paid content
+  if (s.scenario === 'unlinked') return 'link';
+  if (s.scenario === 'deviceLimit') return 'devices';
+  if (s.scenario === 'expired') return 'expired';
+  return atLeast(memberTier(s), need) ? 'ok' : 'plans';
+}
 
-export const gateForAccess = (access: Access, s: AccountScenario): Gate => {
-  if (canWatch(access, s)) return 'ok';
-  if (access === 'signin') return s === 'restricted' ? 'restricted' : 'login';
-  return gateFor(s);
-};
+export const canWatch = (access: Access, s: Pick<AppState, 'scenario' | 'paidTier' | 'includedFrom'>, live = false) => gateForAccess(access, s, live) === 'ok';
+
+/** Scenario for holding a WSOP+ tier (after joining / upgrading). */
+export const scenarioFor = (t: PaidTier): AccountScenario => t;
 
 interface Api {
   state: AppState;
