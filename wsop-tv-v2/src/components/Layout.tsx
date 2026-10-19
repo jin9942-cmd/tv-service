@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Button, Icon, cx } from './ui';
@@ -17,7 +17,6 @@ export const NAV = [
   { to: '/players', label: 'Players', icon: 'user' },
   { to: '/hands', label: 'Hands & Clips', icon: 'grid4' },
   { to: '/archive', label: 'Archive', icon: 'grid2' },
-  { to: '/my-list', label: 'My List', icon: 'plus' },
 ] as const;
 
 const MOBILE_NAV = ['/', '/live', '/schedule', '/hands'];
@@ -122,10 +121,7 @@ export function Layout() {
               <Icon name="tv" size={16} /> <span className="hidden sm:inline">TV Preview</span>
             </Button>
             {signedIn ? (
-              <NavLink to="/account" className="flex items-center gap-2 rounded-full border border-line-strong py-1 pr-3 pl-1 text-[13px] font-semibold hover:border-gold" aria-label="Account">
-                <span className="flex size-7 items-center justify-center rounded-full bg-surface-3 text-[11px] font-bold">DV</span>
-                <span className="hidden md:inline">Account</span>
-              </NavLink>
+              <MyMenu />
             ) : (
               <Button size="sm" variant="ghost" className="hidden md:inline-flex" onClick={() => requireLogin({ reason: 'Sign in to WSOP TV.' })}>
                 Sign in
@@ -139,7 +135,7 @@ export function Layout() {
         {menu && (
           <nav aria-label="Main (menu)" className="border-t border-line bg-surface xl:hidden">
             <ul className="mx-auto grid max-w-content grid-cols-2 gap-1 px-gutter py-3 sm:grid-cols-4 sm:px-6">
-              {[...NAV, { to: '/search', label: 'Search', icon: 'search' }, { to: '/account', label: 'Account', icon: 'user' }].map((n) => (
+              {[...NAV, { to: '/search', label: 'Search', icon: 'search' }, { to: '/my-list', label: 'My List', icon: 'plus' }, { to: '/account', label: 'Account', icon: 'user' }].map((n) => (
                 <li key={n.to}>
                   <NavLink to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex items-center gap-2 rounded-chip px-3 py-2.5 text-sm font-semibold', isActive ? 'bg-surface-3 text-text' : 'text-muted hover:text-text')}>
                     <Icon name={n.icon} size={16} /> {n.label}
@@ -187,6 +183,58 @@ export function Layout() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** "My" menu behind the account avatar: Account, My List, sign out. */
+function MyMenu() {
+  const { state, set, toast } = useApp();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const loc = useLocation();
+  useEffect(() => setOpen(false), [loc.pathname]);
+  useEffect(() => {
+    if (!open) return;
+    ref.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const onDown = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown);
+    return () => (document.removeEventListener('keydown', onKey), document.removeEventListener('pointerdown', onDown));
+  }, [open]);
+  const item = 'flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none';
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="My menu"
+        className={cx('flex items-center gap-2 rounded-full border py-1 pr-3 pl-1 text-[13px] font-semibold hover:border-gold', open ? 'border-gold' : 'border-line-strong')}
+      >
+        <span className="flex size-7 items-center justify-center rounded-full bg-surface-3 text-[11px] font-bold">DV</span>
+        <span className="hidden md:inline">My</span>
+        <Icon name="chevron" size={14} className={cx('text-muted transition-transform duration-150', open ? '-rotate-90' : 'rotate-90')} />
+      </button>
+      {open && (
+        <div role="menu" aria-label="My menu" className="absolute top-11 right-0 z-50 w-60 rounded-card border border-line-strong bg-surface py-1.5 shadow-2xl">
+          <div className="border-b border-line px-3 pt-1 pb-2.5">
+            <p className="text-sm font-bold">Demo Viewer</p>
+            <p className="text-xs text-muted">demo.viewer@example.com</p>
+          </div>
+          <NavLink to="/my-list" role="menuitem" className={item}>
+            <Icon name="plus" size={16} className="text-muted" /> <span className="flex-1">My List</span>
+            {state.myList.length > 0 && <span className="text-xs text-subtle tnum">{state.myList.length}</span>}
+          </NavLink>
+          <NavLink to="/account" role="menuitem" className={item}>
+            <Icon name="user" size={16} className="text-muted" /> Account
+          </NavLink>
+          <button role="menuitem" onClick={() => (setOpen(false), set({ scenario: 'guest' }), toast('Signed out'))} className={cx(item, 'border-t border-line text-muted')}>
+            <Icon name="back" size={16} /> Sign out
+          </button>
+        </div>
+      )}
     </div>
   );
 }
