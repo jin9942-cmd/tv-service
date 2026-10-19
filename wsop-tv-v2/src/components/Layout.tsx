@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Button, Icon, cx } from './ui';
 import { WSOP_LOGO } from '../lib/brand';
 import { LoginModal } from '../features/auth/LoginModal';
 import { DemoControls } from '../features/demo/DemoControls';
 import { TvPreview } from '../features/tv/TvPreview';
+import { GRACE_DAYS, STORE_NAME, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
+
 
 export const NAV = [
   { to: '/', label: 'Home', icon: 'star', end: true },
@@ -30,7 +32,8 @@ export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
 }
 
 export function Layout() {
-  const { state, set, signedIn, requireLogin, login, toasts } = useApp();
+  const { state, set, toast, signedIn, requireLogin, login, toasts } = useApp();
+  const nav = useNavigate();
   const [menu, setMenu] = useState(false);
   const loc = useLocation();
   useEffect(() => {
@@ -57,6 +60,40 @@ export function Layout() {
         </div>
       )}
 
+      {/* Payment issue: watching continues during the grace period */}
+      {state.scenario === 'grace' && (
+        <div className="border-b border-delayed/40 bg-delayed/10" role="status">
+          <div className="mx-auto flex max-w-content flex-wrap items-center justify-between gap-x-4 gap-y-2 px-gutter py-2 sm:px-6 lg:px-8">
+            <p className="text-[13px]">
+              <b>Update your payment method to keep watching.</b> <span className="text-muted">Your access continues until {fmtBillingDate(daysFromNow(GRACE_DAYS))}.</span>
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                state.billingMode === 'web'
+                  ? nav(`/pay/wsop-plus?${new URLSearchParams({ plan: state.plan ?? 'annual', method: 'change', return: loc.pathname })}`)
+                  : toast(`Opens ${STORE_NAME[state.platform]} subscriptions (demo)`)
+              }
+            >
+              Update payment
+            </Button>
+          </div>
+        </div>
+      )}
+      {/* Travelling: wording stays non-committal — the rights policy (subscription country vs. location) isn't decided */}
+      {state.abroad && !state.abroadDismissed && (
+        <div className="border-b border-line bg-surface-2" role="status">
+          <div className="mx-auto flex max-w-content items-center gap-3 px-gutter py-2 sm:px-6 lg:px-8">
+            <Icon name="globe" size={16} className="text-gold" />
+            <p className="flex-1 text-[13px]">You’re watching from {TRAVEL_COUNTRY}. Some events may not be available.</p>
+            <button onClick={() => set({ abroadDismissed: true })} aria-label="Dismiss" className="rounded-chip p-1.5 text-muted hover:text-text">
+              <Icon name="close" size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur">
         <div className="mx-auto flex h-header max-w-content items-center gap-4 px-gutter sm:px-6 lg:px-8">
           <NavLink to="/" aria-label="WSOP TV home" className="shrink-0">
@@ -77,6 +114,9 @@ export function Layout() {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
+            <NavLink to="/search" aria-label="Search" title="Search" className={({ isActive }) => cx('rounded-chip p-2 transition-colors duration-150', isActive ? 'text-gold' : 'text-muted hover:text-text')}>
+              <Icon name="search" />
+            </NavLink>
             <Button size="sm" variant={state.tvPreview ? 'primary' : 'outline'} onClick={() => set({ tvPreview: !state.tvPreview })} aria-pressed={state.tvPreview}>
               <Icon name="tv" size={16} /> <span className="hidden sm:inline">TV Preview</span>
             </Button>
@@ -98,7 +138,7 @@ export function Layout() {
         {menu && (
           <nav aria-label="Main (menu)" className="border-t border-line bg-surface xl:hidden">
             <ul className="mx-auto grid max-w-content grid-cols-2 gap-1 px-gutter py-3 sm:grid-cols-4 sm:px-6">
-              {[...NAV, { to: '/account', label: 'Account', icon: 'user' }].map((n) => (
+              {[...NAV, { to: '/search', label: 'Search', icon: 'search' }, { to: '/my-list', label: 'My List', icon: 'plus' }, { to: '/account', label: 'Account', icon: 'user' }].map((n) => (
                 <li key={n.to}>
                   <NavLink to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex items-center gap-2 rounded-chip px-3 py-2.5 text-sm font-semibold', isActive ? 'bg-surface-3 text-text' : 'text-muted hover:text-text')}>
                     <Icon name={n.icon} size={16} /> {n.label}
@@ -136,8 +176,13 @@ export function Layout() {
 
       <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4 md:bottom-6" role="status" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className="rounded-full border border-line-strong bg-surface-2 px-4 py-2 text-sm shadow-xl">
+          <div key={t.id} className="flex items-center gap-3 rounded-full border border-line-strong bg-surface-2 px-4 py-2 text-sm shadow-xl">
             {t.text}
+            {t.action && (
+              <button onClick={t.action.onClick} className="pointer-events-auto font-bold text-gold-strong hover:underline">
+                {t.action.label}
+              </button>
+            )}
           </div>
         ))}
       </div>

@@ -8,6 +8,7 @@ import { fmtDateTime } from '../lib/time';
 import { canWatch, gateForAccess, useApp } from '../state/app';
 import { HAND_META, HandGlyph } from '../features/player/markers';
 import { AccessBadge, Avatar, Icon, Spoiler, StatusBadge, cx } from './ui';
+import { CardMenu, useListAction, useLongPress, type MenuAction } from '../features/library/listActions';
 
 /** Abstract artwork for a broadcast (no images): stage gradient + event number. */
 /** Card artwork: a real still from the CC footage when `image` is given, otherwise a neutral stage. */
@@ -33,11 +34,14 @@ export function useDayStatus(day: Day) {
   return day.id === HERO_DAY_ID ? state.streamMode : day.status;
 }
 
-export function BroadcastCard({ event, day, wide, progress }: { event: TourEvent; day: Day; wide?: boolean; progress?: number }) {
+export function BroadcastCard({ event, day, wide, progress, extraActions }: { event: TourEvent; day: Day; wide?: boolean; progress?: number; extraActions?: MenuAction[] }) {
   const { state } = useApp();
   const status = useDayStatus(day);
+  const lp = useLongPress();
+  const listAction = useListAction('day', day.id);
   return (
-    <Link to={`/watch/${day.id}`} className={cx('group block', wide ? 'w-80 sm:w-96' : 'w-64 sm:w-72')}>
+    <div className={cx('group relative block', wide ? 'w-80 sm:w-96' : 'w-64 sm:w-72')} {...lp.bind}>
+    <Link to={`/watch/${day.id}`} className="block">
       <Art hue={200 + event.number * 3} image={frameFrom(event.number + event.days.indexOf(day) * 3)} className="transition-transform duration-200 group-hover:scale-[1.015]">
         <span className="absolute top-2 left-2">
           <StatusBadge status={status} size="sm" />
@@ -58,6 +62,8 @@ export function BroadcastCard({ event, day, wide, progress }: { event: TourEvent
         {seriesById(event.seriesId).name} · {status === 'upcoming' ? fmtDateTime(day.start, state.tz) : `Event #${event.number}`}
       </p>
     </Link>
+    <CardMenu actions={[listAction, ...(extraActions ?? [])]} openSignal={lp.signal} className="top-2 right-2" />
+    </div>
   );
 }
 
@@ -65,8 +71,11 @@ export function HandCard({ hand, className }: { hand: Hand; className?: string }
   const { state } = useApp();
   const ev = eventById(hand.eventId)!;
   const m = HAND_META[hand.type];
+  const lp = useLongPress();
+  const listAction = useListAction('hand', hand.id);
   return (
-    <div className={cx('group rounded-card border border-line bg-surface p-3 transition-colors duration-150 hover:border-line-strong', className)}>
+    <div className={cx('group relative rounded-card border border-line bg-surface p-3 transition-colors duration-150 hover:border-line-strong', className)} {...lp.bind}>
+      <CardMenu actions={[listAction]} openSignal={lp.signal} className="top-5 right-5" />
       {/* clip=… lets the player open just this hand when the full broadcast is locked (free highlights). */}
       <Link to={`/watch/${hand.dayId}?t=${hand.t}&clip=${hand.id}`} className="block rounded-card">
       <Art hue={210 + ev.number * 5} image={frameFrom(Number(hand.id.slice(1)) * 5)}>
@@ -125,13 +134,16 @@ export function ArchiveCard({ item }: { item: ArchiveItem }) {
     const gate = gateForAccess(item.access, state.scenario);
     if (gate === 'ok') return toast('Archive playback opens the same player (demo)');
     if (gate === 'login') return requireLogin({ reason: item.access === 'signin' ? 'Sign in free with GGPASS to watch this classic.' : 'Sign in to watch this classic.' });
-    if (gate === 'plans') return nav('/plans', { state: { returnTo: '/archive' } });
+    if (gate === 'plans' || gate === 'expired') return nav('/plans', { state: { returnTo: '/archive' } });
     if (gate === 'link') return toast('Link your GGPASS account to watch (see Account)');
     if (gate === 'restricted') return toast('Viewing isn’t available on this account');
     return nav('/devices', { state: { returnTo: '/archive' } });
   };
+  const lp = useLongPress();
+  const listAction = useListAction('archive', item.id);
   return (
-    <div className="group w-72">
+    <div className="group relative w-72" {...lp.bind}>
+      <CardMenu actions={[listAction]} openSignal={lp.signal} className="top-2 right-2" />
       <button onClick={play} className="block w-full rounded-card text-left">
       <Art hue={item.hue} image={frameFrom(item.year)}>
         <span className="label absolute top-2 left-2 rounded-[3px] bg-black/70 px-1.5 py-0.5 text-[10px]">Classic · {item.year}</span>

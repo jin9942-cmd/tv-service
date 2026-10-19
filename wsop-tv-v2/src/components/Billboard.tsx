@@ -11,6 +11,7 @@ import { VENUE_TZ, countdown, fmtCardDate, fmtTime, relative, tzAbbr } from '../
 import { gateFor, useApp, useTick } from '../state/app';
 import { useDayStatus } from './cards';
 import { AccessBadge, BraceletIcon, Icon, StatusBadge, cx } from './ui';
+import { CardMenu, useListAction, useLongPress } from '../features/library/listActions';
 
 export function Billboard() {
   const { state } = useApp();
@@ -149,8 +150,12 @@ function ChannelCard({ e, d, tableIndex }: { e: TourEvent; d: Day; tableIndex: n
 export function UpcomingCard({ e, d }: { e: TourEvent; d: Day }) {
   const { state } = useApp();
   const now = useTick(60_000);
+  const lp = useLongPress();
+  const listAction = useListAction('day', d.id);
   return (
-    <Link to={`/watch/${d.id}`} className="group block w-64 rounded-card border border-line bg-surface p-2.5 transition-colors duration-150 hover:border-line-strong sm:w-72">
+    <div className="group relative w-64 sm:w-72" {...lp.bind}>
+    <CardMenu actions={[listAction]} openSignal={lp.signal} className="top-5 right-5" />
+    <Link to={`/watch/${d.id}`} className="block rounded-card border border-line bg-surface p-2.5 transition-colors duration-150 hover:border-line-strong">
       <div className="relative aspect-video overflow-hidden rounded-[8px]">
         <img src={frameFrom(e.number * 3 + d.label.length)} alt="" loading="lazy" className="size-full object-cover opacity-70 transition-transform duration-200 group-hover:scale-[1.03]" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
@@ -174,5 +179,6 @@ export function UpcomingCard({ e, d }: { e: TourEvent; d: Day }) {
         {fmtTime(d.start, state.tz)} {tzAbbr(state.tz, d.start)} your time
       </p>
     </Link>
+    </div>
   );
 }

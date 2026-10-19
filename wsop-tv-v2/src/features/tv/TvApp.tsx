@@ -17,8 +17,33 @@ import { useRemoteFocus, type FocusItem, type FocusModel } from './focus';
 import { SHELLS, SHELL_OF, TV_FOCUS, notAvailable, type ShellFamily, type ShellSpec } from './tvTokens';
 import { QrMock } from './QrMock';
 import { WSOP_LOGO } from '../../lib/brand';
+import { COMPLETE_THRESHOLD } from '../../data/policy';
+import { buildIndex, search, KIND_LABEL, type SearchItem } from '../../lib/search';
+import { useMyList } from '../library/listActions';
 
-type Screen = { name: 'home' } | { name: 'event'; eventId: string } | { name: 'player'; dayId: string } | { name: 'login'; after?: Screen };
+type Screen =
+  | { name: 'home' }
+  | { name: 'event'; eventId: string }
+  | { name: 'player'; dayId: string }
+  | { name: 'login'; after?: Screen }
+  | { name: 'search' }
+  /** Options for a focused Continue Watching card (the remote's options key — "o" in the demo). */
+  | { name: 'options'; dayId: string };
+
+interface HomeCard {
+  id: string;
+  title: string;
+  sub: string;
+  hue: number;
+  badge?: ReactNode;
+  onSelect: () => void;
+}
+interface HomeRow {
+  id: string;
+  title: string;
+  hint?: string;
+  cards: HomeCard[];
+}
 
 interface TvCtx {
   family: ShellFamily;
@@ -32,7 +57,8 @@ const Ctx = createContext<TvCtx>(null as unknown as TvCtx);
 const useTv = () => useContext(Ctx);
 
 export function TvApp({ platform }: { platform: Platform }) {
-  const { state, set } = useApp();
+  const { state, set, toast } = useApp();
+  const myList = useMyList();
   const family = SHELL_OF[platform];
   const spec = SHELLS[family];
   const caps = PLATFORMS[platform];
@@ -51,9 +77,81 @@ export function TvApp({ platform }: { platform: Platform }) {
     { id: 'm-home', label: 'Home', icon: 'star', onSelect: () => (setTab(0), setStack([{ name: 'home' }])) },
     { id: 'm-live', label: 'Live', icon: 'play', onSelect: () => (setTab(1), setStack([{ name: 'home' }])) },
     { id: 'm-events', label: 'Events', icon: 'layers', onSelect: () => (setTab(2), setStack([{ name: 'event', eventId: 'lv-main' }])) },
+    { id: 'm-search', label: 'Search', icon: 'search', onSelect: () => (setTab(3), setStack([{ name: 'search' }])) },
     { id: 'm-account', label: signedIn ? 'Account' : 'Sign in', icon: 'user', onSelect: () => (signedIn ? undefined : push({ name: 'login' })) },
   ];
   const openDay = (dayId: string) => push({ name: 'player', dayId });
+
+  // ---- home rows (Continue Watching and My List appear only when they have something) ----
+  const continueItems = signedIn
+    ? Object.entries(state.progress)
+        .map(([id, sec]) => ({ ref: dayById(id), sec }))
+        .filter((x): x is { ref: NonNullable<ReturnType<typeof dayById>>; sec: number } => !!x.ref && x.sec / (x.ref.day.durationMin * 60) < COMPLETE_THRESHOLD)
+    : [];
+  const listCards: HomeCard[] = signedIn
+    ? [...state.myList]
+        .sort((a, b) => b.addedAt - a.addedAt)
+        .flatMap((x, i): HomeCard[] => {
+          if (x.kind === 'day') {
+            const r = dayById(x.id);
+            return r ? [{ id: `ml-${x.id}`, title: r.event.name, sub: r.day.label, hue: 205 + i * 12, onSelect: () => openDay(x.id) }] : [];
+          }
+          if (x.kind === 'event') {
+            const e = eventById(x.id);
+            return e ? [{ id: `ml-${x.id}`, title: e.name, sub: `Event #${e.number}`, hue: 205 + i * 12, onSelect: () => push({ name: 'event', eventId: e.id }) }] : [];
+          }
+          if (x.kind === 'hand') {
+            const h = hands.find((y) => y.id === x.id);
+            return h ? [{ id: `ml-${x.id}`, title: h.title, sub: `Hand · Pot ${chips(h.pot)}`, hue: 205 + i * 12, onSelect: () => openDay(h.dayId) }] : [];
+          }
+          const a = archive.find((y) => y.id === x.id);
+          return a ? [{ id: `ml-${x.id}`, title: `${a.year} ${a.title}`, sub: duration(a.durationSec), hue: a.hue, onSelect: () => openDay('lv-main-day3') }] : [];
+        })
+    : [];
+  const homeRows: HomeRow[] = [
+    ...(continueItems.length
+      ? [
+          {
+            id: 'continue',
+            title: 'Continue Watching',
+            hint: 'Press O for options',
+            cards: continueItems.map(({ ref, sec }, i) => ({
+              id: `cw-${ref.day.id}`,
+              title: ref.event.name,
+              sub: `${ref.day.label} · ${Math.round((sec / (ref.day.durationMin * 60)) * 100)}% watched`,
+              hue: 200 + i * 15,
+              onSelect: () => openDay(ref.day.id),
+            })),
+          },
+        ]
+      : []),
+    ...(listCards.length ? [{ id: 'mylist', title: 'My List', cards: listCards }] : []),
+    { id: 'live', title: 'Live now', cards: liveDays.map(({ e, d }, i) => ({ id: `live-${d.id}`, title: e.name, sub: d.label, hue: 220 + i * 20, badge: <StatusBadge status={d.id === HERO_DAY_ID ? state.streamMode : d.status} />, onSelect: () => openDay(d.id) })) },
+    { id: 'hands', title: 'Trending hands', cards: trending.map((h, i) => ({ id: `hand-${h.id}`, title: h.title, sub: `${HAND_META[h.type].label} · Pot ${chips(h.pot)}`, hue: 210 + i * 9, badge: <HandGlyph type={h.type} size={30} />, onSelect: () => openDay(h.dayId) })) },
+    { id: 'archive', title: 'Archive classics', cards: archive.map((a) => ({ id: `arc-${a.id}`, title: `${a.year} ${a.title}`, sub: duration(a.durationSec), hue: a.hue, onSelect: () => openDay('lv-main-day3') })) },
+  ];
+
+  // ---- search (on-screen keyboard) ----
+  const [tvQuery, setTvQuery] = useState('');
+  const tvResults: SearchItem[] = useMemo(() => (tvQuery.trim() ? search(buildIndex(state.streamMode, state.spoilerFree), tvQuery).slice(0, 10) : []), [tvQuery, state.streamMode, state.spoilerFree]);
+  const openResult = (r: SearchItem) => {
+    set((s) => ({ recentSearches: [tvQuery.trim(), ...s.recentSearches.filter((x) => x.toLowerCase() !== tvQuery.trim().toLowerCase())].slice(0, 8) }));
+    if (r.kind === 'day') return openDay(r.id);
+    if (r.kind === 'event') return push({ name: 'event', eventId: r.id });
+    if (r.kind === 'hand') return openDay(hands.find((h) => h.id === r.id)!.dayId);
+    if (r.kind === 'archive') return openDay('lv-main-day3');
+    toast('Player profiles open on web and mobile (demo)');
+  };
+  const removeContinue = (dayId: string) => {
+    const sec = state.progress[dayId];
+    set((s) => {
+      const next = { ...s.progress };
+      delete next[dayId];
+      return { progress: next };
+    });
+    toast('Removed from Continue Watching', { label: 'Undo', onClick: () => set((s) => ({ progress: { ...s.progress, [dayId]: sec } })) });
+  };
+  const toggleList = (kind: 'event', id: string) => (signedIn ? myList.toggle(kind, id) : (set({ pendingListAdd: { kind, id } }), push({ name: 'login' })));
 
   // ---- player state (owned here so the focus model can reference it) ----
   const [overlay, setOverlay] = useState<OverlayLevel>('basic');
@@ -74,11 +172,31 @@ export function TvApp({ platform }: { platform: Platform }) {
         menuPlacement: placement,
         rows: [
           { id: 'hero', items: [{ id: 'hero-watch', onSelect: () => openDay(HERO_DAY_ID) }, { id: 'hero-event', onSelect: () => push({ name: 'event', eventId: 'lv-main' }) }] },
-          { id: 'live', items: liveDays.map(({ d }) => ({ id: `live-${d.id}`, onSelect: () => openDay(d.id) })) },
-          { id: 'hands', items: trending.map((h) => ({ id: `hand-${h.id}`, onSelect: () => openDay(h.dayId) })) },
-          { id: 'archive', items: archive.map((a) => ({ id: `arc-${a.id}`, onSelect: () => openDay('lv-main-day3') })) },
+          ...homeRows.map((r) => ({ id: r.id, items: r.cards.map((c) => ({ id: c.id, onSelect: c.onSelect })) })),
         ],
       };
+    if (screen.name === 'options')
+      return {
+        onBack: back,
+        rows: [{ id: 'opt', items: [{ id: 'opt-remove', onSelect: () => (removeContinue(screen.dayId), back()) }, { id: 'opt-cancel', onSelect: back }] }],
+      };
+    if (screen.name === 'search') {
+      const keys = ['abcdefghi', 'jklmnopqr', 'stuvwxyz0'].map((r) => r.split(''));
+      const results = tvResults.length
+        ? tvResults.map((r) => ({ id: `sr-${r.kind}-${r.id}`, onSelect: () => openResult(r) }))
+        : !tvQuery.trim() && state.recentSearches.length
+          ? state.recentSearches.map((r) => ({ id: `rs-${r}`, onSelect: () => setTvQuery(r) }))
+          : [{ id: 'sr-none', disabled: true }];
+      return {
+        menu,
+        menuPlacement: placement,
+        rows: [
+          ...keys.map((r, ri) => ({ id: `kb${ri}`, items: r.map((ch) => ({ id: `k-${ch}`, onSelect: () => setTvQuery((q) => q + ch) })) })),
+          { id: 'kb3', items: [{ id: 'k-space', onSelect: () => setTvQuery((q) => q + ' ') }, { id: 'k-del', onSelect: () => setTvQuery((q) => q.slice(0, -1)) }, { id: 'k-clear', onSelect: () => setTvQuery('') }] },
+          { id: 'results', items: results },
+        ],
+      };
+    }
     if (screen.name === 'event') {
       const e = eventById(screen.eventId)!;
       return {
@@ -86,7 +204,7 @@ export function TvApp({ platform }: { platform: Platform }) {
         menuPlacement: placement,
         onBack: back,
         rows: [
-          { id: 'ev-actions', items: [{ id: 'ev-watch', onSelect: () => openDay(e.days[e.days.length - 1].id) }, { id: 'ev-back', onSelect: back }] },
+          { id: 'ev-actions', items: [{ id: 'ev-watch', onSelect: () => openDay(e.days[e.days.length - 1].id) }, { id: 'ev-list', onSelect: () => toggleList('event', e.id) }, { id: 'ev-back', onSelect: back }] },
           { id: 'ev-days', items: e.days.map((d) => ({ id: `day-${d.id}`, onSelect: () => openDay(d.id) })) },
         ],
       };
@@ -125,10 +243,20 @@ export function TvApp({ platform }: { platform: Platform }) {
     }
     return { onBack: back, rows: [{ id: 'login', items: [{ id: 'login-back', onSelect: back }] }] };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, signedIn, state.scenario, platform, spec.nav, spec.timeline]);
+  }, [screen, signedIn, state.scenario, state.progress, state.myList, state.recentSearches, tvQuery, tvResults, platform, spec.nav, spec.timeline]);
 
   const screenKey = `${JSON.stringify(screen)}|${family}`;
-  const { isFocused, focusedRow, setPos, setMenuIndex, inMenu } = useRemoteFocus(model, screenKey);
+  const { pos, isFocused, focusedRow, setPos, setMenuIndex, inMenu } = useRemoteFocus(model, screenKey);
+  // Options key ("o" in the demo) on a focused Continue Watching card.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'o' || (e.target as HTMLElement)?.closest?.('select, input, [data-tv-ignore]')) return;
+      const id = pos.zone === 'content' ? model.rows[pos.row]?.items[pos.col]?.id : undefined;
+      if (screen.name === 'home' && id?.startsWith('cw-')) (e.preventDefault(), push({ name: 'options', dayId: id.slice(3) }));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     setMenuIndex(tab);
   }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -147,8 +275,16 @@ export function TvApp({ platform }: { platform: Platform }) {
   const chromeHidden = screen.name === 'player' || screen.name === 'login';
 
   let body: ReactNode = null;
-  if (screen.name === 'home') body = <TvHome liveDays={liveDays} trending={trending} focusedRow={focusedRow} />;
-  if (screen.name === 'event') body = <TvEvent eventId={screen.eventId} />;
+  if (screen.name === 'home') body = <TvHome rows={homeRows} focusedRow={focusedRow} />;
+  if (screen.name === 'options')
+    body = (
+      <>
+        <TvHome rows={homeRows} focusedRow={-1} />
+        <TvOptions dayId={screen.dayId} />
+      </>
+    );
+  if (screen.name === 'search') body = <TvSearch query={tvQuery} results={tvResults} focusedRow={focusedRow} />;
+  if (screen.name === 'event') body = <TvEvent eventId={screen.eventId} inList={myList.has('event', screen.eventId)} />;
   if (screen.name === 'player')
     body = <TvPlayer dayId={screen.dayId} platform={platform} overlay={overlay} views={views} playing={playing} handIdx={handIdx} scrub={scrub} />;
   if (screen.name === 'login') body = <TvLogin onDone={() => (screen.after ? replace(screen.after) : back())} />;
@@ -358,11 +494,14 @@ function Card({ id, row, col, title, sub, hue, badge }: { id: string; row: numbe
   );
 }
 
-function Row({ title, active, children }: { title: string; active: boolean; children: ReactNode }) {
+function Row({ title, hint, active, children }: { title: string; hint?: string; active: boolean; children: ReactNode }) {
   const { family } = useTv();
   return (
     <section className={family === 'roku' ? 'mb-8' : 'mb-10'}>
-      <h2 className={cx('mb-4 font-bold transition-colors duration-200', family === 'roku' ? 'text-[28px]' : 'text-[32px]', active ? 'text-text' : 'text-muted')}>{title}</h2>
+      <h2 className={cx('mb-4 flex items-baseline gap-5 font-bold transition-colors duration-200', family === 'roku' ? 'text-[28px]' : 'text-[32px]', active ? 'text-text' : 'text-muted')}>
+        {title}
+        {hint && active && <span className="text-[20px] font-medium text-subtle">{hint}</span>}
+      </h2>
       <div className={cx('-mx-8 flex overflow-hidden px-8', family === 'roku' ? 'gap-5 py-3' : family === 'apple' ? 'gap-10 pt-6 pb-10' : 'gap-7 py-5')}>{children}</div>
     </section>
   );
@@ -383,7 +522,7 @@ function PrimaryButton({ id, row, col, children, secondary }: { id: string; row:
 
 // ---- screens ------------------------------------------------------------------------------------
 
-function TvHome({ liveDays, trending, focusedRow }: { liveDays: { e: (typeof events)[number]; d: (typeof events)[number]['days'][number] }[]; trending: typeof hands; focusedRow: number }) {
+function TvHome({ rows, focusedRow }: { rows: HomeRow[]; focusedRow: number }) {
   const { state } = useApp();
   const { spec } = useTv();
   const hero = dayById(HERO_DAY_ID)!;
@@ -412,26 +551,18 @@ function TvHome({ liveDays, trending, focusedRow }: { liveDays: { e: (typeof eve
           </PrimaryButton>
         </div>
       </section>
-      <Row title="Live now" active={focusedRow === 1}>
-        {liveDays.map(({ e, d }, i) => (
-          <Card key={d.id} id={`live-${d.id}`} row={1} col={i} title={e.name} sub={d.label} hue={220 + i * 20} badge={<StatusBadge status={d.id === HERO_DAY_ID ? state.streamMode : d.status} />} />
-        ))}
-      </Row>
-      <Row title="Trending hands" active={focusedRow === 2}>
-        {trending.map((h, i) => (
-          <Card key={h.id} id={`hand-${h.id}`} row={2} col={i} title={h.title} sub={`${HAND_META[h.type].label} · Pot ${chips(h.pot)}`} hue={210 + i * 9} badge={<HandGlyph type={h.type} size={30} />} />
-        ))}
-      </Row>
-      <Row title="Archive classics" active={focusedRow === 3}>
-        {archive.map((a, i) => (
-          <Card key={a.id} id={`arc-${a.id}`} row={3} col={i} title={`${a.year} ${a.title}`} sub={duration(a.durationSec)} hue={a.hue} />
-        ))}
-      </Row>
+      {rows.map((r, ri) => (
+        <Row key={r.id} title={r.title} hint={r.hint} active={focusedRow === ri + 1}>
+          {r.cards.map((c, i) => (
+            <Card key={c.id} id={c.id} row={ri + 1} col={i} title={c.title} sub={c.sub} hue={c.hue} badge={c.badge} />
+          ))}
+        </Row>
+      ))}
     </div>
   );
 }
 
-function TvEvent({ eventId }: { eventId: string }) {
+function TvEvent({ eventId, inList }: { eventId: string; inList: boolean }) {
   const { state } = useApp();
   const { spec, family, click } = useTv();
   const e = eventById(eventId)!;
@@ -458,7 +589,10 @@ function TvEvent({ eventId }: { eventId: string }) {
         <PrimaryButton id="ev-watch" row={0} col={0}>
           <Icon name="play" size={30} /> Watch {e.days[e.days.length - 1].label}
         </PrimaryButton>
-        <PrimaryButton id="ev-back" row={0} col={1} secondary>
+        <PrimaryButton id="ev-list" row={0} col={1} secondary>
+          <Icon name={inList ? 'check' : 'plus'} size={30} /> {inList ? 'In My List' : 'My List'}
+        </PrimaryButton>
+        <PrimaryButton id="ev-back" row={0} col={2} secondary>
           Back
         </PrimaryButton>
       </div>
@@ -666,6 +800,99 @@ function TvLogin({ onDone }: { onDone: () => void }) {
           <QrMock />
         </div>
         <p className="text-[24px] text-muted">Or scan with your phone camera</p>
+      </div>
+    </div>
+  );
+}
+
+/** Options sheet for a Continue Watching card. */
+function TvOptions({ dayId }: { dayId: string }) {
+  const { family } = useTv();
+  const ref = dayById(dayId);
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/75">
+      <div className={cx('w-[760px] bg-surface p-12', family === 'roku' ? 'rounded-[4px]' : 'rounded-[28px]')}>
+        <p className="label text-[18px] text-gold">Options</p>
+        <p className="mt-3 text-[40px] leading-tight font-black">
+          {ref?.event.name} <span className="text-muted">· {ref?.day.label}</span>
+        </p>
+        <div className="mt-10 flex flex-col gap-4">
+          <PrimaryButton id="opt-remove" row={0} col={0}>
+            <Icon name="close" size={30} /> Remove from Continue Watching
+          </PrimaryButton>
+          <PrimaryButton id="opt-cancel" row={0} col={1} secondary>
+            Cancel
+          </PrimaryButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Search with an on-screen keyboard (remote-friendly) and a results row. */
+function TvSearch({ query, results, focusedRow }: { query: string; results: SearchItem[]; focusedRow: number }) {
+  const { state } = useApp();
+  const { spec, click, family } = useTv();
+  const keys = ['abcdefghi', 'jklmnopqr', 'stuvwxyz0'];
+  const keyShape = family === 'roku' ? 'rounded-[4px]' : family === 'apple' ? 'rounded-[14px]' : 'rounded-[10px]';
+  const showRecent = !query.trim() && !results.length && state.recentSearches.length > 0;
+  return (
+    <div className="flex h-full gap-16 overflow-hidden pt-8" style={{ paddingLeft: spec.contentPad, paddingRight: spec.contentPad }}>
+      <div className="w-[640px] shrink-0">
+        <div className={cx('flex h-[88px] items-center gap-4 border-2 border-line-strong bg-surface px-6 text-[34px]', keyShape)} aria-live="polite">
+          <Icon name="search" size={34} className="text-muted" />
+          {query ? <span className="font-semibold">{query}</span> : <span className="text-subtle">Search</span>}
+          <span className="h-10 w-[3px] animate-pulse bg-gold" aria-hidden />
+        </div>
+        <div className="mt-8 space-y-3">
+          {keys.map((r, ri) => (
+            <div key={r} className="flex gap-3">
+              {r.split('').map((ch, ci) => (
+                <F key={ch} id={`k-${ch}`} onClick={() => click(ri, ci)} className={cx('flex size-[60px] items-center justify-center bg-white/10 text-[28px] font-semibold uppercase', keyShape)}>
+                  {ch}
+                </F>
+              ))}
+            </div>
+          ))}
+          <div className="flex gap-3">
+            {[
+              ['k-space', 'Space', 'w-[250px]'],
+              ['k-del', 'Delete', 'w-[180px]'],
+              ['k-clear', 'Clear', 'w-[170px]'],
+            ].map(([id, label, w], ci) => (
+              <F key={id} id={id} onClick={() => click(3, ci)} className={cx('flex h-[60px] items-center justify-center bg-white/10 text-[24px] font-semibold', w, keyShape)}>
+                {label}
+              </F>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="min-w-0 flex-1">
+        <h2 className={cx('mb-5 text-[30px] font-bold', focusedRow === 4 ? 'text-text' : 'text-muted')}>{showRecent ? 'Recent searches' : query.trim() ? `Results · ${results.length}` : 'Type to search'}</h2>
+        <div className="-mx-6 flex gap-5 overflow-hidden px-6 py-4">
+          {showRecent
+            ? state.recentSearches.map((r, i) => (
+                <F key={r} id={`rs-${r}`} onClick={() => click(4, i)} className={cx('bg-white/10 px-7 py-4 text-[24px] font-semibold', keyShape)}>
+                  {r}
+                </F>
+              ))
+            : results.length
+              ? results.map((r, i) => (
+                  <F key={r.kind + r.id} id={`sr-${r.kind}-${r.id}`} onClick={() => click(4, i)} className={cx('w-[330px] overflow-hidden bg-surface', keyShape)}>
+                    <div className="aspect-video bg-surface-3">{r.image && <img src={r.image} alt="" className="size-full object-cover" />}</div>
+                    <div className="p-4">
+                      <p className="label text-[14px] text-subtle">{KIND_LABEL[r.kind]}</p>
+                      <p className="line-clamp-1 text-[22px] font-semibold">{r.title}</p>
+                      <p className="line-clamp-1 text-[17px] text-muted">{r.sub}</p>
+                    </div>
+                  </F>
+                ))
+              : query.trim() && (
+                  <F id="sr-none" disabled className={cx('bg-white/5 px-7 py-5 text-[24px] text-muted', keyShape)}>
+                    No results for “{query}”
+                  </F>
+                )}
+        </div>
       </div>
     </div>
   );

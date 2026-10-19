@@ -15,6 +15,16 @@ export interface Device {
 export interface Toast {
   id: number;
   text: string;
+  /** Optional inline action (e.g. Undo). */
+  action?: { label: string; onClick: () => void };
+}
+
+/** Something saved to My List. */
+export type ListKind = 'event' | 'day' | 'archive' | 'hand';
+export interface ListItem {
+  kind: ListKind;
+  id: string;
+  addedAt: number;
 }
 
 export interface LoginRequest {
@@ -44,6 +54,18 @@ export interface AppState {
   progress: Record<string, number>;
   plan: 'monthly' | 'annual' | null;
   revealed: string[];
+  // ---- added: search, My List, billing, subscription lifecycle, travel ----
+  recentSearches: string[];
+  myList: ListItem[];
+  /** A My List save started by a guest; finished once they come back signed in. */
+  pendingListAdd: Omit<ListItem, 'addedAt'> | null;
+  billingMode: 'web' | 'iap';
+  paymentResult: 'success' | 'fail' | 'cancel';
+  /** Cancellation scheduled: the subscription stays active until the renewal date. */
+  cancelScheduled: boolean;
+  vpnDetected: boolean;
+  abroad: boolean;
+  abroadDismissed: boolean;
 }
 
 const INITIAL: AppState = {
@@ -70,22 +92,32 @@ const INITIAL: AppState = {
   progress: { 'lv-main-day3': 0.62 * 660 * 60, 'lv-mm-finaltable': 0.31 * 480 * 60, 'lv-main-day2': 0.88 * 660 * 60 },
   plan: null,
   revealed: [],
+  recentSearches: ['Han', 'final table', 'bluff'],
+  myList: [],
+  pendingListAdd: null,
+  billingMode: 'web',
+  paymentResult: 'success',
+  cancelScheduled: false,
+  vpnDetected: false,
+  abroad: false,
+  abroadDismissed: false,
 };
 
 /** Max simultaneous streams per account (assumed policy for the demo). */
 export const MAX_STREAMS = 2;
 
-export type Gate = 'ok' | 'login' | 'plans' | 'link' | 'restricted' | 'devices';
+export type Gate = 'ok' | 'login' | 'plans' | 'link' | 'restricted' | 'devices' | 'expired';
 /** What happens when a viewer presses play (soft paywall). */
 export const gateFor = (s: AccountScenario): Gate =>
-  ({ guest: 'login', noSub: 'plans', active: 'ok', unlinked: 'link', restricted: 'restricted', deviceLimit: 'devices' })[s] as Gate;
+  ({ guest: 'login', noSub: 'plans', active: 'ok', unlinked: 'link', restricted: 'restricted', deviceLimit: 'devices', expired: 'expired', grace: 'ok' })[s] as Gate;
 
 /**
  * Content-level access. Free clips play for anyone (no account, not counted against the stream limit);
  * 'signin' content needs any GGPASS account in good standing; subscriber content follows the paywall above.
  */
 export const canWatch = (access: Access, s: AccountScenario) =>
-  access === 'free' ? true : access === 'signin' ? s !== 'guest' && s !== 'restricted' : s === 'active';
+  // A payment issue (grace period) keeps the subscription working; an expired one falls back to free + sign-in content.
+  access === 'free' ? true : access === 'signin' ? s !== 'guest' && s !== 'restricted' : s === 'active' || s === 'grace';
 
 export const gateForAccess = (access: Access, s: AccountScenario): Gate => {
   if (canWatch(access, s)) return 'ok';
@@ -96,7 +128,7 @@ export const gateForAccess = (access: Access, s: AccountScenario): Gate => {
 interface Api {
   state: AppState;
   set: (patch: Partial<AppState> | ((s: AppState) => Partial<AppState>)) => void;
-  toast: (text: string) => void;
+  toast: (text: string, action?: Toast['action']) => void;
   toasts: Toast[];
   login: LoginRequest | null;
   requireLogin: (req: LoginRequest) => void;
@@ -115,11 +147,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const id = useRef(0);
 
   const set = useCallback<Api['set']>((patch) => setState((s) => ({ ...s, ...(typeof patch === 'function' ? patch(s) : patch) })), []);
-  const toast = useCallback((text: string) => {
+  const toast = useCallback((text: string, action?: Toast['action']) => {
     const n = ++id.current;
-    setToasts((t) => [...t, { id: n, text }]);
-    window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== n)), 2800);
+    setToasts((t) => [...t, { id: n, text, action }]);
+    // Toasts with an action (Undo) stay a little longer.
+    window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== n)), action ? 6000 : 2800);
   }, []);
+
+  // Finish a My List save that a guest started, once they're back signed in.
+  useEffect(() => {
+    if (state.scenario === 'guest' || !state.pendingListAdd) return;
+    const p = state.pendingListAdd;
+    setState((s) => ({ ...s, pendingListAdd: null, myList: s.myList.some((x) => x.kind === p.kind && x.id === p.id) ? s.myList : [{ ...p, addedAt: Date.now() }, ...s.myList] }));
+    toast('Added to My List');
+  }, [state.scenario, state.pendingListAdd, toast]);
 
   // Turning spoiler-free back on hides anything revealed earlier.
   useEffect(() => {

@@ -144,8 +144,13 @@ const PATHS: Record<string, string> = {
   menu: 'M4 7h16M4 12h16M4 17h16',
   star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
   layers: 'M12 3 2 8l10 5 10-5zM2 13l10 5 10-5M2 17.5l10 5 10-5',
+  plus: 'M12 5v14M5 12h14',
+  more: 'M4 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0M10 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0M16 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0',
+  history: 'M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7v5l3 2',
+  card: 'M3 6h18v12H3zM3 10h18',
+  shield: 'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z',
 };
-const STROKE = new Set(['check', 'close', 'chevron', 'back', 'full', 'tv', 'audio', 'mute', 'cc', 'globe', 'calendar', 'menu', 'layers', 'grid1', 'grid2', 'grid4']);
+const STROKE = new Set(['plus', 'history', 'card', 'shield', 'check', 'close', 'chevron', 'back', 'full', 'tv', 'audio', 'mute', 'cc', 'globe', 'calendar', 'menu', 'layers', 'grid1', 'grid2', 'grid4']);
 
 export function Icon({ name, size = 20, className }: { name: keyof typeof PATHS | string; size?: number; className?: string }) {
   const stroke = STROKE.has(name);
@@ -372,6 +377,15 @@ export function Tabs<T extends string>({ value, tabs, onChange, label }: { value
         </button>
       ))}
     </div>
+  );
+}
+
+/** Marks a value that isn't decided yet (price, retention, thresholds…). */
+export function Placeholder({ className }: { className?: string }) {
+  return (
+    <span title="Placeholder value — not final" className={cx('label inline-flex items-center rounded-[3px] border border-dashed border-line-strong px-1 py-px align-middle text-[9px] text-subtle', className)}>
+      Placeholder
+    </span>
   );
 }
 

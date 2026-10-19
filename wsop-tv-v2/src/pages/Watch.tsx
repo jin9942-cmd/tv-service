@@ -16,7 +16,9 @@ import { Stage } from '../features/player/Stage';
 import { AUDIO_LABEL, Controls } from '../features/player/Controls';
 import { SidePanel } from '../features/player/SidePanel';
 import { HAND_META, HandGlyph } from '../features/player/markers';
-import { PlaybackGate, RegionBlocked } from '../features/auth/Gates';
+import { PlaybackGate, RegionBlocked, VpnBlocked } from '../features/auth/Gates';
+import { TRAVEL_UNAVAILABLE_EVENTS } from '../data/policy';
+import { MyListButton } from '../features/library/listActions';
 import { DayResults, HandList, VodPanel, maskHand, neutralTitle, useRevealed } from '../features/player/VodPanel';
 
 const CAPTIONS: Record<AudioTrack, string[]> = {
@@ -246,9 +248,12 @@ export function WatchInner({
   const captionLine = cc ? CAPTIONS[audio][Math.floor(now / 5000) % 3] : null;
 
   // Access checks happen at play time (soft paywall). Free highlight clips skip the account gate.
-  const blocked = state.regionBlocked
+  // Travelling abroad: only events whose rights may not cover the current location are blocked.
+  const blocked = state.regionBlocked || (state.abroad && TRAVEL_UNAVAILABLE_EVENTS.includes(event.id))
     ? 'region'
-    : status === 'upcoming' || status === 'late' || status === 'interrupted'
+    : state.vpnDetected
+      ? 'vpn'
+      : status === 'upcoming' || status === 'late' || status === 'interrupted'
       ? status
       : clipMode || dayGate === 'ok'
         ? null
@@ -296,6 +301,7 @@ export function WatchInner({
         <div className="flex items-center gap-2">
           <StatusBadge status={status} delayMin={tableDelay(day.tables[0], status) || 30} />
           <AccessBadge access={clipMode && clipHand ? clipHand.access : dayAccess} locked={!clipMode && dayGate !== 'ok'} size="md" />
+          <MyListButton kind="day" id={dayId} />
           <Link to={`/events/${event.id}`} className="text-sm font-semibold text-muted hover:text-text">
             Event details →
           </Link>
@@ -331,6 +337,8 @@ export function WatchInner({
                 <Skeleton className="absolute inset-0 rounded-none" />
               ) : blocked === 'region' ? (
                 <RegionBlocked />
+              ) : blocked === 'vpn' ? (
+                <VpnBlocked />
               ) : blocked === 'upcoming' ? (
                 <Upcoming dayId={dayId} start={day.start} />
               ) : blocked === 'late' || blocked === 'interrupted' ? (
@@ -560,7 +568,10 @@ export function WatchInner({
                 </span>
                 <AccessBadge access={dayAccess} locked={dayGate !== 'ok'} />
               </p>
-              <h1 className="mt-1.5 text-2xl font-black tracking-tight sm:text-[28px]">{event.name}</h1>
+              <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
+                <h1 className="text-2xl font-black tracking-tight sm:text-[28px]">{event.name}</h1>
+                <MyListButton kind="day" id={dayId} />
+              </div>
             </div>
           )}
           {variant === 'vod' && (
@@ -572,9 +583,12 @@ export function WatchInner({
                 </span>
                 <AccessBadge access={dayAccess} locked={dayGate !== 'ok'} />
               </p>
-              <h1 className="mt-1.5 text-2xl font-black tracking-tight sm:text-[28px]">
-                {event.name} <span className="text-muted">· {day.label}</span>
-              </h1>
+              <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
+                <h1 className="text-2xl font-black tracking-tight sm:text-[28px]">
+                  {event.name} <span className="text-muted">· {day.label}</span>
+                </h1>
+                <MyListButton kind="day" id={dayId} />
+              </div>
               <p className={cx('mt-1.5 inline-flex items-center gap-1.5 text-xs', daysLeft <= 14 ? 'text-delayed' : 'text-subtle')}>
                 {daysLeft <= 14 ? <>Leaving in {daysLeft} day{daysLeft === 1 ? '' : 's'} · available until {fmtDate(availableUntil, VENUE_TZ)}</> : <>Replay available until {fmtDate(availableUntil, VENUE_TZ)}</>}
               </p>
@@ -676,6 +690,12 @@ function ClipCta({ gate, returnTo, size = 'sm' }: { gate: Gate; returnTo: string
     return (
       <Button variant="primary" size={size} onClick={() => nav('/plans', { state: { returnTo } })}>
         See plans
+      </Button>
+    );
+  if (gate === 'expired')
+    return (
+      <Button variant="primary" size={size} onClick={() => nav('/plans', { state: { returnTo } })}>
+        Renew
       </Button>
     );
   if (gate === 'link')

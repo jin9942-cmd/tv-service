@@ -8,6 +8,8 @@ export const SHELL_OF: Record<Platform, ShellFamily> = {
   web: 'apple',
   ios: 'apple',
   android: 'android',
+  ipados: 'apple',
+  androidtablet: 'android',
   appletv: 'apple',
   androidtv: 'android',
   firetv: 'android',

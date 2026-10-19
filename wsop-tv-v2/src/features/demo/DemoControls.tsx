@@ -12,6 +12,8 @@ const SCENARIOS: { v: AccountScenario; label: string }[] = [
   { v: 'unlinked', label: '4 · Subscribed, GGPASS not linked' },
   { v: 'restricted', label: '5 · GGPASS account restricted' },
   { v: 'deviceLimit', label: '6 · Too many devices' },
+  { v: 'expired', label: '7 · Subscription expired' },
+  { v: 'grace', label: '8 · Payment issue (grace period)' },
 ];
 
 export function DemoControls() {
@@ -22,7 +24,7 @@ export function DemoControls() {
   return (
     <div className="fixed right-3 bottom-20 z-[58] w-[19rem] font-mono text-[12px] md:bottom-4">
       {open ? (
-        <section aria-label="Demo Controls" className="rounded-card border-2 border-dashed border-sky-400/70 bg-[#07121c]/95 p-3 text-sky-100 shadow-2xl backdrop-blur">
+        <section aria-label="Demo Controls" className="max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-card border-2 border-dashed border-sky-400/70 bg-[#07121c]/95 p-3 text-sky-100 shadow-2xl backdrop-blur">
           <div className="mb-2 flex items-center justify-between">
             <p className="font-bold tracking-wide text-sky-300">⚙ DEMO CONTROLS</p>
             <button onClick={() => setOpen(false)} className="rounded px-2 py-0.5 text-sky-300 hover:bg-sky-400/10" aria-label="Collapse demo controls">
@@ -71,11 +73,19 @@ export function DemoControls() {
               <input type="checkbox" checked={state.regionBlocked} onChange={(e) => set({ regionBlocked: e.target.checked })} className="accent-sky-400" />
               Region restricted
             </label>
+            <label className="mt-1 flex items-center gap-2">
+              <input type="checkbox" checked={state.vpnDetected} onChange={(e) => set({ vpnDetected: e.target.checked })} className="accent-sky-400" />
+              VPN/proxy detected
+            </label>
+            <label className="mt-1 flex items-center gap-2">
+              <input type="checkbox" checked={state.abroad} onChange={(e) => set({ abroad: e.target.checked, abroadDismissed: false })} className="accent-sky-400" />
+              Traveling abroad
+            </label>
           </Group>
 
           <Group label="Platform">
             <select value={state.platform} onChange={(e) => set({ platform: e.target.value as Platform })} className="w-full rounded border border-sky-400/40 bg-[#0b1a27] px-2 py-1" aria-label="Platform">
-              {(['web', 'mobile', 'tv'] as const).map((k) => (
+              {(['web', 'mobile', 'tablet', 'tv'] as const).map((k) => (
                 <optgroup key={k} label={k.toUpperCase()}>
                   {(Object.keys(PLATFORMS) as Platform[])
                     .filter((p) => PLATFORMS[p].kind === k)
@@ -97,6 +107,30 @@ export function DemoControls() {
               <input type="checkbox" checked={state.spoilerFree} onChange={(e) => set({ spoilerFree: e.target.checked })} className="accent-sky-400" />
               Spoiler-Free Mode
             </label>
+          </Group>
+
+          <Group label="Billing">
+            <p className="mb-1 text-[10.5px] text-sky-200/70">Billing mode</p>
+            <div className="grid grid-cols-2 gap-1" role="radiogroup" aria-label="Billing mode">
+              {(
+                [
+                  ['web', 'Web checkout (WSOP+)'],
+                  ['iap', 'In-app purchase (platform)'],
+                ] as const
+              ).map(([v, label]) => (
+                <button key={v} role="radio" aria-checked={state.billingMode === v} onClick={() => set({ billingMode: v })} className={cx('rounded px-1.5 py-1 text-left text-[11px] leading-tight', state.billingMode === v ? 'bg-sky-400/25 text-white' : 'text-sky-200/80 hover:bg-sky-400/10')}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 mb-1 text-[10.5px] text-sky-200/70">Payment result</p>
+            <div className="grid grid-cols-3 gap-1" role="radiogroup" aria-label="Payment result">
+              {(['success', 'fail', 'cancel'] as const).map((v) => (
+                <button key={v} role="radio" aria-checked={state.paymentResult === v} onClick={() => set({ paymentResult: v })} className={cx('rounded px-1.5 py-1 text-[11px] capitalize', state.paymentResult === v ? 'bg-sky-400/25 text-white' : 'text-sky-200/80 hover:bg-sky-400/10')}>
+                  {v}
+                </button>
+              ))}
+            </div>
           </Group>
         </section>
       ) : (

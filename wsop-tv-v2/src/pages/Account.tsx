@@ -4,7 +4,11 @@ import { useApp } from '../state/app';
 import { AUDIO_LABEL } from '../features/player/Controls';
 import { DeviceList } from '../features/auth/Devices';
 import { GGPassMark } from '../features/auth/LoginModal';
-import { Button, Page, Segmented, Switch } from '../components/ui';
+import { useState } from 'react';
+import { Button, Modal, Page, Placeholder, Segmented, Switch } from '../components/ui';
+import { COMPLETE_THRESHOLD, EXPIRED_DAYS_AGO, GRACE_DAYS, STORE_NAME, daysFromNow, fmtBillingDate, renewalDate } from '../data/policy';
+
+import { dayById } from '../data/mock';
 
 const SCENARIO_TEXT = {
   guest: 'Not signed in',
@@ -13,6 +17,8 @@ const SCENARIO_TEXT = {
   unlinked: 'Active · GGPASS not linked',
   restricted: 'Restricted',
   deviceLimit: 'Active · stream limit reached',
+  expired: 'Expired',
+  grace: 'Active · payment issue',
 } as const;
 
 export function Account() {
@@ -31,7 +37,7 @@ export function Account() {
     );
 
   const linked = state.scenario !== 'unlinked';
-  const subActive = state.scenario !== 'noSub' && state.scenario !== 'restricted';
+  const subActive = state.scenario !== 'noSub' && state.scenario !== 'restricted' && state.scenario !== 'expired';
 
   return (
     <Page className="max-w-4xl space-y-8">
@@ -61,13 +67,11 @@ export function Account() {
           </div>
         </Card>
         <Card title="Subscription">
-          <p className="font-semibold">{SCENARIO_TEXT[state.scenario]}</p>
-          <p className="text-xs text-muted">{subActive ? `${state.plan === 'monthly' ? 'Monthly' : 'Annual'} plan · billed by your platform` : 'Choose a plan to watch live coverage'}</p>
-          <Link to="/plans" className="mt-3 inline-block text-sm font-semibold text-gold hover:underline">
-            {subActive ? 'Change plan' : 'See plans'}
-          </Link>
+          <SubscriptionStatus subActive={subActive} />
         </Card>
       </div>
+
+      <ViewingHistory />
 
       <Card title="Devices">
         <DeviceList />
@@ -132,6 +136,95 @@ export function Account() {
         Sign out
       </Button>
     </Page>
+  );
+}
+
+/** Viewing history: what Continue Watching is built from. Clearing it can't be undone. */
+function ViewingHistory() {
+  const { state, set, toast } = useApp();
+  const [confirm, setConfirm] = useState(false);
+  const entries = Object.entries(state.progress).filter(([id]) => dayById(id));
+  return (
+    <Card title="Viewing history">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-semibold">
+            {entries.length ? `${entries.length} broadcast${entries.length === 1 ? '' : 's'} with saved progress` : 'No viewing history'}
+          </p>
+          <p className="text-xs text-muted">
+            Broadcasts leave Continue Watching once you’ve watched {Math.round(COMPLETE_THRESHOLD * 100)}% <Placeholder />
+          </p>
+        </div>
+        <Button size="sm" variant="outline" disabled={!entries.length} onClick={() => setConfirm(true)}>
+          Clear all
+        </Button>
+      </div>
+      {confirm && (
+        <Modal title="Clear viewing history?" onClose={() => setConfirm(false)}>
+          <p className="text-sm text-muted">This removes every broadcast from Continue Watching and resets where you left off. It can’t be undone.</p>
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setConfirm(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={() => (set({ progress: {} }), setConfirm(false), toast('Viewing history cleared'))}>
+              Clear all
+            </Button>
+          </div>
+        </Modal>
+      )}
+    </Card>
+  );
+}
+
+/** Subscription status incl. scheduled cancellation, expiry and payment issues, and where to manage it. */
+function SubscriptionStatus({ subActive }: { subActive: boolean }) {
+  const { state, set, toast } = useApp();
+  const plan = state.plan ?? 'annual';
+  const ends = fmtBillingDate(renewalDate(plan));
+  const store = STORE_NAME[state.platform];
+  const status =
+    state.scenario === 'expired'
+      ? { title: 'Expired', sub: `Your subscription ended on ${fmtBillingDate(daysFromNow(-EXPIRED_DAYS_AGO))}` }
+      : state.scenario === 'grace'
+        ? { title: 'Payment issue', sub: `Update your payment method by ${fmtBillingDate(daysFromNow(GRACE_DAYS))} to keep watching` }
+        : subActive && state.cancelScheduled
+          ? { title: 'Cancellation scheduled', sub: `Ends on ${ends} · you can keep watching until then` }
+          : { title: SCENARIO_TEXT[state.scenario], sub: subActive ? `${plan === 'monthly' ? 'Monthly' : 'Annual'} plan · renews ${ends}` : 'Choose a plan to watch live coverage' };
+  return (
+    <>
+      <p className="font-semibold">{status.title}</p>
+      <p className="text-xs text-muted">{status.sub}</p>
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Link to="/plans" className="text-sm font-semibold text-gold hover:underline">
+          {state.scenario === 'expired' ? 'Renew' : subActive ? 'Change plan' : 'See plans'}
+        </Link>
+        {subActive &&
+          (state.cancelScheduled ? (
+            <Button size="sm" variant="outline" onClick={() => (set({ cancelScheduled: false }), toast('Subscription resumed'))}>
+              Resume
+            </Button>
+          ) : (
+            <button onClick={() => (set({ cancelScheduled: true }), toast(`Cancellation scheduled · access until ${ends} (demo)`))} className="text-sm font-semibold text-muted hover:text-text">
+              Cancel subscription
+            </button>
+          ))}
+      </div>
+      {(subActive || state.scenario === 'expired') && (
+        <p className="mt-3 border-t border-line pt-3 text-xs text-muted">
+          <b className="text-text">Manage subscription:</b>{' '}
+          {state.billingMode === 'web' ? (
+            <>
+              billing is handled by WSOP+.{' '}
+              <button onClick={() => toast('Opens your WSOP+ account (demo)')} className="font-semibold text-gold hover:underline">
+                Manage on WSOP+
+              </button>
+            </>
+          ) : (
+            <>billing is handled by the platform you subscribed on — manage it in your {store} subscriptions.</>
+          )}
+        </p>
+      )}
+    </>
   );
 }
 

@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { archive } from '../../data/mock';
 import { Button, Icon } from '../../components/ui';
 import { MAX_STREAMS, useApp, type Gate } from '../../state/app';
+import { EXPIRED_DAYS_AGO, daysFromNow, fmtBillingDate } from '../../data/policy';
+
 
 function Panel({ kicker, title, body, children, icon = 'lock' }: { kicker: string; title: string; body: ReactNode; children?: ReactNode; icon?: string }) {
   return (
@@ -67,6 +69,14 @@ export function PlaybackGate({ gate, returnTo }: { gate: Exclude<Gate, 'ok'>; re
           </Button>
         </Panel>
       );
+    case 'expired':
+      return (
+        <Panel kicker="Subscription ended" title={`Your subscription ended on ${fmtBillingDate(daysFromNow(-EXPIRED_DAYS_AGO))}`} body="Renew to keep watching live tables and the full archive. Free highlights and sign-in content are still available.">
+          <Button variant="primary" size="lg" onClick={() => nav('/plans', { state: { returnTo } })}>
+            Renew
+          </Button>
+        </Panel>
+      );
     case 'devices':
       return (
         <Panel kicker="Too many devices" title={`You're watching on ${MAX_STREAMS} devices already`} body={`Your plan allows ${MAX_STREAMS} streams at the same time. Stop playback on another device to continue here.`} icon="tv">
@@ -76,6 +86,26 @@ export function PlaybackGate({ gate, returnTo }: { gate: Exclude<Gate, 'ok'>; re
         </Panel>
       );
   }
+}
+
+/** VPN / proxy detected — a different problem from region rights, so a different message. */
+export function VpnBlocked() {
+  const { state, toast } = useApp();
+  return (
+    <Panel
+      kicker="VPN or proxy detected"
+      icon="shield"
+      title="Turn off your VPN or proxy to watch"
+      body="We can’t confirm where you’re watching from while a VPN or proxy is on. Turn it off, then try again."
+    >
+      <Button variant="primary" size="lg" onClick={() => toast(state.vpnDetected ? 'Still detecting a VPN or proxy' : 'Connection looks fine — starting playback')}>
+        Try again
+      </Button>
+      <Button variant="ghost" onClick={() => toast('Help article: watching with a VPN (demo)')}>
+        Why am I seeing this?
+      </Button>
+    </Panel>
+  );
 }
 
 /** Region restriction: block message + alternatives + Notify me. */

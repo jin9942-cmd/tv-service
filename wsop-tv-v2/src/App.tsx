@@ -13,6 +13,9 @@ import { NotFound } from './pages/NotFound';
 import { GGPassFlow } from './features/auth/GGPassFlow';
 import { Plans } from './features/auth/Plans';
 import { Devices } from './features/auth/Devices';
+import { Search } from './pages/Search';
+import { MyListPage } from './features/library/MyList';
+import { Checkout, CheckoutResult, WsopPlusPay } from './features/billing/Checkout';
 
 // Hash routing keeps deep links working on static hosting (GitHub Pages sub-path) without a server fallback.
 export default function App() {
@@ -22,6 +25,7 @@ export default function App() {
         <Routes>
           {/* External-domain mock, full screen and outside the app shell. */}
           <Route path="/auth/ggpass" element={<GGPassFlow />} />
+          <Route path="/pay/wsop-plus" element={<WsopPlusPay />} />
           <Route element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="live" element={<Live />} />
@@ -36,6 +40,10 @@ export default function App() {
             <Route path="account" element={<Account />} />
             <Route path="plans" element={<Plans />} />
             <Route path="devices" element={<Devices />} />
+            <Route path="search" element={<Search />} />
+            <Route path="my-list" element={<MyListPage />} />
+            <Route path="checkout" element={<Checkout />} />
+            <Route path="checkout/result" element={<CheckoutResult />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

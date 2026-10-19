@@ -2,7 +2,7 @@ import type { OverlayLevel, Platform } from './types';
 
 export interface PlatformCaps {
   label: string;
-  kind: 'web' | 'mobile' | 'tv';
+  kind: 'web' | 'mobile' | 'tablet' | 'tv';
   /** Max simultaneous tables in multiview (1 = not supported). */
   multiview: 1 | 2 | 4;
   overlayMax: OverlayLevel;
@@ -19,6 +19,9 @@ export const PLATFORMS: Record<Platform, PlatformCaps> = {
   web: { label: 'Web', kind: 'web', multiview: 4, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: true, signIn: 'ggpass-web' },
   ios: { label: 'iOS', kind: 'mobile', multiview: 2, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: true, signIn: 'ggpass-web' },
   android: { label: 'Android', kind: 'mobile', multiview: 2, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: true, signIn: 'ggpass-web' },
+  // Tablets start with the same capabilities as their phone platforms.
+  ipados: { label: 'iPadOS', kind: 'tablet', multiview: 2, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: true, signIn: 'ggpass-web' },
+  androidtablet: { label: 'Android Tablet', kind: 'tablet', multiview: 2, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: true, signIn: 'ggpass-web' },
   appletv: { label: 'Apple TV', kind: 'tv', multiview: 4, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: false, signIn: 'device-code' },
   androidtv: { label: 'Android TV', kind: 'tv', multiview: 2, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: false, signIn: 'device-code' },
   firetv: { label: 'Fire TV', kind: 'tv', multiview: 2, overlayMax: 'pro', handMarkers: true, audioTracks: true, captions: true, pip: false, signIn: 'device-code' },

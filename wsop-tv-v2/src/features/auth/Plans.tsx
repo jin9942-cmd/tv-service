@@ -1,35 +1,39 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../../state/app';
-import { AccessBadge, Button, Icon, Page, cx } from '../../components/ui';
+import { AccessBadge, Button, Icon, Page, Placeholder, cx } from '../../components/ui';
+import { PRICES } from '../../data/policy';
+import { IapSheet } from '../billing/Checkout';
 
 const PERKS = ['Every live table, including delayed final tables', 'Full archive and hand-by-hand replays', 'Basic & Pro data overlays', 'Multiview on supported devices', 'Watch on web, mobile and TV'];
 
 export function Plans() {
-  const { state, set, toast, signedIn, requireLogin } = useApp();
+  const { state, signedIn, requireLogin } = useApp();
   const nav = useNavigate();
   const loc = useLocation();
-  const returnTo = (loc.state as { returnTo?: string } | null)?.returnTo ?? '/';
-  const [plan, setPlan] = useState<'monthly' | 'annual'>(state.plan ?? 'annual');
+  const ls = loc.state as { returnTo?: string; openSheet?: boolean; plan?: 'monthly' | 'annual' } | null;
+  const returnTo = ls?.returnTo ?? '/';
+  const [plan, setPlan] = useState<'monthly' | 'annual'>(ls?.plan ?? state.plan ?? 'annual');
+  const [sheet, setSheet] = useState(!!ls?.openSheet);
 
+  // Choosing a plan now goes through a payment step (web checkout or in-app purchase — Demo Controls → Billing).
   const subscribe = () => {
     if (!signedIn) return requireLogin({ reason: 'Sign in with GGPASS before choosing a plan.', returnTo: '/plans' });
-    set({ scenario: 'active', plan });
-    toast(`${plan === 'annual' ? 'Annual' : 'Monthly'} plan active (demo)`);
-    nav(returnTo);
+    if (state.billingMode === 'web') return nav(`/checkout?${new URLSearchParams({ plan, return: returnTo })}`);
+    setSheet(true);
   };
 
   return (
     <Page className="max-w-3xl">
       <p className="label text-gold">Subscription</p>
-      <h1 className="mt-1 text-title font-black">Choose your plan</h1>
+      <h1 className="mt-1 text-title font-black">{state.scenario === 'expired' ? 'Renew your subscription' : 'Choose your plan'}</h1>
       <p className="mt-1 text-muted">One subscription, every bracelet event.</p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Plan">
         {(
           [
-            { id: 'monthly', name: 'Monthly', price: '$X.99', per: '/ month', note: 'Cancel anytime' },
-            { id: 'annual', name: 'Annual', price: '$XX.99', per: '/ year', note: 'Best value · 2 months free' },
+            { id: 'monthly', name: 'Monthly', price: PRICES.monthly.label, per: PRICES.monthly.per, note: 'Cancel anytime' },
+            { id: 'annual', name: 'Annual', price: PRICES.annual.label, per: PRICES.annual.per, note: 'Best value · 2 months free' },
           ] as const
         ).map((p) => (
           <button
@@ -44,7 +48,7 @@ export function Plans() {
               <span className={cx('flex size-5 items-center justify-center rounded-full border', plan === p.id ? 'border-gold bg-gold text-ink' : 'border-line-strong')}>{plan === p.id && <Icon name="check" size={13} />}</span>
             </span>
             <span className="mt-3 block text-3xl font-black tnum">
-              {p.price} <span className="text-sm font-semibold text-muted">{p.per}</span>
+              {p.price} <span className="text-sm font-semibold text-muted">{p.per}</span> <Placeholder />
             </span>
             <span className="mt-1 block text-xs text-muted">{p.note}</span>
           </button>
@@ -77,6 +81,7 @@ export function Plans() {
       <Button variant="primary" size="lg" className="mt-8 w-full sm:w-auto" onClick={subscribe}>
         Continue with {plan === 'annual' ? 'Annual' : 'Monthly'}
       </Button>
+      {sheet && <IapSheet plan={plan} returnTo={returnTo} onClose={() => setSheet(false)} />}
       <p className="mt-3 text-xs text-subtle">Prices are placeholders. Payments are handled according to the policy of the platform you subscribe on. No payment is taken in this demo.</p>
     </Page>
   );

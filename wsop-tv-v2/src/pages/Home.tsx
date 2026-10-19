@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
 import { archive, dayById, events, hands, players } from '../data/mock';
 import { useApp } from '../state/app';
+import { COMPLETE_THRESHOLD } from '../data/policy';
 import { ArchiveCard, BroadcastCard, HandCard, PlayerTile } from '../components/cards';
 import { Billboard, UpcomingCard } from '../components/Billboard';
 import { Page, SectionHeader, cx } from '../components/ui';
+import { ListItemCard } from '../features/library/MyList';
 
 export function Home() {
-  const { state, signedIn } = useApp();
+  const { state, set, toast, signedIn } = useApp();
   const followed = Object.keys(state.followed);
   const followedHands = hands.filter((h) => h.playerIds.some((p) => followed.includes(p))).slice(0, 10);
   const freeHands = [...hands].filter((h) => h.access === 'free').sort((a, b) => b.views - a.views);
@@ -20,7 +22,18 @@ export function Home() {
   const featuredPlayers = [...players].sort((a, b) => b.poyPoints - a.poyPoints).slice(0, 10);
   const continueItems = Object.entries(state.progress)
     .map(([id, sec]) => ({ ref: dayById(id)!, sec }))
-    .filter((x) => x.ref);
+    .filter((x) => x.ref)
+    // Watched past the completion threshold → no longer "in progress".
+    .filter((x) => x.sec / (x.ref.day.durationMin * 60) < COMPLETE_THRESHOLD);
+  const removeContinue = (dayId: string) => {
+    const sec = state.progress[dayId];
+    set((s) => {
+      const next = { ...s.progress };
+      delete next[dayId];
+      return { progress: next };
+    });
+    toast('Removed from Continue Watching', { label: 'Undo', onClick: () => set((s) => ({ progress: { ...s.progress, [dayId]: sec } })) });
+  };
 
   return (
     <>
@@ -31,8 +44,26 @@ export function Home() {
             {signedIn && continueItems.length > 0 && (
               <Row title="Continue Watching">
                 {continueItems.slice(0, 4).map(({ ref, sec }) => (
-                  <BroadcastCard key={ref.day.id} event={ref.event} day={ref.day} progress={sec / (ref.day.durationMin * 60)} />
+                  <BroadcastCard key={ref.day.id} event={ref.event} day={ref.day} progress={sec / (ref.day.durationMin * 60)} extraActions={[{ label: 'Remove from Continue Watching', icon: 'close', onSelect: () => removeContinue(ref.day.id) }]} />
                 ))}
+              </Row>
+            )}
+            {/* My List: hidden while empty */}
+            {signedIn && state.myList.length > 0 && (
+              <Row
+                title="My List"
+                action={
+                  <Link to="/my-list" className="text-sm font-semibold text-muted hover:text-text">
+                    See all →
+                  </Link>
+                }
+              >
+                {[...state.myList]
+                  .sort((a, b) => b.addedAt - a.addedAt)
+                  .slice(0, 4)
+                  .map((x) => (
+                    <ListItemCard key={x.kind + x.id} item={x} />
+                  ))}
               </Row>
             )}
             <Row

@@ -8,6 +8,7 @@ import { canWatch, useApp } from '../state/app';
 import { Art, HandCard, useDayStatus } from '../components/cards';
 import { AccessBadge, BraceletIcon, Icon, Page, SectionHeader, Spoiler, StatusBadge, cx } from '../components/ui';
 import { NotFound } from './NotFound';
+import { MyListButton } from '../features/library/listActions';
 
 export function SeriesList() {
   const { state } = useApp();
@@ -119,6 +120,7 @@ export function EventDetail() {
               <p className="mt-1 text-sm text-muted">
                 {se.venue}, {se.city} · Buy-in {e.buyIn ? money(e.buyIn) : 'Invitational'}
               </p>
+              <MyListButton kind="event" id={e.id} className="mt-3" />
             </div>
           </div>
           {finished && (
