@@ -17,6 +17,7 @@ export const NAV = [
   { to: '/players', label: 'Players', icon: 'user' },
   { to: '/hands', label: 'Hands & Clips', icon: 'grid4' },
   { to: '/archive', label: 'Archive', icon: 'grid2' },
+  { to: '/my-list', label: 'My List', icon: 'plus' },
 ] as const;
 
 const MOBILE_NAV = ['/', '/live', '/schedule', '/hands'];
@@ -138,7 +139,7 @@ export function Layout() {
         {menu && (
           <nav aria-label="Main (menu)" className="border-t border-line bg-surface xl:hidden">
             <ul className="mx-auto grid max-w-content grid-cols-2 gap-1 px-gutter py-3 sm:grid-cols-4 sm:px-6">
-              {[...NAV, { to: '/search', label: 'Search', icon: 'search' }, { to: '/my-list', label: 'My List', icon: 'plus' }, { to: '/account', label: 'Account', icon: 'user' }].map((n) => (
+              {[...NAV, { to: '/search', label: 'Search', icon: 'search' }, { to: '/account', label: 'Account', icon: 'user' }].map((n) => (
                 <li key={n.to}>
                   <NavLink to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex items-center gap-2 rounded-chip px-3 py-2.5 text-sm font-semibold', isActive ? 'bg-surface-3 text-text' : 'text-muted hover:text-text')}>
                     <Icon name={n.icon} size={16} /> {n.label}
