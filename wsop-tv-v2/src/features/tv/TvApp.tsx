@@ -400,7 +400,7 @@ function SideMenu({ items, active, onClick }: { items: MenuItem[]; active: numbe
   );
 }
 
-/** Android TV / Fire TV / Samsung / LG: collapsible rail (icons only until focused). */
+/** Android TV / Samsung / LG: collapsible rail (icons only until focused). */
 function Rail({ items, active, expanded, onClick }: { items: MenuItem[]; active: number; expanded: boolean; onClick: (i: number) => void }) {
   const { isFocused } = useTv();
   return (

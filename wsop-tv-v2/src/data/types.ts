@@ -118,6 +118,6 @@ export interface ArchiveItem {
 }
 
 export type AccountScenario = 'guest' | 'noSub' | 'active' | 'unlinked' | 'restricted' | 'deviceLimit' | 'expired' | 'grace';
-export type Platform = 'web' | 'ios' | 'android' | 'ipados' | 'androidtablet' | 'appletv' | 'androidtv' | 'firetv' | 'roku' | 'samsung' | 'lg';
+export type Platform = 'web' | 'ios' | 'android' | 'ipados' | 'androidtablet' | 'appletv' | 'androidtv' | 'roku' | 'samsung' | 'lg';
 export type OverlayLevel = 'off' | 'basic' | 'pro';
 export type AudioTrack = 'en' | 'natural' | 'es';

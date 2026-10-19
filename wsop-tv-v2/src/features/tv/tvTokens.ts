@@ -12,7 +12,6 @@ export const SHELL_OF: Record<Platform, ShellFamily> = {
   androidtablet: 'android',
   appletv: 'apple',
   androidtv: 'android',
-  firetv: 'android',
   roku: 'roku',
   samsung: 'smarttv',
   lg: 'smarttv',
@@ -37,7 +36,7 @@ export const SHELLS: Record<ShellFamily, ShellSpec> = {
   apple: { nav: 'top-tabs', card: { w: 300, aspect: '2 / 3', radius: '22px', titleSize: '24px' }, timeline: 'markers', contentPad: '96px' },
   // Roku: fixed left menu, uniform grid, thick square border on focus, almost no scaling.
   roku: { nav: 'side-fixed', card: { w: 336, aspect: '16 / 9', radius: '4px', titleSize: '22px' }, timeline: 'trickplay', contentPad: '72px' },
-  // Android TV / Fire TV: collapsible left rail + rows, scale + bright border on focus.
+  // Android TV: collapsible left rail + rows, scale + bright border on focus.
   android: { nav: 'side-rail', card: { w: 400, aspect: '16 / 9', radius: '12px', titleSize: '24px' }, timeline: 'markers', contentPad: '72px' },
   // Samsung (Tizen) / LG (webOS): Android TV shell + system bar + colour-key hints.
   smarttv: { nav: 'side-rail', card: { w: 400, aspect: '16 / 9', radius: '12px', titleSize: '24px' }, timeline: 'markers', systemBar: true, colorKeys: true, contentPad: '72px' },

@@ -33,7 +33,6 @@ export const STORE_NAME: Record<Platform, string> = {
   androidtablet: 'Google Play',
   appletv: 'App Store',
   androidtv: 'Google Play',
-  firetv: 'Amazon Appstore',
   roku: 'Roku Pay',
   samsung: 'Samsung Checkout',
   lg: 'LG Content Store',

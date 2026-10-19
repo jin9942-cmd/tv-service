@@ -76,7 +76,7 @@ Switching the platform dropdown swaps the whole UI shell immediately (the curren
 | --- | --- | --- | --- |
 | Apple TV | Top tab bar, large 2:3 poster cards | Lift + scale + soft shadow (parallax feel) | Multiview 1/2/4, overlay Off/Basic/Pro, hand-marker jump |
 | Roku | Fixed left menu, uniform 16:9 grid | Thick square white border, almost no scaling | Multiview item disabled ("Not available on Roku"), overlay up to Basic (Pro disabled), simple trick-play bar |
-| Android TV / Fire TV | Collapsible left rail (icons → labels when focused) + content rows | Scale + bright border | Multiview up to 2 (4 disabled), all overlay levels |
+| Android TV | Collapsible left rail (icons → labels when focused) + content rows | Scale + bright border | Multiview up to 2 (4 disabled), all overlay levels |
 | Samsung / LG | Android TV shell + top system bar + colour-key hints (A/B/C/D) | Same as Android TV | Per parity matrix |
 
 Unsupported features are never hidden — they stay in place, disabled, with the reason ("Not available on Roku"). The arrow / Enter / Backspace mapping is identical on every shell (top tabs: ↑ from the first row enters the tab bar; side menus: ← from the first column).
