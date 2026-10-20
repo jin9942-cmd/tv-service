@@ -1,5 +1,5 @@
-// Home billboard brought over from the v1 demo: full-width featured stream (real CC footage), the live channel band
-// across its lower edge, and the "Coming up" cards with a large date/time.
+// Home billboard brought over from the v1 demo: full-width featured stream (real CC footage), the "On air now" band
+// (every table feed on air) across its lower edge, and the "Coming up" cards with a large date/time.
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Day, TourEvent } from '../data/types';
@@ -98,9 +98,9 @@ function LiveChannels() {
   const channels = days.flatMap(({ e, d }) => d.tables.map((t, i) => ({ e, d, t, i })));
   const ordered = [...channels.filter((c) => c.i === 0), ...channels.filter((c) => c.i > 0)];
   return (
-    <section className="border-y border-line bg-surface/60" aria-label={ordered.length ? 'Live channels' : 'Schedule'}>
+    <section className="border-y border-line bg-surface/60" aria-label={ordered.length ? 'On air now' : 'Schedule'}>
       <div className="mx-auto max-w-content px-gutter py-5 sm:px-6 lg:px-8">
-        <p className="label mb-3 text-text/80">{ordered.length ? 'Live channels' : 'Schedule'}</p>
+        <p className="label mb-3 text-text/80">{ordered.length ? 'On air now' : 'Schedule'}</p>
         {ordered.length ? (
           <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-6 [&>*]:w-auto!">
             {ordered.slice(0, 6).map(({ e, d, t, i }) => (

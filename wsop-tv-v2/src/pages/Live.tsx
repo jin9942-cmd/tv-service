@@ -11,11 +11,43 @@ import { gateForAccess, useApp } from '../state/app';
 import { AccessBadge, StatusBadge, cx } from '../components/ui';
 import { WatchInner } from './Watch';
 import { NotFound } from './NotFound';
+import { ChannelsView } from '../features/channels/Channels';
+import { channels } from '../data/channels';
 
 type Entry = { e: TourEvent; d: Day; status: StreamStatus };
 
 export function Live() {
   return <LiveScreen />;
+}
+
+/** `/live/channels(/:channelId)` — the linear side of Live: 24/7 channels, the channel player and the programme guide. */
+export function LiveChannels() {
+  const { channelId } = useParams();
+  return (
+    <div>
+      <LiveTabs active="channels" />
+      <ChannelsView channelId={channelId} />
+    </div>
+  );
+}
+
+/** Live has two ways in: event coverage by tournament (pick the event, day and table) or 24/7 channels (lean back). */
+function LiveTabs({ active }: { active: 'tournaments' | 'channels' }) {
+  const tab = (on: boolean) =>
+    cx('-mb-px inline-flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold transition-colors duration-150', on ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text');
+  return (
+    <div className="border-b border-line bg-bg">
+      <nav className="mx-auto flex max-w-[96rem] items-center gap-1 px-gutter sm:px-6 lg:px-8" aria-label="Live">
+        <Link to="/live" className={tab(active === 'tournaments')} aria-current={active === 'tournaments' ? 'page' : undefined}>
+          Tournaments
+        </Link>
+        <Link to="/live/channels" className={tab(active === 'channels')} aria-current={active === 'channels' ? 'page' : undefined}>
+          Channels <span className="rounded-full bg-surface-3 px-1.5 text-[11px] text-muted tnum">{channels.length}</span>
+        </Link>
+        <span className="ml-auto hidden text-xs text-subtle sm:inline">{active === 'channels' ? '24/7 channels on a fixed schedule' : 'Every table of every event, live and delayed'}</span>
+      </nav>
+    </div>
+  );
 }
 
 /**
@@ -95,6 +127,7 @@ function LiveScreen({ dayId, startAt = null, clipId = null }: { dayId?: string; 
 
   return (
     <div>
+      <LiveTabs active="tournaments" />
       {/* tournament strip */}
       <section className="border-b border-line bg-surface/60" aria-label="Tournaments">
         <div className="mx-auto max-w-[96rem] px-gutter py-4 sm:px-6 lg:px-8">

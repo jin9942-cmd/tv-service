@@ -6,6 +6,7 @@ import { ArchiveCard, BroadcastCard, HandCard, PlayerTile } from '../components/
 import { Billboard, UpcomingCard } from '../components/Billboard';
 import { Page, SectionHeader, cx } from '../components/ui';
 import { ListItemCard } from '../features/library/MyList';
+import { ChannelsRow } from '../features/channels/Channels';
 
 export function Home() {
   const { state, set, toast, signedIn } = useApp();
@@ -41,6 +42,8 @@ export function Home() {
       <Page className="space-y-10">
         <div className="grid grid-cols-[minmax(0,1fr)] gap-10">
           <div className="min-w-0 space-y-10">
+            {/* 24/7 linear channels: what's on each one right now */}
+            <ChannelsRow />
             {signedIn && continueItems.length > 0 && (
               <Row title="Continue Watching">
                 {continueItems.slice(0, 4).map(({ ref, sec }) => (

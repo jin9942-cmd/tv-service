@@ -21,7 +21,8 @@ npm run publish:vercel   # build with relative paths and copy into ../wsop-tv/pu
 | --- | --- | --- |
 | `#/watch/:dayId` | **Watch** — live days open the Live screen; ended days open the **replay screen** (breadcrumb, broadcast-day episodes with progress, chapters = key hands, chip counts at the playback point, no live strip / Jump to Live) | 16:9 player mock, LIVE / DELAYED / LATE START / INTERRUPTED / VOD badge, **per-table delay** (feature table 30 min, outer tables 15 min — the live edge and the "showing play from about …" note follow the table on screen), tables on hold (late start / interrupted) with a switch-back button, timeline with **hand markers** (All-in, Big Pot, Bluff, Bad Beat, Hero Fold — distinct glyph + tone) and tooltips, previous/next hand, **Jump to Live**, **overlay Off / Basic / Pro** (Pro adds stacks, hole cards, equity bar, hand history), audio tracks (English Commentary / Natural Sound / Spanish Commentary), CC, quality, volume, full screen, **multiview 1 / 2 / 4** with one audio source, side panel **Chip Counts / Current Hand / Tables** (bottom sheet on mobile; Tables shows each table's delay or state), spoiler blur + Reveal. `?clip=<handId>` opens a **free highlight** (single hand, own short timeline, end card with sign-in / plans CTA) when the full broadcast is locked |
 | `#/` | Home | **v1-style featured player** (full-width real CC footage, muted autoplay, poster when reduced motion) with the **Live channels** band (one card per table: LIVE / Delayed / Late start / Interrupted + access), **Coming up** cards with a large date and Las Vegas time, Continue Watching, Free highlights, Followed Players' Latest Hands, Featured Series, Trending Hands, **Featured players** (v1-style round avatar tiles), Archive Classics (full width) |
-| `#/live` | Live | **v1 layout around the full v2 player**: tournament strip on top (on air → upcoming → ended), the v2 player (real CC footage behind the Off/Basic/Pro overlays, hand markers, Jump to Live, multiview, audio/CC), event info + **Overview** figures and **Hands in this broadcast** below, and on the right the **Streams** list (per-table status, delay, access, "Now watching"), Chip Counts / Current Hand / Tables, and hand replays from the event |
+| `#/live` | Live · **Tournaments** tab | **v1 layout around the full v2 player**: tournament strip on top (on air → upcoming → ended), the v2 player (real CC footage behind the Off/Basic/Pro overlays, hand markers, Jump to Live, multiview, audio/CC), event info + **Overview** figures and **Hands in this broadcast** below, and on the right the **Streams** list (per-table status, delay, access, "Now watching"), Chip Counts / Current Hand / Tables, and hand replays from the event |
+| `#/live/channels`, `#/live/channels/:id` | Live · **Channels** tab | **24/7 linear channels** (WSOP TV 1, WSOP TV 2, WSOP Español, WSOP Classics): channel strip with what's on now, the channel player (no rewind; pause → resume rejoins the channel, "Watch from the start" opens the broadcast), now/next info, **Next on** list with Remind me, and a **channel guide (EPG)** across all channels for the next 8 hours. See *Linear channels* below |
 | `#/schedule` | Schedule | **v1 layout**: venue-calendar date strip with dots for days that have broadcasts, Las Vegas (PT) start time with your time underneath, status + #event · day · buy-in, status note, Watch / Details / View; Today also lists anything still on air; empty state with "Next day with broadcasts"; Remind me, Add to calendar (mock), your-time-zone selector |
 | `#/series`, `#/events/:id` | Series & Events | Series → bracelet event → Day 1A/1B/2/3/Final Table, scoreboard (entrants, prize pool, first prize, level, players left, chip leader, champion), day list with status |
 | `#/players`, `#/players/:id` | Players | Search + nationality filter (empty state), profile with earnings, bracelets (SVG), recent results, highlight hands, Follow + alerts toggle |
@@ -44,6 +45,26 @@ Every card and the Watch header carry an access badge, with a lock when the curr
 | **Subscribers** | Active subscription (paywall states 2–6 apply) | Live tables, other replays, most hands |
 
 Access policy: `canWatch` / `gateForAccess` in `src/state/app.tsx`; per-item levels in `src/data/mock.ts`.
+
+### Linear channels
+
+Channels sit next to the event-based Live view: each one runs a fixed 24/7 schedule (`src/data/channels.ts`, 12 h back → 36 h ahead of page load, on the :00/:30 grid).
+
+| Channel | Carries live | Fills the rest with |
+| --- | --- | --- |
+| WSOP TV 1 | Main Event Final Table (feature feed, 30-min delay) | Studio preview, Day 2/3 encores, Hand of the Day, Bracelet Moments |
+| WSOP TV 2 | $50K High Roller Final Table → Players' Championship Day 1A (joined in progress) → Day 2 | Replays of side events, High Roller Hands, studio recap |
+| WSOP Español | Main Event Final Table simulcast with Spanish commentary | Spanish studio show, replays, Lo mejor del día |
+| WSOP Classics | — (free 24/7, FAST-style) | Classic final tables edited for TV, Greatest Bluffs, Bad Beat Hall of Fame |
+
+Policies shown in the demo:
+
+- **Access per programme, checked when it airs.** Studio, highlight and classic programmes are free; live and replay programmes keep the access of the broadcast they carry (the same `gateForAccess` as everywhere else, so the Split setting applies to live slots). When a programme is locked, the player offers a channel the viewer can watch right now.
+- **Never dark.** If live coverage starts late or drops out (Demo Controls → Featured stream), the channel stands by with highlights instead of going black. A live slot whose broadcast already ended runs as an encore.
+- **No rewind.** Pause → resume rejoins the channel; "Watch from the start" / "All tables & multiview" open the full broadcast on the Watch screen.
+- **Blackout.** With *Region restricted* or *Traveling abroad* on, programmes without rights where the viewer is are blacked out (WSOP TV 2 during the High Roller when abroad); the channel carries on afterwards.
+- **Reminders** for channel programmes are kept with the other reminders (`ch:<programme id>`).
+- Home shows **On the channels now** (one card per channel with now/next); the per-table band on the billboard is now labelled **On air now**.
 
 ## Demo Controls (bottom-right, collapsible)
 

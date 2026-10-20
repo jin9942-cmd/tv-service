@@ -51,6 +51,9 @@ export function Schedule() {
             Times in <b className="text-text">Las Vegas (PT)</b> with your local time ({tzAbbr(state.tz)}). Dates follow the venue's calendar. Times are stream start times; streams air on a broadcast delay, so
             they show play from a little earlier.
           </p>
+          <Link to="/live/channels" className="mt-2 inline-block text-sm font-semibold text-gold hover:text-gold-strong">
+            What's on the 24/7 channels → Channel guide
+          </Link>
         </div>
         <label className="flex flex-col gap-1 text-xs font-semibold text-muted">
           Your time zone

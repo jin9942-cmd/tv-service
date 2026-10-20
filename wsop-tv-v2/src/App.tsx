@@ -2,7 +2,7 @@ import { HashRouter, Route, Routes } from 'react-router-dom';
 import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
-import { Live, WatchRoute } from './pages/Live';
+import { Live, LiveChannels, WatchRoute } from './pages/Live';
 import { Schedule } from './pages/Schedule';
 import { SeriesList, EventDetail } from './pages/Series';
 import { Players, PlayerProfile } from './pages/Players';
@@ -29,6 +29,8 @@ export default function App() {
           <Route element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="live" element={<Live />} />
+            <Route path="live/channels" element={<LiveChannels />} />
+            <Route path="live/channels/:channelId" element={<LiveChannels />} />
             <Route path="watch/:dayId" element={<WatchRoute />} />
             <Route path="schedule" element={<Schedule />} />
             <Route path="series" element={<SeriesList />} />
