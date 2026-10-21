@@ -6,7 +6,7 @@ import type { Day, TourEvent } from '../data/types';
 import { HERO_DAY_ID, HERO_EXPECTED_START, dayById, events, seriesById } from '../data/mock';
 import { isBroadcasting, isOnAir, tableDelay, tableStatus } from '../lib/broadcast';
 import { count } from '../lib/format';
-import { FOOTAGE, HERO_POSTER, frameFrom, tableFrame } from '../lib/media';
+import { FOOTAGE, HERO_POSTER, thumbFor } from '../lib/media';
 import { VENUE_TZ, countdown, fmtCardDate, fmtTime, relative, tzAbbr } from '../lib/time';
 import { canWatch, useApp, useTick } from '../state/app';
 import { useDayStatus } from './cards';
@@ -129,12 +129,12 @@ function ChannelCard({ e, d, tableIndex }: { e: TourEvent; d: Day; tableIndex: n
   return (
     <Link to={`/watch/${d.id}`} className="group block w-56 sm:w-60">
       <div className={cx('relative aspect-video overflow-hidden rounded-card border border-line transition-[border-color,transform] duration-200 group-hover:scale-[1.02] group-hover:border-live/70', offline && 'grayscale')}>
-        <img src={tableFrame(tableIndex, e.number % 3)} alt="" loading="lazy" className={cx('size-full object-cover', offline && 'opacity-50')} />
+        <img src={thumbFor(`feed:${t.id}`)} alt="" loading="lazy" className={cx('size-full object-cover', offline && 'opacity-50')} />
         <span className="absolute top-2 left-2">
           <StatusBadge status={st} size="sm" delayMin={delay || 30} />
         </span>
         <span className="absolute right-2 bottom-2">
-          <AccessBadge access={access} live={isOnAir(dayStatus)} locked={locked} />
+          <AccessBadge onArt access={access} live={isOnAir(dayStatus)} locked={locked} />
         </span>
       </div>
       <p className="mt-2 truncate text-sm font-semibold group-hover:text-gold-strong">{e.name.replace(' World Championship', '')}</p>
@@ -157,7 +157,7 @@ export function UpcomingCard({ e, d }: { e: TourEvent; d: Day }) {
     <CardMenu actions={[listAction]} openSignal={lp.signal} className="top-5 right-5" />
     <Link to={`/watch/${d.id}`} className="block rounded-card border border-line bg-surface p-2.5 transition-colors duration-150 hover:border-line-strong">
       <div className="relative aspect-video overflow-hidden rounded-[8px]">
-        <img src={frameFrom(e.number * 3 + d.label.length)} alt="" loading="lazy" className="size-full object-cover opacity-70 transition-transform duration-200 group-hover:scale-[1.03]" />
+        <img src={thumbFor(`day:${d.id}`)} alt="" loading="lazy" className="size-full object-cover opacity-70 transition-transform duration-200 group-hover:scale-[1.03]" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
         <span className="absolute top-2 left-2">
           <StatusBadge status="upcoming" size="sm" />

@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { archive, dayById, eventById, hands } from '../../data/mock';
-import { frameFrom } from '../../lib/media';
+import { thumbFor } from '../../lib/media';
 import { useApp, type ListItem, type ListKind } from '../../state/app';
 import { ArchiveCard, Art, BroadcastCard, HandCard } from '../../components/cards';
 import { BraceletIcon, Button, FilterChip, Page } from '../../components/ui';
@@ -18,7 +18,7 @@ export function EventCard({ eventId }: { eventId: string }) {
   return (
     <div className="group relative w-64 sm:w-72" {...lp.bind}>
       <Link to={`/events/${e.id}`} className="block">
-        <Art hue={200 + e.number * 3} image={frameFrom(e.number)}>
+        <Art hue={200 + e.number * 3} image={thumbFor(`event:${e.id}`)}>
           <span className="label absolute top-2 left-2 flex items-center gap-1 rounded-[3px] bg-black/70 px-1.5 py-0.5 text-[10px]">
             <BraceletIcon size={12} /> Event #{e.number}
           </span>

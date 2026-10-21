@@ -23,7 +23,7 @@ import { HERO_DAY_ID, HERO_EXPECTED_START, bbFor, dayById, seatsFor } from '../.
 import { TRAVEL_UNAVAILABLE_EVENTS, requiredTier } from '../../data/policy';
 import { PLATFORMS, overlayAllowed } from '../../data/platforms';
 import type { OverlayLevel } from '../../data/types';
-import { FOOTAGE, frameFrom, tableFrame, tableVideo } from '../../lib/media';
+import { FOOTAGE, tableVideo, thumbFor } from '../../lib/media';
 import { fmtDate, fmtTime, relative, tzAbbr } from '../../lib/time';
 import { canWatch, gateForAccess, useApp, useTick, type AppState } from '../../state/app';
 import { useLiveStacks } from '../../state/stacks';
@@ -42,14 +42,13 @@ const lengthLabel = (min: number) => (min >= 60 ? `${Math.floor(min / 60)}h${min
 /** Stills and footage for a programme (CC poker footage, not WSOP). */
 function mediaFor(p: Program): { poster: string; video: string; start: number } {
   if (p.dayId) {
-    const ref = dayById(p.dayId)!;
     const v = tableVideo(0);
-    return { poster: tableFrame(0, ref.event.number % 3), video: v.url, start: v.start };
+    return { poster: thumbFor(`prog:${p.id}`), video: v.url, start: v.start };
   }
-  if (p.kind === 'classic') return { poster: frameFrom(p.seed), video: FOOTAGE.ft.url, start: 40 };
-  if (p.kind === 'studio') return { poster: FOOTAGE.mtl.frames[0].src, video: FOOTAGE.mtl.url, start: 20 };
+  if (p.kind === 'classic') return { poster: thumbFor(`prog:${p.id}`), video: FOOTAGE.ft.url, start: 40 };
+  if (p.kind === 'studio') return { poster: thumbFor(`prog:${p.id}`, 'people'), video: FOOTAGE.mtl.url, start: 20 };
   const f = p.seed % 2 ? FOOTAGE.int : FOOTAGE.deal;
-  return { poster: f.frames[0].src, video: f.url, start: 30 };
+  return { poster: thumbFor(`prog:${p.id}`, p.seed % 2 ? 'people' : 'hands'), video: f.url, start: 30 };
 }
 const STANDBY_POSTER = FOOTAGE.deal.frames[0].src;
 
@@ -758,7 +757,7 @@ function HomeChannelCard({ ch, now }: { ch: LinearChannel; now: number }) {
           <ProgramTag p={p} a={a} />
         </span>
         <span className="absolute right-2 bottom-3">
-          <AccessBadge access={p.access} live={onAir} locked={!watchableNow(ch, now, state)} />
+          <AccessBadge onArt access={p.access} live={onAir} locked={!watchableNow(ch, now, state)} />
         </span>
         <span className="absolute inset-x-0 bottom-0 h-1 bg-white/15">
           <i className={cx('block h-full', onAir ? 'bg-live' : 'bg-gold')} style={{ width: `${pct * 100}%` }} />

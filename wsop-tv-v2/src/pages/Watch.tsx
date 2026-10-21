@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { frameFrom, tableFrame, tableVideo } from '../lib/media';
+import { frameFrom, tableVideo, thumbFor } from '../lib/media';
 import { money } from '../lib/format';
 import { Link, useNavigate } from 'react-router-dom';
 import type { AudioTrack, Hand, OverlayLevel, TableFeed } from '../data/types';
@@ -380,7 +380,7 @@ export function WatchInner({
                               // Real footage (v1): one moving video in single view, stills in multiview tiles.
                               const ti = day.tables.indexOf(t);
                               const v = tableVideo(ti);
-                              return { poster: tableFrame(ti, event.number % 3), video: shownViews === 1 ? v.url : undefined, start: v.start };
+                              return { poster: thumbFor(`feed:${t.id}`), video: shownViews === 1 ? v.url : undefined, start: v.start };
                             })()}
                           />
                         )}
@@ -855,11 +855,11 @@ function EventHandReplays({ eventId, safe }: { eventId: string; safe?: boolean }
     <section aria-label="Hand replays from this event">
       <p className="label mb-3 text-text/80">Hand replays from this event</p>
       <ul className="space-y-2">
-        {list.map((h, i) => (
+        {list.map((h) => (
           <li key={h.id}>
             <Link to={`/watch/${h.dayId}?t=${h.t}&clip=${h.id}`} className="flex gap-3 rounded-card border border-line bg-surface p-2 transition-colors duration-150 hover:border-line-strong">
               <span className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-[6px]">
-                <img src={frameFrom(i * 2 + h.title.length)} alt="" loading="lazy" className="size-full object-cover" />
+                <img src={thumbFor(`hand:${h.id}`)} alt="" loading="lazy" className="size-full object-cover" />
                 <span className="absolute right-1 bottom-1 rounded-[3px] bg-black/75 px-1 text-[10px] font-semibold tnum">{duration(h.durationSec)}</span>
               </span>
               <span className="min-w-0 py-0.5">
@@ -893,7 +893,7 @@ function UpNext({ next, live, eventId, onPlay, onReplay }: { next?: { id: string
     <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-4">
       {next ? (
         <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:items-center">
-          <img src={frameFrom(next.label.length * 3 + (ev?.number ?? 0))} alt="" className="hidden aspect-video w-44 rounded-[8px] object-cover sm:block" />
+          <img src={thumbFor(`day:${next.id}`)} alt="" className="hidden aspect-video w-44 rounded-[8px] object-cover sm:block" />
           <div className="min-w-0 flex-1">
             <p className={cx('label text-[10px]', live ? 'text-live' : 'text-gold')}>{live ? 'On air now' : cancelled ? 'Up next' : `Up next in ${left}s`}</p>
             <p className="mt-1 text-lg leading-tight font-bold">{next.label}</p>
@@ -945,7 +945,7 @@ function RelatedReplays({ eventId }: { eventId: string }) {
           <li key={d.id}>
             <Link to={`/watch/${d.id}`} className="flex gap-3 rounded-card border border-line bg-surface p-2 transition-colors duration-150 hover:border-line-strong">
               <span className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-[6px]">
-                <img src={frameFrom(e.number * 3 + d.label.length)} alt="" loading="lazy" className="size-full object-cover" />
+                <img src={thumbFor(`day:${d.id}`)} alt="" loading="lazy" className="size-full object-cover" />
                 <span className="absolute right-1 bottom-1 rounded-[3px] bg-black/75 px-1 text-[10px] font-semibold tnum">{duration(d.durationMin * 60)}</span>
               </span>
               <span className="min-w-0 py-0.5">

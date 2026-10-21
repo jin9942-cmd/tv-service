@@ -3,7 +3,7 @@
 import type { Access, StreamStatus } from '../data/types';
 import { HERO_DAY_ID, archive, events, hands, playerById, players, seriesById } from '../data/mock';
 import { chips, duration } from './format';
-import { frameFrom } from './media';
+import { thumbFor } from './media';
 import { isOnAir } from './broadcast';
 
 export type SearchKind = 'event' | 'day' | 'hand' | 'player' | 'archive';
@@ -45,7 +45,7 @@ export function buildIndex(streamMode: StreamStatus, spoilerFree: boolean): Sear
       url: `/events/${e.id}`,
       status: evStatus,
       seriesId: e.seriesId,
-      image: frameFrom(e.number),
+      image: thumbFor(`event:${e.id}`),
       text: `${e.name} ${e.number} ${se.name} ${se.city} ${e.game} event`.toLowerCase(),
     });
     for (const d of e.days) {
@@ -60,7 +60,7 @@ export function buildIndex(streamMode: StreamStatus, spoilerFree: boolean): Sear
         badge: st,
         seriesId: e.seriesId,
         access: d.access ?? 'subscriber',
-        image: frameFrom(e.number + e.days.indexOf(d) * 3),
+        image: thumbFor(`day:${d.id}`),
         text: `${e.name} ${d.label} ${se.name} ${d.label === 'Final Table' ? 'ft final table' : ''} broadcast`.toLowerCase(),
       });
     }
@@ -77,7 +77,7 @@ export function buildIndex(streamMode: StreamStatus, spoilerFree: boolean): Sear
       status: 'vod',
       seriesId: e.seriesId,
       access: h.access,
-      image: frameFrom(Number(h.id.slice(1)) * 5),
+      image: thumbFor(`hand:${h.id}`),
       // In spoiler-free mode the descriptive title isn't searchable either.
       text: `${spoilerFree ? '' : h.title} ${names.join(' ')} ${e.name} hand clip`.toLowerCase(),
     });
@@ -101,7 +101,7 @@ export function buildIndex(streamMode: StreamStatus, spoilerFree: boolean): Sear
       url: '/archive',
       status: 'vod',
       access: a.access,
-      image: frameFrom(a.year),
+      image: thumbFor(`archive:${a.id}`),
       text: `${a.year} ${a.title} ${a.subtitle} classic archive`.toLowerCase(),
     });
   }

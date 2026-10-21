@@ -75,9 +75,11 @@ const TIER_TITLE: Record<Tier, string> = {
  * Content-level access badge: the WSOP+ tier this content needs (depends on the "WSOP TV included from" setting;
  * `live` matters for the Split setting). `locked` adds a lock when the current viewer can't play it yet.
  */
-export function AccessBadge({ access, locked, size = 'sm', live }: { access: Access; locked?: boolean; size?: 'sm' | 'md'; live?: boolean }) {
+export function AccessBadge({ access, locked, size = 'sm', live, onArt }: { access: Access; locked?: boolean; size?: 'sm' | 'md'; live?: boolean; onArt?: boolean }) {
   const { state } = useApp();
   const tier = requiredTier(access, state.includedFrom, live);
+  // On thumbnails, only say something useful: "Free", or what the viewer still needs (with a lock).
+  if (onArt && !locked && tier !== 'free') return null;
   return (
     <span
       title={TIER_TITLE[tier]}
