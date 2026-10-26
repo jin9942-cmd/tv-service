@@ -48,10 +48,13 @@ export function Billboard() {
 
         <div className="mx-auto flex w-full max-w-content flex-col justify-end px-gutter pt-16 pb-12 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <p className="flex flex-wrap items-center gap-2">
-              {live ? <StatusBadge status={status} /> : <StatusBadge status="upcoming" />}
-              <span className="label text-text/90">{live ? 'Featured now' : 'No live tournaments right now · up next'}</span>
-            </p>
+            {/* Live hero: no status badge or kicker — the title and Watch live say it. */}
+            {!live && (
+              <p className="flex flex-wrap items-center gap-2">
+                <StatusBadge status="upcoming" />
+                <span className="label text-text/90">No live tournaments right now · up next</span>
+              </p>
+            )}
             <h1 className="mt-4 text-[2.5rem] leading-[1.02] font-black tracking-[-0.02em] drop-shadow-lg sm:text-display">{ev.name}</h1>
             <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold text-text/85">
               <span>{se.name}</span>
