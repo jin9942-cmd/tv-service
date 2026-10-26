@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, type ButtonHTMLAttributes, type ReactNode } f
 import type { Access, StreamStatus } from '../data/types';
 import { initials } from '../lib/format';
 import { useApp } from '../state/app';
-import { TIER_BADGE, requiredTier, type Tier } from '../data/policy';
+import { PRESENTATION, TIER_BADGE, requiredTier, type Tier } from '../data/policy';
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 export { cx };
@@ -60,6 +60,15 @@ export function StatusBadge({ status, delayMin = 30, size = 'md' }: { status: St
       </span>
     );
   return <span className={cx(base, 'bg-surface-3 text-muted')}>VOD</span>;
+}
+
+/** The only label shown on artwork: on air now (live or delayed coverage). */
+export function LiveTag({ className }: { className?: string }) {
+  return (
+    <span className={cx('label inline-flex items-center gap-1.5 rounded-[4px] bg-live px-1.5 py-0.5 text-[10px] text-white', className)}>
+      <i className="live-dot size-1.5 rounded-full bg-white" aria-hidden /> Live
+    </span>
+  );
 }
 
 // ---- access badges (who can play this) -------------------------------------------------------
@@ -391,6 +400,7 @@ export function Tabs<T extends string>({ value, tabs, onChange, label }: { value
 
 /** Marks a value that isn't decided yet (price, retention, thresholds…). */
 export function Placeholder({ className }: { className?: string }) {
+  if (PRESENTATION) return null;
   return (
     <span title="Placeholder value — not final" className={cx('label inline-flex items-center rounded-[3px] border border-dashed border-line-strong px-1 py-px align-middle text-[9px] text-subtle', className)}>
       Placeholder

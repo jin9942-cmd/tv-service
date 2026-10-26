@@ -3,6 +3,13 @@
 // screens that show them carry a "Placeholder" / "Pricing to be confirmed" tag.
 import type { Access } from './types';
 
+/**
+ * Presentation build (CEO report): clean artwork, no broadcast-fault feeds (late / interrupted / failing),
+ * no planning annotations (Placeholder, Sample, store-policy notes), Demo Controls hidden behind Shift+D.
+ * Set to false to bring the full planning demo back.
+ */
+export const PRESENTATION = true;
+
 // ---- WSOP+ membership (WSOP TV only reads the tier; joining, billing and cancelling all happen in WSOP+) ----
 
 /** Content requirement / member level. `free` = no sign-in · `wsopFree` = any GGPass account (WSOP+ Free is automatic). */

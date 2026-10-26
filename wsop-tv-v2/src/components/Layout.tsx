@@ -260,7 +260,9 @@ function Footer() {
           </ul>
         </div>
       </div>
-      <p className="border-t border-line px-gutter py-4 text-center text-xs text-subtle">WSOP TV (working title) · Interactive demo · All players, events and results are fictional.</p>
+      <p className="border-t border-line px-gutter py-4 text-center text-xs text-subtle">
+        WSOP TV (working title) · Interactive demo · All players, events and results are fictional · Footage: World Poker Tour (CC BY 3.0), BrewCrewCountry93 (CC BY-SA 4.0) via Wikimedia Commons
+      </p>
     </footer>
   );
 }

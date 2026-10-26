@@ -5,10 +5,10 @@ import type { ArchiveItem, Day, Hand, Player, TourEvent } from '../data/types';
 import { HERO_DAY_ID, eventById, playerById, seriesById } from '../data/mock';
 import { chips, compact, duration } from '../lib/format';
 import { fmtDateTime } from '../lib/time';
-import { canWatch, gateForAccess, useApp } from '../state/app';
+import { gateForAccess, useApp } from '../state/app';
 import { isOnAir } from '../lib/broadcast';
 import { HAND_META, HandGlyph } from '../features/player/markers';
-import { AccessBadge, Avatar, Icon, Spoiler, StatusBadge, cx } from './ui';
+import { Avatar, Icon, LiveTag, Spoiler, cx } from './ui';
 import { CardMenu, useListAction, useLongPress, type MenuAction } from '../features/library/listActions';
 
 /** Abstract artwork for a broadcast (no images): stage gradient + event number. */
@@ -45,10 +45,7 @@ export function BroadcastCard({ event, day, wide, progress, extraActions }: { ev
     <Link to={`/watch/${day.id}`} className="block">
       <Art hue={200 + event.number * 3} image={thumbFor(`day:${day.id}`)} className="transition-transform duration-200 group-hover:scale-[1.015]">
         <span className="absolute top-2 left-2">
-          <StatusBadge status={status} size="sm" />
-        </span>
-        <span className={cx('absolute right-2', progress !== undefined ? 'bottom-3' : 'bottom-2')}>
-          <AccessBadge onArt access={day.access ?? 'subscriber'} live={isOnAir(status)} locked={!canWatch(day.access ?? 'subscriber', state, isOnAir(status))} />
+          {isOnAir(status) && <LiveTag />}
         </span>
         {progress !== undefined && (
           <span className="absolute inset-x-0 bottom-0 h-1 bg-white/15">
@@ -69,7 +66,6 @@ export function BroadcastCard({ event, day, wide, progress, extraActions }: { ev
 }
 
 export function HandCard({ hand, className }: { hand: Hand; className?: string }) {
-  const { state } = useApp();
   const ev = eventById(hand.eventId)!;
   const m = HAND_META[hand.type];
   const lp = useLongPress();
@@ -83,9 +79,6 @@ export function HandCard({ hand, className }: { hand: Hand; className?: string }
         <span className="absolute top-2 left-2 flex items-center gap-1.5 rounded-[4px] bg-black/70 px-1.5 py-1">
           <HandGlyph type={hand.type} size={14} />
           <span className="label text-[10px]">{m.label}</span>
-        </span>
-        <span className="absolute bottom-2 left-2">
-          <AccessBadge onArt access={hand.access} locked={!canWatch(hand.access, state)} />
         </span>
         <span className="absolute right-2 bottom-2 rounded-[3px] bg-black/70 px-1.5 text-[11px] font-semibold tnum">{duration(hand.durationSec)}</span>
         <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden>
@@ -147,10 +140,6 @@ export function ArchiveCard({ item }: { item: ArchiveItem }) {
       <CardMenu actions={[listAction]} openSignal={lp.signal} className="top-2 right-2" />
       <button onClick={play} className="block w-full rounded-card text-left">
       <Art hue={item.hue} image={thumbFor(`archive:${item.id}`)}>
-        <span className="label absolute top-2 left-2 rounded-[3px] bg-black/70 px-1.5 py-0.5 text-[10px]">Classic · {item.year}</span>
-        <span className="absolute bottom-2 left-2">
-          <AccessBadge onArt access={item.access} locked={!canWatch(item.access, state)} />
-        </span>
         <span className="absolute right-2 bottom-2 rounded-[3px] bg-black/70 px-1.5 text-[11px] font-semibold tnum">{duration(item.durationSec)}</span>
       </Art>
       <p className="mt-2 text-[15px] font-semibold group-hover:text-gold-strong">

@@ -1,10 +1,10 @@
 // Demo-only developer panel. Deliberately styled unlike the product (dashed outline, monospace labels).
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AccountScenario, Platform, StreamStatus } from '../../data/types';
 import { PLATFORMS } from '../../data/platforms';
 import { useApp } from '../../state/app';
 import { cx } from '../../components/ui';
-import { INCLUDED_FROM_LABEL, type IncludedFrom } from '../../data/policy';
+import { INCLUDED_FROM_LABEL, PRESENTATION, type IncludedFrom } from '../../data/policy';
 
 const SCENARIOS: { v: AccountScenario; label: string }[] = [
   { v: 'guest', label: '1 · Not signed in' },
@@ -22,6 +22,19 @@ export function DemoControls() {
   const { state, set } = useApp();
   // Collapsed by default so the product UI is what people see first.
   const [open, setOpen] = useState(false);
+  // Presentation build: no floating button at all — Shift+D shows / hides the panel.
+  const [revealed, setRevealed] = useState(!PRESENTATION);
+  useEffect(() => {
+    if (!PRESENTATION) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!e.shiftKey || e.key.toLowerCase() !== 'd' || (e.target as HTMLElement)?.closest?.('input, textarea, select')) return;
+      setRevealed((r) => !r);
+      setOpen(true);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  if (!revealed) return null;
 
   return (
     <div className="fixed right-3 bottom-20 z-[58] w-[19rem] font-mono text-[12px] md:bottom-4">

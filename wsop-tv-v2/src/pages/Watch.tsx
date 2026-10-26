@@ -17,7 +17,7 @@ import { AUDIO_LABEL, Controls } from '../features/player/Controls';
 import { SidePanel } from '../features/player/SidePanel';
 import { HAND_META, HandGlyph } from '../features/player/markers';
 import { PlaybackGate, RegionBlocked, VpnBlocked } from '../features/auth/Gates';
-import { TRAVEL_UNAVAILABLE_EVENTS, requiredTier, tierFull, type Tier } from '../data/policy';
+import { PRESENTATION, TRAVEL_UNAVAILABLE_EVENTS, requiredTier, tierFull, type Tier } from '../data/policy';
 import { MyListButton } from '../features/library/listActions';
 import { DayResults, HandList, VodPanel, maskHand, neutralTitle, useRevealed } from '../features/player/VodPanel';
 
@@ -838,9 +838,11 @@ function Overview({ eventId, dayId, delayMin, status }: { eventId: string; dayId
           </div>
         ))}
       </dl>
-      <p className="mt-2 flex items-center gap-2 text-[11px] text-subtle">
-        <span className="label rounded-[3px] border border-line-strong px-1 text-[9px]">Sample</span> Tournament figures are sample data, not an EBS / live-reporting feed.
-      </p>
+      {!PRESENTATION && (
+        <p className="mt-2 flex items-center gap-2 text-[11px] text-subtle">
+          <span className="label rounded-[3px] border border-line-strong px-1 text-[9px]">Sample</span> Tournament figures are sample data, not an EBS / live-reporting feed.
+        </p>
+      )}
     </section>
   );
 }

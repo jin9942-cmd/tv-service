@@ -5,6 +5,7 @@ import type { Access } from '../../data/types';
 import { PLATFORMS } from '../../data/platforms';
 import {
   INCLUDED_FROM_LABEL,
+  PRESENTATION,
   MEMBERSHIP_PRICES,
   SHOW_ANNUAL,
   TIER_NAME,
@@ -51,10 +52,10 @@ export function Plans() {
       <p className="label text-gold">WSOP+ membership</p>
       <h1 className="mt-1 text-title font-black">WSOP TV is included with WSOP+</h1>
       <p className="mt-1 text-muted">One GGPass account, one membership. Joining, billing and cancelling all happen in WSOP+ — WSOP TV simply reads your tier.</p>
-      <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-subtle">
+      {!PRESENTATION && <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-subtle">
         <span className="label rounded-[3px] border border-dashed border-line-strong px-1 py-px text-[9px]">Placeholder</span>
         Tier names, prices and what each tier covers aren’t final · WSOP TV currently included from: <b className="text-muted">{INCLUDED_FROM_LABEL[state.includedFrom]}</b>
-      </p>
+      </p>}
 
       <div className="mt-6 grid gap-3 md:grid-cols-3">
         {COLUMNS.map((tier) => {
@@ -108,7 +109,7 @@ export function Plans() {
                 {action && tier !== 'wsopFree' && app && (
                   <p className="mt-2 flex flex-wrap items-center justify-center gap-1.5 text-center text-[11px] text-muted">
                     Opens WSOP+ in your browser
-                    <span className="label rounded-[3px] border border-dashed border-line-strong px-1 text-[9px] text-subtle">Store policy check pending</span>
+                    {!PRESENTATION && <span className="label rounded-[3px] border border-dashed border-line-strong px-1 text-[9px] text-subtle">Store policy check pending</span>}
                   </p>
                 )}
               </div>

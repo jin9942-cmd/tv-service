@@ -1,5 +1,6 @@
 // Fictional demo data. Times are relative to page load so the demo always has something live.
 import type { Access, ArchiveItem, Day, DayLabel, Hand, HandType, Player, Series, StreamStatus, TableFeed, TourEvent } from './types';
+import { PRESENTATION } from './policy';
 
 export const T0 = Date.now();
 const H = 3_600_000;
@@ -56,7 +57,7 @@ const feeds = (prefix: string, n: number, failing?: number, finalTable?: boolean
     id: `${prefix}-t${i + 1}`,
     name: finalTable ? FT_FEEDS[i] : i === 0 ? 'Feature Table' : `Outer Table ${i + 1}`,
     main: i === 0,
-    failing: failing === i,
+    failing: !PRESENTATION && failing === i,
   }));
 
 /** Upcoming broadcasts get realistic start times: today → next :00/:30, later days → noon Las Vegas time. */
@@ -232,8 +233,8 @@ export const events: TourEvent[] = [
   ft.tables = [
     { id: `${ft.id}-t1`, name: 'Main Feed', main: true, delayMin: 30 },
     { id: `${ft.id}-t2`, name: 'Clean Feed', delayMin: 30 },
-    { id: `${ft.id}-t3`, name: 'Player Cam', delayMin: 30, state: 'late', expected: iso(0.4) },
-    { id: `${ft.id}-t4`, name: 'Overhead Cam', delayMin: 30, state: 'interrupted' },
+    PRESENTATION ? { id: `${ft.id}-t3`, name: 'Player Cam', delayMin: 30 } : { id: `${ft.id}-t3`, name: 'Player Cam', delayMin: 30, state: 'late', expected: iso(0.4) },
+    PRESENTATION ? { id: `${ft.id}-t4`, name: 'Overhead Cam', delayMin: 30 } : { id: `${ft.id}-t4`, name: 'Overhead Cam', delayMin: 30, state: 'interrupted' },
   ];
   const d3 = events[0].days[3];
   d3.tables = d3.tables.map((t, i) => ({ ...t, delayMin: i === 0 ? 30 : 15 }));
