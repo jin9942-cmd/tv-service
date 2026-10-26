@@ -27,7 +27,7 @@ import { FOOTAGE, tableVideo, thumbFor } from '../../lib/media';
 import { fmtDate, fmtTime, relative, tzAbbr } from '../../lib/time';
 import { canWatch, gateForAccess, useApp, useTick, type AppState } from '../../state/app';
 import { useLiveStacks } from '../../state/stacks';
-import { AccessBadge, Button, Icon, LiveTag, Page, SectionHeader, Segmented, Skeleton, StatusBadge, cx } from '../../components/ui';
+import { AccessBadge, Button, Icon, Page, SectionHeader, Segmented, Skeleton, StatusBadge, cx } from '../../components/ui';
 import { Stage } from '../player/Stage';
 import { handFor } from '../player/hand';
 import { PlaybackGate, VpnBlocked } from '../auth/Gates';
@@ -754,7 +754,6 @@ function HomeChannelCard({ ch, now }: { ch: LinearChannel; now: number }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" aria-hidden />
         <span className="absolute top-2 left-2 flex items-center gap-1.5">
           <span className="label rounded-[4px] bg-black/75 px-1.5 py-0.5 text-[10px] tnum">CH {ch.number}</span>
-          {a.mode === 'onair' && <LiveTag />}
         </span>
         <span className="absolute right-2 bottom-3">
 

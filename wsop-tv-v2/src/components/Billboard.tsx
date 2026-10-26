@@ -10,7 +10,7 @@ import { FOOTAGE, HERO_POSTER, thumbFor } from '../lib/media';
 import { VENUE_TZ, countdown, fmtCardDate, fmtTime, relative, tzAbbr } from '../lib/time';
 import { useApp, useTick } from '../state/app';
 import { useDayStatus } from './cards';
-import { BraceletIcon, Icon, LiveTag, StatusBadge, cx } from './ui';
+import { BraceletIcon, Icon, StatusBadge, cx } from './ui';
 import { PRESENTATION } from '../data/policy';
 import { CardMenu, useListAction, useLongPress } from '../features/library/listActions';
 
@@ -92,18 +92,17 @@ export function Billboard() {
   );
 }
 
-/** Every table of every on-air day, main tables first. */
+/** One card per on-air broadcast (its main feed); other tables / camera feeds are picked on the watch screen. */
 function LiveChannels() {
   const { state } = useApp();
   const days = events.flatMap((e) => e.days.map((d) => ({ e, d }))).filter(({ d }) => isBroadcasting(d.id === HERO_DAY_ID ? state.streamMode : d.status));
-  const channels = days.flatMap(({ e, d }) => d.tables.map((t, i) => ({ e, d, t, i })));
-  const ordered = [...channels.filter((c) => c.i === 0), ...channels.filter((c) => c.i > 0)];
+  const ordered = days.map(({ e, d }) => ({ e, d, t: d.tables[0], i: 0 }));
   return (
     <section className="border-y border-line bg-surface/60" aria-label={ordered.length ? 'On air now' : 'Schedule'}>
       <div className="mx-auto max-w-content px-gutter py-5 sm:px-6 lg:px-8">
         <p className="label mb-3 text-text/80">{ordered.length ? 'On air now' : 'Schedule'}</p>
         {ordered.length ? (
-          <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-6 [&>*]:w-auto!">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 [&>*]:w-auto!">
             {ordered.slice(0, 6).map(({ e, d, t, i }) => (
               <ChannelCard key={t.id} e={e} d={d} tableIndex={i} />
             ))}
@@ -128,16 +127,11 @@ function ChannelCard({ e, d, tableIndex }: { e: TourEvent; d: Day; tableIndex: n
     <Link to={`/watch/${d.id}`} className="group block w-56 sm:w-60">
       <div className={cx('relative aspect-video overflow-hidden rounded-card border border-line transition-[border-color,transform] duration-200 group-hover:scale-[1.02] group-hover:border-live/70', offline && 'grayscale')}>
         <img src={thumbFor(`feed:${t.id}`)} alt="" loading="lazy" className={cx('size-full object-cover', offline && 'opacity-50')} />
-        <span className="absolute top-2 left-2">
-          {isOnAir(st) && <LiveTag />}
-        </span>
-        <span className="absolute right-2 bottom-2">
-
-        </span>
       </div>
       <p className="mt-2 truncate text-sm font-semibold group-hover:text-gold-strong">{e.name.replace(' World Championship', '')}</p>
       <p className="truncate text-xs text-muted">
-        {t.name}
+        {d.label}
+        {d.tables.length > 1 ? ` · ${d.tables.length} ${d.label === 'Final Table' ? 'camera feeds' : 'tables'}` : ` · ${t.name}`}
         {delay && !PRESENTATION ? ` · ${delay}m delay` : ''}
       </p>
     </Link>
