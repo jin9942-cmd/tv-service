@@ -24,6 +24,7 @@ import { PRESENTATION, TRAVEL_UNAVAILABLE_EVENTS, requiredTier } from '../../dat
 import { PLATFORMS, overlayAllowed } from '../../data/platforms';
 import type { OverlayLevel } from '../../data/types';
 import { FOOTAGE, tableVideo, thumbFor } from '../../lib/media';
+import { duration } from '../../lib/format';
 import { fmtDate, fmtTime, relative, tzAbbr } from '../../lib/time';
 import { canWatch, gateForAccess, useApp, useTick, type AppState } from '../../state/app';
 import { useLiveStacks } from '../../state/stacks';
@@ -206,7 +207,6 @@ const CAPTION_LINES: Record<LinearChannel['lang'], string[]> = {
 
 export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Program; onSwitch: (id: string) => void }) {
   const { state } = useApp();
-  const nav = useNavigate();
   const now = useTick(1000);
   const caps = PLATFORMS[state.platform];
   const a = airing(p, state.streamMode);
@@ -225,6 +225,15 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
   const [overlay, setOverlay] = useState<OverlayLevel>(overlayAllowed(state.platform, state.overlayDefault) ? state.overlayDefault : caps.overlayMax);
   const [fullscreen, setFullscreen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+  // DVR: seconds behind the live edge of the channel (0 = live). The window is this programme so far, up to DVR_WINDOW.
+  const [behind, setBehind] = useState(0);
+  const dvrMax = Math.max(0, Math.min(DVR_WINDOW, (now - p.start) / 1000));
+  const atLive = behind < 5;
+  const seekBehind = (sec: number) => setBehind(Math.max(0, Math.min(dvrMax, sec)));
+  // While paused the channel keeps going, so the gap to live grows.
+  useEffect(() => {
+    if (!playing) setBehind((b) => Math.min(dvrMax, b + 1));
+  }, [now]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const t = window.setTimeout(() => setLoading(false), 350);
@@ -255,7 +264,6 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
   const altProg = alt ? programAt(alt.id, now) : undefined;
 
   const m = mediaFor(p);
-  const pct = Math.min(1, Math.max(0, (now - p.start) / (p.end - p.start)));
   const caption = cc ? CAPTION_LINES[ch.lang][Math.floor(now / 5000) % 3] : null;
   const info = ref
     ? {
@@ -277,6 +285,8 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
           if ((e.target as HTMLElement).closest('input, [role="radiogroup"]')) return;
           if (e.key === 'ArrowUp' || e.key === 'PageUp') (e.preventDefault(), switchBy(-1));
           if (e.key === 'ArrowDown' || e.key === 'PageDown') (e.preventDefault(), switchBy(1));
+          if (e.key === 'ArrowLeft') (e.preventDefault(), seekBehind(behind + 10));
+          if (e.key === 'ArrowRight') (e.preventDefault(), seekBehind(behind - 10));
           if (e.key.toLowerCase() === 'm') setMuted((x) => !x);
           if (e.key.toLowerCase() === 'f') toggleFullscreen();
         }}
@@ -309,20 +319,9 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
                 hand={hand}
               />
               {!playing && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/75 p-6 text-center">
-                  <p className="label text-gold">Paused</p>
-                  <p className="max-w-md text-lg font-bold sm:text-xl">Channels don't rewind — resuming rejoins {ch.name} where it is now</p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <Button variant="primary" onClick={() => setPlaying(true)}>
-                      <Icon name="play" size={16} /> Resume
-                    </Button>
-                    {p.dayId && (
-                      <Button variant="secondary" onClick={() => nav(`/watch/${p.dayId}?t=0`)}>
-                        <Icon name="history" size={16} /> Watch from the start
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                <button onClick={() => setPlaying(true)} aria-label="Resume" className="absolute top-1/2 left-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/60 text-white hover:border-gold">
+                  <Icon name="play" size={30} />
+                </button>
               )}
             </>
           )}
@@ -339,24 +338,21 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
         {!loading && !blocked && (
           <div className={cx(fullscreen ? 'absolute inset-x-0 bottom-0' : 'relative bg-black sm:absolute sm:inset-x-0 sm:bottom-0 sm:bg-transparent')}>
             <div className="px-3 pt-3 pb-2 sm:bg-gradient-to-t sm:from-black/90 sm:via-black/70 sm:to-transparent sm:px-4 sm:pt-6">
-              {/* Programme progress: where the channel is in this slot (not seekable). */}
+              {/* DVR timeline: the whole slot; the rewindable part (up to the live edge) is seekable. */}
               <div className="flex items-center gap-2 text-[11px] text-white/75 tnum">
                 <span>{fmtTime(p.start, state.tz)}</span>
-                <span
-                  className="relative h-1 flex-1 rounded-full bg-white/20"
-                  role="progressbar"
-                  aria-label={`${p.title} progress`}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(pct * 100)}
-                >
-                  <i className={cx('absolute inset-y-0 left-0 rounded-full', onAir ? 'bg-live' : 'bg-gold')} style={{ width: `${pct * 100}%` }} />
-                </span>
+                <DvrBar p={p} now={now} behind={behind} dvrMax={dvrMax} onAir={onAir} onSeek={seekBehind} />
                 <span>{fmtTime(p.end, state.tz)}</span>
               </div>
               <div className="mt-2 flex items-center gap-0.5 sm:gap-2">
                 <CtlButton label={playing ? 'Pause' : 'Resume'} onClick={() => setPlaying((x) => !x)} disabled={a.mode === 'standby'}>
                   <Icon name={playing ? 'pause' : 'play'} size={22} />
+                </CtlButton>
+                <CtlButton label="Back 10 seconds" onClick={() => seekBehind(behind + 10)} disabled={behind >= dvrMax}>
+                  <Icon name="back10" />
+                </CtlButton>
+                <CtlButton label="Forward 10 seconds" onClick={() => seekBehind(behind - 10)} disabled={atLive}>
+                  <Icon name="fwd10" />
                 </CtlButton>
                 <CtlButton label={muted ? 'Unmute' : 'Mute'} onClick={() => setMuted((x) => !x)}>
                   <Icon name={muted ? 'mute' : 'volume'} />
@@ -368,8 +364,19 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
                   <span className="text-[11px] font-black">CH+</span>
                 </CtlButton>
                 <span className="ml-1 hidden truncate text-xs text-white/80 min-[420px]:inline sm:text-[13px]">
-                  {onAir ? <b>{a.status === 'delayed' ? `Live · ${a.delayMin} min delay` : 'Live'}</b> : a.mode === 'standby' ? 'Standing by' : 'On now'} · ends {relative(p.end, now)}
+                  {atLive ? (
+                    <>
+                      {onAir ? <b>{a.status === 'delayed' ? `Live · ${a.delayMin} min delay` : 'Live'}</b> : a.mode === 'standby' ? 'Standing by' : 'On now'} · ends {relative(p.end, now)}
+                    </>
+                  ) : (
+                    <>−{duration(behind)} behind live</>
+                  )}
                 </span>
+                {!atLive && (
+                  <button onClick={() => (setBehind(0), setPlaying(true))} className="label ml-1 rounded-[4px] bg-live px-2 py-1 text-[10px] text-white hover:brightness-110">
+                    Live
+                  </button>
+                )}
                 <div className="ml-auto flex items-center gap-1">
                   {hasData && (
                     <span className="hidden sm:inline-flex">
@@ -413,6 +420,45 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
         </div>
       )}
     </div>
+  );
+}
+
+/** DVR window for channels: how far back a viewer can rewind (this programme so far, capped). */
+const DVR_WINDOW = 4 * 3600;
+
+function DvrBar({ p, now, behind, dvrMax, onAir, onSeek }: { p: Program; now: number; behind: number; dvrMax: number; onAir: boolean; onSeek: (behindSec: number) => void }) {
+  const span = p.end - p.start;
+  const at = (t: number) => `${Math.min(100, Math.max(0, ((t - p.start) / span) * 100))}%`;
+  const edge = now; // live edge of the channel
+  const head = now - behind * 1000;
+  const from = now - dvrMax * 1000;
+  const seekTo = (clientX: number, el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    const t = p.start + ((clientX - r.left) / r.width) * span;
+    onSeek((edge - Math.max(from, Math.min(edge, t))) / 1000);
+  };
+  return (
+    <span
+      role="slider"
+      tabIndex={0}
+      aria-label="Rewind (DVR)"
+      aria-valuemin={0}
+      aria-valuemax={Math.round(dvrMax)}
+      aria-valuenow={Math.round(dvrMax - behind)}
+      aria-valuetext={behind < 5 ? 'Live' : `${duration(behind)} behind live`}
+      onClick={(e) => seekTo(e.clientX, e.currentTarget)}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowLeft') (e.preventDefault(), e.stopPropagation(), onSeek(behind + 10));
+        if (e.key === 'ArrowRight') (e.preventDefault(), e.stopPropagation(), onSeek(behind - 10));
+      }}
+      className="group relative h-1.5 flex-1 cursor-pointer rounded-full bg-white/15 transition-[height] duration-150 hover:h-2"
+    >
+      {/* rewindable range */}
+      <i className="absolute inset-y-0 rounded-full bg-white/25" style={{ left: at(from), width: `calc(${at(edge)} - ${at(from)})` }} />
+      {/* watched up to the play head */}
+      <i className={cx('absolute inset-y-0 left-0 rounded-full', onAir ? 'bg-live' : 'bg-gold')} style={{ width: at(head) }} />
+      <span className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow" style={{ left: at(head) }} />
+    </span>
   );
 }
 

@@ -14,7 +14,7 @@ import { Button, Icon, Page, SectionHeader, cx } from '../components/ui';
 import { ChannelGuide, ChannelNumber, ChannelPlayer, UpNextList, mediaFor, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
-import { ContinueRow, ForYouRow, MyListRow } from './ott';
+import { ContinueRow, ForYouRow, MyListRow, ReplaysRow } from './ott';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
 const isBreak = (p: Program) => BREAK_TITLES.includes(p.title);
@@ -27,7 +27,9 @@ export function TvHome() {
   const now = useTick(15_000);
   const ch = channelById(params.get('ch') ?? '') ?? channels[0];
   const p = programAt(ch.id, now);
-  const setCh = (id: string) => setParams({ ch: id }, { replace: true });
+  // The channel starts on a big poster; pressing it plays in place (switching channel keeps playing).
+  const [started, setStarted] = useState(params.get('play') === '1');
+  const setCh = (id: string) => setParams(started ? { ch: id, play: '1' } : { ch: id }, { replace: true });
 
   return (
     <>
@@ -43,7 +45,7 @@ export function TvHome() {
           {p && (
             <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
               <div className="min-w-0">
-                <ChannelPlayer key={`${ch.id}:${p.id}`} ch={ch} p={p} onSwitch={setCh} />
+                {started ? <ChannelPlayer key={`${ch.id}:${p.id}`} ch={ch} p={p} onSwitch={setCh} /> : <PosterStart p={p} onPlay={() => setStarted(true)} />}
                 <OnNow ch={ch} p={p} now={now} />
               </div>
               <aside>
@@ -58,7 +60,7 @@ export function TvHome() {
       <Page className="space-y-12 py-10">
         <ContinueRow />
         <MyListRow />
-        <TodayRail now={now} />
+        <ReplaysRow />
         <ForYouRow />
         <HowToWatchBand />
       </Page>
@@ -101,6 +103,21 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
   );
 }
 
+/** Big still of what's on now, with one play button. */
+function PosterStart({ p, onPlay }: { p: Program; onPlay: () => void }) {
+  return (
+    <button onClick={onPlay} className="group relative block aspect-video w-full overflow-hidden rounded-panel border border-line bg-black text-left" aria-label={`Play ${p.title}`}>
+      <img src={mediaFor(p).poster} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+      <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden />
+      <span className="absolute inset-0 flex items-center justify-center">
+        <span className="flex size-20 items-center justify-center rounded-full bg-gold text-ink shadow-2xl transition-transform duration-200 group-hover:scale-110 sm:size-24">
+          <Icon name="play" size={40} />
+        </span>
+      </span>
+    </button>
+  );
+}
+
 function OnNow({ ch, p, now }: { ch: LinearChannel; p: Program; now: number }) {
   const { state } = useApp();
   const show = showOf(p);
@@ -128,45 +145,6 @@ function OnNow({ ch, p, now }: { ch: LinearChannel; p: Program; now: number }) {
         )}
       </div>
     </div>
-  );
-}
-
-/** Today on WSOP TV: what's coming up next across all channels. */
-function TodayRail({ now }: { now: number }) {
-  const { state } = useApp();
-  const nav = useNavigate();
-  // The next programme on each channel (one card per channel keeps the row varied).
-  const list = channels
-    .map((ch) => ({ ch, p: programsFor(ch.id).find((p) => p.start > now && !isBreak(p)) }))
-    .filter((x): x is { ch: LinearChannel; p: Program } => !!x.p)
-    .sort((a, b) => a.p.start - b.p.start);
-  return (
-    <section aria-label="Coming up on WSOP TV">
-      <SectionHeader
-        title="Coming up on WSOP TV"
-        action={
-          <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
-            Schedule →
-          </Link>
-        }
-      />
-      <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
-        {list.map(({ ch, p }) => {
-          const show = showOf(p);
-          return (
-            <button key={p.id} onClick={() => nav(show ? `/shows/${show.id}` : '/schedule')} className="group min-w-0 text-left">
-              <div className="relative aspect-video overflow-hidden rounded-card border border-line transition-[border-color,transform] duration-200 group-hover:scale-[1.02] group-hover:border-line-strong">
-                <img src={mediaFor(p).poster} alt="" loading="lazy" className="size-full object-cover" />
-              </div>
-              <p className="mt-2 text-sm font-bold tnum">
-                {fmtTime(p.start, state.tz)} <span className="font-semibold text-muted">· {ch.name}</span>
-              </p>
-              <p className="truncate text-[15px] font-semibold group-hover:text-gold-strong">{p.title}</p>
-            </button>
-          );
-        })}
-      </div>
-    </section>
   );
 }
 

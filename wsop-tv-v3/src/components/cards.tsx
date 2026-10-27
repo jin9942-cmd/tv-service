@@ -47,6 +47,11 @@ export function BroadcastCard({ event, day, wide, progress, extraActions }: { ev
         <span className="absolute top-2 left-2">
           {isOnAir(status) && <LiveTag />}
         </span>
+        <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden>
+          <span className="flex size-12 items-center justify-center rounded-full bg-black/60 text-white">
+            <Icon name="play" size={22} />
+          </span>
+        </span>
         {progress !== undefined && (
           <span className="absolute inset-x-0 bottom-0 h-1 bg-white/15">
             <i className="block h-full bg-gold" style={{ width: `${Math.round(progress * 100)}%` }} />
