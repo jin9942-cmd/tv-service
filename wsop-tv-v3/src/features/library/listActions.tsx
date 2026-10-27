@@ -19,12 +19,12 @@ export function useMyList() {
 }
 
 /** Add to My List / Remove toggle used on the watch screen, event detail and TV-like contexts. */
-export function MyListButton({ kind, id, size = 'sm', className }: { kind: ListKind; id: string; size?: 'sm' | 'md'; className?: string }) {
+export function MyListButton({ kind, id, size = 'sm', className, labelClassName }: { kind: ListKind; id: string; size?: 'sm' | 'md' | 'lg'; className?: string; labelClassName?: string }) {
   const list = useMyList();
   const on = list.has(kind, id);
   return (
     <Button size={size} variant={on ? 'secondary' : 'outline'} aria-pressed={on} aria-label={on ? 'Remove from My List' : 'Add to My List'} onClick={() => list.toggle(kind, id)} className={className}>
-      <Icon name={on ? 'check' : 'plus'} size={16} /> {on ? 'In My List' : 'My List'}
+      <Icon name={on ? 'check' : 'plus'} size={16} /> <span className={labelClassName}>{on ? 'In My List' : 'My List'}</span>
     </Button>
   );
 }

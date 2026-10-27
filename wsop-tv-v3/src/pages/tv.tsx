@@ -8,6 +8,7 @@ import { dayById, hands } from '../data/mock';
 import { PLATFORMS } from '../data/platforms';
 import { thumbFor } from '../lib/media';
 import { HERO_IMAGES } from '../lib/brand';
+import { MyListButton } from '../features/library/listActions';
 import { money } from '../lib/format';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
@@ -196,6 +197,7 @@ function HeroBillboard({ ch, p, onPlay }: { ch: LinearChannel; p: Program; onPla
               Details
             </Button>
           </Link>
+          {ref && <MyListButton kind="event" id={ref.event.id} size="lg" className="px-4 sm:px-6" labelClassName="hidden sm:inline" />}
         </>
       ),
     },
@@ -235,10 +237,13 @@ function HeroBillboard({ ch, p, onPlay }: { ch: LinearChannel; p: Program; onPla
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:hidden" aria-hidden />
       </div>
       <Page className="relative flex max-w-[96rem] flex-col justify-center pt-2 pb-8 md:min-h-[min(34rem,46vw)] md:py-12">
+        {/* Every block has a fixed height, so the title and the buttons stay put when the slide changes. */}
         <div className="max-w-xl" aria-live="polite">
-          <p className="label text-gold">{sl.kicker}</p>
-          <h1 className="mt-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
-          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-text/85">
+          <p className="label truncate text-gold">{sl.kicker}</p>
+          <div className="mt-2 flex h-[4.9rem] items-end sm:h-[6.94rem]">
+            <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
+          </div>
+          <p className="mt-3 flex min-h-[2.75rem] flex-wrap content-start items-center gap-x-2 gap-y-1 text-sm font-medium text-text/85 lg:min-h-[1.25rem]">
             {sl.facts.map((x, i) => (
               <span key={i} className="inline-flex items-center gap-2">
                 {i > 0 && <span className="text-subtle">·</span>}
@@ -246,9 +251,9 @@ function HeroBillboard({ ch, p, onPlay }: { ch: LinearChannel; p: Program; onPla
               </span>
             ))}
           </p>
-          <p className="mt-3 line-clamp-2 text-[15px] text-text/75">{sl.synopsis}</p>
-          <div className="mt-6 flex flex-wrap gap-2">{sl.actions}</div>
-          {sl.note && <p className="mt-4 truncate text-xs text-muted">{sl.note}</p>}
+          <p className="mt-3 line-clamp-2 h-[2.8rem] text-[15px] leading-[1.4rem] text-text/75">{sl.synopsis}</p>
+          <div className="mt-6 flex gap-2">{sl.actions}</div>
+          <p className="mt-4 h-4 truncate text-xs text-muted">{sl.note}</p>
         </div>
         <div className="mt-8 flex items-center gap-3">
           <button onClick={() => setSlide((slide + slides.length - 1) % slides.length)} aria-label="Previous" className="rounded-full border border-line-strong p-1.5 text-muted hover:border-text hover:text-text">

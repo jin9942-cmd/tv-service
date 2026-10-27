@@ -94,7 +94,7 @@ export function Layout() {
                 key={n.to}
                 to={n.to}
                 end={'end' in n}
-                className={({ isActive }) => cx('rounded-chip px-3 py-1.5 text-[15px] font-medium transition-colors duration-150', isActive ? 'text-text' : 'text-text/70 hover:text-text')}
+                className={({ isActive }) => cx('rounded-chip px-3 py-1.5 text-[15px] font-medium whitespace-nowrap transition-colors duration-150', isActive ? 'text-text' : 'text-text/70 hover:text-text')}
               >
                 {({ isActive }) => (
                   <span className={cx('relative', isActive && 'after:absolute after:-bottom-[21px] after:left-0 after:h-[3px] after:w-full after:bg-gold')}>{n.label}</span>
@@ -106,7 +106,15 @@ export function Layout() {
             <NavLink to="/search" aria-label="Search" title="Search" className={({ isActive }) => cx('rounded-chip p-2 transition-colors duration-150', isActive ? 'text-gold' : 'text-muted hover:text-text')}>
               <Icon name="search" />
             </NavLink>
-            <Button size="sm" variant={state.tvPreview ? 'primary' : 'outline'} onClick={() => set({ tvPreview: !state.tvPreview })} aria-pressed={state.tvPreview}>
+            <NavLink
+              to="/my-list"
+              aria-label="My List"
+              title="My List"
+              className={({ isActive }) => cx('inline-flex items-center gap-1.5 rounded-chip p-2 text-sm font-medium transition-colors duration-150', isActive ? 'text-gold' : 'text-muted hover:text-text')}
+            >
+              <Icon name="plus" /> <span className="hidden xl:inline">My List</span>
+            </NavLink>
+            <Button size="sm" variant={state.tvPreview ? 'primary' : 'outline'} className="hidden sm:inline-flex" onClick={() => set({ tvPreview: !state.tvPreview })} aria-pressed={state.tvPreview}>
               <Icon name="tv" size={16} /> <span className="hidden sm:inline">TV Preview</span>
             </Button>
             {signedIn ? (
