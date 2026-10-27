@@ -2,9 +2,9 @@
 // up next, then today's schedule, the shows, the latest video and how to watch. Labels stay minimal.
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
+import { airing, channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
 import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
-import { hands } from '../data/mock';
+import { dayById, hands } from '../data/mock';
 import { PLATFORMS } from '../data/platforms';
 import { thumbFor } from '../lib/media';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
@@ -103,18 +103,31 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
   );
 }
 
-/** Big still of what's on now, with one play button. */
+/**
+ * Billboard-style preview of what's on now: the channel's footage autoplays muted behind the picture, with
+ * "Watch live" (opens the full player with sound and DVR) and "Key hands" on top.
+ */
 function PosterStart({ p, onPlay }: { p: Program; onPlay: () => void }) {
+  const { state } = useApp();
+  const m = mediaFor(p);
+  const live = airing(p, state.streamMode).mode === 'onair';
+  const ref = p.dayId ? dayById(p.dayId) : undefined;
   return (
-    <button onClick={onPlay} className="group relative block aspect-video w-full overflow-hidden rounded-panel border border-line bg-black text-left" aria-label={`Play ${p.title}`}>
-      <img src={mediaFor(p).poster} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
-      <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden />
-      <span className="absolute inset-0 flex items-center justify-center">
-        <span className="flex size-20 items-center justify-center rounded-full bg-gold text-ink shadow-2xl transition-transform duration-200 group-hover:scale-110 sm:size-24">
-          <Icon name="play" size={40} />
-        </span>
-      </span>
-    </button>
+    <div className="relative aspect-video w-full overflow-hidden rounded-panel border border-line bg-black">
+      <img src={m.poster} alt="" className="absolute inset-0 size-full object-cover" />
+      <video key={m.video} className="absolute inset-0 size-full object-cover" src={`${m.video}#t=${m.start}`} poster={m.poster} autoPlay loop muted playsInline aria-hidden />
+      <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" aria-hidden />
+      <div className="absolute inset-x-4 bottom-4 flex flex-wrap gap-2 sm:inset-x-6 sm:bottom-6">
+        <Button variant="primary" size="lg" onClick={onPlay}>
+          <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch now'}
+        </Button>
+        <Link to={ref ? `/events/${ref.event.id}` : '/highlights'}>
+          <Button variant="secondary" size="lg" tabIndex={-1}>
+            Key hands
+          </Button>
+        </Link>
+      </div>
+    </div>
   );
 }
 
