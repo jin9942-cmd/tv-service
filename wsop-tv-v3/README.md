@@ -1,0 +1,131 @@
+# WSOP TV — v3 demo (NBA TV-style channel site). Forked from wsop-tv-v2; see that README for the shared data model.
+
+A clickable demo of a sports-OTT style viewing platform for championship poker, for investors, partners and internal stakeholders.
+React + TypeScript + Tailwind CSS (v4), client-side routing, local mock data only. No backend, payments or real video.
+
+- Live: https://jin9942-cmd.github.io/tv-service/v2/ · https://tv-service-keig.vercel.app/v2/
+- Video: real poker footage under Creative Commons, streamed from Wikimedia Commons, with stills in `public/media` (see `public/media/CREDITS.md`) — not WSOP footage.
+- All players, events and results are fictional. The WSOP logo (`public/wsop-logo.webp`) is used at the WSOP team's request; it replaces the text wordmark in the header, footer, sign-in dialog and TV shells.
+
+```bash
+cd wsop-tv-v2
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # type-check + static build (dist/)
+npm run publish:vercel   # build with relative paths and copy into ../wsop-tv/public/v2 (Vercel site)
+```
+
+## Screens
+
+| Route | Screen | Highlights |
+| --- | --- | --- |
+| `#/watch/:dayId` | **Watch** — live days open the Live screen; ended days open the **replay screen** (breadcrumb, broadcast-day episodes with progress, chapters = key hands, chip counts at the playback point, no live strip / Jump to Live) | 16:9 player mock, LIVE / DELAYED / LATE START / INTERRUPTED / VOD badge, **per-table delay** (feature table 30 min, outer tables 15 min — the live edge and the "showing play from about …" note follow the table on screen), tables on hold (late start / interrupted) with a switch-back button, timeline with **hand markers** (All-in, Big Pot, Bluff, Bad Beat, Hero Fold — distinct glyph + tone) and tooltips, previous/next hand, **Jump to Live**, **overlay Off / Basic / Pro** (Pro adds stacks, hole cards, equity bar, hand history), audio tracks (English Commentary / Natural Sound / Spanish Commentary), CC, quality, volume, full screen, **multiview 1 / 2 / 4** with one audio source, side panel **Chip Counts / Current Hand / Tables** (bottom sheet on mobile; Tables shows each table's delay or state), spoiler blur + Reveal. `?clip=<handId>` opens a **free highlight** (single hand, own short timeline, end card with sign-in / plans CTA) when the full broadcast is locked |
+| `#/` | Home | **v1-style featured player** (full-width real CC footage, muted autoplay, poster when reduced motion) with the **Live channels** band (one card per table: LIVE / Delayed / Late start / Interrupted + access), **Coming up** cards with a large date and Las Vegas time, Continue Watching, Free highlights, Followed Players' Latest Hands, Featured Series, Trending Hands, **Featured players** (v1-style round avatar tiles), Archive Classics (full width) |
+| `#/live` | Live · **Tournaments** tab | **v1 layout around the full v2 player**: tournament strip on top (on air → upcoming → ended), the v2 player (real CC footage behind the Off/Basic/Pro overlays, hand markers, Jump to Live, multiview, audio/CC), event info + **Overview** figures and **Hands in this broadcast** below, and on the right the **Streams** list (per-table status, delay, access, "Now watching"), Chip Counts / Current Hand / Tables, and hand replays from the event |
+| `#/live/channels`, `#/live/channels/:id` | Live · **Channels** tab | **24/7 linear channels** (WSOP TV 1, WSOP TV 2, WSOP Español, WSOP Classics): channel strip with what's on now, the channel player (no rewind; pause → resume rejoins the channel, "Watch from the start" opens the broadcast), now/next info, **Next on** list with Remind me, and a **channel guide (EPG)** across all channels for the next 8 hours. See *Linear channels* below |
+| `#/schedule` | Schedule | **v1 layout**: venue-calendar date strip with dots for days that have broadcasts, Las Vegas (PT) start time with your time underneath, status + #event · day · buy-in, status note, Watch / Details / View; Today also lists anything still on air; empty state with "Next day with broadcasts"; Remind me, Add to calendar (mock), your-time-zone selector |
+| `#/series`, `#/events/:id` | Series & Events | Series → bracelet event → Day 1A/1B/2/3/Final Table, scoreboard (entrants, prize pool, first prize, level, players left, chip leader, champion), day list with status |
+| `#/players`, `#/players/:id` | Players | Search + nationality filter (empty state), profile with earnings, bracelets (SVG), recent results, highlight hands, Follow + alerts toggle |
+| `#/hands` | Hands & Clips | Filter chips, sort, skeleton loader |
+| `#/archive` | Archive | Classics + replays (guests see part of it) |
+| `#/account` | Account | GGPASS connection, subscription, devices (sign out one / all), Spoiler-Free Mode, default overlay/audio/captions, notifications, privacy requests, Responsible Gaming |
+| `#/auth/ggpass` | GGPASS mock | External-domain look (light theme, fake address bar): sign-in → consent (email + nickname only) → redirect back |
+| `#/plans`, `#/devices` | Plans / Devices | Monthly / Annual placeholders ("handled according to platform policy"); stream-limit device management |
+
+States covered: empty (player search, followed hands), loading (skeletons on Watch and Hands), error (High Roller outer table feed in Tables tab / multiview, with Retry), broadcast states (Main Event Final Table: Outer Table 3 late start, Outer Table 4 interrupted).
+
+### Content access badges
+
+Every card and the Watch header carry an access badge, with a lock when the current viewer can't play it yet:
+
+| Badge | Who can watch | Examples in the demo |
+| --- | --- | --- |
+| **Free** | Anyone, no account (not counted against the stream limit) | A quarter of the hands — the Home "Free highlights" row |
+| **Sign in** | Any GGPASS account in good standing (no subscription) | Some hands, the 2019 / 2024 classics, Main Event Day 1A replay |
+| **Subscribers** | Active subscription (paywall states 2–6 apply) | Live tables, other replays, most hands |
+
+Access policy: `canWatch` / `gateForAccess` in `src/state/app.tsx`; per-item levels in `src/data/mock.ts`.
+
+### Linear channels
+
+Channels sit next to the event-based Live view: each one runs a fixed 24/7 schedule (`src/data/channels.ts`, 12 h back → 36 h ahead of page load, on the :00/:30 grid).
+
+| Channel | Carries live | Fills the rest with |
+| --- | --- | --- |
+| WSOP TV 1 | Main Event Final Table (feature feed, 30-min delay) | Studio preview, Day 2/3 encores, Hand of the Day, Bracelet Moments |
+| WSOP TV 2 | $50K High Roller Final Table → Players' Championship Day 1A (joined in progress) → Day 2 | Replays of side events, High Roller Hands, studio recap |
+| WSOP Español | Main Event Final Table simulcast with Spanish commentary | Spanish studio show, replays, Lo mejor del día |
+| WSOP Classics | — (free 24/7, FAST-style) | Classic final tables edited for TV, Greatest Bluffs, Bad Beat Hall of Fame |
+
+Policies shown in the demo:
+
+- **Access per programme, checked when it airs.** Studio, highlight and classic programmes are free; live and replay programmes keep the access of the broadcast they carry (the same `gateForAccess` as everywhere else, so the Split setting applies to live slots). When a programme is locked, the player offers a channel the viewer can watch right now.
+- **Never dark.** If live coverage starts late or drops out (Demo Controls → Featured stream), the channel stands by with highlights instead of going black. A live slot whose broadcast already ended runs as an encore.
+- **No rewind.** Pause → resume rejoins the channel; "Watch from the start" / "All tables & multiview" open the full broadcast on the Watch screen.
+- **Blackout.** With *Region restricted* or *Traveling abroad* on, programmes without rights where the viewer is are blacked out (WSOP TV 2 during the High Roller when abroad); the channel carries on afterwards.
+- **Reminders** for channel programmes are kept with the other reminders (`ch:<programme id>`).
+- Home shows **On the channels now** (one card per channel with now/next); the per-table band on the billboard is now labelled **On air now**.
+
+## Demo Controls (bottom-right, collapsible)
+
+Visually separate from the product (dashed blue, monospace).
+
+- **Account state:** 1 not signed in · 2 GGPASS, no subscription (plan picker at play) · 3 active · 4 subscribed but GGPASS not linked (link screen) · 5 GGPASS restricted (support link) · 6 too many devices (device management)
+- **Featured stream:** LIVE / DELAYED / VOD / LATE START / INTERRUPTED for the Main Event Final Table (VOD turns the Home hero into a countdown; late start and interrupted show their own Home and Watch messages)
+- **Region restricted:** "This event isn't available in your region" + alternatives + Notify me
+- **Platform:** web / mobile / TV devices — limits overlay level and multiview per the parity matrix
+- **Spoiler-Free Mode** shortcut
+
+## TV Preview (10-foot UI)
+
+Open with **TV Preview** (header) or Demo Controls. The TV UI is a 1920×1080 canvas scaled into a TV frame.
+
+| Keyboard | Remote |
+| --- | --- |
+| ← ↑ → ↓ | D-pad (focus moves between the side menu and content rows; columns are remembered per row) |
+| Enter | OK |
+| Backspace | Back |
+| Esc | Close the preview |
+
+Screens (shared by every platform): Home, event detail, player, **TV sign-in** (6-digit code + QR mock, "Go to ggpass.example/activate", auto-authorizes after ~5 s). Optional 5% overscan safe-area guide.
+
+### Platform UI shells
+
+Switching the platform dropdown swaps the whole UI shell immediately (the current screen is kept so platforms can be compared). Design tokens, data and screen structure stay common; only the chrome and focus language change.
+
+| Platform | Shell | Focus | Player |
+| --- | --- | --- | --- |
+| Apple TV | Top tab bar, large 2:3 poster cards | Lift + scale + soft shadow (parallax feel) | Multiview 1/2/4, overlay Off/Basic/Pro, hand-marker jump |
+| Roku | Fixed left menu, uniform 16:9 grid | Thick square white border, almost no scaling | Multiview item disabled ("Not available on Roku"), overlay up to Basic (Pro disabled), simple trick-play bar |
+| Android TV | Collapsible left rail (icons → labels when focused) + content rows | Scale + bright border | Multiview up to 2 (4 disabled), all overlay levels |
+| Samsung / LG | Android TV shell + top system bar + colour-key hints (A/B/C/D) | Same as Android TV | Per parity matrix |
+
+Unsupported features are never hidden — they stay in place, disabled, with the reason ("Not available on Roku"). The arrow / Enter / Backspace mapping is identical on every shell (top tabs: ↑ from the first row enters the tab bar; side menus: ← from the first column).
+
+- Shell + focus tokens: `src/features/tv/tvTokens.ts` (one file)
+- Focus engine: `src/features/tv/focus.ts` · shells & screens: `src/features/tv/TvApp.tsx` · frame + parity panel: `src/features/tv/TvPreview.tsx`
+
+## Design
+
+Tokens live in `src/styles/theme.css` (colour, type, radius, motion, layout, focus ring) and are used everywhere as Tailwind utilities.
+Charcoal base, one restrained gold accent, status colours only for LIVE (red) and DELAYED (amber). No felt green, chips, cards or dice decoration. Numbers use tabular figures. Bracelets are a hand-drawn SVG icon. Copy talks about championships, the mind sport, strategy and competition — no real-money play, deposits, bonuses or betting CTAs anywhere.
+
+Accessibility: keyboard-reachable controls with a visible focus ring, skip link, ARIA roles for tabs/radios/sliders/dialogs, focus-trapped modals, CC toggle, colour contrast ≥ WCAG AA (see token comments), markers distinguished by shape as well as colour, reduced-motion support.
+
+## Poker data model (kept consistent)
+
+- Final tables are one table: their streams are camera feeds (Main / Clean / Player Cam / Overhead) on one delay; earlier days have feature + outer tables.
+- Stacks add up to chips in play (entrants × starting stack); blinds use a big-blind ante; pots and bets are sized in big blinds for each broadcast (Day 1 hundreds of chips, final tables millions).
+- Overlays and chip counts use the players at that broadcast's table; the current hand (AK vs QQ) has consistent action order, pots and equities.
+
+## Assumptions
+
+- **GGPASS SSO:** OAuth 2.0 / OIDC authorization-code flow with a consent screen; WSOP TV receives only email and nickname. New SSO users have no subscription until they pick a plan. TV uses a device-code flow (code + QR) at `ggpass.example/activate`.
+- **Account states** 4–6 (unlinked subscription, restricted GGPASS account, stream limit) are assumed product policies; the stream limit is 2 concurrent streams.
+- **Delay:** set per table — the feature table at a final table runs 30 minutes behind real time, outer tables 15; the timeline's live edge is the delayed edge of the table on screen, and chip counts / hands follow the stream.
+- **Broadcast states:** *late start* (scheduled time passed, expected start shown) and *interrupted* (temporarily off air, resumes automatically) can apply to a whole broadcast or a single table.
+- **Access levels:** free / sign-in / subscriber per content item; free clips play without an account.
+- **Platform capabilities** in the parity matrix are placeholders to be confirmed per platform SDK.
+- **Prices** are placeholders; billing follows the store/platform policy.
+- Hand types, chip counts and equity are presented as competition data, in line with the spec.
+- State lives in React only (no browser storage), so a reload resets the demo.

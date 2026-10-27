@@ -2,6 +2,7 @@
 #   /<repo>/        → wsop-tv (viewer demo)
 #   /<repo>/pitch/  → wsop-tv-pitch (app + CMS demo for internal reporting)
 #   /<repo>/v2/     → wsop-tv-v2 (WSOP TV working-title demo)
+#   /<repo>/v3/     → wsop-tv-v3 (NBA TV-style channel site)
 # One-time setup: repository Settings → Pages → Source: "GitHub Actions".
 name: Deploy demo to GitHub Pages
 
@@ -32,6 +33,7 @@ jobs:
             wsop-tv/package-lock.json
             wsop-tv-pitch/package-lock.json
             wsop-tv-v2/package-lock.json
+            wsop-tv-v3/package-lock.json
       - name: Build viewer demo (wsop-tv)
         working-directory: wsop-tv
         run: npm ci && npm run build
@@ -52,6 +54,12 @@ jobs:
         env:
           BASE_PATH: /${{ github.event.repository.name }}/v2/
       - run: rm -rf wsop-tv/dist/v2 && cp -r wsop-tv-v2/dist wsop-tv/dist/v2
+      - name: Build v3 demo (wsop-tv-v3) into /v3
+        working-directory: wsop-tv-v3
+        run: npm ci && npm run build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/v3/
+      - run: rm -rf wsop-tv/dist/v3 && cp -r wsop-tv-v3/dist wsop-tv/dist/v3
       - uses: actions/upload-pages-artifact@v3
         with:
           path: wsop-tv/dist

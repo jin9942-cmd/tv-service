@@ -1,0 +1,179 @@
+// Home billboard brought over from the v1 demo: full-width featured stream (real CC footage), the "On air now" band
+// (every table feed on air) across its lower edge, and the "Coming up" cards with a large date/time.
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import type { Day, TourEvent } from '../data/types';
+import { HERO_DAY_ID, HERO_EXPECTED_START, dayById, events, seriesById } from '../data/mock';
+import { isBroadcasting, isOnAir, tableDelay, tableStatus } from '../lib/broadcast';
+import { count } from '../lib/format';
+import { FOOTAGE, HERO_POSTER, thumbFor } from '../lib/media';
+import { VENUE_TZ, countdown, fmtCardDate, fmtTime, relative, tzAbbr } from '../lib/time';
+import { useApp, useTick } from '../state/app';
+import { useDayStatus } from './cards';
+import { BraceletIcon, Icon, StatusBadge, cx } from './ui';
+import { PRESENTATION } from '../data/policy';
+import { CardMenu, useListAction, useLongPress } from '../features/library/listActions';
+
+export function Billboard() {
+  const { state } = useApp();
+  const now = useTick(1000);
+  const hero = dayById(HERO_DAY_ID)!;
+  const status = useDayStatus(hero.day);
+  const live = isBroadcasting(status);
+  const next = events
+    .flatMap((e) => e.days.map((d) => ({ e, d })))
+    .filter((x) => x.d.status === 'upcoming')
+    .sort((a, b) => a.d.start.localeCompare(b.d.start))[0];
+  const ev = live ? hero.event : next.e;
+  const day = live ? hero.day : next.d;
+  const se = seriesById(ev.seriesId);
+  const [reduceMotion] = useState(() => {
+    try {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch {
+      return false;
+    }
+  });
+
+  return (
+    <>
+      {/* As in v1: the footage keeps its own 16:9 frame, centred on the content column (never stretched across a wide
+          screen), and all four edges fade into the page colour so there is no hard frame line. */}
+      <section className="relative isolate flex flex-col justify-end overflow-hidden" style={{ minHeight: 'min(680px, max(30rem, calc(min(100vw, 80rem) * 0.5625)))' }} aria-label="Featured">
+        <div className="hero-frame absolute top-0 left-1/2 -z-10 aspect-video w-full max-w-content -translate-x-1/2" aria-hidden>
+          <img src={HERO_POSTER} alt="" className="absolute inset-0 size-full object-cover object-center" />
+          {!reduceMotion && <video key={FOOTAGE.ft.id} className="absolute inset-0 size-full object-cover object-center" src={`${FOOTAGE.ft.url}#t=110`} poster={HERO_POSTER} muted autoPlay loop playsInline preload="metadata" />}
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(11_12_14/0.94)_0%,rgb(11_12_14/0.86)_28%,rgb(11_12_14/0.4)_48%,transparent_64%),linear-gradient(0deg,rgb(11_12_14/0.6)_0%,transparent_40%)]" />
+        </div>
+
+        <div className="mx-auto flex w-full max-w-content flex-col justify-end px-gutter pt-16 pb-12 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            {/* Live hero: no status badge or kicker — the title and Watch live say it. */}
+            {!live && (
+              <p className="flex flex-wrap items-center gap-2">
+                <StatusBadge status="upcoming" />
+                <span className="label text-text/90">No live tournaments right now · up next</span>
+              </p>
+            )}
+            <h1 className="mt-4 text-[2.5rem] leading-[1.02] font-black tracking-[-0.02em] drop-shadow-lg sm:text-display">{ev.name}</h1>
+            <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold text-text/85">
+              <span>{se.name}</span>
+              <span className="text-subtle">·</span>
+              <span className="flex items-center gap-1.5">
+                <BraceletIcon size={14} /> Event #{ev.number}
+              </span>
+              <span className="text-subtle">·</span>
+              <span>{day.label}</span>
+              {live && ev.remaining > 0 && (
+                <>
+                  <span className="text-subtle">·</span>
+                  <span className="tnum">{count(ev.remaining)} players left</span>
+                </>
+              )}
+            </p>
+            {!live && (
+              <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-text/80">
+                Starts in {countdown(Date.parse(day.start) - now)} — {fmtTime(day.start, state.tz)} your time, {fmtTime(day.start, VENUE_TZ)} in Las Vegas.
+              </p>
+            )}
+            {status === 'late' && <p className="mt-2 text-sm text-delayed">Coverage is starting late — now expected around {fmtTime(HERO_EXPECTED_START, state.tz)} your time.</p>}
+            {status === 'interrupted' && <p className="mt-2 text-sm text-live">The broadcast is temporarily off air and resumes automatically.</p>}
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link to={`/watch/${day.id}`} className="inline-flex h-12 items-center gap-2 rounded-chip bg-gold px-6 text-[15px] font-bold text-ink transition-colors duration-150 hover:bg-gold-strong">
+                <Icon name="play" size={18} /> {live ? (isOnAir(status) ? 'Watch live' : 'Open broadcast') : 'Preview & remind me'}
+              </Link>
+              <Link to={`/events/${ev.id}`} className="inline-flex h-12 items-center rounded-chip border border-white/25 bg-white/10 px-6 text-[15px] font-bold backdrop-blur transition-colors duration-150 hover:border-gold">
+                Key hands
+              </Link>
+            </div>
+          </div>
+        </div>
+
+      </section>
+      <LiveChannels />
+    </>
+  );
+}
+
+/** One card per on-air broadcast (its main feed); other tables / camera feeds are picked on the watch screen. */
+function LiveChannels() {
+  const { state } = useApp();
+  const days = events.flatMap((e) => e.days.map((d) => ({ e, d }))).filter(({ d }) => isBroadcasting(d.id === HERO_DAY_ID ? state.streamMode : d.status));
+  const ordered = days.map(({ e, d }) => ({ e, d, t: d.tables[0], i: 0 }));
+  return (
+    <section className="border-y border-line bg-surface/60" aria-label={ordered.length ? 'On air now' : 'Schedule'}>
+      <div className="mx-auto max-w-content px-gutter py-5 sm:px-6 lg:px-8">
+        <p className="label mb-3 text-text/80">{ordered.length ? 'On air now' : 'Schedule'}</p>
+        {ordered.length ? (
+          <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 [&>*]:w-auto!">
+            {ordered.slice(0, 6).map(({ e, d, t, i }) => (
+              <ChannelCard key={t.id} e={e} d={d} tableIndex={i} />
+            ))}
+          </div>
+        ) : (
+          <Link to="/schedule" className="text-sm font-semibold text-gold">
+            Nothing on air — open the schedule →
+          </Link>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ChannelCard({ e, d, tableIndex }: { e: TourEvent; d: Day; tableIndex: number }) {
+  const dayStatus = useDayStatus(d);
+  const t = d.tables[tableIndex];
+  const st = tableStatus(t, dayStatus);
+  const offline = st === 'late' || st === 'interrupted';
+  const delay = st === 'delayed' ? tableDelay(t, dayStatus) : 0;
+  return (
+    <Link to={`/watch/${d.id}`} className="group block w-56 sm:w-60">
+      <div className={cx('relative aspect-video overflow-hidden rounded-card border border-line transition-[border-color,transform] duration-200 group-hover:scale-[1.02] group-hover:border-live/70', offline && 'grayscale')}>
+        <img src={thumbFor(`feed:${t.id}`)} alt="" loading="lazy" className={cx('size-full object-cover', offline && 'opacity-50')} />
+      </div>
+      <p className="mt-2 truncate text-sm font-semibold group-hover:text-gold-strong">{e.name.replace(' World Championship', '')}</p>
+      <p className="truncate text-xs text-muted">
+        {d.label}
+        {d.tables.length > 1 ? ` · ${d.tables.length} ${d.label === 'Final Table' ? 'camera feeds' : 'tables'}` : ` · ${t.name}`}
+        {delay && !PRESENTATION ? ` · ${delay}m delay` : ''}
+      </p>
+    </Link>
+  );
+}
+
+/** v1-style upcoming card: still frame with a large date and venue time. */
+export function UpcomingCard({ e, d }: { e: TourEvent; d: Day }) {
+  const { state } = useApp();
+  const now = useTick(60_000);
+  const lp = useLongPress();
+  const listAction = useListAction('day', d.id);
+  return (
+    <div className="group relative w-64 sm:w-72" {...lp.bind}>
+    <CardMenu actions={[listAction]} openSignal={lp.signal} className="top-5 right-5" />
+    <Link to={`/watch/${d.id}`} className="block rounded-card border border-line bg-surface p-2.5 transition-colors duration-150 hover:border-line-strong">
+      <div className="relative aspect-video overflow-hidden rounded-[8px]">
+        <img src={thumbFor(`day:${d.id}`)} alt="" loading="lazy" className="size-full object-cover opacity-70 transition-transform duration-200 group-hover:scale-[1.03]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
+        <span className="absolute top-2 left-2">
+
+        </span>
+        <span className="absolute bottom-2.5 left-3">
+          <span className="label block text-[11px] text-white/85">{fmtCardDate(d.start, VENUE_TZ)}</span>
+          <span className="block text-2xl leading-tight font-black tnum">
+            {fmtTime(d.start, VENUE_TZ)} {tzAbbr(VENUE_TZ, d.start)}
+          </span>
+        </span>
+      </div>
+      <p className="mt-2.5 truncate px-0.5 text-[15px] font-semibold group-hover:text-gold-strong">
+        #{e.number} {e.name}
+      </p>
+      <p className="px-0.5 text-xs text-muted">
+        {d.label} · starts {relative(d.start, now)}
+      </p>
+      <p className="px-0.5 text-xs text-subtle">
+        {fmtTime(d.start, state.tz)} {tzAbbr(state.tz, d.start)} your time
+      </p>
+    </Link>
+    </div>
+  );
+}
