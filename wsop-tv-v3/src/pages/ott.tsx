@@ -169,7 +169,7 @@ export function TvEventDetail() {
   const keyHands = hands.filter((h) => h.eventId === e.id).sort((a, b) => b.pot - a.pot).slice(0, 4);
 
   const cta = resume
-    ? { to: `/watch/${resume.ref.day.id}`, label: `Continue ${resume.ref.day.label} · ${Math.round(resume.pct * 100)}%` }
+    ? { to: `/watch/${resume.ref.day.id}`, label: `Continue ${resume.ref.day.label}` }
     : live
       ? { to: `/watch/${live.id}`, label: `Watch ${live.label} live` }
       : first
@@ -263,7 +263,7 @@ function Episode({ e, d, pct }: { e: TourEvent; d: Day; pct?: number }) {
         <span className="block text-xs text-muted">
           {fmtDate(d.start, state.tz)} · {Math.round(d.durationMin / 60)}h · {d.tables.length} {d.label === 'Final Table' ? (d.tables.length > 1 ? 'camera feeds' : 'feed') : d.tables.length > 1 ? 'tables' : 'table'}
         </span>
-        {pct !== undefined && <span className="block text-xs text-gold-strong">{Math.round(pct * 100)}% watched</span>}
+        {pct !== undefined && <span className="block text-xs text-gold-strong">In progress</span>}
         {!playable && <span className="block text-xs text-subtle">Airs {fmtDate(d.start, state.tz)}</span>}
       </span>
       {playable && <Icon name="play" size={18} className="shrink-0 text-muted" />}

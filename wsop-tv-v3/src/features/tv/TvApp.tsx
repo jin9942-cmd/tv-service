@@ -115,10 +115,10 @@ export function TvApp({ platform }: { platform: Platform }) {
             id: 'continue',
             title: 'Continue Watching',
             hint: 'Press O for options',
-            cards: continueItems.map(({ ref, sec }, i) => ({
+            cards: continueItems.map(({ ref }, i) => ({
               id: `cw-${ref.day.id}`,
               title: ref.event.name,
-              sub: `${ref.day.label} · ${Math.round((sec / (ref.day.durationMin * 60)) * 100)}% watched`,
+              sub: `${ref.day.label} · In progress`,
               hue: 200 + i * 15,
               onSelect: () => openDay(ref.day.id),
             })),
