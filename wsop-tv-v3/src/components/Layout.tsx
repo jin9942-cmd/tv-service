@@ -106,15 +106,7 @@ export function Layout() {
             <NavLink to="/search" aria-label="Search" title="Search" className={({ isActive }) => cx('rounded-chip p-2 transition-colors duration-150', isActive ? 'text-gold' : 'text-muted hover:text-text')}>
               <Icon name="search" />
             </NavLink>
-            <NavLink
-              to="/my-list"
-              aria-label="My List"
-              title="My List"
-              className={({ isActive }) => cx('inline-flex items-center gap-1.5 rounded-chip p-2 text-sm font-medium transition-colors duration-150', isActive ? 'text-gold' : 'text-muted hover:text-text')}
-            >
-              <Icon name="plus" /> <span className="hidden xl:inline">My List</span>
-            </NavLink>
-            <Button size="sm" variant={state.tvPreview ? 'primary' : 'outline'} className="hidden sm:inline-flex" onClick={() => set({ tvPreview: !state.tvPreview })} aria-pressed={state.tvPreview}>
+            <Button size="sm" variant={state.tvPreview ? 'primary' : 'outline'} onClick={() => set({ tvPreview: !state.tvPreview })} aria-pressed={state.tvPreview}>
               <Icon name="tv" size={16} /> <span className="hidden sm:inline">TV Preview</span>
             </Button>
             {signedIn ? (
