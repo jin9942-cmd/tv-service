@@ -7,12 +7,13 @@ import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '..
 import { dayById, hands } from '../data/mock';
 import { PLATFORMS } from '../data/platforms';
 import { thumbFor } from '../lib/media';
+import { HERO_IMAGES } from '../lib/brand';
 import { money } from '../lib/format';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
 import { HandCard } from '../components/cards';
 import { Button, Icon, Page, SectionHeader, cx } from '../components/ui';
-import { ChannelGuide, ChannelNumber, ChannelPlayer, mediaFor, useProgramReminder } from '../features/channels/Channels';
+import { ChannelGuide, ChannelNumber, ChannelPlayer, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
 import { ClassicsRow, ContinueRow, ForYouRow, ReplaysRow } from './ott';
@@ -154,12 +155,12 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
 }
 
 /**
- * Home hero, streaming-service style: the channel's footage plays muted edge to edge, and the title, a line of facts,
- * a short synopsis and the actions sit on top of it. "Watch live" opens the full player (sound, DVR, mini player).
+ * Home banner, wsop.com style: a still photo (no autoplay), with the title, a line of facts, a short synopsis and the
+ * actions beside it. Two slides — what's on the channel now, and the archive. "Watch live" opens the full player.
  */
 function HeroBillboard({ ch, p, onPlay }: { ch: LinearChannel; p: Program; onPlay: () => void }) {
   const { state } = useApp();
-  const m = mediaFor(p);
+  const [slide, setSlide] = useState(0);
   const live = airing(p, state.streamMode).mode === 'onair';
   const ref = p.dayId ? dayById(p.dayId) : undefined;
   const show = showOf(p);
@@ -171,46 +172,96 @@ function HeroBillboard({ ch, p, onPlay }: { ch: LinearChannel; p: Program; onPla
     ref ? ref.event.game : null,
     ch.name,
     `${fmtTime(p.start, state.tz)} – ${fmtTime(p.end, state.tz)}`,
-  ].filter(Boolean);
+  ].filter(Boolean) as string[];
   const synopsis = ref
     ? `${ref.event.entrants.toLocaleString('en-US')} entered. ${live && ref.day.label === 'Final Table' ? `${ref.event.remaining} remain, playing for ${money(ref.event.firstPrize)} and the bracelet.` : 'Every key hand of the day, from the feature table.'}`
     : show?.description ?? p.subtitle;
   const details = ref ? `/events/${ref.event.id}` : show ? `/shows/${show.id}` : '/schedule';
+  const slides = [
+    {
+      img: HERO_IMAGES.table,
+      pos: '30% 25%',
+      kicker: live ? `Live now · ${ch.name}` : `On now · ${ch.name}`,
+      title,
+      facts,
+      synopsis,
+      note: next ? `Next ${fmtTime(next.start, state.tz)} · ${next.title}` : null,
+      actions: (
+        <>
+          <Button variant="primary" size="lg" onClick={onPlay}>
+            <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch now'}
+          </Button>
+          <Link to={details}>
+            <Button variant="secondary" size="lg" tabIndex={-1}>
+              Details
+            </Button>
+          </Link>
+        </>
+      ),
+    },
+    {
+      img: HERO_IMAGES.portrait,
+      pos: '50% 20%',
+      kicker: 'WSOP Archive',
+      title: 'Every final table, on demand',
+      facts: ['Classics', 'Full broadcasts', 'Key hands'],
+      synopsis: 'Past WSOP final tables and every broadcast day, in one place — pick up any event from Day 1 to the bracelet.',
+      note: null,
+      actions: (
+        <>
+          <Link to="/archive">
+            <Button variant="primary" size="lg" tabIndex={-1}>
+              Browse the archive
+            </Button>
+          </Link>
+          <Link to="/highlights">
+            <Button variant="secondary" size="lg" tabIndex={-1}>
+              Highlights
+            </Button>
+          </Link>
+        </>
+      ),
+    },
+  ];
+  const sl = slides[slide];
   return (
-    <div className="relative h-[min(78vh,56.25vw)] min-h-[26rem] w-full overflow-hidden bg-black">
-      <img src={m.poster} alt="" className="absolute inset-0 size-full object-cover" />
-      <video key={m.video} className="absolute inset-0 size-full object-cover" src={`${m.video}#t=${m.start}`} poster={m.poster} autoPlay loop muted playsInline aria-hidden />
-      <div className="absolute inset-0 bg-gradient-to-r from-bg/95 via-bg/55 to-transparent" aria-hidden />
-      <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent" aria-hidden />
-      <Page className="relative flex h-full max-w-[96rem] flex-col justify-end pb-10 sm:pb-14">
-        <div className="max-w-2xl">
-          <h1 className="text-[2.5rem] leading-[1.02] font-black tracking-tight drop-shadow-lg sm:text-display">{title}</h1>
-          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-text/85">
-            {facts.map((x, i) => (
+    <div className="relative overflow-hidden bg-black" aria-roledescription="carousel" aria-label="Featured">
+      {/* Photo: on top on phones, on the right on wider screens, fading into the black. */}
+      <div className="relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-0 md:aspect-auto md:w-[66%]">
+        <img key={sl.img} src={sl.img} alt="" className="size-full object-cover" style={{ objectPosition: sl.pos }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:bg-gradient-to-r md:from-black md:via-black/30 md:to-transparent" aria-hidden />
+        <div className="absolute inset-0 hidden bg-gradient-to-t from-black/70 via-transparent to-transparent md:block" aria-hidden />
+      </div>
+      <Page className="relative flex max-w-[96rem] flex-col justify-center pt-2 pb-8 md:min-h-[min(34rem,46vw)] md:py-12">
+        <div className="max-w-xl" aria-live="polite">
+          <p className="label text-gold">{sl.kicker}</p>
+          <h1 className="mt-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-text/85">
+            {sl.facts.map((x, i) => (
               <span key={i} className="inline-flex items-center gap-2">
                 {i > 0 && <span className="text-subtle">·</span>}
                 {x}
               </span>
             ))}
           </p>
-          <p className="mt-3 line-clamp-2 max-w-xl text-[15px] text-text/80">{synopsis}</p>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Button variant="primary" size="lg" onClick={onPlay}>
-              <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch now'}
-            </Button>
-            <Link to={details}>
-              <Button variant="secondary" size="lg" tabIndex={-1}>
-                Details
-              </Button>
-            </Link>
+          <p className="mt-3 line-clamp-2 text-[15px] text-text/75">{sl.synopsis}</p>
+          <div className="mt-6 flex flex-wrap gap-2">{sl.actions}</div>
+          {sl.note && <p className="mt-4 truncate text-xs text-muted">{sl.note}</p>}
+        </div>
+        <div className="mt-8 flex items-center gap-3">
+          <button onClick={() => setSlide((slide + slides.length - 1) % slides.length)} aria-label="Previous" className="rounded-full border border-line-strong p-1.5 text-muted hover:border-text hover:text-text">
+            <Icon name="back" size={16} />
+          </button>
+          <div className="flex gap-1.5">
+            {slides.map((x, i) => (
+              <button key={i} onClick={() => setSlide(i)} aria-label={`Slide ${i + 1}: ${x.kicker}`} aria-current={i === slide} className={cx('h-1 rounded-full transition-all duration-200', i === slide ? 'w-8 bg-gold' : 'w-4 bg-line-strong hover:bg-muted')} />
+            ))}
           </div>
+          <button onClick={() => setSlide((slide + 1) % slides.length)} aria-label="Next" className="rounded-full border border-line-strong p-1.5 text-muted hover:border-text hover:text-text">
+            <Icon name="chevron" size={16} />
+          </button>
         </div>
       </Page>
-      {next && (
-        <p className="absolute right-4 bottom-10 hidden max-w-xs truncate rounded-chip bg-black/55 px-3 py-1.5 text-xs text-text/85 backdrop-blur sm:block lg:right-8 lg:bottom-14">
-          Next {fmtTime(next.start, state.tz)} · {next.title}
-        </p>
-      )}
     </div>
   );
 }

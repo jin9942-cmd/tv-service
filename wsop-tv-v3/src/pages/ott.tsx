@@ -134,12 +134,10 @@ export function ForYouRow() {
   const fromFollowed = hands.filter((h) => h.playerIds.some((p) => followed.includes(p))).sort((a, b) => b.views - a.views);
   const personal = fromFollowed.length >= 2;
   const list = (personal ? fromFollowed : [...hands].sort((a, b) => b.views - a.views)).slice(0, 3);
-  const names = followed.slice(0, 2).map((id) => playerById(id).name.split(' ').slice(-1)[0]);
   return (
     <section aria-label="Highlights">
       <SectionHeader
         title="Highlights"
-        kicker={personal ? `From players you follow · ${names.join(' · ')}` : 'Most watched hands'}
         action={
           <Link to="/highlights" className="text-sm font-semibold text-muted hover:text-text">
             All highlights →

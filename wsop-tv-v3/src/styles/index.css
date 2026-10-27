@@ -12,6 +12,14 @@
   body {
     min-height: 100dvh;
   }
+  /* wsop.com titles: condensed, uppercase. */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.005em;
+  }
   /* One visible focus style everywhere (keyboard only). */
   :focus-visible {
     outline: none;

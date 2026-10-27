@@ -43,7 +43,7 @@ export function StatusBadge({ status, delayMin = 30, size = 'md' }: { status: St
   if (status === 'delayed')
     return (
       <span className={cx(base, 'bg-delayed text-ink')} title={`Broadcast delayed by ${delayMin} minutes for competition integrity`}>
-        <i className="size-1.5 rounded-full bg-ink" aria-hidden /> Delayed {delayMin} min
+        <i className="size-1.5 rounded-full bg-black/80" aria-hidden /> Delayed {delayMin} min
       </span>
     );
   if (status === 'upcoming') return <span className={cx(base, 'border border-line-strong text-muted')}>Upcoming</span>;

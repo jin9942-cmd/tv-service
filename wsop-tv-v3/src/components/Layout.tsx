@@ -83,21 +83,21 @@ export function Layout() {
         </div>
       )}
 
-      <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-line bg-black">
         <div className="mx-auto flex h-header max-w-content items-center gap-4 px-gutter sm:px-6 lg:px-8">
           <NavLink to="/" aria-label="WSOP TV home" className="shrink-0">
             <Wordmark />
           </NavLink>
-          <nav aria-label="Main" className="hidden flex-1 items-center gap-0.5 xl:flex">
+          <nav aria-label="Main" className="ml-4 hidden flex-1 items-center gap-1 lg:flex">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}
                 end={'end' in n}
-                className={({ isActive }) => cx('rounded-chip px-2.5 py-1.5 text-[13.5px] font-semibold transition-colors duration-150', isActive ? 'text-text' : 'text-muted hover:text-text')}
+                className={({ isActive }) => cx('rounded-chip px-3 py-1.5 text-[15px] font-medium transition-colors duration-150', isActive ? 'text-text' : 'text-text/70 hover:text-text')}
               >
                 {({ isActive }) => (
-                  <span className={cx('relative', isActive && 'after:absolute after:-bottom-[13px] after:left-0 after:h-0.5 after:w-full after:bg-gold')}>{n.label}</span>
+                  <span className={cx('relative', isActive && 'after:absolute after:-bottom-[21px] after:left-0 after:h-[3px] after:w-full after:bg-gold')}>{n.label}</span>
                 )}
               </NavLink>
             ))}
@@ -116,13 +116,13 @@ export function Layout() {
                 Sign in
               </Button>
             )}
-            <button className="rounded-chip p-2 text-muted hover:text-text xl:hidden" aria-label="Open menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}>
+            <button className="rounded-chip p-2 text-muted hover:text-text lg:hidden" aria-label="Open menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}>
               <Icon name="menu" />
             </button>
           </div>
         </div>
         {menu && (
-          <nav aria-label="Main (menu)" className="border-t border-line bg-surface xl:hidden">
+          <nav aria-label="Main (menu)" className="border-t border-line bg-surface lg:hidden">
             <ul className="mx-auto grid max-w-content grid-cols-2 gap-1 px-gutter py-3 sm:grid-cols-4 sm:px-6">
               {[...NAV, { to: '/search', label: 'Search', icon: 'search' }, { to: '/my-list', label: 'My List', icon: 'plus' }, { to: '/account', label: 'Account', icon: 'user' }].map((n) => (
                 <li key={n.to}>
