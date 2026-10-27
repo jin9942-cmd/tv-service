@@ -116,7 +116,7 @@ export function TvArchive() {
 
       <section aria-label="Classics">
         <SectionHeader title="Classics" kicker="Legendary final tables" />
-        <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 [&>*]:w-auto!">
+        <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-4 [&>*]:w-auto!">
           {classics.map((c) => (
             <ArchiveCard key={c.id} item={c} />
           ))}

@@ -16,7 +16,7 @@ import type { Day, TourEvent } from '../data/types';
 import { NotFound } from './NotFound';
 
 // Three big cards per row; every card plays when pressed.
-const grid = 'grid grid-cols-1 gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3 [&>*]:w-auto! [&>*]:min-w-0';
+const grid = 'grid grid-cols-1 gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-4 [&>*]:w-auto! [&>*]:min-w-0';
 
 /** Broadcast days the viewer has started and not finished, most watched first. */
 function useInProgress() {
@@ -45,7 +45,7 @@ export function ContinueRow() {
     <section aria-label="Continue watching">
       <SectionHeader title="Continue watching" />
       <div className={grid}>
-        {items.slice(0, 3).map(({ ref, sec, pct }) => (
+        {items.slice(0, 4).map(({ ref, sec, pct }) => (
           <BroadcastCard key={ref.day.id} event={ref.event} day={ref.day} progress={pct} extraActions={[{ label: 'Remove from Continue Watching', icon: 'close', onSelect: () => remove(ref.day.id, sec) }]} />
         ))}
       </div>
@@ -69,7 +69,7 @@ export function MyListRow() {
       <div className={grid}>
         {[...state.myList]
           .sort((a, b) => b.addedAt - a.addedAt)
-          .slice(0, 3)
+          .slice(0, 4)
           .map((x) => (
             <ListItemCard key={x.kind + x.id} item={x} />
           ))}
@@ -80,7 +80,7 @@ export function MyListRow() {
 
 /** Classics — legendary final tables, newest first; each plays when pressed. */
 export function ClassicsRow() {
-  const list = [...archive].sort((a, b) => b.year - a.year).slice(0, 3);
+  const list = [...archive].sort((a, b) => b.year - a.year).slice(0, 4);
   return (
     <section aria-label="Classics">
       <SectionHeader
@@ -107,7 +107,7 @@ export function ReplaysRow() {
   const latest = events
     .flatMap((e) => e.days.filter((d) => d.status === 'vod' && !started.has(d.id)).map((d) => ({ e, d })))
     .sort((a, b) => b.d.start.localeCompare(a.d.start))
-    .slice(0, 3);
+    .slice(0, 4);
   return (
     <section aria-label="Latest replays">
       <SectionHeader
@@ -133,7 +133,7 @@ export function ForYouRow() {
   const followed = signedIn ? Object.keys(state.followed) : [];
   const fromFollowed = hands.filter((h) => h.playerIds.some((p) => followed.includes(p))).sort((a, b) => b.views - a.views);
   const personal = fromFollowed.length >= 2;
-  const list = (personal ? fromFollowed : [...hands].sort((a, b) => b.views - a.views)).slice(0, 3);
+  const list = (personal ? fromFollowed : [...hands].sort((a, b) => b.views - a.views)).slice(0, 4);
   return (
     <section aria-label="Highlights">
       <SectionHeader

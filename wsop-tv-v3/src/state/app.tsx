@@ -94,7 +94,7 @@ const INITIAL: AppState = {
     { id: 'd3', name: 'Living Room Apple TV', kind: 'tv', lastActive: 'Yesterday', streaming: true },
     { id: 'd4', name: 'Pixel 8', kind: 'mobile', lastActive: '3 days ago' },
   ],
-  progress: { 'lv-main-day3': 0.62 * 660 * 60, 'lv-mm-finaltable': 0.31 * 480 * 60, 'lv-main-day2': 0.88 * 660 * 60 },
+  progress: { 'lv-main-day3': 0.62 * 660 * 60, 'lv-mm-finaltable': 0.31 * 480 * 60, 'lv-main-day2': 0.88 * 660 * 60, 'classic-a1-finaltable': 0.45 * (9 * 3600 + 1200) },
   paidTier: PRESENTATION ? 'premium' : 'basic',
   includedFrom: 'basic',
   wsopPlusRecord: null,
