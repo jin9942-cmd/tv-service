@@ -11,10 +11,10 @@ import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
 import { HandCard } from '../components/cards';
 import { Button, Icon, Page, SectionHeader, cx } from '../components/ui';
-import { ChannelGuide, ChannelNumber, ChannelPlayer, UpNextList, mediaFor, useProgramReminder } from '../features/channels/Channels';
+import { ChannelGuide, ChannelNumber, ChannelPlayer, mediaFor, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
-import { ContinueRow, ForYouRow, MyListRow, ReplaysRow } from './ott';
+import { ClassicsRow, ContinueRow, ForYouRow, ReplaysRow } from './ott';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
 const isBreak = (p: Program) => BREAK_TITLES.includes(p.title);
@@ -43,14 +43,10 @@ export function TvHome() {
           </div>
           <ChannelTabs active={ch.id} now={now} onSelect={setCh} />
           {p && (
-            <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-              <div className="min-w-0">
-                {started ? <ChannelPlayer key={`${ch.id}:${p.id}`} ch={ch} p={p} onSwitch={setCh} /> : <PosterStart p={p} onPlay={() => setStarted(true)} />}
-                <OnNow ch={ch} p={p} now={now} />
-              </div>
-              <aside>
-                <UpNextList ch={ch} now={now} />
-              </aside>
+            // Full width: the broadcast is the hero. What's next is one line under it (the full guide is in Schedule).
+            <div className="mt-4 min-w-0">
+              {started ? <ChannelPlayer key={`${ch.id}:${p.id}`} ch={ch} p={p} onSwitch={setCh} /> : <PosterStart p={p} onPlay={() => setStarted(true)} />}
+              <OnNow ch={ch} p={p} now={now} />
             </div>
           )}
         </Page>
@@ -59,7 +55,7 @@ export function TvHome() {
       {/* Home rows (max six; personal rows only appear when they have something). */}
       <Page className="space-y-12 py-10">
         <ContinueRow />
-        <MyListRow />
+        <ClassicsRow />
         <ReplaysRow />
         <ForYouRow />
         <HowToWatchBand />
@@ -134,10 +130,17 @@ function PosterStart({ p, onPlay }: { p: Program; onPlay: () => void }) {
 function OnNow({ ch, p, now }: { ch: LinearChannel; p: Program; now: number }) {
   const { state } = useApp();
   const show = showOf(p);
+  const next = programsFor(ch.id).find((x) => x.start >= p.end && !isBreak(x));
   return (
     <div className="mt-4">
       <p className="text-xs text-muted tnum">
         On now · {ch.name} · {fmtTime(p.start, state.tz)} – {fmtTime(p.end, state.tz)} · ends {relative(p.end, now)}
+        {next && (
+          <>
+            {' '}
+            · <span className="text-text/80">Next {fmtTime(next.start, state.tz)} {next.title}</span>
+          </>
+        )}
       </p>
       <h2 className="mt-1 text-2xl font-black tracking-tight">{p.title}</h2>
       <p className="mt-1 text-sm text-muted">{p.subtitle}</p>

@@ -131,7 +131,7 @@ export function ArchiveCard({ item }: { item: ArchiveItem }) {
   const w = playerById(item.winnerId);
   const play = () => {
     const gate = gateForAccess(item.access, state);
-    if (gate === 'ok') return toast('Archive playback opens the same player (demo)');
+    if (gate === 'ok') return nav(`/classics/${item.id}`);
     if (gate === 'login') return requireLogin({ reason: item.access === 'signin' ? 'Sign in free with GGPASS to watch this classic.' : 'Sign in to watch this classic.' });
     if (gate === 'plans' || gate === 'expired') return nav('/plans', { state: { returnTo: '/archive', access: item.access } });
     if (gate === 'link') return toast('Link your GGPASS account to watch (see Account)');

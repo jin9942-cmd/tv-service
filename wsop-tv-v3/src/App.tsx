@@ -3,7 +3,7 @@ import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
 import { Live, LiveChannels, WatchRoute } from './pages/Live';
 import { TvHome, TvHowToWatch, TvSchedule, TvShowDetail, TvShows } from './pages/tv';
-import { TvArchive, TvHighlights } from './pages/poker';
+import { TvArchive, TvClassic, TvHighlights } from './pages/poker';
 import { TvEventDetail } from './pages/ott';
 import { SeriesList } from './pages/Series';
 import { Players, PlayerProfile } from './pages/Players';
@@ -44,6 +44,7 @@ export default function App() {
             <Route path="hands" element={<Hands />} />
             <Route path="archive" element={<TvArchive />} />
             <Route path="highlights" element={<TvHighlights />} />
+            <Route path="classics/:classicId" element={<TvClassic />} />
             <Route path="account" element={<Account />} />
             <Route path="plans" element={<Plans />} />
             <Route path="devices" element={<Devices />} />

@@ -2,14 +2,14 @@
 // (not genres), and an event page that works like a series page (episodes = broadcast days). Kept calm: a row only
 // appears when it has something, four cards per row, no status labels on artwork.
 import { Link, useParams } from 'react-router-dom';
-import { dayById, eventById, events, hands, playerById, seriesById } from '../data/mock';
+import { archive, dayById, eventById, events, hands, playerById, seriesById } from '../data/mock';
 import { COMPLETE_THRESHOLD } from '../data/policy';
 import { money } from '../lib/format';
 import { thumbFor } from '../lib/media';
 import { fmtDate } from '../lib/time';
 import { isOnAir } from '../lib/broadcast';
 import { useApp } from '../state/app';
-import { BroadcastCard, HandCard, useDayStatus } from '../components/cards';
+import { ArchiveCard, BroadcastCard, HandCard, useDayStatus } from '../components/cards';
 import { BraceletIcon, Button, Icon, LiveTag, Page, SectionHeader, Spoiler, cx } from '../components/ui';
 import { ListItemCard, MyListButton } from '../features/library/MyList';
 import type { Day, TourEvent } from '../data/types';
@@ -78,6 +78,28 @@ export function MyListRow() {
   );
 }
 
+/** Classics — legendary final tables, newest first; each plays when pressed. */
+export function ClassicsRow() {
+  const list = [...archive].sort((a, b) => b.year - a.year).slice(0, 3);
+  return (
+    <section aria-label="Classics">
+      <SectionHeader
+        title="Classics"
+        action={
+          <Link to="/archive" className="text-sm font-semibold text-muted hover:text-text">
+            Archive →
+          </Link>
+        }
+      />
+      <div className={grid}>
+        {list.map((a) => (
+          <ArchiveCard key={a.id} item={a} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /** Latest full replays — ready to play (replaces "coming up", which can't be played yet). */
 export function ReplaysRow() {
   // Skip what's already in Continue Watching, so the same broadcast isn't shown twice.
@@ -114,10 +136,10 @@ export function ForYouRow() {
   const list = (personal ? fromFollowed : [...hands].sort((a, b) => b.views - a.views)).slice(0, 3);
   const names = followed.slice(0, 2).map((id) => playerById(id).name.split(' ').slice(-1)[0]);
   return (
-    <section aria-label={personal ? 'From players you follow' : 'Popular hands'}>
+    <section aria-label="Highlights">
       <SectionHeader
-        title={personal ? 'From players you follow' : 'Popular hands'}
-        kicker={personal ? names.join(' · ') : undefined}
+        title="Highlights"
+        kicker={personal ? `From players you follow · ${names.join(' · ')}` : 'Most watched hands'}
         action={
           <Link to="/highlights" className="text-sm font-semibold text-muted hover:text-text">
             All highlights →
