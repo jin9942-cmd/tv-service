@@ -14,6 +14,7 @@ import { Button, Icon, Page, SectionHeader, cx } from '../components/ui';
 import { ChannelGuide, ChannelNumber, ChannelPlayer, UpNextList, mediaFor, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
+import { ContinueRow, ForYouRow, MyListRow } from './ott';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
 const isBreak = (p: Program) => BREAK_TITLES.includes(p.title);
@@ -53,7 +54,10 @@ export function TvHome() {
         </Page>
       </section>
 
+      {/* Home rows (max six; personal rows only appear when they have something). */}
       <Page className="space-y-12 py-10">
+        <ContinueRow />
+        <MyListRow />
         <TodayRail now={now} />
         <section aria-label="Shows">
           <SectionHeader
@@ -65,29 +69,12 @@ export function TvHome() {
             }
           />
           <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
-            {shows.slice(0, 8).map((s) => (
+            {shows.slice(0, 4).map((s) => (
               <ShowCard key={s.id} s={s} now={now} />
             ))}
           </div>
         </section>
-        <section aria-label="Latest video">
-          <SectionHeader
-            title="Latest video"
-            action={
-              <Link to="/video" className="text-sm font-semibold text-muted hover:text-text">
-                All video →
-              </Link>
-            }
-          />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:w-auto!">
-            {[...hands]
-              .sort((a, b) => b.views - a.views)
-              .slice(0, 4)
-              .map((h) => (
-                <HandCard key={h.id} hand={h} />
-              ))}
-          </div>
-        </section>
+        <ForYouRow />
         <HowToWatchBand />
       </Page>
     </>
@@ -154,11 +141,11 @@ function OnNow({ ch, p, now }: { ch: LinearChannel; p: Program; now: number }) {
 function TodayRail({ now }: { now: number }) {
   const { state } = useApp();
   const nav = useNavigate();
+  // The next programme on each channel (one card per channel keeps the row varied).
   const list = channels
-    .flatMap((ch) => programsFor(ch.id).map((p) => ({ ch, p })))
-    .filter(({ p }) => p.start > now && !isBreak(p))
-    .sort((a, b) => a.p.start - b.p.start)
-    .slice(0, 4);
+    .map((ch) => ({ ch, p: programsFor(ch.id).find((p) => p.start > now && !isBreak(p)) }))
+    .filter((x): x is { ch: LinearChannel; p: Program } => !!x.p)
+    .sort((a, b) => a.p.start - b.p.start);
   return (
     <section aria-label="Coming up on WSOP TV">
       <SectionHeader

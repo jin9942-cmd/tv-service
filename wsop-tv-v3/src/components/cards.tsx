@@ -54,7 +54,7 @@ export function BroadcastCard({ event, day, wide, progress, extraActions }: { ev
         )}
       </Art>
       <p className="mt-2 truncate text-[15px] font-semibold group-hover:text-gold-strong">
-        {event.name} · {day.label}
+        {event.name.replace(' World Championship', '')} · {day.label}
       </p>
       <p className="truncate text-xs text-muted">
         {seriesById(event.seriesId).name} · {status === 'upcoming' ? fmtDateTime(day.start, state.tz) : `Event #${event.number}`}

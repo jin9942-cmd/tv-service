@@ -4,7 +4,8 @@ import { Layout } from './components/Layout';
 import { Live, LiveChannels, WatchRoute } from './pages/Live';
 import { TvHome, TvHowToWatch, TvSchedule, TvShowDetail, TvShows } from './pages/tv';
 import { TvArchive, TvHighlights } from './pages/poker';
-import { SeriesList, EventDetail } from './pages/Series';
+import { TvEventDetail } from './pages/ott';
+import { SeriesList } from './pages/Series';
 import { Players, PlayerProfile } from './pages/Players';
 import { Hands } from './pages/Hands';
 import { Account } from './pages/Account';
@@ -37,7 +38,7 @@ export default function App() {
             <Route path="video" element={<Hands />} />
             <Route path="how-to-watch" element={<TvHowToWatch />} />
             <Route path="series" element={<SeriesList />} />
-            <Route path="events/:eventId" element={<EventDetail />} />
+            <Route path="events/:eventId" element={<TvEventDetail />} />
             <Route path="players" element={<Players />} />
             <Route path="players/:playerId" element={<PlayerProfile />} />
             <Route path="hands" element={<Hands />} />
