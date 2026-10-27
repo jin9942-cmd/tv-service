@@ -3,10 +3,10 @@ import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
 import { Live, LiveChannels, WatchRoute } from './pages/Live';
 import { TvHome, TvHowToWatch, TvSchedule, TvShowDetail, TvShows } from './pages/tv';
+import { TvArchive, TvHighlights } from './pages/poker';
 import { SeriesList, EventDetail } from './pages/Series';
 import { Players, PlayerProfile } from './pages/Players';
 import { Hands } from './pages/Hands';
-import { Archive } from './pages/Archive';
 import { Account } from './pages/Account';
 import { NotFound } from './pages/NotFound';
 import { GGPassFlow } from './features/auth/GGPassFlow';
@@ -41,7 +41,8 @@ export default function App() {
             <Route path="players" element={<Players />} />
             <Route path="players/:playerId" element={<PlayerProfile />} />
             <Route path="hands" element={<Hands />} />
-            <Route path="archive" element={<Archive />} />
+            <Route path="archive" element={<TvArchive />} />
+            <Route path="highlights" element={<TvHighlights />} />
             <Route path="account" element={<Account />} />
             <Route path="plans" element={<Plans />} />
             <Route path="devices" element={<Devices />} />

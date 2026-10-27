@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
-import { airingsOf, showById, showOf, shows, type Show } from '../data/shows';
+import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
 import { hands } from '../data/mock';
 import { PLATFORMS } from '../data/platforms';
 import { thumbFor } from '../lib/media';
@@ -296,7 +296,15 @@ function ScheduleRow({ ch, p, now }: { ch: LinearChannel; p: Program; now: numbe
             p.title
           )}
         </span>
-        <span className="block truncate text-xs text-muted">{isNow ? `On now · ends ${relative(p.end, now)}` : p.subtitle}</span>
+        <span className="block truncate text-xs text-muted">
+          {isNow ? `On now · ends ${relative(p.end, now)}` : p.subtitle}
+          {commentaryFor(p) && (
+            <span className="block truncate text-subtle sm:inline">
+              <span className="hidden sm:inline"> · </span>
+              {commentaryFor(p)}
+            </span>
+          )}
+        </span>
       </span>
       {isNow ? (
         <Link to={`/?ch=${ch.id}`}>

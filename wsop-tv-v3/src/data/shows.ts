@@ -113,3 +113,12 @@ export const showById = (id: string) => shows.find((s) => s.id === id);
 export const airingsOf = (s: Show) => programs.filter(s.match).sort((a, b) => a.start - b.start);
 /** The show a schedule slot belongs to (if any). */
 export const showOf = (p: Program) => shows.find((s) => s.match(p));
+
+/** Who's on the call (fictional commentary teams), as poker schedules list it. */
+export function commentaryFor(p: Program): string | null {
+  if (p.channelId === 'wsop-es') return p.kind === 'live' || p.kind === 'replay' ? 'Comentarios: Marta Ríos y Pablo Vega' : p.kind === 'studio' ? 'Presenta: Marta Ríos' : null;
+  if (p.kind === 'live' || p.kind === 'replay') return `Commentary: ${p.channelId === 'wsop2' ? 'Sam Okoye & Jules Laurent' : 'Ava Marsh & Leo Grant'}`;
+  if (p.kind === 'studio') return 'Host: Ava Marsh';
+  if (p.kind === 'classic') return 'Original broadcast commentary';
+  return null;
+}

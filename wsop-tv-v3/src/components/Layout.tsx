@@ -11,14 +11,14 @@ import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data
 
 // v3 (NBA TV-style): the channel is the product.
 export const NAV = [
-  { to: '/', label: 'Watch Live', icon: 'play', end: true },
+  { to: '/', label: 'Home', icon: 'star', end: true },
   { to: '/schedule', label: 'Schedule', icon: 'calendar' },
+  { to: '/highlights', label: 'Highlights', icon: 'grid4' },
+  { to: '/archive', label: 'Archive', icon: 'grid2' },
   { to: '/shows', label: 'Shows', icon: 'layers' },
-  { to: '/video', label: 'Video', icon: 'grid4' },
-  { to: '/how-to-watch', label: 'How to Watch', icon: 'tv' },
 ] as const;
 
-const MOBILE_NAV = ['/', '/schedule', '/shows', '/video'];
+const MOBILE_NAV = ['/', '/schedule', '/highlights', '/archive'];
 
 export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (
@@ -148,7 +148,7 @@ export function Layout() {
         {NAV.filter((n) => MOBILE_NAV.includes(n.to)).map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold', isActive ? 'text-gold' : 'text-muted')}>
             <Icon name={n.icon} size={20} />
-            {n.label.replace('Watch Live', 'Live')}
+            {n.label}
           </NavLink>
         ))}
         <button className="flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold text-muted" onClick={() => setMenu(true)} aria-label="More">
@@ -249,6 +249,11 @@ function Footer() {
         <div>
           <p className="label mb-2 text-subtle">Service</p>
           <ul className="space-y-1.5 text-muted">
+            <li>
+              <NavLink to="/how-to-watch" className="hover:text-text">
+                How to watch
+              </NavLink>
+            </li>
             {['Help Center', 'Terms of Use', 'Privacy Policy', 'Accessibility'].map((x) => (
               <li key={x}>
                 <a href="#legal" onClick={(e) => e.preventDefault()} className="hover:text-text">

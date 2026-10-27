@@ -46,7 +46,7 @@ function mediaFor(p: Program): { poster: string; video: string; start: number } 
     return { poster: thumbFor(`prog:${p.id}`), video: v.url, start: v.start };
   }
   if (p.kind === 'classic') return { poster: thumbFor(`prog:${p.id}`), video: FOOTAGE.ft.url, start: 40 };
-  if (p.kind === 'studio') return { poster: thumbFor(`prog:${p.id}`, 'people'), video: FOOTAGE.mtl.url, start: 20 };
+  if (p.kind === 'studio') return { poster: thumbFor(`prog:${p.id}`, 'people'), video: FOOTAGE.int.url, start: 20 };
   const f = p.seed % 2 ? FOOTAGE.int : FOOTAGE.deal;
   return { poster: thumbFor(`prog:${p.id}`, p.seed % 2 ? 'people' : 'hands'), video: f.url, start: 30 };
 }
