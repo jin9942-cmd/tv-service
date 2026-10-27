@@ -4,7 +4,8 @@
 import { useMemo } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { Access, Day, StreamStatus, TableFeed, TourEvent } from '../data/types';
-import { HERO_DAY_ID, dayById, events, finalTableSeats, seriesById } from '../data/mock';
+import { HERO_DAY_ID, archive, classicDayId, dayById, events, finalTableSeats, isClassicEvent, seriesById } from '../data/mock';
+import { duration } from '../lib/format';
 import { isBroadcasting, isOnAir, tableDelay, tableStatus } from '../lib/broadcast';
 import { VENUE_TZ, fmtDate, fmtTime, tzAbbr } from '../lib/time';
 import { gateForAccess, useApp } from '../state/app';
@@ -98,13 +99,25 @@ function LiveScreen({ dayId, startAt = null, clipId = null }: { dayId?: string; 
                 Archive
               </Link>
               <span aria-hidden>›</span>
-              <Link to="/series" className="hover:text-text">
-                {se.name}
-              </Link>
-              <span aria-hidden>›</span>
-              <Link to={`/events/${selected.e.id}`} className="font-semibold text-text hover:text-gold-strong">
-                #{selected.e.number} {selected.e.name.replace(' World Championship', '')}
-              </Link>
+              {isClassicEvent(selected.e) ? (
+                <>
+                  <Link to="/archive" className="hover:text-text">
+                    Classics
+                  </Link>
+                  <span aria-hidden>›</span>
+                  <span className="font-semibold text-text">{selected.e.name}</span>
+                </>
+              ) : (
+                <>
+                  <Link to="/series" className="hover:text-text">
+                    {se.name}
+                  </Link>
+                  <span aria-hidden>›</span>
+                  <Link to={`/events/${selected.e.id}`} className="font-semibold text-text hover:text-gold-strong">
+                    #{selected.e.number} {selected.e.name.replace(' World Championship', '')}
+                  </Link>
+                </>
+              )}
             </nav>
             <Link to="/live" className="inline-flex items-center gap-2 text-sm font-semibold text-muted hover:text-text">
               <i className="live-dot size-1.5 rounded-full bg-live" aria-hidden /> What's live now →
@@ -119,7 +132,7 @@ function LiveScreen({ dayId, startAt = null, clipId = null }: { dayId?: string; 
           variant="vod"
           tableId={selected.d.tables[tableIdx].id}
           onTable={pickTable}
-          asideTop={<Episodes e={selected.e} current={selected.d.id} />}
+          asideTop={isClassicEvent(selected.e) ? <MoreClassics current={selected.d.id} /> : <Episodes e={selected.e} current={selected.d.id} />}
         />
       </div>
     );
@@ -238,6 +251,41 @@ function StreamCard({ x, t, i, on, onClick }: { x: Entry; t: TableFeed; i: numbe
 }
 
 /** Replay screen: every broadcast day of the event, like episodes. */
+/** Classics: the other final tables, newest first (a classic is a single broadcast). */
+function MoreClassics({ current }: { current: string }) {
+  const list = [...archive].sort((a, b) => b.year - a.year);
+  return (
+    <section aria-label="Classics">
+      <p className="label mb-3 text-text/80">
+        Classics · <span className="tnum">{list.length}</span>
+      </p>
+      <ol className="space-y-2">
+        {list.map((c) => {
+          const on = classicDayId(c.id) === current;
+          return (
+            <li key={c.id}>
+              <Link
+                to={`/watch/${classicDayId(c.id)}`}
+                aria-current={on || undefined}
+                className={cx('block rounded-card border p-3 transition-colors duration-150', on ? 'border-gold bg-gold-dim' : 'border-line bg-surface hover:border-line-strong')}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[15px] font-bold">
+                    {c.year} {c.title}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted tnum">{duration(c.durationSec)}</span>
+                </span>
+                <span className="block truncate text-xs text-muted">{c.subtitle}</span>
+                {on && <span className="label mt-1.5 block text-[10px] text-gold">Now playing</span>}
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
 function Episodes({ e, current }: { e: TourEvent; current: string }) {
   const { state } = useApp();
   return (

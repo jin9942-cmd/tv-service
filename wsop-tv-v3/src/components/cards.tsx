@@ -2,7 +2,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { thumbFor } from '../lib/media';
 import type { ArchiveItem, Day, Hand, Player, TourEvent } from '../data/types';
-import { HERO_DAY_ID, eventById, playerById, seriesById } from '../data/mock';
+import { HERO_DAY_ID, classicDayId, eventById, playerById, seriesById } from '../data/mock';
 import { chips, compact, duration } from '../lib/format';
 import { fmtDateTime } from '../lib/time';
 import { gateForAccess, useApp } from '../state/app';
@@ -131,7 +131,7 @@ export function ArchiveCard({ item }: { item: ArchiveItem }) {
   const w = playerById(item.winnerId);
   const play = () => {
     const gate = gateForAccess(item.access, state);
-    if (gate === 'ok') return nav(`/classics/${item.id}`);
+    if (gate === 'ok') return nav(`/watch/${classicDayId(item.id)}`);
     if (gate === 'login') return requireLogin({ reason: item.access === 'signin' ? 'Sign in free with GGPASS to watch this classic.' : 'Sign in to watch this classic.' });
     if (gate === 'plans' || gate === 'expired') return nav('/plans', { state: { returnTo: '/archive', access: item.access } });
     if (gate === 'link') return toast('Link your GGPASS account to watch (see Account)');

@@ -226,11 +226,13 @@ function HeroBillboard({ ch, p, onPlay }: { ch: LinearChannel; p: Program; onPla
   const sl = slides[slide];
   return (
     <div className="relative overflow-hidden bg-black" aria-roledescription="carousel" aria-label="Featured">
-      {/* Photo: on top on phones, on the right on wider screens, fading into the black. */}
-      <div className="relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-0 md:aspect-auto md:w-[66%]">
+      {/* Ambient fill: the same photo, blurred and dimmed, across the whole banner, so the photo never ends in a hard edge. */}
+      <img key={'bg-' + sl.img} src={sl.img} alt="" aria-hidden className="absolute inset-0 hidden size-full scale-110 object-cover opacity-50 blur-3xl md:block" />
+      <div className="absolute inset-0 hidden bg-black/50 md:block" aria-hidden />
+      {/* Photo: on top on phones; on wider screens right of centre, feathered into the fill on every side. */}
+      <div className="hero-photo relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-[3%] md:aspect-auto md:w-[60%]">
         <img key={sl.img} src={sl.img} alt="" className="size-full object-cover" style={{ objectPosition: sl.pos }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:bg-gradient-to-r md:from-black md:via-black/30 md:to-transparent" aria-hidden />
-        <div className="absolute inset-0 hidden bg-gradient-to-t from-black/70 via-transparent to-transparent md:block" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:hidden" aria-hidden />
       </div>
       <Page className="relative flex max-w-[96rem] flex-col justify-center pt-2 pb-8 md:min-h-[min(34rem,46vw)] md:py-12">
         <div className="max-w-xl" aria-live="polite">

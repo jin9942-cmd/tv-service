@@ -373,13 +373,71 @@ export const archive: ArchiveItem[] = [
   { id: 'a6', title: 'Main Event Final Table', year: 2025, subtitle: 'The comeback from one big blind', durationSec: 8 * 3600 + 2400, winnerId: 'p04', hue: 270, access: 'subscriber' },
 ];
 
+// ---- classics as replays -----------------------------------------------------------------------
+// Each classic opens in the same replay player as any broadcast day: one final-table "day" with its own key hands
+// (hand list, spoiler-safe results, hands only). Kept out of `events` / `hands` so the current series stays as is.
+
+const classicsSeries: Series = { id: 'classics', name: 'WSOP Classics', venue: 'Las Vegas', city: 'Las Vegas, NV', tz: LA, start: iso(-24 * 365 * 7), end: iso(-24 * 300) };
+export const classicDayId = (archiveId: string) => `classic-${archiveId}-finaltable`;
+export const isClassicEvent = (e: TourEvent) => e.seriesId === 'classics';
+export const classicEvents: TourEvent[] = archive.map((c, i) => {
+  const id = `classic-${c.id}`;
+  const dayId = classicDayId(c.id);
+  return {
+    id,
+    seriesId: 'classics',
+    number: [76, 1, 12, 76, 2, 76][i % 6],
+    name: `${c.year} ${c.title}`,
+    game: 'No-Limit Hold’em',
+    startingStack: 50_000,
+    buyIn: c.title.startsWith('High Roller') ? 50_000 : 10_000,
+    entrants: [8_569, 412, 196, 8_663, 87, 9_735][i % 6],
+    prizePool: [80_548_600, 24_720_000, 9_506_000, 81_432_200, 4_350_000, 91_509_000][i % 6],
+    firstPrize: [10_000_000, 3_000_000, 2_400_000, 10_000_000, 1_000_000, 10_000_000][i % 6],
+    level: 38,
+    remaining: 1,
+    winnerId: c.winnerId,
+    days: [{ id: dayId, label: 'Final Table', start: iso(-24 * 365 * (2026 - c.year) - 24 * 30), durationMin: Math.round(c.durationSec / 60), status: 'vod', tables: feeds(dayId, 2, undefined, true), access: c.access }],
+  };
+});
+const CLASSIC_TYPES: HandType[] = ['bigpot', 'bluff', 'herofold', 'badbeat', 'allin', 'allin'];
+export const classicHands: Hand[] = classicEvents.flatMap((e, ci) => {
+  const d = e.days[0];
+  const others = players.map((p) => p.id).filter((id) => id !== e.winnerId);
+  return CLASSIC_TYPES.map((type, k) => {
+    // The last hand is the one that ends it: the champion wins the final all-in.
+    const last = k === CLASSIC_TYPES.length - 1;
+    const a = last ? e.winnerId! : others[(ci * 5 + k * 3) % others.length];
+    const b = others[(ci * 5 + k * 3 + 7) % others.length];
+    const winner = last || k % 2 === 0 ? a : b;
+    const pot = roundPot(FT_POT['lv-main'] * TYPE_POT[type] * (0.6 + k * 0.12));
+    return {
+      id: `c${ci + 1}h${k + 1}`,
+      title: last ? 'The final hand' : HAND_TITLES[type][(ci + k) % HAND_TITLES[type].length],
+      type,
+      eventId: e.id,
+      dayId: d.id,
+      playerIds: [a, b],
+      pot,
+      t: Math.round(((k + 0.6) / (CLASSIC_TYPES.length + 0.2)) * d.durationMin * 60),
+      result: last ? `${playerById(winner).name} wins the bracelet` : type === 'herofold' ? `${playerById(a).name} lays it down — ${playerById(b).name} shows the stronger hand` : `${playerById(winner).name} wins the pot`,
+      winnerId: winner,
+      views: 40_000 + ((ci * 31 + k) * 7919) % 300_000,
+      durationSec: 90 + ((ci + k) * 53) % 200,
+      access: d.access ?? 'subscriber',
+    };
+  });
+});
+/** Every hand with a place on a replay timeline: the series' hands and the classics' key hands. */
+export const allHands: Hand[] = [...hands, ...classicHands];
+
 // ---- lookups -----------------------------------------------------------------------------------
 
 export { playerById };
 export const eventById = (id: string) => events.find((e) => e.id === id);
-export const seriesById = (id: string) => series.find((s) => s.id === id)!;
+export const seriesById = (id: string) => (id === classicsSeries.id ? classicsSeries : series.find((s) => s.id === id)!);
 export const dayById = (id: string) => {
-  for (const e of events) {
+  for (const e of [...events, ...classicEvents]) {
     const d = e.days.find((x) => x.id === id);
     if (d) return { event: e, day: d };
   }

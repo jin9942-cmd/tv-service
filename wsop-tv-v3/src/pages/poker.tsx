@@ -2,11 +2,11 @@
 // Highlights are organised the way poker fans talk about hands (type, pot, players, event); Archive groups classic final
 // tables by year and full broadcasts by event, day by day.
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import type { HandType } from '../data/types';
-import { archive, eventById, events, hands, playerById, seriesById } from '../data/mock';
+import { archive, classicDayId, eventById, events, hands, playerById, seriesById } from '../data/mock';
 import { chips, duration, money } from '../lib/format';
-import { FOOTAGE, thumbFor } from '../lib/media';
+import { thumbFor } from '../lib/media';
 import { VENUE_TZ, fmtDate } from '../lib/time';
 import { useApp } from '../state/app';
 import { ArchiveCard, HandCard, useDayStatus } from '../components/cards';
@@ -197,35 +197,5 @@ export function TvClassic() {
   const { classicId = '' } = useParams();
   const c = archive.find((x) => x.id === classicId);
   if (!c) return <NotFound />;
-  const more = [...archive].filter((x) => x.id !== c.id).sort((a, b) => b.year - a.year).slice(0, 3);
-  return (
-    <Page className="max-w-[96rem] space-y-8">
-      <div className="overflow-hidden rounded-panel border border-line bg-black">
-        <video className="aspect-video w-full" src={`${FOOTAGE.ft.url}#t=40`} poster={thumbFor(`archive:${c.id}`)} controls autoPlay playsInline />
-      </div>
-      <div>
-        <p className="text-sm text-muted">
-          Classic · {c.year} · {duration(c.durationSec)}
-        </p>
-        <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-[28px]">
-          {c.year} {c.title}
-        </h1>
-        <p className="mt-1 text-sm text-muted">{c.subtitle}</p>
-        <p className="mt-2 text-sm">
-          <span className="text-subtle">Champion </span>
-          <Spoiler k={`archive-${c.id}`} inline label="Champion hidden">
-            <b>{playerById(c.winnerId).name}</b>
-          </Spoiler>
-        </p>
-      </div>
-      <section aria-label="More classics">
-        <SectionHeader title="More classics" />
-        <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 [&>*]:w-auto!">
-          {more.map((x) => (
-            <ArchiveCard key={x.id} item={x} />
-          ))}
-        </div>
-      </section>
-    </Page>
-  );
+  return <Navigate to={`/watch/${classicDayId(c.id)}`} replace />;
 }

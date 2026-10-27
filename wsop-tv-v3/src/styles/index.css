@@ -81,6 +81,15 @@
       mask-composite: intersect;
     }
   }
+  /* Home banner photo: soft edges on all four sides (wide screens). */
+  @media (min-width: 768px) {
+    .hero-photo {
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 24%, #000 86%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 12%, #000 84%, transparent 100%);
+      -webkit-mask-composite: source-in;
+      mask-image: linear-gradient(90deg, transparent 0%, #000 24%, #000 86%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 12%, #000 84%, transparent 100%);
+      mask-composite: intersect;
+    }
+  }
   .skeleton {
     background: linear-gradient(90deg, var(--color-surface-2), var(--color-surface-3), var(--color-surface-2));
     background-size: 200% 100%;

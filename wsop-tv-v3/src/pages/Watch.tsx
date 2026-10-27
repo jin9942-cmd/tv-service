@@ -3,7 +3,7 @@ import { frameFrom, tableVideo, thumbFor } from '../lib/media';
 import { money } from '../lib/format';
 import { Link, useNavigate } from 'react-router-dom';
 import type { AudioTrack, Hand, OverlayLevel, TableFeed } from '../data/types';
-import { HERO_DAY_ID, HERO_EXPECTED_START, bbFor, dayById, events, hands, playerById, seatsFor, seriesById } from '../data/mock';
+import { HERO_DAY_ID, HERO_EXPECTED_START, allHands, bbFor, dayById, events, hands, playerById, seatsFor, seriesById } from '../data/mock';
 import { handFor } from '../features/player/hand';
 import { PLATFORMS, overlayAllowed } from '../data/platforms';
 import { chips, duration } from '../lib/format';
@@ -80,7 +80,7 @@ export function WatchInner({
   const dayAccess = day.access ?? 'subscriber';
   const dayGate = gateForAccess(dayAccess, state, isLive);
   const dayRequired = requiredTier(dayAccess, state.includedFrom, isLive);
-  const clipHand = clipId ? hands.find((h) => h.id === clipId && h.dayId === dayId) : undefined;
+  const clipHand = clipId ? allHands.find((h) => h.id === clipId && h.dayId === dayId) : undefined;
   const clipMode = dayGate !== 'ok' && !!clipHand && canWatch(clipHand.access, state) && (isLive || status === 'vod');
 
   const [loading, setLoading] = useState(true);
@@ -134,7 +134,7 @@ export function WatchInner({
   // Hand markers. Live: scale into what has aired so far so the timeline is always populated.
   const markers: Hand[] = useMemo(
     () =>
-      hands
+      allHands
         .filter((h) => h.dayId === dayId)
         .map((h) => (isLive ? { ...h, t: Math.round((h.t / fullLen) * end * 0.96) } : h))
         .sort((a, b) => a.t - b.t),
@@ -590,9 +590,10 @@ export function WatchInner({
                 </h1>
                 <MyListButton kind="day" id={dayId} />
               </div>
-              <p className={cx('mt-1.5 inline-flex items-center gap-1.5 text-xs', daysLeft <= 14 ? 'text-delayed' : 'text-subtle')}>
+              {/* Classics stay in the archive; other replays have an availability window. */}
+              {se.id !== 'classics' && <p className={cx('mt-1.5 inline-flex items-center gap-1.5 text-xs', daysLeft <= 14 ? 'text-delayed' : 'text-subtle')}>
                 {daysLeft <= 14 ? <>Leaving in {daysLeft} day{daysLeft === 1 ? '' : 's'} · available until {fmtDate(availableUntil, VENUE_TZ)}</> : <>Replay available until {fmtDate(availableUntil, VENUE_TZ)}</>}
-              </p>
+              </p>}
             </div>
           )}
 
