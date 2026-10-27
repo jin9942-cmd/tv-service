@@ -25,7 +25,6 @@ export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
     <span className={cx('inline-flex items-center gap-1.5 font-black tracking-tight', size === 'lg' ? 'text-3xl' : 'text-lg')}>
       <img src={WSOP_LOGO} alt="WSOP" width={216} height={80} className={cx('w-auto', size === 'lg' ? 'h-12' : 'h-8 sm:h-9')} />
       <span className="text-gold">TV</span>
-      <span className="label ml-1 hidden self-center rounded-[3px] border border-line-strong px-1 py-px text-[9px] font-bold text-muted sm:inline">Working title</span>
     </span>
   );
 }
@@ -49,7 +48,7 @@ export function Layout() {
         <div className="border-b border-line bg-surface">
           <div className="mx-auto flex max-w-content items-center justify-between gap-3 px-gutter py-2 sm:px-6 lg:px-8">
             <p className="text-[13px] text-muted">
-              <span className="hidden sm:inline">Watch every bracelet event live and on demand. </span>WSOP TV is included with WSOP+ — free with every GGPass account.
+              <span className="hidden sm:inline">The official WSOP video service. </span>Sign in with GGPass to watch.
             </p>
             <Button size="sm" variant="primary" onClick={() => requireLogin({ reason: 'Sign in to watch live coverage and keep your progress.' })}>
               Continue with GGPASS
@@ -236,7 +235,7 @@ function Footer() {
         <div>
           <Wordmark />
           <p className="mt-3 max-w-md text-muted">
-            The official home of the mind sport — live and on-demand coverage of championship poker. Viewing service only. Demo build with fictional players and events.
+            The official video service of the World Series of Poker — every bracelet event live, on demand and in the archive. Viewing service only.
           </p>
         </div>
         <div>
@@ -265,7 +264,7 @@ function Footer() {
         </div>
       </div>
       <p className="border-t border-line px-gutter py-4 text-center text-xs text-subtle">
-        WSOP TV (working title) · Interactive demo · All players, events and results are fictional · Footage: World Poker Tour (CC BY 3.0), BrewCrewCountry93 (CC BY-SA 4.0) via Wikimedia Commons
+        WSOP TV · Interactive demo · All players, events and results are fictional · Footage: World Poker Tour (CC BY 3.0), BrewCrewCountry93 (CC BY-SA 4.0) via Wikimedia Commons
       </p>
     </footer>
   );

@@ -282,7 +282,10 @@ function HowToWatchBand() {
   return (
     <section className="rounded-panel border border-line bg-surface p-6 sm:p-8" aria-label="How to watch">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 className="text-xl font-black tracking-tight sm:text-2xl">How to watch WSOP TV</h2>
+        <div>
+          <p className="label text-gold">Official WSOP video service</p>
+          <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">Every WSOP event, in one place</h2>
+        </div>
         <Link to="/how-to-watch" className="text-sm font-semibold text-gold hover:underline">
           Plans & devices →
         </Link>
