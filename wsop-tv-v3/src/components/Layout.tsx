@@ -15,7 +15,7 @@ export const NAV = [
   { to: '/schedule', label: 'Schedule', icon: 'calendar' },
   { to: '/highlights', label: 'Highlights', icon: 'grid4' },
   { to: '/archive', label: 'Archive', icon: 'grid2' },
-  { to: '/shows', label: 'Shows', icon: 'layers' },
+  { to: '/how-to-watch', label: 'How to Watch', icon: 'tv' },
 ] as const;
 
 const MOBILE_NAV = ['/', '/schedule', '/highlights', '/archive'];
