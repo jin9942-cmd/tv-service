@@ -1,6 +1,6 @@
 // v3 — NBA TV-style site: the channel is the product. Home leads with the live channel player and what's on now /
 // up next, then today's schedule, the shows, the latest video and how to watch. Labels stay minimal.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { airing, channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
 import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
@@ -30,6 +30,32 @@ export function TvHome() {
   // The channel starts on a big poster; pressing it plays in place (switching channel keeps playing).
   const [started, setStarted] = useState(params.get('play') === '1');
   const setCh = (id: string) => setParams(started ? { ch: id, play: '1' } : { ch: id }, { replace: true });
+  // Mini player: once playback has started, scrolling the player out of view docks it bottom-right and it keeps playing.
+  const holder = useRef<HTMLDivElement>(null);
+  const [offscreen, setOffscreen] = useState(false);
+  useEffect(() => {
+    const el = holder.current;
+    if (!el) return;
+    // Docked once less than ~30% of the player is left above the fold (checked on scroll and resize).
+    const check = () => {
+      const r = el.getBoundingClientRect();
+      setOffscreen(r.top < 0 && r.bottom < r.height * 0.3);
+    };
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => (window.removeEventListener('scroll', check), window.removeEventListener('resize', check));
+  }, [p?.id]);
+  const mini = started && offscreen;
+  const backToPlayer = () => {
+    const el = holder.current;
+    if (!el) return;
+    const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 120);
+    window.scrollTo({ top, behavior: 'smooth' });
+    // Some browsers ignore smooth scrolling (reduced motion, embedded views): fall back to a jump.
+    window.setTimeout(() => Math.abs(window.scrollY - top) > 40 && window.scrollTo(0, top), 500);
+    setOffscreen(false);
+  };
 
   return (
     <>
@@ -45,7 +71,31 @@ export function TvHome() {
           {p && (
             // Full width: the broadcast is the hero. What's next is one line under it (the full guide is in Schedule).
             <div className="mt-4 min-w-0">
-              {started ? <ChannelPlayer key={`${ch.id}:${p.id}`} ch={ch} p={p} onSwitch={setCh} /> : <PosterStart p={p} onPlay={() => setStarted(true)} />}
+              {/* The holder keeps the player's space while it's docked, so the page doesn't jump. */}
+              <div ref={holder} className={cx(mini && 'aspect-video rounded-panel border border-dashed border-line')}>
+                <div
+                  className={cx(
+                    mini && 'fixed right-3 bottom-20 z-[57] w-[min(15rem,calc(100vw-1.5rem))] sm:w-[24rem] overflow-hidden rounded-panel bg-black shadow-2xl ring-1 ring-line-strong md:right-5 md:bottom-5',
+                  )}
+                  role={mini ? 'region' : undefined}
+                  aria-label={mini ? 'Mini player' : undefined}
+                >
+                  {mini && (
+                    <div className="flex items-center gap-2 bg-surface px-3 py-1.5">
+                      <span className="min-w-0 flex-1 truncate text-xs font-semibold">
+                        {ch.name} · <span className="text-muted">{p.title}</span>
+                      </span>
+                      <button onClick={backToPlayer} aria-label="Back to the full player" title="Back to the full player" className="rounded-chip p-1.5 text-muted hover:text-text">
+                        <Icon name="full" size={16} />
+                      </button>
+                      <button onClick={() => setStarted(false)} aria-label="Close mini player" title="Close" className="rounded-chip p-1.5 text-muted hover:text-text">
+                        <Icon name="close" size={16} />
+                      </button>
+                    </div>
+                  )}
+                  {started ? <ChannelPlayer key={`${ch.id}:${p.id}`} ch={ch} p={p} onSwitch={setCh} mini={mini} /> : <PosterStart p={p} onPlay={() => setStarted(true)} />}
+                </div>
+              </div>
               <OnNow ch={ch} p={p} now={now} />
             </div>
           )}
@@ -70,7 +120,7 @@ const channelTrait = (ch: LinearChannel) => (ch.free ? 'Free' : ch.lang === 'ES'
 function ChannelTabs({ active, now, onSelect }: { active: string; now: number; onSelect: (id: string) => void }) {
   return (
     // Full-width grid (no sideways scroll), so programme titles have room.
-    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4" role="tablist" aria-label="Channels">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" role="tablist" aria-label="Channels">
       {channels.map((ch) => {
         const p = programAt(ch.id, now);
         const on = ch.id === active;

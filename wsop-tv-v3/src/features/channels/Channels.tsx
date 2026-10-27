@@ -205,7 +205,8 @@ const CAPTION_LINES: Record<LinearChannel['lang'], string[]> = {
   ES: ['Bienvenidos de nuevo a WSOP TV en español.', 'Siete brazaletes y ni un gesto de nervios.', 'Silencio absoluto en Las Vegas.'],
 };
 
-export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Program; onSwitch: (id: string) => void }) {
+/** `mini`: docked mini player — clean picture, only play/pause, mute and Live. */
+export function ChannelPlayer({ ch, p, onSwitch, mini }: { ch: LinearChannel; p: Program; onSwitch: (id: string) => void; mini?: boolean }) {
   const { state } = useApp();
   const now = useTick(1000);
   const caps = PLATFORMS[state.platform];
@@ -307,7 +308,7 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
           ) : (
             <>
               <Stage
-                overlay={hasData ? overlay : 'off'}
+                overlay={hasData && !mini ? overlay : 'off'}
                 tableName={ref?.day.tables[0].name ?? ch.name}
                 seats={stacks}
                 playing={playing}
@@ -325,7 +326,7 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
               )}
             </>
           )}
-          {!loading && !blocked && (
+          {!loading && !blocked && !mini && (
             <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-2">
               <span className="label rounded-[4px] bg-black/75 px-2 py-1 text-[10px] text-white/90 tnum">
                 CH {ch.number} · {ch.short}
@@ -336,8 +337,8 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
         </div>
 
         {!loading && !blocked && (
-          <div className={cx(fullscreen ? 'absolute inset-x-0 bottom-0' : 'relative bg-black sm:absolute sm:inset-x-0 sm:bottom-0 sm:bg-transparent')}>
-            <div className="px-3 pt-3 pb-2 sm:bg-gradient-to-t sm:from-black/90 sm:via-black/70 sm:to-transparent sm:px-4 sm:pt-6">
+          <div className={cx(fullscreen ? 'absolute inset-x-0 bottom-0' : mini ? 'relative bg-black' : 'relative bg-black sm:absolute sm:inset-x-0 sm:bottom-0 sm:bg-transparent')}>
+            <div className={cx('px-3 pt-3 pb-2', !mini && 'sm:bg-gradient-to-t sm:from-black/90 sm:via-black/70 sm:to-transparent sm:px-4 sm:pt-6')}>
               {/* DVR timeline: the whole slot; the rewindable part (up to the live edge) is seekable. */}
               <div className="flex items-center gap-2 text-[11px] text-white/75 tnum">
                 <span>{fmtTime(p.start, state.tz)}</span>
@@ -348,22 +349,30 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
                 <CtlButton label={playing ? 'Pause' : 'Resume'} onClick={() => setPlaying((x) => !x)} disabled={a.mode === 'standby'}>
                   <Icon name={playing ? 'pause' : 'play'} size={22} />
                 </CtlButton>
-                <CtlButton label="Back 10 seconds" onClick={() => seekBehind(behind + 10)} disabled={behind >= dvrMax}>
-                  <Icon name="back10" />
-                </CtlButton>
-                <CtlButton label="Forward 10 seconds" onClick={() => seekBehind(behind - 10)} disabled={atLive}>
-                  <Icon name="fwd10" />
-                </CtlButton>
+                {!mini && (
+                  <>
+                    <CtlButton label="Back 10 seconds" onClick={() => seekBehind(behind + 10)} disabled={behind >= dvrMax}>
+                      <Icon name="back10" />
+                    </CtlButton>
+                    <CtlButton label="Forward 10 seconds" onClick={() => seekBehind(behind - 10)} disabled={atLive}>
+                      <Icon name="fwd10" />
+                    </CtlButton>
+                  </>
+                )}
                 <CtlButton label={muted ? 'Unmute' : 'Mute'} onClick={() => setMuted((x) => !x)}>
                   <Icon name={muted ? 'mute' : 'volume'} />
                 </CtlButton>
-                <CtlButton label="Previous channel" onClick={() => switchBy(-1)}>
-                  <span className="text-[11px] font-black">CH−</span>
-                </CtlButton>
-                <CtlButton label="Next channel" onClick={() => switchBy(1)}>
-                  <span className="text-[11px] font-black">CH+</span>
-                </CtlButton>
-                <span className="ml-1 hidden truncate text-xs text-white/80 min-[420px]:inline sm:text-[13px]">
+                {!mini && (
+                  <>
+                    <CtlButton label="Previous channel" onClick={() => switchBy(-1)}>
+                      <span className="text-[11px] font-black">CH−</span>
+                    </CtlButton>
+                    <CtlButton label="Next channel" onClick={() => switchBy(1)}>
+                      <span className="text-[11px] font-black">CH+</span>
+                    </CtlButton>
+                  </>
+                )}
+                <span className={cx('ml-1 truncate text-xs text-white/80', mini ? 'inline' : 'hidden min-[420px]:inline sm:text-[13px]')}>
                   {atLive ? (
                     <>
                       {onAir ? <b>{a.status === 'delayed' ? `Live · ${a.delayMin} min delay` : 'Live'}</b> : a.mode === 'standby' ? 'Standing by' : 'On now'} · ends {relative(p.end, now)}
@@ -377,7 +386,7 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
                     Live
                   </button>
                 )}
-                <div className="ml-auto flex items-center gap-1">
+                {!mini && <div className="ml-auto flex items-center gap-1">
                   {hasData && (
                     <span className="hidden sm:inline-flex">
                       <Segmented
@@ -400,7 +409,7 @@ export function ChannelPlayer({ ch, p, onSwitch }: { ch: LinearChannel; p: Progr
                   <CtlButton label={fullscreen ? 'Exit full screen' : 'Full screen'} onClick={toggleFullscreen}>
                     <Icon name="full" />
                   </CtlButton>
-                </div>
+                </div>}
               </div>
             </div>
           </div>
