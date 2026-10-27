@@ -7,6 +7,7 @@ import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '..
 import { dayById, hands } from '../data/mock';
 import { PLATFORMS } from '../data/platforms';
 import { thumbFor } from '../lib/media';
+import { money } from '../lib/format';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
 import { HandCard } from '../components/cards';
@@ -45,7 +46,7 @@ export function TvHome() {
     window.addEventListener('scroll', check, { passive: true });
     window.addEventListener('resize', check);
     return () => (window.removeEventListener('scroll', check), window.removeEventListener('resize', check));
-  }, [p?.id]);
+  }, [p?.id, started]);
   const mini = started && offscreen;
   const backToPlayer = () => {
     const el = holder.current;
@@ -59,23 +60,15 @@ export function TvHome() {
 
   return (
     <>
-      <section className="border-b border-line bg-surface/40" aria-label="Watch WSOP TV">
-        <Page className="max-w-[96rem] py-5 sm:py-6">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Watch WSOP TV</h1>
-            <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
-              Full schedule →
-            </Link>
-          </div>
-          <ChannelTabs active={ch.id} now={now} onSelect={setCh} />
-          {p && (
-            // Full width: the broadcast is the hero. What's next is one line under it (the full guide is in Schedule).
-            <div className="mt-4 min-w-0">
+      <section className="border-b border-line" aria-label="Watch WSOP TV">
+        {p &&
+          (started ? (
+            <Page className="max-w-[96rem] py-5 sm:py-6">
               {/* The holder keeps the player's space while it's docked, so the page doesn't jump. */}
               <div ref={holder} className={cx(mini && 'aspect-video rounded-panel border border-dashed border-line')}>
                 <div
                   className={cx(
-                    mini && 'fixed right-3 bottom-20 z-[57] w-[min(15rem,calc(100vw-1.5rem))] sm:w-[24rem] overflow-hidden rounded-panel bg-black shadow-2xl ring-1 ring-line-strong md:right-5 md:bottom-5',
+                    mini && 'fixed right-3 bottom-20 z-[57] w-[min(15rem,calc(100vw-1.5rem))] overflow-hidden rounded-panel bg-black shadow-2xl ring-1 ring-line-strong sm:w-[24rem] md:right-5 md:bottom-5',
                   )}
                   role={mini ? 'region' : undefined}
                   aria-label={mini ? 'Mini player' : undefined}
@@ -93,12 +86,23 @@ export function TvHome() {
                       </button>
                     </div>
                   )}
-                  {started ? <ChannelPlayer key={`${ch.id}:${p.id}`} ch={ch} p={p} onSwitch={setCh} mini={mini} /> : <PosterStart p={p} onPlay={() => setStarted(true)} />}
+                  <ChannelPlayer key={`${ch.id}:${p.id}`} ch={ch} p={p} onSwitch={setCh} mini={mini} />
                 </div>
               </div>
               <OnNow ch={ch} p={p} now={now} />
-            </div>
-          )}
+            </Page>
+          ) : (
+            <HeroBillboard ch={ch} p={p} onPlay={() => setStarted(true)} />
+          ))}
+        {/* Channels sit under the hero (switching keeps whatever mode the hero is in). */}
+        <Page className="max-w-[96rem] pt-4 pb-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="label text-text/80">Channels · 24/7</p>
+            <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
+              Full schedule →
+            </Link>
+          </div>
+          <ChannelTabs active={ch.id} now={now} onSelect={setCh} />
         </Page>
       </section>
 
@@ -150,29 +154,63 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
 }
 
 /**
- * Billboard-style preview of what's on now: the channel's footage autoplays muted behind the picture, with
- * "Watch live" (opens the full player with sound and DVR) and "Key hands" on top.
+ * Home hero, streaming-service style: the channel's footage plays muted edge to edge, and the title, a line of facts,
+ * a short synopsis and the actions sit on top of it. "Watch live" opens the full player (sound, DVR, mini player).
  */
-function PosterStart({ p, onPlay }: { p: Program; onPlay: () => void }) {
+function HeroBillboard({ ch, p, onPlay }: { ch: LinearChannel; p: Program; onPlay: () => void }) {
   const { state } = useApp();
   const m = mediaFor(p);
   const live = airing(p, state.streamMode).mode === 'onair';
   const ref = p.dayId ? dayById(p.dayId) : undefined;
+  const show = showOf(p);
+  const next = programsFor(ch.id).find((x) => x.start >= p.end && !isBreak(x));
+  const title = ref ? ref.event.name.replace(' World Championship', '') : p.title;
+  const facts = [
+    ref?.day.label,
+    ref && live && ref.day.label === 'Final Table' ? `${ref.event.remaining} players left` : null,
+    ref ? ref.event.game : null,
+    ch.name,
+    `${fmtTime(p.start, state.tz)} – ${fmtTime(p.end, state.tz)}`,
+  ].filter(Boolean);
+  const synopsis = ref
+    ? `${ref.event.entrants.toLocaleString('en-US')} entered. ${live && ref.day.label === 'Final Table' ? `${ref.event.remaining} remain, playing for ${money(ref.event.firstPrize)} and the bracelet.` : 'Every key hand of the day, from the feature table.'}`
+    : show?.description ?? p.subtitle;
+  const details = ref ? `/events/${ref.event.id}` : show ? `/shows/${show.id}` : '/schedule';
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-panel border border-line bg-black">
+    <div className="relative h-[min(78vh,56.25vw)] min-h-[26rem] w-full overflow-hidden bg-black">
       <img src={m.poster} alt="" className="absolute inset-0 size-full object-cover" />
       <video key={m.video} className="absolute inset-0 size-full object-cover" src={`${m.video}#t=${m.start}`} poster={m.poster} autoPlay loop muted playsInline aria-hidden />
-      <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" aria-hidden />
-      <div className="absolute inset-x-4 bottom-4 flex flex-wrap gap-2 sm:inset-x-6 sm:bottom-6">
-        <Button variant="primary" size="lg" onClick={onPlay}>
-          <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch now'}
-        </Button>
-        <Link to={ref ? `/events/${ref.event.id}` : '/highlights'}>
-          <Button variant="secondary" size="lg" tabIndex={-1}>
-            Key hands
-          </Button>
-        </Link>
-      </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-bg/95 via-bg/55 to-transparent" aria-hidden />
+      <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent" aria-hidden />
+      <Page className="relative flex h-full max-w-[96rem] flex-col justify-end pb-10 sm:pb-14">
+        <div className="max-w-2xl">
+          <h1 className="text-[2.5rem] leading-[1.02] font-black tracking-tight drop-shadow-lg sm:text-display">{title}</h1>
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-text/85">
+            {facts.map((x, i) => (
+              <span key={i} className="inline-flex items-center gap-2">
+                {i > 0 && <span className="text-subtle">·</span>}
+                {x}
+              </span>
+            ))}
+          </p>
+          <p className="mt-3 line-clamp-2 max-w-xl text-[15px] text-text/80">{synopsis}</p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button variant="primary" size="lg" onClick={onPlay}>
+              <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch now'}
+            </Button>
+            <Link to={details}>
+              <Button variant="secondary" size="lg" tabIndex={-1}>
+                Details
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Page>
+      {next && (
+        <p className="absolute right-4 bottom-10 hidden max-w-xs truncate rounded-chip bg-black/55 px-3 py-1.5 text-xs text-text/85 backdrop-blur sm:block lg:right-8 lg:bottom-14">
+          Next {fmtTime(next.start, state.tz)} · {next.title}
+        </p>
+      )}
     </div>
   );
 }
