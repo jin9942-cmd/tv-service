@@ -1,10 +1,11 @@
-// v3 — NBA TV-style site: the channel is the product. Home leads with the live channel player and what's on now /
-// up next, then today's schedule, the shows, the latest video and how to watch. Labels stay minimal.
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { airing, channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
+// v3 — WSOP TV: a promotion banner, the 24/7 channels (each opens its channel screen), then the rows; plus the
+// schedule, shows and how to watch. Labels stay minimal.
+import { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
 import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
-import { dayById, hands } from '../data/mock';
+import { HERO_DAY_ID, dayById, hands } from '../data/mock';
+import { isOnAir } from '../lib/broadcast';
 import { PLATFORMS } from '../data/platforms';
 import { thumbFor } from '../lib/media';
 import { HERO_IMAGES } from '../lib/brand';
@@ -14,7 +15,7 @@ import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
 import { HandCard } from '../components/cards';
 import { Button, Icon, Page, SectionHeader, cx } from '../components/ui';
-import { ChannelGuide, ChannelNumber, ChannelPlayer, useProgramReminder } from '../features/channels/Channels';
+import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
 import { ClassicsRow, ContinueRow, ForYouRow, ReplaysRow } from './ott';
@@ -26,77 +27,12 @@ const showPoster = (s: Show) => thumbFor(`show:${s.id}`, s.art);
 // ---- Home -------------------------------------------------------------------------------------------
 
 export function TvHome() {
-  const [params, setParams] = useSearchParams();
   const now = useTick(15_000);
-  const ch = channelById(params.get('ch') ?? '') ?? channels[0];
-  const p = programAt(ch.id, now);
-  // The channel starts on a big poster; pressing it plays in place (switching channel keeps playing).
-  const [started, setStarted] = useState(params.get('play') === '1');
-  const setCh = (id: string) => setParams(started ? { ch: id, play: '1' } : { ch: id }, { replace: true });
-  // Mini player: once playback has started, scrolling the player out of view docks it bottom-right and it keeps playing.
-  const holder = useRef<HTMLDivElement>(null);
-  const [offscreen, setOffscreen] = useState(false);
-  useEffect(() => {
-    const el = holder.current;
-    if (!el) return;
-    // Docked once less than ~30% of the player is left above the fold (checked on scroll and resize).
-    const check = () => {
-      const r = el.getBoundingClientRect();
-      setOffscreen(r.top < 0 && r.bottom < r.height * 0.3);
-    };
-    check();
-    window.addEventListener('scroll', check, { passive: true });
-    window.addEventListener('resize', check);
-    return () => (window.removeEventListener('scroll', check), window.removeEventListener('resize', check));
-  }, [p?.id, started]);
-  const mini = started && offscreen;
-  const backToPlayer = () => {
-    const el = holder.current;
-    if (!el) return;
-    const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 120);
-    window.scrollTo({ top, behavior: 'smooth' });
-    // Some browsers ignore smooth scrolling (reduced motion, embedded views): fall back to a jump.
-    window.setTimeout(() => Math.abs(window.scrollY - top) > 40 && window.scrollTo(0, top), 500);
-    setOffscreen(false);
-  };
-
   return (
     <>
-      <section className="border-b border-line" aria-label="Watch WSOP TV">
-        {p &&
-          (started ? (
-            <Page className="max-w-[96rem] py-5 sm:py-6">
-              {/* The holder keeps the player's space while it's docked, so the page doesn't jump. */}
-              <div ref={holder} className={cx(mini && 'aspect-video rounded-panel border border-dashed border-line')}>
-                <div
-                  className={cx(
-                    mini && 'fixed right-3 bottom-20 z-[57] w-[min(15rem,calc(100vw-1.5rem))] overflow-hidden rounded-panel bg-black shadow-2xl ring-1 ring-line-strong sm:w-[24rem] md:right-5 md:bottom-5',
-                  )}
-                  role={mini ? 'region' : undefined}
-                  aria-label={mini ? 'Mini player' : undefined}
-                >
-                  {mini && (
-                    <div className="flex items-center gap-2 bg-surface px-3 py-1.5">
-                      <span className="min-w-0 flex-1 truncate text-xs font-semibold">
-                        {ch.name} · <span className="text-muted">{p.title}</span>
-                      </span>
-                      <button onClick={backToPlayer} aria-label="Back to the full player" title="Back to the full player" className="rounded-chip p-1.5 text-muted hover:text-text">
-                        <Icon name="full" size={16} />
-                      </button>
-                      <button onClick={() => setStarted(false)} aria-label="Close mini player" title="Close" className="rounded-chip p-1.5 text-muted hover:text-text">
-                        <Icon name="close" size={16} />
-                      </button>
-                    </div>
-                  )}
-                  <ChannelPlayer key={`${ch.id}:${p.id}`} ch={ch} p={p} onSwitch={setCh} mini={mini} />
-                </div>
-              </div>
-              <OnNow ch={ch} p={p} now={now} />
-            </Page>
-          ) : (
-            <HeroBillboard ch={ch} p={p} onPlay={() => setStarted(true)} />
-          ))}
-        {/* Channels sit under the hero (switching keeps whatever mode the hero is in). */}
+      <section className="border-b border-line" aria-label="Featured">
+        <PromoBanner />
+        {/* 24/7 channels: each card opens that channel's screen (player, up next, guide). */}
         <Page className="max-w-[96rem] pt-4 pb-6">
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="label text-text/80">Channels · 24/7</p>
@@ -104,7 +40,7 @@ export function TvHome() {
               Full schedule →
             </Link>
           </div>
-          <ChannelTabs active={ch.id} now={now} onSelect={setCh} />
+          <ChannelLinks now={now} />
         </Page>
       </section>
 
@@ -123,9 +59,41 @@ export function TvHome() {
 /** What sets a channel apart at a glance (language, or free) — skipped when the name already says it. */
 const channelTrait = (ch: LinearChannel) => (ch.free ? 'Free' : ch.lang === 'ES' ? null : 'English');
 
-function ChannelTabs({ active, now, onSelect }: { active: string; now: number; onSelect: (id: string) => void }) {
+function ChannelLinks({ now }: { now: number }) {
   return (
     // Full-width grid (no sideways scroll), so programme titles have room.
+    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="Channels">
+      {channels.map((ch) => {
+        const p = programAt(ch.id, now);
+        return (
+          <li key={ch.id} className="min-w-0">
+            <Link
+              to={`/live/channels/${ch.id}`}
+              aria-label={`Watch ${ch.name}${p ? ` · now ${p.title}` : ''}`}
+              className="group flex min-w-0 items-center gap-3 rounded-card border border-line bg-surface px-3 py-2.5 transition-colors duration-150 hover:border-gold"
+            >
+              <ChannelNumber ch={ch} />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline gap-2">
+                  <span className="truncate text-sm font-bold">{ch.name}</span>
+                  {channelTrait(ch) && <span className="shrink-0 text-[11px] text-subtle">{channelTrait(ch)}</span>}
+                </span>
+                <span className="block truncate text-xs text-muted" title={p?.title}>
+                  <span className="font-semibold text-text/70">Now</span> · {p?.title}
+                </span>
+              </span>
+              <Icon name="play" size={16} className="shrink-0 text-muted transition-colors duration-150 group-hover:text-gold" />
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Channel picker for the Schedule (selects in place). */
+function ChannelTabs({ active, now, onSelect }: { active: string; now: number; onSelect: (id: string) => void }) {
+  return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" role="tablist" aria-label="Channels">
       {channels.map((ch) => {
         const p = programAt(ch.id, now);
@@ -156,48 +124,37 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
 }
 
 /**
- * Home banner, wsop.com style: a still photo (no autoplay), with the title, a line of facts, a short synopsis and the
- * actions beside it. Two slides — what's on the channel now, and the archive. "Watch live" opens the full player.
+ * Home promotion banner, wsop.com style: still photos (no autoplay) with the title, a line of facts, a short synopsis and
+ * the actions beside them. It promotes fixed picks (this year's Main Event, the archive) and is independent of the
+ * channel cards below.
  */
-function HeroBillboard({ ch, p, onPlay }: { ch: LinearChannel; p: Program; onPlay: () => void }) {
+function PromoBanner() {
   const { state } = useApp();
   const [slide, setSlide] = useState(0);
-  const live = airing(p, state.streamMode).mode === 'onair';
-  const ref = p.dayId ? dayById(p.dayId) : undefined;
-  const show = showOf(p);
-  const next = programsFor(ch.id).find((x) => x.start >= p.end && !isBreak(x));
-  const title = ref ? ref.event.name.replace(' World Championship', '') : p.title;
-  const facts = [
-    ref?.day.label,
-    ref && live && ref.day.label === 'Final Table' ? `${ref.event.remaining} players left` : null,
-    ref ? ref.event.game : null,
-    ch.name,
-    `${fmtTime(p.start, state.tz)} – ${fmtTime(p.end, state.tz)}`,
-  ].filter(Boolean) as string[];
-  const synopsis = ref
-    ? `${ref.event.entrants.toLocaleString('en-US')} entered. ${live && ref.day.label === 'Final Table' ? `${ref.event.remaining} remain, playing for ${money(ref.event.firstPrize)} and the bracelet.` : 'Every key hand of the day, from the feature table.'}`
-    : show?.description ?? p.subtitle;
-  const details = ref ? `/events/${ref.event.id}` : show ? `/shows/${show.id}` : '/schedule';
+  const { event, day } = dayById(HERO_DAY_ID)!;
+  const live = isOnAir(state.streamMode);
   const slides = [
     {
       img: HERO_IMAGES.table,
       pos: '30% 25%',
-      kicker: live ? `Live now · ${ch.name}` : `On now · ${ch.name}`,
-      title,
-      facts,
-      synopsis,
-      note: next ? `Next ${fmtTime(next.start, state.tz)} · ${next.title}` : null,
+      kicker: live ? 'Live now · Final table' : 'Main Event · Final table',
+      title: `Main Event ${day.label}`,
+      facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
+      synopsis: `${event.entrants.toLocaleString('en-US')} entered. The last table of the Main Event, live from Las Vegas — hole cards shown on a 30-minute delay.`,
+      note: 'Every table live, plus replays of every day',
       actions: (
         <>
-          <Button variant="primary" size="lg" onClick={onPlay}>
-            <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch now'}
-          </Button>
-          <Link to={details}>
+          <Link to={`/watch/${HERO_DAY_ID}`}>
+            <Button variant="primary" size="lg" tabIndex={-1}>
+              <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch'}
+            </Button>
+          </Link>
+          <Link to={`/events/${event.id}`}>
             <Button variant="secondary" size="lg" tabIndex={-1}>
               Details
             </Button>
           </Link>
-          {ref && <MyListButton kind="event" id={ref.event.id} size="lg" className="px-4 sm:px-6" labelClassName="hidden sm:inline" />}
+          <MyListButton kind="event" id={event.id} size="lg" className="px-4 sm:px-6" labelClassName="hidden sm:inline" />
         </>
       ),
     },
@@ -269,43 +226,6 @@ function HeroBillboard({ ch, p, onPlay }: { ch: LinearChannel; p: Program; onPla
           </button>
         </div>
       </Page>
-    </div>
-  );
-}
-
-function OnNow({ ch, p, now }: { ch: LinearChannel; p: Program; now: number }) {
-  const { state } = useApp();
-  const show = showOf(p);
-  const next = programsFor(ch.id).find((x) => x.start >= p.end && !isBreak(x));
-  return (
-    <div className="mt-4">
-      <p className="text-xs text-muted tnum">
-        On now · {ch.name} · {fmtTime(p.start, state.tz)} – {fmtTime(p.end, state.tz)} · ends {relative(p.end, now)}
-        {next && (
-          <>
-            {' '}
-            · <span className="text-text/80">Next {fmtTime(next.start, state.tz)} {next.title}</span>
-          </>
-        )}
-      </p>
-      <h2 className="mt-1 text-2xl font-black tracking-tight">{p.title}</h2>
-      <p className="mt-1 text-sm text-muted">{p.subtitle}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {show && (
-          <Link to={`/shows/${show.id}`}>
-            <Button size="sm" variant="secondary" tabIndex={-1}>
-              About {show.title}
-            </Button>
-          </Link>
-        )}
-        {p.dayId && (
-          <Link to={`/watch/${p.dayId}`}>
-            <Button size="sm" variant="outline" tabIndex={-1}>
-              <Icon name="layers" size={14} /> All tables & camera feeds
-            </Button>
-          </Link>
-        )}
-      </div>
     </div>
   );
 }

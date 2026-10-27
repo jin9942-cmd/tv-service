@@ -26,7 +26,6 @@ export function LiveChannels() {
   const { channelId } = useParams();
   return (
     <div>
-      <LiveTabs active="channels" />
       <ChannelsView channelId={channelId} />
     </div>
   );

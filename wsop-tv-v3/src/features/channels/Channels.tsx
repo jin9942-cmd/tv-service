@@ -123,6 +123,35 @@ export function ChannelsView({ channelId }: { channelId?: string }) {
   const ch = channelById(channelId ?? '') ?? channels[0];
   const current = programAt(ch.id, now);
   const select = (id: string) => nav(`/live/channels/${id}`, { replace: true });
+  // Mini player: scrolling the player out of view docks it bottom-right and it keeps playing.
+  const holder = useRef<HTMLDivElement>(null);
+  const [mini, setMini] = useState(false);
+  const [closed, setClosed] = useState(false);
+  useEffect(() => {
+    const el = holder.current;
+    if (!el) return;
+    // Docked once less than ~30% of the player is left above the fold (checked on scroll and resize).
+    const check = () => {
+      const r = el.getBoundingClientRect();
+      const off = r.top < 0 && r.bottom < r.height * 0.3;
+      setMini(off);
+      if (!off) setClosed(false);
+    };
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => (window.removeEventListener('scroll', check), window.removeEventListener('resize', check));
+  }, [current?.id]);
+  const docked = mini && !closed;
+  const backToPlayer = () => {
+    const el = holder.current;
+    if (!el) return;
+    const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 120);
+    window.scrollTo({ top, behavior: 'smooth' });
+    // Some browsers ignore smooth scrolling (reduced motion, embedded views): fall back to a jump.
+    window.setTimeout(() => Math.abs(window.scrollY - top) > 40 && window.scrollTo(0, top), 500);
+    setMini(false);
+  };
   if (!current) return null;
   return (
     <div>
@@ -131,7 +160,29 @@ export function ChannelsView({ channelId }: { channelId?: string }) {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="min-w-0 space-y-4">
             {/* Remounts when the channel changes or the next programme starts (access is checked per programme). */}
-            <ChannelPlayer key={`${ch.id}:${current.id}`} ch={ch} p={current} onSwitch={select} />
+            {/* The holder keeps the player's space while it's docked, so the page doesn't jump. */}
+            <div ref={holder} className={cx(docked && 'aspect-video rounded-panel border border-dashed border-line')}>
+              <div
+                className={cx(docked && 'fixed right-3 bottom-20 z-[57] w-[min(15rem,calc(100vw-1.5rem))] overflow-hidden rounded-panel bg-black shadow-2xl ring-1 ring-line-strong sm:w-[24rem] md:right-5 md:bottom-5')}
+                role={docked ? 'region' : undefined}
+                aria-label={docked ? 'Mini player' : undefined}
+              >
+                {docked && (
+                  <div className="flex items-center gap-2 bg-surface px-3 py-1.5">
+                    <span className="min-w-0 flex-1 truncate text-xs font-semibold">
+                      {ch.name} · <span className="text-muted">{current.title}</span>
+                    </span>
+                    <button onClick={backToPlayer} aria-label="Back to the full player" title="Back to the full player" className="rounded-chip p-1.5 text-muted hover:text-text">
+                      <Icon name="full" size={16} />
+                    </button>
+                    <button onClick={() => setClosed(true)} aria-label="Close mini player" title="Close" className="rounded-chip p-1.5 text-muted hover:text-text">
+                      <Icon name="close" size={16} />
+                    </button>
+                  </div>
+                )}
+                <ChannelPlayer key={`${ch.id}:${current.id}`} ch={ch} p={current} onSwitch={select} mini={docked} />
+              </div>
+            </div>
             <NowInfo ch={ch} p={current} now={now} />
           </div>
           <aside className="space-y-6">
