@@ -196,8 +196,7 @@ function PromoBanner() {
       <Page className="relative flex max-w-[96rem] flex-col justify-center pt-2 pb-8 md:min-h-[min(34rem,46vw)] md:py-12">
         {/* Every block has a fixed height, so the title and the buttons stay put when the slide changes. */}
         <div className="max-w-xl" aria-live="polite">
-          <p className="label truncate text-gold">{sl.kicker}</p>
-          <div className="mt-2 flex h-[4.9rem] items-end sm:h-[6.94rem]">
+          <div className="flex h-[4.9rem] items-end sm:h-[6.94rem]">
             <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
           </div>
           <p className="mt-3 flex min-h-[2.75rem] flex-wrap content-start items-center gap-x-2 gap-y-1 text-sm font-medium text-text/85 lg:min-h-[1.25rem]">
