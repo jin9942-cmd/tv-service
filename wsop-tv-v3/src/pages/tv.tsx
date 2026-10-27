@@ -59,21 +59,6 @@ export function TvHome() {
         <ContinueRow />
         <MyListRow />
         <TodayRail now={now} />
-        <section aria-label="Shows">
-          <SectionHeader
-            title="Shows"
-            action={
-              <Link to="/shows" className="text-sm font-semibold text-muted hover:text-text">
-                All shows →
-              </Link>
-            }
-          />
-          <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
-            {shows.slice(0, 4).map((s) => (
-              <ShowCard key={s.id} s={s} now={now} />
-            ))}
-          </div>
-        </section>
         <ForYouRow />
         <HowToWatchBand />
       </Page>
@@ -81,9 +66,13 @@ export function TvHome() {
   );
 }
 
+/** What sets a channel apart at a glance (language, or free) — skipped when the name already says it. */
+const channelTrait = (ch: LinearChannel) => (ch.free ? 'Free' : ch.lang === 'ES' ? null : 'English');
+
 function ChannelTabs({ active, now, onSelect }: { active: string; now: number; onSelect: (id: string) => void }) {
   return (
-    <div className="hscroll" role="tablist" aria-label="Channels">
+    // Full-width grid (no sideways scroll), so programme titles have room.
+    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4" role="tablist" aria-label="Channels">
       {channels.map((ch) => {
         const p = programAt(ch.id, now);
         const on = ch.id === active;
@@ -93,12 +82,17 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
             role="tab"
             aria-selected={on}
             onClick={() => onSelect(ch.id)}
-            className={cx('flex w-60 items-center gap-3 rounded-card border px-3 py-2.5 text-left transition-colors duration-150', on ? 'border-gold bg-gold-dim' : 'border-line bg-surface hover:border-line-strong')}
+            className={cx('flex min-w-0 items-center gap-3 rounded-card border px-3 py-2.5 text-left transition-colors duration-150', on ? 'border-gold bg-gold-dim' : 'border-line bg-surface hover:border-line-strong')}
           >
             <ChannelNumber ch={ch} className={on ? 'border-gold text-gold-strong' : undefined} />
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-bold">{ch.name}</span>
-              <span className="block truncate text-xs text-muted">{p?.title}</span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-baseline gap-2">
+                <span className="truncate text-sm font-bold">{ch.name}</span>
+                {channelTrait(ch) && <span className="shrink-0 text-[11px] text-subtle">{channelTrait(ch)}</span>}
+              </span>
+              <span className="block truncate text-xs text-muted" title={p?.title}>
+                <span className="font-semibold text-text/70">Now</span> · {p?.title}
+              </span>
             </span>
           </button>
         );
