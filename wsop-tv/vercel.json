@@ -3,6 +3,7 @@
   "redirects": [
     { "source": "/v2", "destination": "/v2/", "permanent": false },
     { "source": "/v3", "destination": "/v3/", "permanent": false },
-    { "source": "/:path((?!v2/|v2$|v3/|v3$).*)", "destination": "/v2/", "permanent": false }
+    { "source": "/v4", "destination": "/v4/", "permanent": false },
+    { "source": "/:path((?!v2/|v2$|v3/|v3$|v4/|v4$).*)", "destination": "/v2/", "permanent": false }
   ]
 }

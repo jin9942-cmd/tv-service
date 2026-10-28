@@ -78,6 +78,21 @@
         "--strictPort"
       ],
       "port": 5176
+    },
+    {
+      "name": "wsop-tv-v4",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "wsop-tv-v4",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5177",
+        "--strictPort"
+      ],
+      "port": 5177
     }
   ]
 }
