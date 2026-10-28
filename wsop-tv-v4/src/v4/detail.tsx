@@ -168,11 +168,10 @@ export function About({ v }: { v: Video }) {
 }
 
 /**
- * The one card used everywhere: thumbnail (only LIVE on it) → plays; title and one quiet line; ⓘ opens the detail popup.
+ * The one card used everywhere: thumbnail (only LIVE on it) and title → play. The detail popup opens only from the home banner.
  */
 export function VideoCard({ v, progress, className }: { v: Video; progress?: number; className?: string }) {
   const { state } = useApp();
-  const { open } = useDetail();
   const live = isLive(v, state.streamMode);
   return (
     <div className={cx('group relative min-w-0', className)}>
@@ -192,15 +191,10 @@ export function VideoCard({ v, progress, className }: { v: Video; progress?: num
           )}
         </span>
       </Link>
-      <div className="mt-2 flex items-start gap-2">
-        <Link to={`/watch/${v.id}`} className="min-w-0 flex-1">
-          <span className="line-clamp-2 text-[15px] leading-snug font-semibold group-hover:text-gold-strong">{v.title}</span>
-          <span className="mt-0.5 block truncate text-xs text-muted">{v.subtitle}</span>
-        </Link>
-        <button onClick={() => open(v.id)} aria-label={`Details: ${v.title}`} title="Details" className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-line-strong text-muted hover:border-text hover:text-text">
-          <span className="text-[13px] font-bold">i</span>
-        </button>
-      </div>
+      <Link to={`/watch/${v.id}`} className="mt-2 block min-w-0">
+        <span className="line-clamp-2 text-[15px] leading-snug font-semibold group-hover:text-gold-strong">{v.title}</span>
+        <span className="mt-0.5 block truncate text-xs text-muted">{v.subtitle}</span>
+      </Link>
     </div>
   );
 }

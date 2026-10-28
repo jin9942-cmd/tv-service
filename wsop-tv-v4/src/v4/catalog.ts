@@ -1,6 +1,6 @@
 // v4 — one catalog of everything playable (broadcast days, classics, hand clips, 24/7 channels). Cards, the detail
 // popup, the common player, related videos and tag pages all read from here, so every video looks and behaves the same.
-import { archive, classicEvents, dayById, events, finalTableSeats, hands, seatsFor, seriesById } from '../data/mock';
+import { archive, classicEvents, dayById, events, finalTableSeats, hands, playerById, seatsFor, seriesById } from '../data/mock';
 import { channelById, channels, programAt } from '../data/channels';
 import type { Day, Hand, TourEvent } from '../data/types';
 import { FOOTAGE, tableVideo, thumbFor } from '../lib/media';
@@ -55,6 +55,9 @@ const HAND_TAG: Record<Hand['type'], Tag> = {
 };
 const eventTag = (e: TourEvent): Tag => ({ slug: `event-${e.id}`, label: e.seriesId === 'classics' ? e.name : short(e) });
 const stageTag = (d: Day): Tag => ({ slug: d.label === 'Final Table' ? 'final-table' : 'tournament-days', label: d.label === 'Final Table' ? 'Final Table' : 'Tournament days' });
+/** Player tags: the players at the table (biggest stacks first, at most four) or the two players in a hand. */
+const playerTags = (ids: string[]): Tag[] => ids.map((id) => ({ slug: `player-${id}`, label: playerById(id).name }));
+const tablePlayers = (d: Day) => [...(d.id === HERO_DAY ? finalTableSeats : seatsFor(d.id))].sort((a, b) => b.stack - a.stack).slice(0, 4).map((x) => x.playerId);
 const seriesTag = (e: TourEvent): Tag => (e.seriesId === 'classics' ? { slug: 'classics', label: 'WSOP Classics' } : { slug: `series-${e.seriesId}`, label: seriesById(e.seriesId).name });
 
 function aboutDay(e: TourEvent, d: Day): [string, string][] {
@@ -92,7 +95,7 @@ function dayVideo(e: TourEvent, d: Day, i: number): Video {
     eventId: e.id,
     dayId: d.id,
     status: d.status,
-    tags: [eventTag(e), GAME_TAG[e.game], stageTag(d), seriesTag(e)],
+    tags: [eventTag(e), ...playerTags(tablePlayers(d)), GAME_TAG[e.game], stageTag(d), seriesTag(e)],
     about: aboutDay(e, d),
     views: 40_000 + ((i * 7919 + e.entrants) % 400_000),
   };
@@ -111,7 +114,7 @@ function clipVideo(h: Hand, i: number): Video {
     durationSec: h.durationSec,
     eventId: ref.event.id,
     dayId: h.dayId,
-    tags: [eventTag(ref.event), HAND_TAG[h.type], GAME_TAG[ref.event.game], stageTag(ref.day)],
+    tags: [eventTag(ref.event), ...playerTags(h.playerIds), HAND_TAG[h.type], GAME_TAG[ref.event.game], stageTag(ref.day)],
     about: [
       ['Event', short(ref.event)],
       ['Broadcast', ref.day.label],
@@ -145,7 +148,7 @@ export function channelVideo(channelId: string, at: number): Video | undefined {
     durationSec: Math.round((p.end - p.start) / 1000),
     eventId: ref?.event.id,
     dayId: p.dayId,
-    tags: ref ? [eventTag(ref.event), GAME_TAG[ref.event.game], { slug: 'channels', label: '24/7 Channels' }] : [{ slug: 'channels', label: '24/7 Channels' }],
+    tags: ref ? [eventTag(ref.event), ...playerTags(tablePlayers(ref.day)), GAME_TAG[ref.event.game], { slug: 'channels', label: '24/7 Channels' }] : [{ slug: 'channels', label: '24/7 Channels' }],
     about: ref
       ? aboutDay(ref.event, ref.day)
       : [
