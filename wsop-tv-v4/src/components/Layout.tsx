@@ -9,16 +9,18 @@ import { TvPreview } from '../features/tv/TvPreview';
 import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
 
 
-// v3 (NBA TV-style): the channel is the product.
+// v4: the three things the service does — live (events and 24/7 channels), replays by event, short clips.
+// How to Watch lives in the footer; My List in the My menu.
 export const NAV = [
   { to: '/', label: 'Home', icon: 'star', end: true },
-  { to: '/schedule', label: 'Schedule', icon: 'calendar' },
+  { to: '/live', label: 'Live', icon: 'tv' },
+  { to: '/events', label: 'Events', icon: 'grid2' },
   { to: '/highlights', label: 'Highlights', icon: 'grid4' },
-  { to: '/archive', label: 'Archive', icon: 'grid2' },
-  { to: '/how-to-watch', label: 'How to Watch', icon: 'tv' },
 ] as const;
 
-const MOBILE_NAV = ['/', '/schedule', '/highlights', '/archive'];
+const MOBILE_NAV = ['/', '/live', '/events', '/highlights'];
+/** The schedule is a tab of Live, so Live stays highlighted there. */
+const navOn = (to: string, isActive: boolean, path: string) => isActive || (to === '/live' && path === '/schedule');
 
 export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (
@@ -94,10 +96,10 @@ export function Layout() {
                 key={n.to}
                 to={n.to}
                 end={'end' in n}
-                className={({ isActive }) => cx('rounded-chip px-3 py-1.5 text-[15px] font-medium whitespace-nowrap transition-colors duration-150', isActive ? 'text-text' : 'text-text/70 hover:text-text')}
+                className={({ isActive }) => cx('rounded-chip px-3 py-1.5 text-[15px] font-medium whitespace-nowrap transition-colors duration-150', navOn(n.to, isActive, loc.pathname) ? 'text-text' : 'text-text/70 hover:text-text')}
               >
                 {({ isActive }) => (
-                  <span className={cx('relative', isActive && 'after:absolute after:-bottom-[21px] after:left-0 after:h-[3px] after:w-full after:bg-gold')}>{n.label}</span>
+                  <span className={cx('relative', navOn(n.to, isActive, loc.pathname) && 'after:absolute after:-bottom-[21px] after:left-0 after:h-[3px] after:w-full after:bg-gold')}>{n.label}</span>
                 )}
               </NavLink>
             ))}
@@ -145,7 +147,7 @@ export function Layout() {
       {/* Mobile bottom navigation */}
       <nav aria-label="Main (mobile)" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-bg/95 backdrop-blur md:hidden">
         {NAV.filter((n) => MOBILE_NAV.includes(n.to)).map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold', isActive ? 'text-gold' : 'text-muted')}>
+          <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold', navOn(n.to, isActive, loc.pathname) ? 'text-gold' : 'text-muted')}>
             <Icon name={n.icon} size={20} />
             {n.label}
           </NavLink>

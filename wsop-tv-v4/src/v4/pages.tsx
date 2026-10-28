@@ -1,17 +1,18 @@
-// v4 — the common watch page, tag pages, Highlights and Archive (all built from the catalog and the one card).
+// v4 — the common watch page, Live, Events, tag pages and Highlights (all built from the catalog and the one card).
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
 import { Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, upNext } from '../data/channels';
-import { dayById } from '../data/mock';
+import { dayById, eventById, events, seriesById } from '../data/mock';
+import type { TourEvent } from '../data/types';
 import { fmtTime } from '../lib/time';
-import { duration } from '../lib/format';
+import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { byTag, catalog, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
+import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -201,7 +202,7 @@ export function TagPage() {
   );
 }
 
-// ---- Highlights & Archive ------------------------------------------------------------------------------
+// ---- Highlights ------------------------------------------------------------------------------
 
 const HAND_FILTERS = [
   ['all', 'All'],
@@ -230,26 +231,6 @@ export function HighlightsPage() {
           <VideoCard key={v.id} v={v} />
         ))}
       </div>
-    </Page>
-  );
-}
-
-export function ArchivePage() {
-  const byEvent = [...new Set(replays.map((v) => v.eventId))].map((id) => replays.filter((v) => v.eventId === id));
-  return (
-    <Page className="max-w-[96rem] space-y-12">
-      <h1 className="text-title">Archive</h1>
-      <section aria-label="Classics">
-        <h2 className="mb-3 text-xl sm:text-2xl">Classics</h2>
-        <div className={rowGrid}>
-          {classics.map((v) => (
-            <VideoCard key={v.id} v={v} />
-          ))}
-        </div>
-      </section>
-      {byEvent.map((list) => (
-        <VideoRow key={list[0].eventId} title={list[0].title.split(' · ')[0]} videos={list} action={<Link to={`/tag/event-${list[0].eventId}`} className="text-sm font-semibold text-muted hover:text-text">All →</Link>} />
-      ))}
     </Page>
   );
 }
@@ -285,8 +266,8 @@ export function HomeRows() {
       <VideoRow title="Continue watching" videos={continuing} progressOf={progressOf} />
       <VideoRow title="Recommended for you" videos={recommendedRow(started)} />
       <VideoRow title="My List" videos={mine} action={more('/my-list', 'See all')} />
-      <VideoRow title="Classics" videos={classics} action={more('/archive')} />
-      <VideoRow title="Latest replays" videos={[...replays].reverse().filter((v) => !started.has(v.id))} action={more('/archive')} />
+      <VideoRow title="Classics" videos={classics} action={more('/events')} />
+      <VideoRow title="Latest replays" videos={[...replays].reverse().filter((v) => !started.has(v.id))} action={more('/events')} />
       <VideoRow title="Highlights" videos={highlightClips} action={more('/highlights')} />
     </>
   );
@@ -316,6 +297,148 @@ export function MyListPage() {
       ) : (
         <p className="mt-4 text-sm text-muted">Nothing saved yet. Use My List on any video to keep it here.</p>
       )}
+    </Page>
+  );
+}
+
+// ---- Live -------------------------------------------------------------------------------------------
+
+/** Live has two views: what's on now (events and the 24/7 channels) and the schedule. */
+export function LiveTabs({ active }: { active: 'now' | 'schedule' }) {
+  const tab = (on: boolean) => cx('-mb-px border-b-2 px-1 pb-2.5 text-[15px] font-semibold transition-colors duration-150', on ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text');
+  return (
+    <nav aria-label="Live" className="mt-3 flex gap-6 border-b border-line">
+      <Link to="/live" className={tab(active === 'now')} aria-current={active === 'now' ? 'page' : undefined}>
+        Live now
+      </Link>
+      <Link to="/schedule" className={tab(active === 'schedule')} aria-current={active === 'schedule' ? 'page' : undefined}>
+        Schedule
+      </Link>
+    </nav>
+  );
+}
+
+export function LivePage() {
+  const { state } = useApp();
+  const now = useTick(15_000);
+  const live = catalog.filter((v) => isLive(v, state.streamMode));
+  const chans = channels.map((c) => channelVideo(c.id, now)).filter((v): v is Video => !!v);
+  return (
+    <Page className="max-w-[96rem] space-y-10">
+      <div>
+        <h1 className="text-title">Live</h1>
+        <LiveTabs active="now" />
+      </div>
+      <section aria-label="Live events">
+        <h2 className="mb-3 text-xl sm:text-2xl">Live events</h2>
+        {live.length ? (
+          <div className={rowGrid}>
+            {live.map((v) => (
+              <VideoCard key={v.id} v={v} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted">No event is live right now. The 24/7 channels below are always on.</p>
+        )}
+      </section>
+      <section aria-label="24/7 Channels">
+        <h2 className="mb-3 text-xl sm:text-2xl">24/7 Channels</h2>
+        <div className={rowGrid}>
+          {chans.map((v) => (
+            <VideoCard key={v.id} v={v} />
+          ))}
+        </div>
+      </section>
+    </Page>
+  );
+}
+
+// ---- Events -----------------------------------------------------------------------------------------
+
+const eventVideos = (id: string) => catalog.filter((v) => v.eventId === id && v.kind === 'broadcast');
+
+function EventCard({ e }: { e: TourEvent }) {
+  const { state } = useApp();
+  const list = eventVideos(e.id);
+  const cover = list.find((v) => v.title.endsWith('Final Table')) ?? list[list.length - 1];
+  const live = list.some((v) => isLive(v, state.streamMode));
+  return (
+    <Link to={`/events/${e.id}`} className="group block min-w-0">
+      <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+        <img src={cover.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+        {live && <LiveTag className="absolute top-2 left-2" />}
+      </span>
+      <span className="mt-2 block truncate text-[15px] font-semibold group-hover:text-gold-strong">{e.name.replace(' World Championship', '')}</span>
+      <span className="mt-0.5 block truncate text-xs text-muted">
+        {seriesById(e.seriesId).name} · {list.length} broadcast{list.length === 1 ? '' : 's'}
+      </span>
+    </Link>
+  );
+}
+
+/** Events: this series by tournament, then WSOP Classics. */
+export function EventsPage() {
+  const withVideo = events.filter((e) => eventVideos(e.id).length);
+  const bySeries = [...new Set(withVideo.map((e) => e.seriesId))];
+  return (
+    <Page className="max-w-[96rem] space-y-12">
+      <h1 className="text-title">Events</h1>
+      {bySeries.map((sid) => (
+        <section key={sid} aria-label={seriesById(sid).name}>
+          <h2 className="mb-3 text-xl sm:text-2xl">{seriesById(sid).name}</h2>
+          <div className={rowGrid}>
+            {withVideo
+              .filter((e) => e.seriesId === sid)
+              .map((e) => (
+                <EventCard key={e.id} e={e} />
+              ))}
+          </div>
+        </section>
+      ))}
+      <section aria-label="WSOP Classics">
+        <h2 className="mb-3 text-xl sm:text-2xl">WSOP Classics</h2>
+        <div className={rowGrid}>
+          {classics.map((v) => (
+            <VideoCard key={v.id} v={v} />
+          ))}
+        </div>
+      </section>
+    </Page>
+  );
+}
+
+/** One event: its broadcasts in order and its key hands. */
+export function EventPage() {
+  const { eventId = '' } = useParams();
+  const { state } = useApp();
+  const e = eventById(eventId);
+  const list = e ? eventVideos(e.id) : [];
+  if (!e || !list.length) return <NotFound />;
+  const live = list.some((v) => isLive(v, state.streamMode));
+  const clips = highlightClips.filter((v) => v.eventId === e.id);
+  return (
+    <Page className="max-w-[96rem] space-y-10">
+      <div>
+        <Link to="/events" className="text-sm text-muted hover:text-text">
+          ← Events
+        </Link>
+        <h1 className="mt-2 text-title">{e.name.replace(' World Championship', '')}</h1>
+        <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+          {live && <LiveTag />}
+          <span>
+            {seriesById(e.seriesId).name} · {e.game} · Buy-in {e.buyIn ? money(e.buyIn) : 'Invitational'} · {e.entrants.toLocaleString('en-US')} entries · Prize pool {money(e.prizePool)}
+          </span>
+        </p>
+      </div>
+      <section aria-label="Broadcasts">
+        <h2 className="mb-3 text-xl sm:text-2xl">Broadcasts</h2>
+        <div className={rowGrid}>
+          {list.map((v) => (
+            <VideoCard key={v.id} v={v} progress={state.progress[v.id] ? state.progress[v.id] / v.durationSec : undefined} />
+          ))}
+        </div>
+      </section>
+      <VideoRow title="Key hands" videos={clips} action={<Link to={`/tag/event-${e.id}`} className="text-sm font-semibold text-muted hover:text-text">All videos →</Link>} />
     </Page>
   );
 }

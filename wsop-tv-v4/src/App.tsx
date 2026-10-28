@@ -1,12 +1,10 @@
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
-import { Live } from './pages/Live';
-import { ArchivePage, ChannelRedirect, HighlightsPage, MyListPage, TagPage, WatchPage } from './v4/pages';
+import { ChannelRedirect, EventPage, EventsPage, HighlightsPage, LivePage, MyListPage, TagPage, WatchPage } from './v4/pages';
 import { DetailProvider } from './v4/detail';
 import { TvHome, TvHowToWatch, TvSchedule, TvShowDetail, TvShows } from './pages/tv';
 import { TvClassic } from './pages/poker';
-import { TvEventDetail } from './pages/ott';
 import { SeriesList } from './pages/Series';
 import { Players, PlayerProfile } from './pages/Players';
 import { Hands } from './pages/Hands';
@@ -30,7 +28,7 @@ export default function App() {
           <Route path="/wsop-plus/join" element={<WsopPlusJoin />} />
           <Route element={<Layout />}>
             <Route index element={<TvHome />} />
-            <Route path="live" element={<Live />} />
+            <Route path="live" element={<LivePage />} />
             <Route path="live/channels" element={<ChannelRedirect />} />
             <Route path="live/channels/:channelId" element={<ChannelRedirect />} />
             <Route path="watch/:dayId" element={<WatchPage />} />
@@ -41,11 +39,12 @@ export default function App() {
             <Route path="video" element={<Hands />} />
             <Route path="how-to-watch" element={<TvHowToWatch />} />
             <Route path="series" element={<SeriesList />} />
-            <Route path="events/:eventId" element={<TvEventDetail />} />
+            <Route path="events" element={<EventsPage />} />
+            <Route path="events/:eventId" element={<EventPage />} />
             <Route path="players" element={<Players />} />
             <Route path="players/:playerId" element={<PlayerProfile />} />
             <Route path="hands" element={<Hands />} />
-            <Route path="archive" element={<ArchivePage />} />
+            <Route path="archive" element={<Navigate to="/events" replace />} />
             <Route path="highlights" element={<HighlightsPage />} />
             <Route path="classics/:classicId" element={<TvClassic />} />
             <Route path="account" element={<Account />} />
