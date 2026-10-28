@@ -124,8 +124,8 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
 }
 
 /**
- * Home promotion banner, wsop.com style: still photos (no autoplay) with the title, a line of facts and the actions
- * beside them. It promotes fixed picks (this year's Main Event, the archive) and is independent of the
+ * Home promotion banner, wsop.com style: still photos (no autoplay) with the title, a line of facts, one promo line and
+ * the actions beside them. It promotes fixed picks (this year's Main Event, the archive) and is independent of the
  * channel cards below.
  */
 function PromoBanner() {
@@ -140,7 +140,7 @@ function PromoBanner() {
       kicker: live ? 'Live now · Final table' : 'Main Event · Final table',
       title: `Main Event ${day.label}`,
       facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
-      note: 'Every table live, plus replays of every day',
+      line: 'Live from Las Vegas · Hole cards on a 30-minute delay',
       actions: (
         <>
           <Link to={`/watch/${HERO_DAY_ID}`}>
@@ -163,7 +163,7 @@ function PromoBanner() {
       kicker: 'WSOP Archive',
       title: 'Every final table, on demand',
       facts: ['Classics', 'Full broadcasts', 'Key hands'],
-      note: null,
+      line: 'Every final table from 2019 to 2025, with every key hand',
       actions: (
         <Link to="/archive">
           <Button variant="primary" size="lg" tabIndex={-1}>
@@ -198,8 +198,9 @@ function PromoBanner() {
               </span>
             ))}
           </p>
+          {/* One promo line, never more (fixed height, so the buttons stay put). */}
+          <p className="mt-3 line-clamp-2 h-[2.8rem] text-[15px] leading-[1.4rem] text-text/75 sm:line-clamp-1 sm:h-[1.4rem]">{sl.line}</p>
           <div className="mt-6 flex gap-2">{sl.actions}</div>
-          <p className="mt-4 h-4 truncate text-xs text-muted">{sl.note}</p>
         </div>
         <div className="mt-8 flex items-center gap-3">
           <button onClick={() => setSlide((slide + slides.length - 1) % slides.length)} aria-label="Previous" className="rounded-full border border-line-strong p-1.5 text-muted hover:border-text hover:text-text">
