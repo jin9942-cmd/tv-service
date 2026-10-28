@@ -124,8 +124,8 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
 }
 
 /**
- * Home promotion banner, wsop.com style: still photos (no autoplay) with the title, a line of facts, a short synopsis and
- * the actions beside them. It promotes fixed picks (this year's Main Event, the archive) and is independent of the
+ * Home promotion banner, wsop.com style: still photos (no autoplay) with the title, a line of facts and the actions
+ * beside them. It promotes fixed picks (this year's Main Event, the archive) and is independent of the
  * channel cards below.
  */
 function PromoBanner() {
@@ -140,13 +140,12 @@ function PromoBanner() {
       kicker: live ? 'Live now · Final table' : 'Main Event · Final table',
       title: `Main Event ${day.label}`,
       facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
-      synopsis: `${event.entrants.toLocaleString('en-US')} entered. The last table of the Main Event, live from Las Vegas — hole cards shown on a 30-minute delay.`,
       note: 'Every table live, plus replays of every day',
       actions: (
         <>
           <Link to={`/watch/${HERO_DAY_ID}`}>
             <Button variant="primary" size="lg" tabIndex={-1}>
-              <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch'}
+              <Icon name="play" size={18} /> Watch
             </Button>
           </Link>
           <Link to={`/events/${event.id}`}>
@@ -164,21 +163,13 @@ function PromoBanner() {
       kicker: 'WSOP Archive',
       title: 'Every final table, on demand',
       facts: ['Classics', 'Full broadcasts', 'Key hands'],
-      synopsis: 'Past WSOP final tables and every broadcast day, in one place — pick up any event from Day 1 to the bracelet.',
       note: null,
       actions: (
-        <>
-          <Link to="/archive">
-            <Button variant="primary" size="lg" tabIndex={-1}>
-              Browse the archive
-            </Button>
-          </Link>
-          <Link to="/highlights">
-            <Button variant="secondary" size="lg" tabIndex={-1}>
-              Highlights
-            </Button>
-          </Link>
-        </>
+        <Link to="/archive">
+          <Button variant="primary" size="lg" tabIndex={-1}>
+            <Icon name="play" size={18} /> Watch
+          </Button>
+        </Link>
       ),
     },
   ];
@@ -207,7 +198,6 @@ function PromoBanner() {
               </span>
             ))}
           </p>
-          <p className="mt-3 line-clamp-2 h-[2.8rem] text-[15px] leading-[1.4rem] text-text/75">{sl.synopsis}</p>
           <div className="mt-6 flex gap-2">{sl.actions}</div>
           <p className="mt-4 h-4 truncate text-xs text-muted">{sl.note}</p>
         </div>
