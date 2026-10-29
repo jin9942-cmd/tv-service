@@ -1,9 +1,9 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
-import { ChannelRedirect, EventPage, EventsPage, HighlightsPage, LivePage, MyListPage, TagPage, WatchPage } from './v4/pages';
+import { ChannelRedirect, EventPage, EventsPage, HighlightsPage, LivePage, MyListPage, SchedulePage, TagPage, WatchPage } from './v4/pages';
 import { DetailProvider } from './v4/detail';
-import { TvHome, TvHowToWatch, TvSchedule, TvShowDetail, TvShows } from './pages/tv';
+import { TvHome, TvHowToWatch, TvShowDetail, TvShows } from './pages/tv';
 import { TvClassic } from './pages/poker';
 import { SeriesList } from './pages/Series';
 import { Players, PlayerProfile } from './pages/Players';
@@ -33,7 +33,7 @@ export default function App() {
             <Route path="live/channels/:channelId" element={<ChannelRedirect />} />
             <Route path="watch/:dayId" element={<WatchPage />} />
             <Route path="tag/:slug" element={<TagPage />} />
-            <Route path="schedule" element={<TvSchedule />} />
+            <Route path="schedule" element={<SchedulePage />} />
             <Route path="shows" element={<TvShows />} />
             <Route path="shows/:showId" element={<TvShowDetail />} />
             <Route path="video" element={<Hands />} />

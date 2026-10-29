@@ -18,7 +18,7 @@ import { Button, Icon, Page, SectionHeader, cx } from '../components/ui';
 import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
-import { HomeRows, LiveTabs } from '../v4/pages';
+import { HomeRows } from '../v4/pages';
 import { useDetail } from '../v4/detail';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
@@ -278,8 +278,7 @@ export function TvSchedule() {
   const list = programsFor(ch.id).filter((p) => dayKey(p.start, state.tz) === days[day] && p.end > now - 3 * 3_600_000 && !isBreak(p));
   return (
     <Page className="max-w-[96rem]">
-      <h1 className="text-title">Live</h1>
-      <LiveTabs active="schedule" />
+      <h1 className="text-title">Schedule</h1>
       <p className="mt-1 text-sm text-muted">All times in your time zone.</p>
       <div className="mt-5">
         <ChannelTabs active={ch.id} now={now} onSelect={(id) => (setChId(id), setDay(0))} />

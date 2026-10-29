@@ -2,11 +2,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
-import { Icon, LiveTag, Page, cx } from '../components/ui';
-import { channelById, channels, programAt, upNext } from '../data/channels';
+import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
+import { channelById, channels, programAt, programs, reminderKey, upNext } from '../data/channels';
+import { commentaryFor } from '../data/shows';
+import { useProgramReminder } from '../features/channels/Channels';
 import { dayById, eventById, events, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
-import { fmtTime } from '../lib/time';
+import { dayKey, fmtTime } from '../lib/time';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
@@ -303,52 +305,219 @@ export function MyListPage() {
 
 // ---- Live -------------------------------------------------------------------------------------------
 
-/** Live has two views: what's on now (events and the 24/7 channels) and the schedule. */
-export function LiveTabs({ active }: { active: 'now' | 'schedule' }) {
-  const tab = (on: boolean) => cx('-mb-px border-b-2 px-1 pb-2.5 text-[15px] font-semibold transition-colors duration-150', on ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text');
-  return (
-    <nav aria-label="Live" className="mt-3 flex gap-6 border-b border-line">
-      <Link to="/live" className={tab(active === 'now')} aria-current={active === 'now' ? 'page' : undefined}>
-        Live now
-      </Link>
-      <Link to="/schedule" className={tab(active === 'schedule')} aria-current={active === 'schedule' ? 'page' : undefined}>
-        Schedule
-      </Link>
-    </nav>
-  );
+/** Seconds into the broadcast at the live edge: a channel counts from the start of what's on, an event from its day's start. */
+function liveEdgeFor(v: Video, at: number) {
+  if (v.kind === 'channel') {
+    const p = programAt(v.id.slice(3), at);
+    return () => Math.max(60, (Date.now() - (p?.start ?? Date.now())) / 1000);
+  }
+  const ref = v.dayId ? dayById(v.dayId) : undefined;
+  return () => (ref ? Math.max(120, Math.min(v.durationSec, (Date.now() - Date.parse(ref.day.start)) / 1000)) : v.durationSec);
 }
 
+/**
+ * Live: something is always playing. The player opens on the first live event (or a 24/7 channel when no event is
+ * live); the list beside it switches what's on screen without leaving the page.
+ */
 export function LivePage() {
   const { state } = useApp();
   const now = useTick(15_000);
-  const live = catalog.filter((v) => isLive(v, state.streamMode));
+  const [params, setParams] = useSearchParams();
+  const events = catalog.filter((v) => isLive(v, state.streamMode));
   const chans = channels.map((c) => channelVideo(c.id, now)).filter((v): v is Video => !!v);
+  const sources = [...events, ...chans];
+  const v = sources.find((x) => x.id === params.get('v')) ?? sources[0];
+  const program = v.kind === 'channel' ? programAt(v.id.slice(3), now) : undefined;
+  const pick = (id: string) => setParams({ v: id }, { replace: true });
+  const upcoming = programs
+    .filter((p) => p.start > now && p.start < now + 6 * 3_600_000 && !BREAKS.includes(p.title))
+    .sort((a, b) => a.start - b.start)
+    .slice(0, 6);
   return (
-    <Page className="max-w-[96rem] space-y-10">
-      <div>
-        <h1 className="text-title">Live</h1>
-        <LiveTabs active="now" />
-      </div>
-      <section aria-label="Live events">
-        <h2 className="mb-3 text-xl sm:text-2xl">Live events</h2>
-        {live.length ? (
-          <div className={rowGrid}>
-            {live.map((v) => (
-              <VideoCard key={v.id} v={v} />
-            ))}
+    <Page className="max-w-[96rem] py-4 sm:py-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0">
+          <div className="overflow-hidden rounded-panel">
+            <Player key={`${v.id}:${program?.id ?? ''}`} v={v} live liveEdge={liveEdgeFor(v, now)} />
           </div>
-        ) : (
-          <p className="text-sm text-muted">No event is live right now. The 24/7 channels below are always on.</p>
-        )}
-      </section>
-      <section aria-label="24/7 Channels">
-        <h2 className="mb-3 text-xl sm:text-2xl">24/7 Channels</h2>
-        <div className={rowGrid}>
-          {chans.map((v) => (
-            <VideoCard key={v.id} v={v} />
-          ))}
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="font-sans text-xl leading-snug font-bold normal-case sm:text-2xl">{v.title}</h1>
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+                <LiveTag />
+                <span>{v.subtitle}</span>
+                {program && (
+                  <span className="tnum">
+                    · {fmtTime(program.start, state.tz)} – {fmtTime(program.end, state.tz)}
+                  </span>
+                )}
+              </p>
+            </div>
+            <Link to={`/watch/${v.id}`} className="text-sm font-semibold text-muted hover:text-text">
+              Details & related →
+            </Link>
+          </div>
+          <TagList v={v} className="mt-4" />
         </div>
-      </section>
+
+        <aside className="space-y-6">
+          <section aria-label="Live now">
+            <h2 className="mb-3 font-sans text-base font-bold normal-case">Live now</h2>
+            {events.length > 0 && (
+              <>
+                <h3 className="mt-4 mb-2 text-xs font-semibold tracking-wide text-subtle uppercase first:mt-0">Events</h3>
+                <ul className="space-y-2">
+                  {events.map((x) => (
+                <SourceItem key={x.id} x={x} on={x.id === v.id} onPick={pick} />
+              ))}
+                </ul>
+              </>
+            )}
+            <h3 className="mt-4 mb-2 text-xs font-semibold tracking-wide text-subtle uppercase first:mt-0">24/7 Channels</h3>
+            <ul className="space-y-2">
+              {chans.map((x) => (
+                <SourceItem key={x.id} x={x} on={x.id === v.id} onPick={pick} />
+              ))}
+            </ul>
+          </section>
+          <section aria-label="Coming up">
+            <div className="mb-2 flex items-end justify-between">
+              <h2 className="font-sans text-base font-bold normal-case">Coming up</h2>
+              <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
+                Full schedule →
+              </Link>
+            </div>
+            <ol className="divide-y divide-line">
+              {upcoming.map((p) => (
+                <li key={p.id} className="flex gap-3 py-2 text-sm">
+                  <span className="w-16 shrink-0 text-muted tnum">{fmtTime(p.start, state.tz)}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate">{p.title}</span>
+                    <span className="block truncate text-xs text-subtle">{channelById(p.channelId)?.name}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </aside>
+      </div>
+    </Page>
+  );
+}
+
+/** One row of the Live list: thumbnail (play mark when it's on screen), title, where it's from. */
+function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: string) => void }) {
+  return (
+    <li>
+      <button onClick={() => onPick(x.id)} aria-current={on || undefined} className={cx('flex w-full gap-3 rounded-card p-2 text-left transition-colors duration-150', on ? 'bg-surface-3' : 'hover:bg-surface-2')}>
+        <span className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-chip bg-surface-2">
+          <img src={x.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+          {on && (
+            <span className="absolute inset-0 flex items-center justify-center bg-black/45" aria-hidden>
+              <Icon name="play" size={18} />
+            </span>
+          )}
+        </span>
+        <span className="min-w-0">
+          <span className="line-clamp-2 text-sm leading-snug font-semibold">{x.title}</span>
+          <span className="mt-0.5 block truncate text-xs text-muted">{x.subtitle}</span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+// ---- Schedule ---------------------------------------------------------------------------------------
+
+const BREAKS = ['Coming Up', 'A continuación'];
+
+/** Schedule by date: a strip of dates, an optional channel filter, and every programme of that day in time order. */
+export function SchedulePage() {
+  const { state } = useApp();
+  const now = useTick(30_000);
+  const remind = useProgramReminder();
+  const today = dayKey(now, state.tz);
+  // One chip per date that has programmes, from today on (a week ahead).
+  const dates = [...new Set(programs.map((p) => dayKey(p.start, state.tz)))].filter((k) => k >= today).slice(0, 7);
+  const [date, setDate] = useState(dates[0]);
+  const [ch, setCh] = useState<string>('all');
+  const list = programs
+    .filter((p) => dayKey(p.start, state.tz) === date && (ch === 'all' || p.channelId === ch) && !BREAKS.includes(p.title))
+    .sort((a, b) => a.start - b.start || a.channelId.localeCompare(b.channelId));
+  const label = (k: string) => {
+    const at = Date.parse(`${k}T12:00:00Z`);
+    return { wd: new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' }).format(at), md: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(at) };
+  };
+  return (
+    <Page className="max-w-[96rem]">
+      <h1 className="text-title">Schedule</h1>
+      <p className="mt-1 text-sm text-muted">All times in your time zone.</p>
+
+      <div className="hscroll mt-5" role="tablist" aria-label="Date">
+        {dates.map((k) => {
+          const l = label(k);
+          const on = k === date;
+          return (
+            <button key={k} role="tab" aria-selected={on} onClick={() => setDate(k)} className={cx('flex w-20 flex-col items-center rounded-card border py-2 transition-colors duration-150', on ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text')}>
+              <span className="text-xs font-semibold uppercase">{l.wd}</span>
+              <span className="text-[15px] font-bold tnum">{l.md}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Channel">
+        {[{ id: 'all', name: 'All channels' }, ...channels].map((c) => (
+          <button key={c.id} role="tab" aria-selected={ch === c.id} onClick={() => setCh(c.id)} className={cx('h-9 rounded-full border px-4 text-sm font-semibold', ch === c.id ? 'border-gold bg-gold-dim text-text' : 'border-line-strong text-muted hover:text-text')}>
+            {c.name}
+          </button>
+        ))}
+      </div>
+
+      <ol className="mt-5 divide-y divide-line overflow-hidden rounded-panel border border-line bg-surface">
+        {list.map((p) => {
+          const c = channelById(p.channelId)!;
+          const isNow = p.start <= now && now < p.end;
+          const past = p.end <= now;
+          const on = state.reminders.includes(reminderKey(p));
+          const team = commentaryFor(p);
+          return (
+            <li key={p.id} className={cx('flex items-center gap-4 px-4 py-3', isNow && 'bg-gold-dim', past && 'opacity-55')}>
+              <span className="w-[4.5rem] shrink-0 text-sm font-bold tnum">{fmtTime(p.start, state.tz)}</span>
+              <span className="hidden w-32 shrink-0 truncate text-sm text-muted sm:block">{c.name}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  {isNow && <LiveTag />}
+                  <span className="truncate text-[15px] font-semibold">{p.title}</span>
+                </span>
+                <span className="block truncate text-xs text-muted">
+                  <span className="sm:hidden">{c.name} · </span>
+                  {p.subtitle}
+                  {team && <span className="text-subtle"> · {team}</span>}
+                </span>
+              </span>
+              {isNow ? (
+                <Link to={`/live?v=ch-${c.id}`}>
+                  <Button size="sm" variant="primary" tabIndex={-1}>
+                    <Icon name="play" size={14} /> Watch
+                  </Button>
+                </Link>
+              ) : (
+                !past && (
+                  <button
+                    onClick={() => remind(p, c)}
+                    aria-pressed={on}
+                    aria-label={on ? `Reminder set for ${p.title}` : `Remind me about ${p.title}`}
+                    className={cx('inline-flex size-9 shrink-0 items-center justify-center rounded-chip border transition-colors duration-150', on ? 'border-gold bg-gold-dim text-gold-strong' : 'border-line-strong text-muted hover:text-text')}
+                  >
+                    <Icon name="bell" size={16} />
+                  </button>
+                )
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </Page>
   );
 }

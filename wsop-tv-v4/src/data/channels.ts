@@ -58,9 +58,9 @@ export const KIND_LABEL: Record<ProgramKind, string> = { live: 'Live', replay: '
 const M = 60_000;
 const H = 60 * M;
 const SLOT = 30 * M;
-/** The guide covers 12 hours back and 36 hours ahead of page load. */
+/** The guide covers 12 hours back and a week ahead of page load (the Schedule shows it by date). */
 export const GUIDE_START = Math.floor((T0 - 12 * H) / SLOT) * SLOT;
-export const GUIDE_END = GUIDE_START + 48 * H;
+export const GUIDE_END = GUIDE_START + (12 + 7 * 24) * H;
 
 /** Live coverage each channel carries (broadcast day ids, in order). The Spanish channel simulcasts the Main Event. */
 const CARRIAGE: Record<string, string[]> = {
