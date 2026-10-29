@@ -9,7 +9,6 @@ import { isOnAir } from '../lib/broadcast';
 import { PLATFORMS } from '../data/platforms';
 import { thumbFor } from '../lib/media';
 import { HERO_IMAGES } from '../lib/brand';
-import { MyListButton } from '../features/library/listActions';
 import { money } from '../lib/format';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
@@ -143,7 +142,6 @@ function PromoBanner() {
           <Button variant="secondary" size="lg" onClick={() => openDetail(HERO_DAY_ID)}>
             Details
           </Button>
-          <MyListButton kind="day" id={HERO_DAY_ID} size="lg" className="px-4 sm:px-6" labelClassName="hidden sm:inline" />
         </>
       ),
     },
