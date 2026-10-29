@@ -716,13 +716,15 @@ function AboutChannels() {
 const PPM = 4; // pixels per minute
 const GUIDE_HOURS = 8;
 
-export function ChannelGuide({ now, active, onSelect }: { now: number; active: string; onSelect: (id: string) => void }) {
+/** With from, the guide shows a whole other day (24 hours from that time) instead of the next 8 hours from now. */
+export function ChannelGuide({ now, active, onSelect, from }: { now: number; active: string; onSelect: (id: string) => void; from?: number }) {
   const { state } = useApp();
-  const start = Math.floor((now - 30 * M) / SLOT) * SLOT;
-  const end = start + GUIDE_HOURS * 60 * M;
+  const start = from ?? Math.floor((now - 30 * M) / SLOT) * SLOT;
+  const hours = from ? 24 : GUIDE_HOURS;
+  const end = start + hours * 60 * M;
   const width = ((end - start) / M) * PPM;
   const x = (t: number) => ((Math.max(start, Math.min(end, t)) - start) / M) * PPM;
-  const ticks = Array.from({ length: GUIDE_HOURS * 2 }, (_, i) => start + i * SLOT);
+  const ticks = Array.from({ length: hours * 2 }, (_, i) => start + i * SLOT);
   const select = (id: string) => {
     onSelect(id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -731,13 +733,13 @@ export function ChannelGuide({ now, active, onSelect }: { now: number; active: s
     <section id="channel-guide" className="mt-10 scroll-mt-24" aria-label="Channel guide">
       <SectionHeader
         title="Channel guide"
-        kicker="All channels · next 8 hours"
+        kicker={from ? `All channels · ${fmtDate(start, state.tz)}` : "All channels · next 8 hours"}
         action={<span className="hidden text-xs text-muted md:inline">Your time ({tzAbbr(state.tz)}) · select a programme on now to switch, a later one for a reminder</span>}
       />
       <div className="overflow-x-auto rounded-panel border border-line bg-surface">
         <div style={{ width: width + 176 }}>
           <div className="flex h-9 border-b border-line">
-            <div className="sticky left-0 z-20 flex w-32 shrink-0 items-center border-r border-line bg-surface px-3 text-xs font-semibold text-muted sm:w-44">{fmtDate(now, state.tz)}</div>
+            <div className="sticky left-0 z-20 flex w-32 shrink-0 items-center border-r border-line bg-surface px-3 text-xs font-semibold text-muted sm:w-44">{fmtDate(start, state.tz)}</div>
             <div className="relative flex-1">
               {ticks.map((t) => (
                 <span key={t} className="absolute top-0 h-full border-l border-line/70 pt-2.5 pl-1.5 text-[11px] text-muted tnum" style={{ left: x(t) }}>
@@ -755,10 +757,7 @@ export function ChannelGuide({ now, active, onSelect }: { now: number; active: s
                 className={cx('sticky left-0 z-20 flex w-32 shrink-0 items-center gap-2.5 border-r border-line px-3 text-left transition-colors duration-150 sm:w-44', ch.id === active ? 'bg-surface-3' : 'bg-surface hover:bg-surface-2')}
               >
                 <ChannelNumber ch={ch} className={ch.id === active ? 'border-gold text-gold-strong' : undefined} />
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-bold">{ch.name}</span>
-                  <span className="block truncate text-[11px] text-muted">{ch.free ? 'Free · 24/7' : ch.lang === 'ES' ? 'Español' : 'English'}</span>
-                </span>
+                <span className="min-w-0 truncate text-sm font-bold">{ch.name}</span>
               </button>
               <div className="relative flex-1">
                 {programsFor(ch.id)

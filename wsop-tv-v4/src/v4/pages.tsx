@@ -5,7 +5,7 @@ import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, reminderKey, upNext } from '../data/channels';
 import { commentaryFor } from '../data/shows';
-import { useProgramReminder } from '../features/channels/Channels';
+import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
 import { dayById, eventById, events, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { dayKey, fmtTime } from '../lib/time';
@@ -431,7 +431,10 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
 
 const BREAKS = ['Coming Up', 'A continuación'];
 
-/** Schedule by date: a strip of dates, an optional channel filter, and every programme of that day in time order. */
+/**
+ * Schedule: pick a channel (cards with what's on now) and a date, see that channel's day in time order,
+ * then every channel side by side in the guide below.
+ */
 export function SchedulePage() {
   const { state } = useApp();
   const now = useTick(30_000);
@@ -440,10 +443,13 @@ export function SchedulePage() {
   // One chip per date that has programmes, from today on (a week ahead).
   const dates = [...new Set(programs.map((p) => dayKey(p.start, state.tz)))].filter((k) => k >= today).slice(0, 7);
   const [date, setDate] = useState(dates[0]);
-  const [ch, setCh] = useState<string>('all');
-  const list = programs
-    .filter((p) => dayKey(p.start, state.tz) === date && (ch === 'all' || p.channelId === ch) && !BREAKS.includes(p.title))
-    .sort((a, b) => a.start - b.start || a.channelId.localeCompare(b.channelId));
+  const [chId, setChId] = useState(channels[0].id);
+  const ch = channelById(chId)!;
+  const ofDay = programs.filter((p) => dayKey(p.start, state.tz) === date);
+  const list = ofDay.filter((p) => p.channelId === ch.id && !BREAKS.includes(p.title)).sort((a, b) => a.start - b.start);
+  // The guide follows the selected date: next 8 hours today, the whole day on a later date.
+  const firstOfDay = Math.min(...ofDay.map((p) => p.start));
+  const from = date === today ? undefined : firstOfDay - (firstOfDay % 3_600_000);
   const label = (k: string) => {
     const at = Date.parse(`${k}T12:00:00Z`);
     return { wd: new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' }).format(at), md: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(at) };
@@ -453,30 +459,45 @@ export function SchedulePage() {
       <h1 className="text-title">Schedule</h1>
       <p className="mt-1 text-sm text-muted">All times in your time zone.</p>
 
-      <div className="hscroll mt-5" role="tablist" aria-label="Date">
-        {dates.map((k) => {
-          const l = label(k);
-          const on = k === date;
+      <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" role="tablist" aria-label="Channel">
+        {channels.map((c) => {
+          const p = programAt(c.id, now);
+          const on = c.id === ch.id;
           return (
-            <button key={k} role="tab" aria-selected={on} onClick={() => setDate(k)} className={cx('flex w-20 flex-col items-center rounded-card border py-2 transition-colors duration-150', on ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text')}>
-              <span className="text-xs font-semibold uppercase">{l.wd}</span>
-              <span className="text-[15px] font-bold tnum">{l.md}</span>
+            <button
+              key={c.id}
+              role="tab"
+              aria-selected={on}
+              onClick={() => setChId(c.id)}
+              className={cx('flex min-w-0 items-center gap-3 rounded-card border px-3 py-2.5 text-left transition-colors duration-150', on ? 'border-gold bg-gold-dim' : 'border-line bg-surface hover:border-line-strong')}
+            >
+              <ChannelNumber ch={c} className={on ? 'border-gold text-gold-strong' : undefined} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-bold">{c.name}</span>
+                <span className="block truncate text-xs text-muted" title={p?.title}>
+                  <span className="font-semibold text-text/70">Now</span> · {p?.title}
+                </span>
+              </span>
             </button>
           );
         })}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Channel">
-        {[{ id: 'all', name: 'All channels' }, ...channels].map((c) => (
-          <button key={c.id} role="tab" aria-selected={ch === c.id} onClick={() => setCh(c.id)} className={cx('h-9 rounded-full border px-4 text-sm font-semibold', ch === c.id ? 'border-gold bg-gold-dim text-text' : 'border-line-strong text-muted hover:text-text')}>
-            {c.name}
-          </button>
-        ))}
+      <div className="hscroll mt-4" role="tablist" aria-label="Date">
+        {dates.map((k) => {
+          const l = label(k);
+          const on = k === date;
+          return (
+            <button key={k} role="tab" aria-selected={on} onClick={() => setDate(k)} className={cx('flex w-[4.5rem] flex-col items-center rounded-card border py-1.5 transition-colors duration-150', on ? 'border-gold bg-gold-dim text-text' : 'border-line-strong text-muted hover:text-text')}>
+              <span className="text-[11px] font-semibold uppercase">{l.wd}</span>
+              <span className="text-sm font-bold tnum">{l.md}</span>
+            </button>
+          );
+        })}
       </div>
 
-      <ol className="mt-5 divide-y divide-line overflow-hidden rounded-panel border border-line bg-surface">
+      <ol className="mt-4 divide-y divide-line overflow-hidden rounded-panel border border-line bg-surface">
         {list.map((p) => {
-          const c = channelById(p.channelId)!;
           const isNow = p.start <= now && now < p.end;
           const past = p.end <= now;
           const on = state.reminders.includes(reminderKey(p));
@@ -484,20 +505,18 @@ export function SchedulePage() {
           return (
             <li key={p.id} className={cx('flex items-center gap-4 px-4 py-3', isNow && 'bg-gold-dim', past && 'opacity-55')}>
               <span className="w-[4.5rem] shrink-0 text-sm font-bold tnum">{fmtTime(p.start, state.tz)}</span>
-              <span className="hidden w-32 shrink-0 truncate text-sm text-muted sm:block">{c.name}</span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
                   {isNow && <LiveTag />}
                   <span className="truncate text-[15px] font-semibold">{p.title}</span>
                 </span>
                 <span className="block truncate text-xs text-muted">
-                  <span className="sm:hidden">{c.name} · </span>
                   {p.subtitle}
                   {team && <span className="text-subtle"> · {team}</span>}
                 </span>
               </span>
               {isNow ? (
-                <Link to={`/live?v=ch-${c.id}`}>
+                <Link to={`/live?v=ch-${ch.id}`}>
                   <Button size="sm" variant="primary" tabIndex={-1}>
                     <Icon name="play" size={14} /> Watch
                   </Button>
@@ -505,7 +524,7 @@ export function SchedulePage() {
               ) : (
                 !past && (
                   <button
-                    onClick={() => remind(p, c)}
+                    onClick={() => remind(p, ch)}
                     aria-pressed={on}
                     aria-label={on ? `Reminder set for ${p.title}` : `Remind me about ${p.title}`}
                     className={cx('inline-flex size-9 shrink-0 items-center justify-center rounded-chip border transition-colors duration-150', on ? 'border-gold bg-gold-dim text-gold-strong' : 'border-line-strong text-muted hover:text-text')}
@@ -518,6 +537,8 @@ export function SchedulePage() {
           );
         })}
       </ol>
+
+      <ChannelGuide now={now} active={ch.id} onSelect={setChId} from={from} />
     </Page>
   );
 }
