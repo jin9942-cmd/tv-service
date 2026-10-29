@@ -144,7 +144,7 @@ export function Layout() {
       <Footer />
 
       {/* Mobile bottom navigation */}
-      <nav aria-label="Main (mobile)" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-bg/95 backdrop-blur md:hidden">
+      <nav aria-label="Main (mobile)" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-line bg-bg/95 backdrop-blur md:hidden">
         {NAV.filter((n) => MOBILE_NAV.includes(n.to)).map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold', isActive ? 'text-gold' : 'text-muted')}>
             <Icon name={n.icon} size={20} />

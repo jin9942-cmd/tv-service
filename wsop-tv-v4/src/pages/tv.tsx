@@ -174,7 +174,7 @@ function PromoBanner() {
         <img key={sl.img} src={sl.img} alt="" className="size-full object-cover" style={{ objectPosition: sl.pos }} />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:hidden" aria-hidden />
       </div>
-      <Page className="relative flex max-w-[96rem] flex-col justify-center pt-2 pb-8 md:min-h-[min(34rem,46vw)] md:py-12">
+      <Page className="relative flex max-w-[96rem] flex-col justify-end pt-2 pb-14 md:min-h-[min(34rem,46vw)] md:pt-12 md:pb-16">
         {/* Every block has a fixed height, so the title and the buttons stay put when the slide changes. */}
         <div className="max-w-xl" aria-live="polite">
           <div className="flex h-[4.9rem] items-end sm:h-[6.94rem]">
@@ -192,20 +192,15 @@ function PromoBanner() {
           <p className="mt-3 line-clamp-2 h-[2.8rem] text-[15px] leading-[1.4rem] text-text/75 sm:line-clamp-1 sm:h-[1.4rem]">{sl.line}</p>
           <div className="mt-6 flex gap-2">{sl.actions}</div>
         </div>
-        <div className="mt-8 flex items-center gap-3">
-          <button onClick={() => setSlide((slide + slides.length - 1) % slides.length)} aria-label="Previous" className="rounded-full border border-line-strong p-1.5 text-muted hover:border-text hover:text-text">
-            <Icon name="back" size={16} />
-          </button>
-          <div className="flex gap-1.5">
-            {slides.map((x, i) => (
-              <button key={i} onClick={() => setSlide(i)} aria-label={`Slide ${i + 1}: ${x.kicker}`} aria-current={i === slide} className={cx('h-1 rounded-full transition-all duration-200', i === slide ? 'w-8 bg-gold' : 'w-4 bg-line-strong hover:bg-muted')} />
-            ))}
-          </div>
-          <button onClick={() => setSlide((slide + 1) % slides.length)} aria-label="Next" className="rounded-full border border-line-strong p-1.5 text-muted hover:border-text hover:text-text">
-            <Icon name="chevron" size={16} />
-          </button>
-        </div>
       </Page>
+      {/* Slide dots only (no arrows), centred along the bottom edge; each has a tall hit area for touch. */}
+      <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2 md:bottom-6">
+        {slides.map((x, i) => (
+          <button key={i} onClick={() => setSlide(i)} aria-label={`Slide ${i + 1}: ${x.kicker}`} aria-current={i === slide} className="group flex h-6 items-center">
+            <span className={cx('block h-1 rounded-full transition-all duration-200', i === slide ? 'w-8 bg-gold' : 'w-5 bg-white/30 group-hover:bg-white/60')} />
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
