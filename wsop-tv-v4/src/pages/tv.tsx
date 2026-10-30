@@ -131,8 +131,8 @@ function PromoBanner() {
       {/* Ambient fill: the same photo, blurred and dimmed, across the whole banner, so the photo never ends in a hard edge. */}
       <img key={'bg-' + sl.img} src={sl.img} alt="" aria-hidden className="absolute inset-0 hidden size-full scale-110 object-cover opacity-50 blur-3xl md:block" />
       <div className="absolute inset-0 hidden bg-black/50 md:block" aria-hidden />
-      {/* Photo: on top on phones; on wider screens right of centre, feathered into the fill on every side. */}
-      <div className="hero-photo relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-[3%] md:aspect-auto md:w-[60%]">
+      {/* Photo: on top on phones; on wider screens a little right of centre (not against the edge), feathered into the fill on every side. */}
+      <div className="hero-photo relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-[12%] md:aspect-auto md:w-[60%]">
         <img key={sl.img} src={sl.img} alt="" className="size-full object-cover" style={{ objectPosition: sl.pos }} />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:hidden" aria-hidden />
       </div>
