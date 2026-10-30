@@ -58,7 +58,7 @@ function DetailModal({ id, onClose, onOpen }: { id: string; onClose: () => void;
           <Icon name="close" size={18} />
         </button>
         <div className="relative aspect-video w-full overflow-hidden">
-          <img src={v.thumb} alt="" className="absolute inset-0 size-full object-cover" />
+          <img src={v.thumb} style={{ objectPosition: v.thumbPos }} alt="" className="absolute inset-0 size-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/20 to-transparent" aria-hidden />
           <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8">
             {live && <LiveTag className="mb-2" />}
@@ -94,7 +94,7 @@ function DetailModal({ id, onClose, onOpen }: { id: string; onClose: () => void;
                   <li key={x.id}>
                     <Link to={`/watch/${x.id}`} className={cx('flex items-center gap-4 p-3 hover:bg-surface-2', x.id === v.id && 'bg-surface-2')}>
                       <span className="w-5 text-center text-lg font-bold text-subtle tnum">{i + 1}</span>
-                      <img src={x.thumb} alt="" className="aspect-video w-28 shrink-0 rounded-chip object-cover sm:w-36" />
+                      <img src={x.thumb} style={{ objectPosition: x.thumbPos }} alt="" className="aspect-video w-28 shrink-0 rounded-chip object-cover sm:w-36" />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
                           <span className="truncate font-semibold">{x.title.split(' · ').pop()}</span>
@@ -117,7 +117,7 @@ function DetailModal({ id, onClose, onOpen }: { id: string; onClose: () => void;
                 {more.map((x) => (
                   <button key={x.id} onClick={() => onOpen(x.id)} className="group overflow-hidden rounded-card bg-surface-2 text-left">
                     <span className="relative block aspect-video">
-                      <img src={x.thumb} alt="" className="absolute inset-0 size-full object-cover" />
+                      <img src={x.thumb} style={{ objectPosition: x.thumbPos }} alt="" className="absolute inset-0 size-full object-cover" />
                       {isLive(x, state.streamMode) && <LiveTag className="absolute top-2 left-2" />}
                     </span>
                     <span className="block p-2.5">
@@ -177,7 +177,7 @@ export function VideoCard({ v, progress, className }: { v: Video; progress?: num
     <div className={cx('group relative min-w-0', className)}>
       <Link to={`/watch/${v.id}`} className="block" aria-label={`Watch ${v.title}`}>
         <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-          <img src={v.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+          <img src={v.thumb} style={{ objectPosition: v.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
           {live && <LiveTag className="absolute top-2 left-2" />}
           <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden>
             <span className="flex size-12 items-center justify-center rounded-full bg-black/60 text-white">

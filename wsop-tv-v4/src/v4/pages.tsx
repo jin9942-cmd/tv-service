@@ -125,7 +125,7 @@ function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: bool
                 <li key={x.id}>
                   <Link to={`/watch/${x.id}`} className="group flex gap-3">
                     <span className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2">
-                      <img src={x.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+                      <img src={x.thumb} style={{ objectPosition: x.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
                       {isLive(x, state.streamMode) && <LiveTag className="absolute top-1.5 left-1.5" />}
                     </span>
                     <span className="min-w-0">
@@ -411,7 +411,7 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
     <li>
       <button onClick={() => onPick(x.id)} aria-current={on || undefined} className={cx('flex w-full gap-3 rounded-card p-2 text-left transition-colors duration-150', on ? 'bg-surface-3' : 'hover:bg-surface-2')}>
         <span className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-chip bg-surface-2">
-          <img src={x.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+          <img src={x.thumb} style={{ objectPosition: x.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
           {on && (
             <span className="absolute inset-0 flex items-center justify-center bg-black/45" aria-hidden>
               <Icon name="play" size={18} />
@@ -555,7 +555,7 @@ function EventCard({ e }: { e: TourEvent }) {
   return (
     <Link to={`/events/${e.id}`} className="group block min-w-0">
       <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-        <img src={cover.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+        <img src={cover.thumb} style={{ objectPosition: cover.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
         {live && <LiveTag className="absolute top-2 left-2" />}
       </span>
       <span className="mt-2 block truncate text-[15px] font-semibold group-hover:text-gold-strong">{e.name.replace(' World Championship', '')}</span>
@@ -666,7 +666,7 @@ export function TodayCards({ now }: { now: number }) {
         return (
           <li key={ch.id} className="flex min-w-0 flex-col overflow-hidden rounded-card border border-line bg-surface">
             <Link to={`/live?v=ch-${ch.id}`} className="group relative block aspect-video overflow-hidden" aria-label={`Watch ${ch.name}: ${p.title}`}>
-              <img src={v.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+              <img src={v.thumb} style={{ objectPosition: v.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
               <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden />
               {live && <LiveTag className="absolute top-2 left-2" />}
               <span className="absolute bottom-2 left-2.5 text-xs font-semibold text-white/90">{ch.name}</span>
