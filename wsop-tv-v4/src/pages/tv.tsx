@@ -16,7 +16,7 @@ import { Button, Icon, Page, SectionHeader, cx } from '../components/ui';
 import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
-import { HomeRows } from '../v4/pages';
+import { HomeRows, TodayCards } from '../v4/pages';
 import { useDetail } from '../v4/detail';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
@@ -31,15 +31,15 @@ export function TvHome() {
     <>
       <section className="border-b border-line" aria-label="Featured">
         <PromoBanner />
-        {/* 24/7 channels: each card opens that channel's screen (player, up next, guide). */}
+        {/* Today: what each 24/7 channel is showing now, with the numbers that matter and what's next. */}
         <Page className="max-w-[96rem] pt-4 pb-6">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="label text-text/80">Channels · 24/7</p>
+            <h2 className="text-xl sm:text-2xl">Today</h2>
             <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
               Full schedule →
             </Link>
           </div>
-          <ChannelLinks now={now} />
+          <TodayCards now={now} />
         </Page>
       </section>
 
@@ -52,35 +52,6 @@ export function TvHome() {
   );
 }
 
-
-function ChannelLinks({ now }: { now: number }) {
-  return (
-    // Full-width grid (no sideways scroll), so programme titles have room.
-    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="Channels">
-      {channels.map((ch) => {
-        const p = programAt(ch.id, now);
-        return (
-          <li key={ch.id} className="min-w-0">
-            <Link
-              to={`/watch/ch-${ch.id}`}
-              aria-label={`Watch ${ch.name}${p ? ` · now ${p.title}` : ''}`}
-              className="group flex min-w-0 items-center gap-3 rounded-card border border-line bg-surface px-3 py-2.5 transition-colors duration-150 hover:border-gold"
-            >
-              <ChannelNumber ch={ch} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold">{ch.name}</span>
-                <span className="block truncate text-xs text-muted" title={p?.title}>
-                  <span className="font-semibold text-text/70">Now</span> · {p?.title}
-                </span>
-              </span>
-              <Icon name="play" size={16} className="shrink-0 text-muted transition-colors duration-150 group-hover:text-gold" />
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
 
 /** Channel picker for the Schedule (selects in place). */
 function ChannelTabs({ active, now, onSelect }: { active: string; now: number; onSelect: (id: string) => void }) {

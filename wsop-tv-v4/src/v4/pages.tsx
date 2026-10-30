@@ -3,13 +3,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
-import { channelById, channels, programAt, programs, reminderKey, upNext } from '../data/channels';
+import { airing, channelById, channels, programAt, programs, reminderKey, upNext } from '../data/channels';
 import { commentaryFor } from '../data/shows';
 import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
-import { dayById, eventById, events, seriesById } from '../data/mock';
+import { bbFor, dayById, eventById, events, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { dayKey, fmtTime } from '../lib/time';
-import { duration, money } from '../lib/format';
+import { chips, duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
@@ -632,3 +632,82 @@ export function EventPage() {
     </Page>
   );
 }
+
+// ---- Home: Today ------------------------------------------------------------------------------------
+
+/**
+ * Home "Today": one card per 24/7 channel, Today's-Matches style — the picture of what's on, the event and the numbers
+ * that matter (players left, level and blinds for a live final table), Watch, and what's next with a reminder.
+ */
+export function TodayCards({ now }: { now: number }) {
+  const { state } = useApp();
+  const remind = useProgramReminder();
+  return (
+    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Today">
+      {channels.map((ch) => {
+        const p = programAt(ch.id, now);
+        const v = channelVideo(ch.id, now);
+        if (!p || !v) return null;
+        const ref = p.dayId ? dayById(p.dayId) : undefined;
+        const live = airing(p, state.streamMode).mode === 'onair';
+        const next = upNext(ch.id, now, 6).find((x) => !BREAKS.includes(x.title));
+        const bb = ref ? bbFor(ref.day.id) : 0;
+        const stats: [string, string][] =
+          live && ref
+            ? [
+                [String(ref.event.remaining), 'Players left'],
+                [`Level ${ref.event.level}`, `Blinds ${chips(bb / 2)} / ${chips(bb)}`],
+              ]
+            : [
+                ['Now', `until ${fmtTime(p.end, state.tz)}`],
+                [duration(Math.round((p.end - p.start) / 1000)), 'Running time'],
+              ];
+        const reminded = next ? state.reminders.includes(reminderKey(next)) : false;
+        return (
+          <li key={ch.id} className="flex min-w-0 flex-col overflow-hidden rounded-card border border-line bg-surface">
+            <Link to={`/live?v=ch-${ch.id}`} className="group relative block aspect-video overflow-hidden" aria-label={`Watch ${ch.name}: ${p.title}`}>
+              <img src={v.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+              <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden />
+              {live && <LiveTag className="absolute top-2 left-2" />}
+              <span className="absolute bottom-2 left-2.5 text-xs font-semibold text-white/90">{ch.name}</span>
+            </Link>
+            <div className="flex flex-1 flex-col p-3.5">
+              <p className="line-clamp-1 font-bold" title={p.title}>
+                {p.title}
+              </p>
+              <dl className="mt-3 grid grid-cols-2 gap-2">
+                {stats.map(([k, sub]) => (
+                  <div key={sub} className="min-w-0 rounded-chip bg-surface-2 px-2.5 py-2">
+                    <dt className="truncate text-sm font-bold tnum">{k}</dt>
+                    <dd className="truncate text-[11px] text-muted">{sub}</dd>
+                  </div>
+                ))}
+              </dl>
+              <Link to={`/live?v=ch-${ch.id}`} className="mt-3">
+                <Button variant="primary" size="sm" className="w-full" tabIndex={-1}>
+                  <Icon name="play" size={14} /> {live ? 'Watch live' : 'Watch'}
+                </Button>
+              </Link>
+              {next && (
+                <div className="mt-3 flex items-center gap-2 border-t border-line pt-3 text-xs">
+                  <span className="min-w-0 flex-1 truncate text-muted">
+                    <span className="font-semibold text-text/80 tnum">Next {fmtTime(next.start, state.tz)}</span> · {next.title}
+                  </span>
+                  <button
+                    onClick={() => remind(next, ch)}
+                    aria-pressed={reminded}
+                    aria-label={reminded ? `Reminder set for ${next.title}` : `Remind me about ${next.title}`}
+                    className={cx('inline-flex size-8 shrink-0 items-center justify-center rounded-chip border transition-colors duration-150', reminded ? 'border-gold bg-gold-dim text-gold-strong' : 'border-line-strong text-muted hover:text-text')}
+                  >
+                    <Icon name="bell" size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
