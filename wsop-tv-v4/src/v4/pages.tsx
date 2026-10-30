@@ -3,13 +3,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
-import { airing, channelById, channels, programAt, programs, reminderKey, upNext } from '../data/channels';
+import { channelById, channels, programAt, programs, reminderKey, upNext, type LinearChannel } from '../data/channels';
 import { commentaryFor } from '../data/shows';
 import { ChannelGuide, useProgramReminder } from '../features/channels/Channels';
-import { bbFor, dayById, eventById, events, seriesById } from '../data/mock';
+import { dayById, eventById, events, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { dayKey, fmtTime } from '../lib/time';
-import { chips, duration, money } from '../lib/format';
+import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
@@ -462,31 +462,9 @@ export function SchedulePage() {
 
       {/* 24/7 channels: the channel's picture, what's on, its time slot, and Watch now. Selecting a card shows its day below. */}
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" role="tablist" aria-label="Channel">
-        {channels.map((c) => {
-          const p = programAt(c.id, now);
-          const on = c.id === ch.id;
-          const a = CHANNEL_ART[c.id];
-          return (
-            <div key={c.id} className={cx('relative flex min-w-0 items-center gap-3.5 rounded-panel border p-3 transition-colors duration-150', on ? 'border-gold bg-gold-dim' : 'border-line-strong bg-surface hover:border-text/40')}>
-              <img src={a.src} style={{ objectPosition: a.pos }} alt="" className="size-16 shrink-0 rounded-card object-cover" />
-              <div className="min-w-0 flex-1">
-                {/* The whole card selects the channel; the Watch link sits above that hit area. */}
-                <button role="tab" aria-selected={on} onClick={() => setChId(c.id)} className="block w-full min-w-0 text-left after:absolute after:inset-0 after:content-['']">
-                  <span className="block truncate text-base font-bold" title={p?.title}>
-                    {p?.title}
-                  </span>
-                  <span className="mt-0.5 block truncate text-sm text-muted tnum">
-                    {c.name}
-                    {p && ` · until ${fmtTime(p.end, state.tz)}`}
-                  </span>
-                </button>
-                <Link to={`/live?v=ch-${c.id}`} className="relative z-10 mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-strong hover:underline">
-                  <Icon name="play" size={14} /> Watch now
-                </Link>
-              </div>
-            </div>
-          );
-        })}
+        {channels.map((c) => (
+          <ChannelCard key={c.id} c={c} now={now} selected={c.id === ch.id} onSelect={() => setChId(c.id)} />
+        ))}
       </div>
 
       <div className="hscroll mt-4" role="tablist" aria-label="Date">
@@ -639,81 +617,57 @@ export function EventPage() {
   );
 }
 
-// ---- Home: Today ------------------------------------------------------------------------------------
+// ---- 24/7 channel cards (Home and Tournaments) ---------------------------------------------------------
 
 /**
- * Home "Today": one card per 24/7 channel, Today's-Matches style — the picture of what's on, the event and the numbers
- * that matter (players left, level and blinds for a live final table), Watch, and what's next with a reminder.
+ * One 24/7 channel: its picture, what's on, the channel and when it ends, and Watch now. On Tournaments the card
+ * selects the channel (`onSelect`); on Home the whole card opens it on Live.
  */
-export function TodayCards({ now }: { now: number }) {
+function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: number; selected?: boolean; onSelect?: () => void }) {
   const { state } = useApp();
-  const remind = useProgramReminder();
+  const p = programAt(c.id, now);
+  const a = CHANNEL_ART[c.id];
+  const hit = "block w-full min-w-0 text-left after:absolute after:inset-0 after:content-['']";
+  const text = (
+    <>
+      <span className="block truncate text-base font-bold" title={p?.title}>
+        {p?.title}
+      </span>
+      <span className="mt-0.5 block truncate text-sm text-muted tnum">
+        {c.name}
+        {p && ` · until ${fmtTime(p.end, state.tz)}`}
+      </span>
+    </>
+  );
   return (
-    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Today">
-      {channels.map((ch) => {
-        const p = programAt(ch.id, now);
-        const v = channelVideo(ch.id, now);
-        if (!p || !v) return null;
-        const ref = p.dayId ? dayById(p.dayId) : undefined;
-        const live = airing(p, state.streamMode).mode === 'onair';
-        const next = upNext(ch.id, now, 6).find((x) => !BREAKS.includes(x.title));
-        const bb = ref ? bbFor(ref.day.id) : 0;
-        const stats: [string, string][] =
-          live && ref
-            ? [
-                [String(ref.event.remaining), 'Players left'],
-                [`Level ${ref.event.level}`, `Blinds ${chips(bb / 2)} / ${chips(bb)}`],
-              ]
-            : [
-                ['Now', `until ${fmtTime(p.end, state.tz)}`],
-                [duration(Math.round((p.end - p.start) / 1000)), 'Running time'],
-              ];
-        const reminded = next ? state.reminders.includes(reminderKey(next)) : false;
-        return (
-          <li key={ch.id} className="flex min-w-0 flex-col overflow-hidden rounded-card border border-line bg-surface">
-            <Link to={`/live?v=ch-${ch.id}`} className="group relative block aspect-video overflow-hidden" aria-label={`Watch ${ch.name}: ${p.title}`}>
-              <img src={v.thumb} style={{ objectPosition: v.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-              <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden />
-              {live && <LiveTag className="absolute top-2 left-2" />}
-              <span className="absolute bottom-2 left-2.5 text-xs font-semibold text-white/90">{ch.name}</span>
-            </Link>
-            <div className="flex flex-1 flex-col p-3.5">
-              <p className="line-clamp-1 font-bold" title={p.title}>
-                {p.title}
-              </p>
-              <dl className="mt-3 grid grid-cols-2 gap-2">
-                {stats.map(([k, sub]) => (
-                  <div key={sub} className="min-w-0 rounded-chip bg-surface-2 px-2.5 py-2">
-                    <dt className="truncate text-sm font-bold tnum">{k}</dt>
-                    <dd className="truncate text-[11px] text-muted">{sub}</dd>
-                  </div>
-                ))}
-              </dl>
-              <Link to={`/live?v=ch-${ch.id}`} className="mt-3">
-                <Button variant="primary" size="sm" className="w-full" tabIndex={-1}>
-                  <Icon name="play" size={14} /> {live ? 'Watch live' : 'Watch'}
-                </Button>
-              </Link>
-              {next && (
-                <div className="mt-3 flex items-center gap-2 border-t border-line pt-3 text-xs">
-                  <span className="min-w-0 flex-1 truncate text-muted">
-                    <span className="font-semibold text-text/80 tnum">Next {fmtTime(next.start, state.tz)}</span> · {next.title}
-                  </span>
-                  <button
-                    onClick={() => remind(next, ch)}
-                    aria-pressed={reminded}
-                    aria-label={reminded ? `Reminder set for ${next.title}` : `Remind me about ${next.title}`}
-                    className={cx('inline-flex size-8 shrink-0 items-center justify-center rounded-chip border transition-colors duration-150', reminded ? 'border-gold bg-gold-dim text-gold-strong' : 'border-line-strong text-muted hover:text-text')}
-                  >
-                    <Icon name="bell" size={14} />
-                  </button>
-                </div>
-              )}
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+    <div className={cx('relative flex min-w-0 items-center gap-3.5 rounded-panel border p-3 transition-colors duration-150', selected ? 'border-gold bg-gold-dim' : 'border-line-strong bg-surface hover:border-text/40')}>
+      <img src={a.src} style={{ objectPosition: a.pos }} alt="" className="size-16 shrink-0 rounded-card object-cover" />
+      <div className="min-w-0 flex-1">
+        {/* The whole card is the hit area; the Watch link sits above it. */}
+        {onSelect ? (
+          <button role="tab" aria-selected={selected} onClick={onSelect} className={hit}>
+            {text}
+          </button>
+        ) : (
+          <Link to={`/live?v=ch-${c.id}`} className={hit} aria-label={`${c.name}: ${p?.title ?? ''}`}>
+            {text}
+          </Link>
+        )}
+        <Link to={`/live?v=ch-${c.id}`} className="relative z-10 mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-strong hover:underline">
+          <Icon name="play" size={14} /> Watch now
+        </Link>
+      </div>
+    </div>
   );
 }
 
+/** Home: the four 24/7 channels right under the banner. */
+export function TodayCards({ now }: { now: number }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="24/7 channels">
+      {channels.map((c) => (
+        <ChannelCard key={c.id} c={c} now={now} />
+      ))}
+    </div>
+  );
+}

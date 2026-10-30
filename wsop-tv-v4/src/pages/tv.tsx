@@ -31,14 +31,8 @@ export function TvHome() {
     <>
       <section className="border-b border-line" aria-label="Featured">
         <PromoBanner />
-        {/* Today: what each 24/7 channel is showing now, with the numbers that matter and what's next. */}
-        <Page className="max-w-[96rem] pt-4 pb-6">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-xl sm:text-2xl">Today</h2>
-            <Link to="/tournaments" className="text-sm font-semibold text-muted hover:text-text">
-              Full schedule →
-            </Link>
-          </div>
+        {/* The four 24/7 channels, right under the banner (no section title). */}
+        <Page className="max-w-[96rem] pt-5 pb-6">
           <TodayCards now={now} />
         </Page>
       </section>
