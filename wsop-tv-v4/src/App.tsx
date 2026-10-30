@@ -33,7 +33,8 @@ export default function App() {
             <Route path="live/channels/:channelId" element={<ChannelRedirect />} />
             <Route path="watch/:dayId" element={<WatchPage />} />
             <Route path="tag/:slug" element={<TagPage />} />
-            <Route path="schedule" element={<SchedulePage />} />
+            <Route path="tournaments" element={<SchedulePage />} />
+            <Route path="schedule" element={<Navigate to="/tournaments" replace />} />
             <Route path="shows" element={<TvShows />} />
             <Route path="shows/:showId" element={<TvShowDetail />} />
             <Route path="video" element={<Hands />} />

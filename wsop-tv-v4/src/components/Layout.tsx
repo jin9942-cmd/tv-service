@@ -8,17 +8,17 @@ import { DemoControls } from '../features/demo/DemoControls';
 import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
 
 
-// v4: live (events and 24/7 channels), the schedule by date, replays by event, short clips.
+// v4: live (events and 24/7 channels), tournaments (the schedule by date), replays by event, short clips.
 // How to Watch lives in the footer; My List in the My menu.
 export const NAV = [
   { to: '/', label: 'Home', icon: 'star', end: true },
   { to: '/live', label: 'Live', icon: 'tv' },
-  { to: '/schedule', label: 'Schedule', icon: 'calendar' },
+  { to: '/tournaments', label: 'Tournaments', icon: 'calendar' },
   { to: '/events', label: 'Events', icon: 'grid2' },
   { to: '/highlights', label: 'Highlights', icon: 'grid4' },
 ] as const;
 
-const MOBILE_NAV = ['/', '/live', '/schedule', '/events', '/highlights'];
+const MOBILE_NAV = ['/', '/live', '/tournaments', '/events', '/highlights'];
 
 export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (

@@ -5,7 +5,7 @@ import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { airing, channelById, channels, programAt, programs, reminderKey, upNext } from '../data/channels';
 import { commentaryFor } from '../data/shows';
-import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
+import { ChannelGuide, useProgramReminder } from '../features/channels/Channels';
 import { bbFor, dayById, eventById, events, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { dayKey, fmtTime } from '../lib/time';
@@ -14,6 +14,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
+import { CHANNEL_ART } from '../lib/brand';
 import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
@@ -383,7 +384,7 @@ export function LivePage() {
           <section aria-label="Coming up">
             <div className="mb-2 flex items-end justify-between">
               <h2 className="font-sans text-base font-bold normal-case">Coming up</h2>
-              <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
+              <Link to="/tournaments" className="text-sm font-semibold text-muted hover:text-text">
                 Full schedule →
               </Link>
             </div>
@@ -456,29 +457,34 @@ export function SchedulePage() {
   };
   return (
     <Page className="max-w-[96rem]">
-      <h1 className="text-title">Schedule</h1>
+      <h1 className="text-title">Tournaments</h1>
       <p className="mt-1 text-sm text-muted">All times in your time zone.</p>
 
-      <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" role="tablist" aria-label="Channel">
+      {/* 24/7 channels: the channel's picture, what's on, its time slot, and Watch now. Selecting a card shows its day below. */}
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" role="tablist" aria-label="Channel">
         {channels.map((c) => {
           const p = programAt(c.id, now);
           const on = c.id === ch.id;
+          const a = CHANNEL_ART[c.id];
           return (
-            <button
-              key={c.id}
-              role="tab"
-              aria-selected={on}
-              onClick={() => setChId(c.id)}
-              className={cx('flex min-w-0 items-center gap-3 rounded-card border px-3 py-2.5 text-left transition-colors duration-150', on ? 'border-gold bg-gold-dim' : 'border-line bg-surface hover:border-line-strong')}
-            >
-              <ChannelNumber ch={c} className={on ? 'border-gold text-gold-strong' : undefined} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold">{c.name}</span>
-                <span className="block truncate text-xs text-muted" title={p?.title}>
-                  <span className="font-semibold text-text/70">Now</span> · {p?.title}
-                </span>
-              </span>
-            </button>
+            <div key={c.id} className={cx('relative flex min-w-0 items-center gap-3.5 rounded-panel border p-3 transition-colors duration-150', on ? 'border-gold bg-gold-dim' : 'border-line-strong bg-surface hover:border-text/40')}>
+              <img src={a.src} style={{ objectPosition: a.pos }} alt="" className="size-16 shrink-0 rounded-card object-cover" />
+              <div className="min-w-0 flex-1">
+                {/* The whole card selects the channel; the Watch link sits above that hit area. */}
+                <button role="tab" aria-selected={on} onClick={() => setChId(c.id)} className="block w-full min-w-0 text-left after:absolute after:inset-0 after:content-['']">
+                  <span className="block truncate text-base font-bold" title={p?.title}>
+                    {p?.title}
+                  </span>
+                  <span className="mt-0.5 block truncate text-sm text-muted tnum">
+                    {c.name}
+                    {p && ` · until ${fmtTime(p.end, state.tz)}`}
+                  </span>
+                </button>
+                <Link to={`/live?v=ch-${c.id}`} className="relative z-10 mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-strong hover:underline">
+                  <Icon name="play" size={14} /> Watch now
+                </Link>
+              </div>
+            </div>
           );
         })}
       </div>

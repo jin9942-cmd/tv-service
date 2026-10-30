@@ -35,7 +35,7 @@ export function TvHome() {
         <Page className="max-w-[96rem] pt-4 pb-6">
           <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className="text-xl sm:text-2xl">Today</h2>
-            <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
+            <Link to="/tournaments" className="text-sm font-semibold text-muted hover:text-text">
               Full schedule →
             </Link>
           </div>

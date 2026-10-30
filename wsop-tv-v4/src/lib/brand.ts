@@ -43,6 +43,14 @@ export const VENUE_ART: Art[] = [
   art(`${PROMO}poker-room.png`, '80% 50%'),
   art(`${PROMO}venue-horseshoe.png`, '15% 50%'),
 ];
+/** Each 24/7 channel's own picture (the Tournaments page's channel cards). */
+export const CHANNEL_ART: Record<string, Art> = {
+  wsop1: TABLE_ART[0],
+  wsop2: TABLE_ART[1],
+  'wsop-es': art(`${PROMO}poker-room.png`),
+  classics: TABLE_ART[5],
+};
+
 /** Fixed picks for the videos people see first (the rest walk the pools in order). */
 export const PROMO_ART: Record<string, Art> = {
   'lv-main-finaltable': TABLE_ART[0],
