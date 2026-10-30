@@ -5,6 +5,7 @@ import { useApp } from '../state/app';
 import { Button, Icon, LiveTag, cx } from '../components/ui';
 import { duration } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
+import { artStyle } from '../lib/brand';
 import type { ListKind } from '../state/app';
 import { episodesOf, isLive, relatedTo, videoById, type Video } from './catalog';
 
@@ -58,7 +59,7 @@ function DetailModal({ id, onClose, onOpen }: { id: string; onClose: () => void;
           <Icon name="close" size={18} />
         </button>
         <div className="relative aspect-video w-full overflow-hidden">
-          <img src={v.thumb} style={{ objectPosition: v.thumbPos }} alt="" className="absolute inset-0 size-full object-cover" />
+          <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" className="absolute inset-0 size-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/20 to-transparent" aria-hidden />
           <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8">
             {live && <LiveTag className="mb-2" />}
@@ -94,7 +95,7 @@ function DetailModal({ id, onClose, onOpen }: { id: string; onClose: () => void;
                   <li key={x.id}>
                     <Link to={`/watch/${x.id}`} className={cx('flex items-center gap-4 p-3 hover:bg-surface-2', x.id === v.id && 'bg-surface-2')}>
                       <span className="w-5 text-center text-lg font-bold text-subtle tnum">{i + 1}</span>
-                      <img src={x.thumb} style={{ objectPosition: x.thumbPos }} alt="" className="aspect-video w-28 shrink-0 rounded-chip object-cover sm:w-36" />
+                      <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" className="aspect-video w-28 shrink-0 rounded-chip object-cover sm:w-36" />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
                           <span className="truncate font-semibold">{x.title.split(' · ').pop()}</span>
@@ -117,7 +118,7 @@ function DetailModal({ id, onClose, onOpen }: { id: string; onClose: () => void;
                 {more.map((x) => (
                   <button key={x.id} onClick={() => onOpen(x.id)} className="group overflow-hidden rounded-card bg-surface-2 text-left">
                     <span className="relative block aspect-video">
-                      <img src={x.thumb} style={{ objectPosition: x.thumbPos }} alt="" className="absolute inset-0 size-full object-cover" />
+                      <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" className="absolute inset-0 size-full object-cover" />
                       {isLive(x, state.streamMode) && <LiveTag className="absolute top-2 left-2" />}
                     </span>
                     <span className="block p-2.5">
@@ -170,14 +171,24 @@ export function About({ v }: { v: Video }) {
 /**
  * The one card used everywhere: thumbnail (only LIVE on it) and title → play. The detail popup opens only from the home banner.
  */
-export function VideoCard({ v, progress, className }: { v: Video; progress?: number; className?: string }) {
+export function VideoCard({ v, progress, onRemove, className }: { v: Video; progress?: number; /** Continue Watching: show a remove (×) button. */ onRemove?: () => void; className?: string }) {
   const { state } = useApp();
   const live = isLive(v, state.streamMode);
   return (
     <div className={cx('group relative min-w-0', className)}>
+      {onRemove && (
+        <button
+          onClick={onRemove}
+          aria-label={`Remove ${v.title} from Continue Watching`}
+          title="Remove from Continue Watching"
+          className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-black focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+        >
+          <Icon name="close" size={16} />
+        </button>
+      )}
       <Link to={`/watch/${v.id}`} className="block" aria-label={`Watch ${v.title}`}>
         <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-          <img src={v.thumb} style={{ objectPosition: v.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+          <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
           {live && <LiveTag className="absolute top-2 left-2" />}
           <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden>
             <span className="flex size-12 items-center justify-center rounded-full bg-black/60 text-white">
@@ -201,7 +212,7 @@ export function VideoCard({ v, progress, className }: { v: Video; progress?: num
 
 export const rowGrid = 'grid grid-cols-1 gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-4';
 
-export function VideoRow({ title, videos, action, progressOf }: { title: string; videos: Video[]; action?: ReactNode; progressOf?: (v: Video) => number | undefined }) {
+export function VideoRow({ title, videos, action, progressOf, onRemove }: { title: string; videos: Video[]; action?: ReactNode; progressOf?: (v: Video) => number | undefined; onRemove?: (v: Video) => void }) {
   if (!videos.length) return null;
   return (
     <section aria-label={title}>
@@ -211,7 +222,7 @@ export function VideoRow({ title, videos, action, progressOf }: { title: string;
       </div>
       <div className={rowGrid}>
         {videos.slice(0, 4).map((v) => (
-          <VideoCard key={v.id} v={v} progress={progressOf?.(v)} />
+          <VideoCard key={v.id} v={v} progress={progressOf?.(v)} onRemove={onRemove && (() => onRemove(v))} />
         ))}
       </div>
     </section>

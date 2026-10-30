@@ -14,7 +14,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { CHANNEL_ART } from '../lib/brand';
+import { CHANNEL_ART, artStyle } from '../lib/brand';
 import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
@@ -126,7 +126,7 @@ function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: bool
                 <li key={x.id}>
                   <Link to={`/watch/${x.id}`} className="group flex gap-3">
                     <span className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2">
-                      <img src={x.thumb} style={{ objectPosition: x.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+                      <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
                       {isLive(x, state.streamMode) && <LiveTag className="absolute top-1.5 left-1.5" />}
                     </span>
                     <span className="min-w-0">
@@ -244,8 +244,19 @@ export { catalog };
 
 /** Home rows: Continue watching, Recommended, My List, Classics, Latest replays, Highlights. */
 export function HomeRows() {
-  const { state, signedIn } = useApp();
+  const { state, set, toast, signedIn } = useApp();
   const progressOf = (v: Video) => (state.progress[v.id] ? state.progress[v.id] / v.durationSec : undefined);
+  // Remove one video from Continue Watching (with Undo).
+  const removeContinue = (v: Video) => {
+    const before = state.progress;
+    set((s) => {
+      const next = { ...s.progress };
+      delete next[v.id];
+      return { progress: next };
+    });
+    // Undo puts the list back exactly as it was, so the card returns to its place in the row.
+    toast('Removed from Continue Watching', { label: 'Undo', onClick: () => set({ progress: before }) });
+  };
   const continuing = signedIn
     ? Object.entries(state.progress)
         .map(([id, sec]) => ({ v: videoById(id), sec }))
@@ -266,7 +277,7 @@ export function HomeRows() {
   );
   return (
     <>
-      <VideoRow title="Continue watching" videos={continuing} progressOf={progressOf} />
+      <VideoRow title="Continue watching" videos={continuing} progressOf={progressOf} onRemove={removeContinue} />
       <VideoRow title="Recommended for you" videos={recommendedRow(started)} />
       <VideoRow title="My List" videos={mine} action={more('/my-list', 'See all')} />
       <VideoRow title="Classics" videos={classics} action={more('/events')} />
@@ -412,7 +423,7 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
     <li>
       <button onClick={() => onPick(x.id)} aria-current={on || undefined} className={cx('flex w-full gap-3 rounded-card p-2 text-left transition-colors duration-150', on ? 'bg-surface-3' : 'hover:bg-surface-2')}>
         <span className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-chip bg-surface-2">
-          <img src={x.thumb} style={{ objectPosition: x.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+          <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
           {on && (
             <span className="absolute inset-0 flex items-center justify-center bg-black/45" aria-hidden>
               <Icon name="play" size={18} />
@@ -539,7 +550,7 @@ function EventCard({ e }: { e: TourEvent }) {
   return (
     <Link to={`/events/${e.id}`} className="group block min-w-0">
       <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-        <img src={cover.thumb} style={{ objectPosition: cover.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+        <img src={cover.thumb} style={artStyle({ pos: cover.thumbPos, fit: cover.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
         {live && <LiveTag className="absolute top-2 left-2" />}
       </span>
       <span className="mt-2 block truncate text-[15px] font-semibold group-hover:text-gold-strong">{e.name.replace(' World Championship', '')}</span>
@@ -641,7 +652,7 @@ function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: nu
   );
   return (
     <div className={cx('relative flex min-w-0 items-center gap-3.5 rounded-panel border p-3 transition-colors duration-150', selected ? 'border-gold bg-gold-dim' : 'border-line-strong bg-surface hover:border-text/40')}>
-      <img src={a.src} style={{ objectPosition: a.pos }} alt="" className="size-16 shrink-0 rounded-card object-cover" />
+      <img src={a.src} style={artStyle(a)} alt="" className="size-16 shrink-0 rounded-card object-cover" />
       <div className="min-w-0 flex-1">
         {/* The whole card is the hit area; the Watch link sits above it. */}
         {onSelect ? (

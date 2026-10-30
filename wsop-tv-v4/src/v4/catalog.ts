@@ -29,6 +29,8 @@ export interface Video {
   thumb: string;
   /** Crop of the thumbnail (CSS object-position). */
   thumbPos: string;
+  /** 'contain' for cut-out artwork (shown whole on a backdrop). */
+  thumbFit?: 'contain';
   media: { url: string; start: number };
   durationSec: number;
   eventId?: string;
@@ -48,11 +50,11 @@ const walk = { table: 0, venue: 0 };
 function artFor(id: string, pool: 'table' | 'venue') {
   const list = pool === 'table' ? TABLE_ART : VENUE_ART;
   const a = PROMO_ART[id] ?? list[walk[pool]++ % list.length];
-  return { thumb: a.src, thumbPos: a.pos };
+  return { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit };
 }
 const thumbOf = (id: string) => {
   const v = catalog.find((x) => x.id === id);
-  return v && { thumb: v.thumb, thumbPos: v.thumbPos };
+  return v && { thumb: v.thumb, thumbPos: v.thumbPos, thumbFit: v.thumbFit };
 };
 const HERO_DAY = 'lv-main-finaltable';
 
@@ -159,7 +161,7 @@ export function channelVideo(channelId: string, at: number): Video | undefined {
     subtitle: ch.name,
     description: p.subtitle,
     // A channel showing a broadcast or a classic uses that video's image, so the same content looks the same everywhere.
-    ...((p.dayId && thumbOf(p.dayId)) || (p.archiveId && thumbOf(`classic-${p.archiveId}-finaltable`)) || { thumb: TABLE_ART[p.seed % TABLE_ART.length].src, thumbPos: TABLE_ART[p.seed % TABLE_ART.length].pos }),
+    ...((p.dayId && thumbOf(p.dayId)) || (p.archiveId && thumbOf(`classic-${p.archiveId}-finaltable`)) || { thumb: TABLE_ART[p.seed % TABLE_ART.length].src, thumbPos: TABLE_ART[p.seed % TABLE_ART.length].pos, thumbFit: TABLE_ART[p.seed % TABLE_ART.length].fit }),
     media: { url: m.video, start: m.start },
     durationSec: Math.round((p.end - p.start) / 1000),
     eventId: ref?.event.id,

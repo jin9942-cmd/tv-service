@@ -1,13 +1,27 @@
 // v4 — the one player for everything (broadcasts, classics, hand clips, live events and 24/7 channels).
-// Plain OTT controls: play/pause, 10 s back/forward, seek bar, sound, full screen; live adds a 4-hour DVR and a LIVE
-// button. No overlays, no multiview, no hand markers. `mini` renders the docked mini player's compact controls.
+// Plain OTT controls: play/pause, 10 s back/forward, seek bar, sound, subtitles, settings (subtitles, audio track,
+// quality), full screen; live adds a 4-hour DVR and a LIVE button. No overlays, no multiview, no hand markers.
+// `mini` renders the docked mini player's compact controls.
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../state/app';
 import { Icon, cx } from '../components/ui';
 import { duration } from '../lib/format';
+import type { AudioTrack } from '../data/types';
+import { AUDIO_LABEL } from '../features/player/Controls';
 import type { Video } from './catalog';
 
 const DVR_WINDOW = 4 * 3600;
+
+const SUBTITLE_OPTIONS = ['Off', 'English', 'Español', '한국어'] as const;
+type Subs = (typeof SUBTITLE_OPTIONS)[number];
+const AUDIO_OPTIONS: AudioTrack[] = ['en', 'es', 'natural'];
+const QUALITY_OPTIONS = ['Auto', '1080p', '720p', '480p'];
+/** Sample subtitle lines per language (the demo footage has no real captions). */
+const CAPTIONS: Record<Exclude<Subs, 'Off'>, string[]> = {
+  English: ['Seven players left, and the chip leader opens from the button.', 'A call from the big blind — this pot is getting big.', 'The crowd in Las Vegas is completely silent.'],
+  Español: ['Quedan siete jugadores y el líder abre desde el botón.', 'Paga desde la ciega grande: este bote crece.', 'Silencio absoluto en Las Vegas.'],
+  한국어: ['남은 인원 7명, 칩 리더가 버튼에서 레이즈합니다.', '빅블라인드에서 콜, 팟이 커지고 있습니다.', '라스베이거스 현장이 숨죽이고 있습니다.'],
+};
 
 export function Player({ v, live, liveEdge, mini = false }: { v: Video; live: boolean; /** Seconds into the broadcast at the live edge. */ liveEdge?: () => number; mini?: boolean }) {
   const { state, set } = useApp();
@@ -15,6 +29,11 @@ export function Player({ v, live, liveEdge, mini = false }: { v: Video; live: bo
   const vid = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(true);
   const [muted, setMuted] = useState(true);
+  // Subtitles, audio track and quality start from the Account defaults and can be changed here.
+  const [subs, setSubs] = useState<Subs>(state.ccDefault ? 'English' : 'Off');
+  const [audio, setAudio] = useState<AudioTrack>(state.audioDefault);
+  const [quality, setQuality] = useState<string>('Auto');
+  const [menu, setMenu] = useState(false);
   const saves = v.kind === 'broadcast' || v.kind === 'classic';
   // VOD: position in seconds · live: how far behind the live edge.
   const [pos, setPos] = useState(() => (saves && !live ? Math.min(state.progress[v.id] ?? 0, v.durationSec - 5) : 0));
@@ -145,12 +164,52 @@ export function Player({ v, live, liveEdge, mini = false }: { v: Video; live: bo
             )
           )}
           {!mini && (
-            <button className={cx(btn, 'ml-auto')} onClick={full} aria-label="Full screen">
-              <Icon name="full" size={20} />
-            </button>
+            <>
+              <button className={cx(btn, 'ml-auto', subs !== 'Off' && 'text-gold-strong')} onClick={() => setSubs((x) => (x === 'Off' ? 'English' : 'Off'))} aria-pressed={subs !== 'Off'} aria-label="Subtitles" title="Subtitles">
+                <Icon name="cc" size={20} />
+              </button>
+              <button className={cx(btn, menu && 'bg-white/15')} onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-label="Settings: subtitles, audio and quality" title="Settings">
+                <Icon name="gear" size={20} />
+              </button>
+              <button className={btn} onClick={full} aria-label="Full screen">
+                <Icon name="full" size={20} />
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {/* Subtitles: a sample line in the chosen language, above the controls. */}
+      {subs !== 'Off' && !mini && (
+        <p className="pointer-events-none absolute inset-x-0 bottom-20 mx-auto w-fit max-w-[80%] rounded bg-black/75 px-3 py-1.5 text-center text-sm text-white sm:text-base">{CAPTIONS[subs][Math.floor(Date.now() / 4000) % CAPTIONS[subs].length]}</p>
+      )}
+
+      {/* Settings: subtitles, audio track, video quality. */}
+      {menu && !mini && (
+        <div role="dialog" aria-label="Player settings" className="absolute right-3 bottom-16 z-10 grid w-[min(36rem,calc(100%-1.5rem))] grid-cols-3 gap-3 rounded-card bg-black/90 p-3 text-white shadow-2xl ring-1 ring-white/15 backdrop-blur">
+          {(
+            [
+              ['Subtitles', SUBTITLE_OPTIONS, subs, (x: string) => setSubs(x as Subs)],
+              ['Audio', AUDIO_OPTIONS.map((a) => AUDIO_LABEL[a]), AUDIO_LABEL[audio], (x: string) => setAudio(AUDIO_OPTIONS.find((a) => AUDIO_LABEL[a] === x)!)],
+              ['Quality', QUALITY_OPTIONS, quality, setQuality],
+            ] as const
+          ).map(([title, options, current, pick]) => (
+            <fieldset key={title} className="min-w-0">
+              <legend className="mb-1.5 text-[11px] font-semibold tracking-wide text-white/60 uppercase">{title}</legend>
+              <ul className="space-y-0.5">
+                {options.map((o) => (
+                  <li key={o}>
+                    <button onClick={() => pick(o)} aria-pressed={o === current} className={cx('flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[13px] hover:bg-white/10', o === current && 'font-semibold')}>
+                      <Icon name="check" size={14} className={o === current ? 'text-gold-strong' : 'invisible'} />
+                      <span className="truncate">{o}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

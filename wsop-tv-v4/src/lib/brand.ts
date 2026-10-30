@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 /** WSOP logo image (public/wsop-logo.webp, 216×80, transparent) — resolved against the deploy base path. */
 export const WSOP_LOGO = `${import.meta.env.BASE_URL}wsop-logo.webp`;
 
@@ -15,10 +16,18 @@ export const HERO_IMAGES = {
 export interface Art {
   src: string;
   pos: string;
+  /** 'contain' shows the whole picture on a dark backdrop (cut-out images such as the bracelet). */
+  fit?: 'contain';
 }
 const PROMO = `${import.meta.env.BASE_URL}promo/`;
 const HERO = `${import.meta.env.BASE_URL}hero/`;
-const art = (src: string, pos = '50% 50%'): Art => ({ src, pos });
+const art = (src: string, pos = '50% 50%', fit?: 'contain'): Art => ({ src, pos, fit });
+
+/** Inline style for a thumbnail <img>: its crop, or the whole cut-out on a dark gold backdrop. */
+export function artStyle(a: { pos: string; fit?: 'contain' }): CSSProperties {
+  if (a.fit !== 'contain') return { objectPosition: a.pos };
+  return { objectPosition: a.pos, objectFit: 'contain', padding: '7%', background: 'radial-gradient(ellipse at 50% 45%, #3d2b0f 0%, #140e06 55%, #070707 100%)' };
+}
 /** Table, player and trophy shots — for final tables, classics and hand clips. */
 export const TABLE_ART: Art[] = [
   art(`${PROMO}final-table-wide.webp`),
@@ -26,7 +35,7 @@ export const TABLE_ART: Art[] = [
   art(`${PROMO}main-event-stage.png`),
   art(`${PROMO}bracelet-win.png`, '50% 40%'),
   art(`${HERO}negreanu-table.webp`, '30% 30%'),
-  art(`${PROMO}champion-belt.png`),
+  art(`${PROMO}bracelet.webp`, '50% 50%', 'contain'),
   art(`${PROMO}table-scene.png`),
   art(`${PROMO}champion.png`, '50% 40%'),
   art(`${HERO}negreanu-portrait.png`, '50% 25%'),
