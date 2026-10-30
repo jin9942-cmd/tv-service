@@ -32,7 +32,7 @@ export function TvHome() {
       <section className="border-b border-line" aria-label="Featured">
         <PromoBanner />
         {/* The four 24/7 channels, right under the banner (no section title). */}
-        <Page className="max-w-[96rem] pt-5 pb-6">
+        <Page className="pt-5 pb-6">
           <TodayCards now={now} />
         </Page>
       </section>
@@ -131,12 +131,15 @@ function PromoBanner() {
       {/* Ambient fill: the same photo, blurred and dimmed, across the whole banner, so the photo never ends in a hard edge. */}
       <img key={'bg-' + sl.img} src={sl.img} alt="" aria-hidden className="absolute inset-0 hidden size-full scale-110 object-cover opacity-50 blur-3xl md:block" />
       <div className="absolute inset-0 hidden bg-black/50 md:block" aria-hidden />
-      {/* Photo: on top on phones; on wider screens a little right of centre (not against the edge), feathered into the fill on every side. */}
-      <div className="hero-photo relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-[12%] md:aspect-auto md:w-[60%]">
-        <img key={sl.img} src={sl.img} alt="" className="size-full object-cover" style={{ objectPosition: sl.pos }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:hidden" aria-hidden />
+      {/* Photo: on top on phones; on wider screens it sits inside the same content width as the menu, text and cards
+          (right side of that box), so it never drifts to the window edge on wide screens. Feathered on every side. */}
+      <div className="md:absolute md:inset-0 md:mx-auto md:max-w-content md:px-8">
+        <div className="hero-photo relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-8 md:aspect-auto md:w-[64%]">
+          <img key={sl.img} src={sl.img} alt="" className="size-full object-cover" style={{ objectPosition: sl.pos }} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:hidden" aria-hidden />
+        </div>
       </div>
-      <Page className="relative flex max-w-[96rem] flex-col justify-end pt-2 pb-14 md:min-h-[min(34rem,46vw)] md:pt-12 md:pb-16">
+      <Page className="relative flex flex-col justify-end pt-2 pb-14 md:min-h-[min(34rem,46vw)] md:pt-12 md:pb-16">
         {/* Every block has a fixed height, so the title and the buttons stay put when the slide changes. */}
         <div className="max-w-xl" aria-live="polite">
           <div className="flex h-[4.9rem] items-end sm:h-[6.94rem]">
