@@ -91,7 +91,7 @@ const INITIAL: AppState = {
   devices: [
     { id: 'd1', name: 'Chrome on macOS', kind: 'web', lastActive: 'Active now', current: true },
     { id: 'd2', name: 'iPhone 15', kind: 'mobile', lastActive: '2 hours ago', streaming: true },
-    { id: 'd3', name: 'Living Room Apple TV', kind: 'tv', lastActive: 'Yesterday', streaming: true },
+    { id: 'd3', name: 'iPad Air', kind: 'mobile', lastActive: 'Yesterday', streaming: true },
     { id: 'd4', name: 'Pixel 8', kind: 'mobile', lastActive: '3 days ago' },
   ],
   progress: { 'lv-main-day3': 0.62 * 660 * 60, 'lv-mm-finaltable': 0.31 * 480 * 60, 'lv-main-day2': 0.88 * 660 * 60, 'classic-a1-finaltable': 0.45 * (9 * 3600 + 1200) },

@@ -5,7 +5,6 @@ import { Button, Icon, cx } from './ui';
 import { WSOP_LOGO } from '../lib/brand';
 import { LoginModal } from '../features/auth/LoginModal';
 import { DemoControls } from '../features/demo/DemoControls';
-import { TvPreview } from '../features/tv/TvPreview';
 import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
 
 
@@ -107,9 +106,6 @@ export function Layout() {
             <NavLink to="/search" aria-label="Search" title="Search" className={({ isActive }) => cx('rounded-chip p-2 transition-colors duration-150', isActive ? 'text-gold' : 'text-muted hover:text-text')}>
               <Icon name="search" />
             </NavLink>
-            <Button size="sm" variant={state.tvPreview ? 'primary' : 'outline'} onClick={() => set({ tvPreview: !state.tvPreview })} aria-pressed={state.tvPreview}>
-              <Icon name="tv" size={16} /> <span className="hidden sm:inline">TV Preview</span>
-            </Button>
             {signedIn ? (
               <MyMenu />
             ) : (
@@ -158,7 +154,6 @@ export function Layout() {
       </nav>
 
       {login && <LoginModal />}
-      {state.tvPreview && <TvPreview />}
       <DemoControls />
 
       <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4 md:bottom-6" role="status" aria-live="polite">

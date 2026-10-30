@@ -114,7 +114,7 @@ export function DemoControls() {
 
           <Group label="Platform">
             <select value={state.platform} onChange={(e) => set({ platform: e.target.value as Platform })} className="w-full rounded border border-sky-400/40 bg-[#0b1a27] px-2 py-1" aria-label="Platform">
-              {(['web', 'mobile', 'tablet', 'tv'] as const).map((k) => (
+              {(['web', 'mobile', 'tablet'] as const).map((k) => (
                 <optgroup key={k} label={k.toUpperCase()}>
                   {(Object.keys(PLATFORMS) as Platform[])
                     .filter((p) => PLATFORMS[p].kind === k)
@@ -126,9 +126,6 @@ export function DemoControls() {
                 </optgroup>
               ))}
             </select>
-            <button onClick={() => set({ tvPreview: !state.tvPreview })} className="mt-1.5 w-full rounded border border-sky-400/40 px-2 py-1 hover:bg-sky-400/10">
-              {state.tvPreview ? 'Close TV Preview' : 'Open TV Preview'}
-            </button>
           </Group>
 
           <Group label="Viewer">
