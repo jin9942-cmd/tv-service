@@ -8,6 +8,7 @@ import { duration, money } from '../lib/format';
 import { VENUE_TZ, fmtDateTime } from '../lib/time';
 import { isOnAir } from '../lib/broadcast';
 import { mediaFor } from '../features/channels/Channels';
+import { PROMO_THUMBS } from '../lib/brand';
 import type { StreamStatus } from '../data/types';
 
 export type VideoKind = 'broadcast' | 'classic' | 'clip' | 'channel';
@@ -89,7 +90,7 @@ function dayVideo(e: TourEvent, d: Day, i: number): Video {
       : d.label === 'Final Table'
         ? `The final table of the ${short(e)} — ${e.entrants.toLocaleString('en-US')} entries, ${money(e.firstPrize)} and the bracelet to the winner.`
         : `${d.label} of the ${short(e)}, from the feature table.`,
-    thumb: thumbFor(classic ? `archive:${a?.id}` : `day:${d.id}`),
+    thumb: PROMO_THUMBS[d.id] ?? thumbFor(classic ? `archive:${a?.id}` : `day:${d.id}`),
     media: { url: v.url, start: v.start },
     durationSec: d.durationMin * 60,
     eventId: e.id,
@@ -143,7 +144,8 @@ export function channelVideo(channelId: string, at: number): Video | undefined {
     title: p.title,
     subtitle: ch.name,
     description: p.subtitle,
-    thumb: m.poster,
+    // A channel showing a broadcast or a classic uses that video's image, so the same content looks the same everywhere.
+    thumb: (p.dayId && PROMO_THUMBS[p.dayId]) || (p.archiveId && PROMO_THUMBS[`classic-${p.archiveId}-finaltable`]) || m.poster,
     media: { url: m.video, start: m.start },
     durationSec: Math.round((p.end - p.start) / 1000),
     eventId: ref?.event.id,

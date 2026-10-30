@@ -124,8 +124,8 @@ function PromoBanner() {
   const live = isOnAir(state.streamMode);
   const slides = [
     {
-      img: HERO_IMAGES.table,
-      pos: '30% 25%',
+      img: HERO_IMAGES.finalTable,
+      pos: '50% 60%',
       kicker: live ? 'Live now · Final table' : 'Main Event · Final table',
       title: `Main Event ${day.label}`,
       facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
