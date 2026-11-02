@@ -348,7 +348,7 @@ function FollowedPlayers({ ids }: { ids: string[] }) {
             <div key={id} className="grid gap-4 rounded-panel border border-line bg-surface p-4 sm:p-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
               <div>
                 <Link to={`/players/${id}`} className="flex items-center gap-3 hover:text-gold-strong">
-                  <Avatar name={p.name} hue={p.hue} size={48} />
+                  <Avatar name={p.name} hue={p.hue} photo={p.photo} size={48} />
                   <span className="text-lg font-bold">{p.name}</span>
                 </Link>
                 {j && <JourneyChip status={j.status} className="mt-3" />}
@@ -1013,7 +1013,7 @@ export function MyListPage() {
               return (
                 <li key={id}>
                   <Link to={`/players/${id}`} className="flex items-center gap-3 rounded-panel border border-line bg-surface p-3 hover:border-gold">
-                    <Avatar name={p.name} hue={p.hue} size={44} />
+                    <Avatar name={p.name} hue={p.hue} photo={p.photo} size={44} />
                     <span className="min-w-0 flex-1">
                       <span className="block font-bold">{p.name}</span>
                       {j ? <JourneyChip status={j.status} className="mt-1" /> : <span className="text-xs text-muted">Not playing on camera this series</span>}

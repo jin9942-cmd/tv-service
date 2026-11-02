@@ -53,7 +53,7 @@ export const STATUS_LABEL: Record<JourneyStatus, string> = {
 /** The player's hands in the clip library, most watched first. */
 export const handsOf = (playerId: string, n = 6): Video[] => highlightClips.filter((v) => v.playerIds.includes(playerId)).slice(0, n);
 
-/** The alert a follower gets, e.g. "Seo-yeon Han is back on Day 3 — catch up on 3 hands so far." */
+/** The alert a follower gets, e.g. "Daniel Negreanu is back on Day 3 — catch up on 3 hands so far." */
 export function followAlert(playerId: string, streamMode: StreamStatus): string | undefined {
   const p = playerById(playerId);
   const j = journeyOf(playerId, streamMode)[0];

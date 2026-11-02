@@ -175,10 +175,12 @@ export function Icon({ name, size = 20, className }: { name: keyof typeof PATHS 
   );
 }
 
-// ---- avatar (initials, no photos) ------------------------------------------------------------
+// ---- avatar (photo when the player has one, otherwise initials) ------------------------------------------------------------
 
 /** Initials avatar. `vivid` = solid player colour with a thin outer ring (v1 "Featured players" look). */
-export function Avatar({ name, hue, size = 48, ring, vivid }: { name: string; hue: number; size?: number; ring?: boolean; vivid?: boolean }) {
+export function Avatar({ name, hue, size = 48, ring, vivid, photo }: { name: string; hue: number; size?: number; ring?: boolean; vivid?: boolean; photo?: string }) {
+  if (photo)
+    return <img src={photo} alt="" width={size} height={size} className={cx('shrink-0 rounded-full object-cover', ring && 'ring-2 ring-gold ring-offset-2 ring-offset-bg')} style={{ width: size, height: size }} aria-hidden />;
   return (
     <span
       className={cx(

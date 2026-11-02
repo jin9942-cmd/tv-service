@@ -158,7 +158,7 @@ export function VodPanel({
                 const on = follow.isFollowing(p.id);
                 return (
                   <li key={p.id} className="flex items-center gap-2.5 rounded-chip bg-surface-2 px-2.5 py-2">
-                    <Avatar name={p.name} hue={p.hue} size={26} />
+                    <Avatar name={p.name} hue={p.hue} photo={p.photo} size={26} />
                     <Link to={`/players/${p.id}`} className="min-w-0 flex-1 hover:text-gold-strong">
                       <span className="block truncate text-[13px] font-semibold">{p.name}</span>
                       <CountryCode cc={p.cc} />
@@ -250,7 +250,7 @@ export function DayResults({
               return (
                 <li key={id} className="flex items-center gap-2.5 rounded-chip bg-surface-2 px-2.5 py-2">
                   <span className="w-4 text-xs font-bold text-subtle tnum">{i + 1}</span>
-                  <Avatar name={p.name} hue={p.hue} size={24} />
+                  <Avatar name={p.name} hue={p.hue} photo={p.photo} size={24} />
                   <Link to={`/players/${id}`} className="min-w-0 flex-1 truncate text-[13px] font-semibold hover:text-gold-strong">
                     {p.name}
                   </Link>

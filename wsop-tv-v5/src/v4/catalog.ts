@@ -4,7 +4,7 @@ import { archive, classicEvents, dayById, events, finalTableSeats, hands, seatsF
 import { channelById, channels, programAt } from '../data/channels';
 import type { Day, Hand, TourEvent } from '../data/types';
 import { FOOTAGE, tableVideo, thumbFor } from '../lib/media';
-import { PROMO_ART, TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
+import { PLAYER_ART, PROMO_ART, TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
 import { duration, money } from '../lib/format';
 import { VENUE_TZ, fmtDateTime } from '../lib/time';
 import { isOnAir } from '../lib/broadcast';
@@ -136,6 +136,16 @@ function dayVideo(e: TourEvent, d: Day, i: number): Video {
   };
 }
 
+/** A clip with a player the demo has photos of shows that player (their photos in turn). */
+const playerTurn: Record<string, number> = {};
+function playerArt(h: Hand) {
+  const id = h.playerIds.find((p) => PLAYER_ART[p]);
+  if (!id) return undefined;
+  const list = PLAYER_ART[id];
+  const a = list[(playerTurn[id] = (playerTurn[id] ?? -1) + 1) % list.length];
+  return { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit };
+}
+
 function clipVideo(h: Hand, i: number): Video {
   const ref = dayById(h.dayId)!;
   return {
@@ -144,7 +154,7 @@ function clipVideo(h: Hand, i: number): Video {
     title: h.title,
     subtitle: `${short(ref.event)} · ${ref.day.label}`,
     description: `A key hand from the ${short(ref.event)} ${ref.day.label.toLowerCase()}.`,
-    ...artFor(h.id, 'clip'),
+    ...(playerArt(h) ?? artFor(h.id, 'clip')),
     media: { url: FOOTAGE.ft.url, start: [40, 110, 180, 260, 330][i % 5] },
     durationSec: h.durationSec,
     eventId: ref.event.id,

@@ -64,6 +64,8 @@ export const CHANNEL_ART: Record<string, Art> = {
 
 /** Fixed picks for the videos people see first (the rest walk the pools in order). */
 export const PROMO_ART: Record<string, Art> = {
+  'lv-main-day1a': art(`${PROMO}event-hall.webp`),
+  'lv-plo-finaltable': art(`${PROMO}feature-table-player.png`, '50% 30%'),
   'lv-main-finaltable': TABLE_ART[0],
   'lv-hr-finaltable': TABLE_ART[1],
   'lv-mm-finaltable': TABLE_ART[6],
@@ -75,3 +77,8 @@ export const PROMO_ART: Record<string, Art> = {
 
 /** The WSOP bracelet, small (the bracelet count on player profiles and cards). */
 export const BRACELET_ICON = `${PROMO}bracelet-small.webp`;
+
+/** Photos of the players the demo has pictures of: their hand clips use these, in turn. */
+export const PLAYER_ART: Record<string, Art[]> = {
+  p04: [art(`${PROMO}negreanu-gg.png`, '50% 35%'), art(`${PROMO}negreanu-bracelet.webp`, '50% 30%'), art(`${PROMO}negreanu-hoodie.webp`, '60% 35%'), art(`${PROMO}negreanu-smile.png`, '45% 30%')],
+};
