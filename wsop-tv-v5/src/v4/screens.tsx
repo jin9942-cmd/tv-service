@@ -196,12 +196,11 @@ function TonightsMatch() {
   const clips = clipsOf(e.id).slice(0, 3);
   return (
     <section aria-label="Tonight's main match" className="relative overflow-hidden border-b border-line">
-      {v && <img src={v.thumb} style={thumbStyle(v)} alt="" className="absolute inset-0 size-full object-cover" />}
-      {/* A light overall overlay, a stronger one behind the text (left) and a fade at the bottom, so the text reads over the photo. */}
-      <div className="absolute inset-0 bg-black/30" aria-hidden />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.8)_30%,rgba(0,0,0,0.35)_60%,transparent_85%)]" aria-hidden />
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/85 to-transparent" aria-hidden />
-      <Page className="relative max-w-[96rem] py-10 sm:py-14">
+      {v && <img src={v.thumb} style={{ ...thumbStyle(v), filter: 'brightness(1.12)' }} alt="" className="absolute inset-0 size-full object-cover" />}
+      {/* The photo stays bright: only the text side (left) and the bottom edge are shaded, so the text still reads. */}
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.8)_0%,rgba(0,0,0,0.55)_35%,rgba(0,0,0,0.15)_58%,transparent_72%)]" aria-hidden />
+      <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/70 to-transparent" aria-hidden />
+      <Page className="relative flex min-h-[26rem] max-w-[96rem] flex-col justify-end py-10 [text-shadow:0_1px_10px_rgba(0,0,0,0.85)] sm:min-h-[34rem] sm:py-14 lg:min-h-[38rem]">
         <p className="label text-gold">Tonight’s main match</p>
         <h1 className="mt-2 max-w-3xl text-[2.2rem] leading-[1.02] sm:text-[3.2rem]">
           {short(e.name)} · {d.label}
