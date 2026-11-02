@@ -2,15 +2,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
-import { Avatar, Button, Icon, LiveTag, Page, cx } from '../components/ui';
+import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, reminderKey, upNext, type LinearChannel } from '../data/channels';
 import { commentaryFor } from '../data/shows';
 import { ChannelGuide, useProgramReminder } from '../features/channels/Channels';
-import { HERO_DAY_ID, dayById, eventById, events, playerById, seriesById } from '../data/mock';
+import { HERO_DAY_ID, dayById, eventById, events, seriesById } from '../data/mock';
 import type { Day, TourEvent } from '../data/types';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, tzAbbr } from '../lib/time';
 import { isBroadcasting } from '../lib/broadcast';
-import { STATUS_LABEL, followAlert, handsOf, journeyOf, type JourneyStatus } from './journey';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
@@ -272,13 +271,11 @@ export function HomeRows() {
         .map((x) => videoById(x.kind === 'archive' ? `classic-${x.id}-finaltable` : x.kind === 'event' ? (catalog.find((v) => v.eventId === x.id && v.kind !== 'clip')?.id ?? '') : x.id))
         .filter((v): v is Video => !!v)
     : [];
-  const followed = Object.keys(state.followed);
-  const onHome = new Set([...mustWatch(followed), ...followed.flatMap((id) => followedHands(id))].map((v) => v.id));
+  const onHome = new Set(mustWatch().map((v) => v.id));
   return (
     <>
       <VideoRow title="Continue watching" videos={continuing} progressOf={progressOf} onRemove={removeContinue} />
-      <EditorsPicks followed={followed} />
-      {followed.length > 0 && <FollowedPlayers ids={followed} />}
+      <EditorsPicks />
       <VideoRow title="Recommended for you" videos={recommendedRow(new Set([...started, ...onHome]))} />
       <VideoRow title="My List" videos={mine} action={more('/my-list', 'See all')} />
       <VideoRow title="Classics" videos={classics} action={more('/events')} />
@@ -312,20 +309,19 @@ function Section({ title, kicker, action, children }: { title: string; kicker?: 
   );
 }
 
-/** Editor's picks: three hands, with how long they take — not the followed players' hands, which have their own section. */
-const mustWatch = (followed: string[]) => {
-  const pool = highlightClips.filter((v) => !v.tags.some((t) => followed.some((id) => t.slug === `player-${id}`)));
+/** Editor's picks: three hands, with how long they take. */
+const mustWatch = () => {
   // Three different pictures side by side: skip a hand whose thumbnail is already picked.
   const picked: Video[] = [];
   for (const slug of ['bluff', 'all-in', 'hero-fold']) {
-    const v = pool.find((x) => x.tags.some((t) => t.slug === slug) && !picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos));
+    const v = highlightClips.find((x) => x.tags.some((t) => t.slug === slug) && !picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos));
     if (v) picked.push(v);
   }
   return picked;
 };
 
-function EditorsPicks({ followed }: { followed: string[] }) {
-  const picks = mustWatch(followed);
+function EditorsPicks() {
+  const picks = mustWatch();
   const total = picks.reduce((n, v) => n + v.durationSec, 0);
   return (
     <Section title="3 hands worth your time" kicker={`Editor’s picks · ${duration(total)} in all`} action={more('/highlights', 'All highlights')}>
@@ -335,64 +331,6 @@ function EditorsPicks({ followed }: { followed: string[] }) {
         ))}
       </div>
     </Section>
-  );
-}
-
-/** A followed player's most-watched hands on Home. */
-const followedHands = (id: string) => handsOf(id, 3);
-
-/** Followed players: where they are in the series right now, and why each video is here. */
-function FollowedPlayers({ ids }: { ids: string[] }) {
-  const { state } = useApp();
-  return (
-    <Section title="Players you follow">
-      <div className="space-y-6">
-        {ids.map((id) => {
-          const p = playerById(id);
-          const j = journeyOf(id, state.streamMode)[0];
-          const alert = followAlert(id, state.streamMode);
-          return (
-            <div key={id} className="grid gap-4 rounded-panel border border-line bg-surface p-4 sm:p-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
-              <div>
-                <Link to={`/players/${id}`} className="flex items-center gap-3 hover:text-gold-strong">
-                  <Avatar name={p.name} hue={p.hue} photo={p.photo} size={48} />
-                  <span className="text-lg font-bold">{p.name}</span>
-                </Link>
-                {j && <JourneyChip status={j.status} className="mt-3" />}
-                {alert && <p className="mt-2 text-sm text-text/85">{alert}</p>}
-                {j?.status === 'onTable' && (
-                  <Link to={`/watch/${j.day.id}`} className="mt-3 inline-block">
-                    <Button size="sm" variant="primary" tabIndex={-1}>
-                      <Icon name="play" size={14} /> Watch their table
-                    </Button>
-                  </Link>
-                )}
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                {followedHands(id).map((v) => (
-                  <VideoCard key={v.id} v={v} reason={`Because you follow ${p.name.split(' ')[0]}`} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </Section>
-  );
-}
-
-function JourneyChip({ status, className }: { status: JourneyStatus; className?: string }) {
-  return (
-    <span
-      className={cx(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold',
-        status === 'onTable' ? 'bg-live/15 text-live' : status === 'stillIn' ? 'bg-gold-dim text-gold-strong' : 'bg-surface-3 text-muted',
-        className,
-      )}
-    >
-      {status === 'onTable' && <i className="live-dot size-1.5 rounded-full bg-live" aria-hidden />}
-      {STATUS_LABEL[status]}
-    </span>
   );
 }
 
