@@ -5,12 +5,11 @@ import { Button, Icon, cx } from './ui';
 import { WSOP_LOGO } from '../lib/brand';
 import { LoginModal } from '../features/auth/LoginModal';
 import { DemoControls } from '../features/demo/DemoControls';
-import { TvPreview } from '../features/tv/TvPreview';
 import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
 
 
-// v5: named for what viewers want — what's on, events, short hands, players. Search and My List stay one tap away in
-// the header; account settings sit behind the avatar. Phones get five tabs (Home, Live, Browse, Search, My List).
+// v5: named for what viewers want — what's on, events, short hands, players. Search stays one tap away in the header;
+// My List and account settings sit behind the avatar. Phones get four tabs (Home, Live, Browse, Search).
 export const NAV = [
   { to: '/', label: 'Home', icon: 'star', end: true },
   { to: '/live', label: 'Live & Schedule', icon: 'tv' },
@@ -24,7 +23,6 @@ const MOBILE_NAV = [
   { to: '/live', label: 'Live', icon: 'tv' },
   { to: '/browse', label: 'Browse', icon: 'grid2' },
   { to: '/search', label: 'Search', icon: 'search' },
-  { to: '/my-list', label: 'My List', icon: 'plus' },
 ];
 /** The schedule and channel guide are tabs of Live; Browse covers events, highlights, players and collections. */
 const navOn = (to: string, isActive: boolean, path: string) =>
@@ -114,12 +112,6 @@ export function Layout() {
             <NavLink to="/search" aria-label="Search" title="Search" className={({ isActive }) => cx('hidden rounded-chip p-2 transition-colors duration-150 lg:inline-flex', isActive ? 'text-gold' : 'text-muted hover:text-text')}>
               <Icon name="search" />
             </NavLink>
-            <NavLink to="/my-list" className={({ isActive }) => cx('hidden items-center gap-1.5 rounded-chip px-2 py-1.5 text-sm font-semibold whitespace-nowrap transition-colors duration-150 lg:inline-flex', isActive ? 'text-gold' : 'text-muted hover:text-text')}>
-              <Icon name="plus" size={18} /> My List
-            </NavLink>
-            <Button size="sm" variant={state.tvPreview ? 'primary' : 'outline'} onClick={() => set({ tvPreview: !state.tvPreview })} aria-pressed={state.tvPreview}>
-              <Icon name="tv" size={16} /> <span className="hidden sm:inline">TV Preview</span>
-            </Button>
             {signedIn ? (
               <MyMenu />
             ) : (
@@ -138,7 +130,7 @@ export function Layout() {
       <Footer />
 
       {/* Mobile bottom navigation */}
-      <nav aria-label="Main (mobile)" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-bg/95 backdrop-blur lg:hidden">
+      <nav aria-label="Main (mobile)" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-line bg-bg/95 backdrop-blur lg:hidden">
         {MOBILE_NAV.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold', navOn(n.to, isActive, loc.pathname) ? 'text-gold' : 'text-muted')}>
             <Icon name={n.icon} size={20} />
@@ -148,7 +140,6 @@ export function Layout() {
       </nav>
 
       {login && <LoginModal />}
-      {state.tvPreview && <TvPreview />}
       <DemoControls />
 
       <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4 md:bottom-6" role="status" aria-live="polite">

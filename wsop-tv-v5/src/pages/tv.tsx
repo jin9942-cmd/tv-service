@@ -4,7 +4,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
 import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
 import { hands } from '../data/mock';
-import { PLATFORMS } from '../data/platforms';
 import { thumbFor } from '../lib/media';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
@@ -73,7 +72,7 @@ export function HowToWatchBand() {
   const tiles: [string, string, string][] = [
     ['WSOP+ Free', 'WSOP Classics and every studio and highlight show — free with a GGPass account.', 'star'],
     ['WSOP+ membership', 'Live final tables and full replays on every channel.', 'play'],
-    ['On every screen', 'Web, iOS, Android, and TV apps for Apple TV, Android TV, Roku, Samsung and LG.', 'tv'],
+    ['Web and mobile', 'Watch in any browser, or on the iOS and Android apps for phones and tablets.', 'grid1'],
   ];
   return (
     <section className="rounded-panel border border-line bg-surface p-6 sm:p-8" aria-label="How to watch">
@@ -291,14 +290,13 @@ export function TvHowToWatch() {
   const groups: [string, string[]][] = [
     ['Web', ['Any modern browser']],
     ['Mobile & tablet', ['iPhone', 'iPad', 'Android phones', 'Android tablets'].filter(Boolean)],
-    ['TV', (['appletv', 'androidtv', 'roku', 'samsung', 'lg'] as const).map((p) => PLATFORMS[p].label)],
   ];
   return (
     <>
       <Page className="pb-0">
         <h1 className="text-title font-black">How to watch</h1>
-        <p className="mt-1 text-sm text-muted">Sign in once with GGPass and watch every channel on any screen.</p>
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
+        <p className="mt-1 text-sm text-muted">Sign in once with GGPass and watch every channel in your browser or on your phone and tablet.</p>
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
           {groups.map(([t, items]) => (
             <section key={t} className="rounded-panel border border-line bg-surface p-5" aria-label={t}>
               <p className="label text-gold">{t}</p>
