@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import type { AudioTrack, OverlayLevel } from '../data/types';
+import type { AudioTrack } from '../data/types';
 import { memberTier, useApp } from '../state/app';
 import { AUDIO_LABEL } from '../features/player/Controls';
 import { DeviceList } from '../features/auth/Devices';
 import { GGPassMark } from '../features/auth/LoginModal';
 import { useState } from 'react';
-import { Button, Modal, Page, Placeholder, Segmented, Switch } from '../components/ui';
+import { Button, Modal, Page, Placeholder, Switch } from '../components/ui';
 import { COMPLETE_THRESHOLD, GRACE_DAYS, NEXT_PAYMENT_DAYS, daysFromNow, fmtBillingDate, tierFull } from '../data/policy';
 
 import { dayById } from '../data/mock';
@@ -68,19 +68,6 @@ export function Account() {
 
       <Card title="Viewing preferences">
         <Switch label="Spoiler-Free Mode" description="Hide results, champions, chip standings and hand outcomes everywhere until you choose to reveal them." on={state.spoilerFree} onChange={(v) => set({ spoilerFree: v })} />
-        <Row label="Default overlay">
-          <Segmented<OverlayLevel>
-            label="Default overlay"
-            size="sm"
-            value={state.overlayDefault}
-            onChange={(v) => set({ overlayDefault: v })}
-            options={[
-              { value: 'off', label: 'Off' },
-              { value: 'basic', label: 'Basic' },
-              { value: 'pro', label: 'Pro' },
-            ]}
-          />
-        </Row>
         <Row label="Default audio">
           <select value={state.audioDefault} onChange={(e) => set({ audioDefault: e.target.value as AudioTrack })} className="h-9 rounded-chip border border-line-strong bg-surface-2 px-2 text-sm" aria-label="Default audio">
             {(Object.keys(AUDIO_LABEL) as AudioTrack[]).map((a) => (

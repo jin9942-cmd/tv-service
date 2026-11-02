@@ -51,7 +51,7 @@ export function requiredTier(access: Access, includedFrom: IncludedFrom, live = 
 /** What each tier gets on WSOP TV, derived from the setting above (for the plan comparison). */
 export function tvCoverage(tier: Exclude<Tier, 'free'>, includedFrom: IncludedFrom): string[] {
   if (tier === 'wsopFree') return ['Free highlight clips', 'Selected classics, replays and hands', 'Follow players, reminders, My List'];
-  const all = ['Every live table, incl. delayed final tables', 'Full archive of replays', 'Hand-by-hand replays and clips', 'Basic & Pro data overlays, multiview'];
+  const all = ['Every live table, incl. delayed final tables', 'Full archive of replays', 'Hand-by-hand replays and clips'];
   if (tier === 'premium') return all;
   if (includedFrom === 'basic') return all;
   if (includedFrom === 'split') return ['Full archive of replays', 'Hand-by-hand replays and clips', 'Live tables need Premium'];

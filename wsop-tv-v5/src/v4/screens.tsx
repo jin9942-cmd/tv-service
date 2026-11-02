@@ -183,7 +183,8 @@ function reasonFor(v: Video): string {
 /** "Tonight's main match": who's playing, what's at stake, when it airs. */
 function TonightsMatch() {
   const { state } = useApp();
-  const now = useTick(15_000);
+  // Re-render as the broadcast state changes (live now / starts at).
+  useTick(15_000);
   const hero = dayById(HERO_DAY_ID)!;
   const st = state.streamMode;
   const live = isOnAir(st);
@@ -192,9 +193,7 @@ function TonightsMatch() {
   const d = live || isBroadcasting(st) ? hero.day : up.d;
   const v = videoById(d.id);
   const seats = tablePlayers(d);
-  const delay = Math.max(0, ...d.tables.map((t) => tableDelay(t, st)));
   const clips = clipsOf(e.id).slice(0, 3);
-  const langs = languagesFor(d.id, now);
   return (
     <section aria-label="Tonight's main match" className="relative overflow-hidden border-b border-line">
       {v && <img src={v.thumb} style={thumbStyle(v)} alt="" className="absolute inset-0 size-full object-cover" />}
@@ -207,32 +206,22 @@ function TonightsMatch() {
         <h1 className="mt-2 max-w-3xl text-[2.2rem] leading-[1.02] sm:text-[3.2rem]">
           {short(e.name)} · {d.label}
         </h1>
-        {/* Plain lines of text, no boxes or chips. */}
-        <dl className="mt-4 max-w-3xl space-y-1.5 text-[15px] text-white/90">
-          <div className="flex flex-wrap gap-x-2">
-            <dt className="text-white/60">At stake</dt>
-            <dd className="font-semibold">{money(e.firstPrize)} and the bracelet</dd>
-          </div>
-          <div className="flex flex-wrap gap-x-2">
-            <dt className="text-white/60">{live ? 'On air' : 'Starts'}</dt>
-            <dd className="font-semibold">
-              {live ? (delay ? `Now · ${delay}-min delay` : 'Now') : `${fmtDate(d.start, state.tz)} · ${fmtTime(d.start, state.tz)}`} · {langs.join(', ')}
-            </dd>
-          </div>
-          <div className="flex flex-wrap gap-x-2">
-            <dt className="text-white/60">At the table</dt>
-            <dd>
-              {seats.map((id, i) => (
-                <span key={id}>
-                  {i > 0 && ', '}
-                  <Link to={`/players/${id}`} className="font-semibold hover:text-gold-strong hover:underline">
-                    {playerById(id).name}
-                  </Link>
-                </span>
-              ))}
-            </dd>
-          </div>
-        </dl>
+        {/* One line: what's at stake, when, and who (delay and languages are on the watch screen). */}
+        <p className="mt-3 max-w-3xl text-[15px] text-white/85">
+          <b className="text-white">{money(e.firstPrize)} and the bracelet</b>
+          <span className="mx-2 text-white/40">·</span>
+          {live ? 'Live now' : `${fmtDate(d.start, state.tz)} · ${fmtTime(d.start, state.tz)}`}
+          <span className="mx-2 text-white/40">·</span>
+          {seats.slice(0, 2).map((id, i) => (
+            <span key={id}>
+              {i > 0 && ', '}
+              <Link to={`/players/${id}`} className="hover:text-gold-strong hover:underline">
+                {playerById(id).name}
+              </Link>
+            </span>
+          ))}
+          {e.remaining > 2 && ` and ${e.remaining - 2} more`}
+        </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link to={`/watch/${d.id}`}>
             <Button variant="primary" size="lg" tabIndex={-1}>
