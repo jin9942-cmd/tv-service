@@ -148,6 +148,9 @@ export function HomePage() {
   const { state } = useApp();
   const progress = useContinue();
   const followed = Object.keys(state.followed);
+  // Rows don't repeat each other: Recommended skips what's started and the editor's picks; Latest replays skips both.
+  const started = new Set(progress.map((x) => x.v.id));
+  const recs = recommended.filter((v) => !started.has(v.id) && !mustWatch().some((p) => p.id === v.id));
   return (
     <>
       <TonightsMatch />
@@ -161,9 +164,9 @@ export function HomePage() {
         <StorySoFar />
         <MustWatchHands />
         {followed.length > 0 && <FollowedPlayers ids={followed} />}
-        <VideoRow title="Recommended for you" videos={recommended} reasonOf={reasonFor} />
+        <VideoRow title="Recommended for you" videos={recs} reasonOf={reasonFor} />
         <ArchiveCollections />
-        <VideoRow title="Latest replays" videos={[...replays].reverse()} action={more('/events', 'All events')} reasonOf={() => 'Full broadcast'} />
+        <VideoRow title="Latest replays" videos={[...replays].reverse().filter((v) => !started.has(v.id) && !recs.slice(0, 4).some((r) => r.id === v.id))} action={more('/events', 'All events')} reasonOf={() => 'Full broadcast'} />
         <AccessSection />
         <HowToWatchBand />
       </Page>
@@ -249,56 +252,49 @@ function TonightsMatch() {
   );
 }
 
-/** "The story so far": a short, spoiler-aware catch-up on the main event. */
+/**
+ * "Road to the final table" (the feedback's "story so far"): one line of facts, then every broadcast day of the event as
+ * a card to watch. The chip leader stays behind a tap, whatever the spoiler setting.
+ */
 function StorySoFar() {
+  const { state } = useApp();
+  const [leaderShown, setLeaderShown] = useState(false);
   const hero = dayById(HERO_DAY_ID)!;
   const e = hero.event;
-  const seats = seatsFor(HERO_DAY_ID);
-  const leader = playerById(seats[0].playerId);
-  const day3 = e.days.find((d) => d.label === 'Day 3');
+  const leader = playerById(seatsFor(HERO_DAY_ID)[0].playerId);
+  const days = eventDays(e.id);
   return (
-    <Section title="The story so far" kicker={`${short(e.name)} · spoiler-aware`}>
-      <div className="grid gap-5 rounded-panel border border-line bg-surface p-5 sm:p-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <div className="space-y-3 text-[15px] leading-relaxed text-text/85">
-          <p>
-            {e.entrants.toLocaleString('en-US')} players bought in over two starting days, building a {money(e.prizePool)} prize pool. Three more days on the
-            broadcast table took the field down to a final table.
-          </p>
-          <p>
-            Tonight decides who takes {money(e.firstPrize)} and the bracelet.{' '}
-            <Spoiler k="story-lv-main" inline label="Chip leader hidden">
-              <span>
-                {leader.name} starts as chip leader with {chips(seats[0].stack)}.
-              </span>
-            </Spoiler>
-          </p>
-        </div>
-        <div className="flex flex-col gap-2">
-          {day3 && (
-            <Link to={`/watch/${day3.id}`} className="flex items-center gap-3 rounded-card bg-surface-2 p-3 hover:bg-surface-3">
-              <Icon name="play" size={18} className="text-gold" />
-              <span className="min-w-0">
-                <span className="block font-semibold">Watch Day 3 in full</span>
-                <span className="block text-xs text-muted">{duration(day3.durationMin * 60)} · how the final table was set</span>
-              </span>
-            </Link>
-          )}
-          <Link to={`/events/${e.id}`} className="flex items-center gap-3 rounded-card bg-surface-2 p-3 hover:bg-surface-3">
-            <Icon name="grid2" size={18} className="text-gold" />
-            <span className="min-w-0">
-              <span className="block font-semibold">Event centre</span>
-              <span className="block text-xs text-muted">Broadcasts, chip counts, blinds and payouts</span>
-            </span>
-          </Link>
-        </div>
+    <Section
+      title="Road to the final table"
+      kicker={`${short(e.name)} · ${e.entrants.toLocaleString('en-US')} entries · ${money(e.prizePool)} prize pool`}
+      action={more(`/events/${e.id}`, 'Event centre')}
+    >
+      <div className="grid grid-flow-col auto-cols-[minmax(13rem,1fr)] gap-4 overflow-x-auto pb-1">
+        {days.map((v) => (
+          <VideoCard key={v.id} v={v} progress={state.progress[v.id] ? state.progress[v.id] / v.durationSec : undefined} />
+        ))}
       </div>
+      <p className="mt-3 text-sm text-muted">
+        {leaderShown ? (
+          <>
+            Chip leader going in: <b className="text-text">{leader.name}</b>
+          </>
+        ) : (
+          <button onClick={() => setLeaderShown(true)} className="inline-flex items-center gap-1.5 font-semibold text-text/80 hover:text-text">
+            <Icon name="eye" size={14} /> Show the chip leader
+          </button>
+        )}
+      </p>
     </Section>
   );
 }
 
 /** Editor's picks: three hands, with how long they take. */
+const mustWatch = () =>
+  [highlightClips.find((v) => v.tags.some((t) => t.slug === 'bluff')), highlightClips.find((v) => v.tags.some((t) => t.slug === 'all-in')), highlightClips.find((v) => v.tags.some((t) => t.slug === 'hero-fold'))].filter((v): v is Video => !!v);
+
 function MustWatchHands() {
-  const picks = [highlightClips.find((v) => v.tags.some((t) => t.slug === 'bluff')), highlightClips.find((v) => v.tags.some((t) => t.slug === 'all-in')), highlightClips.find((v) => v.tags.some((t) => t.slug === 'hero-fold'))].filter((v): v is Video => !!v);
+  const picks = mustWatch();
   const total = picks.reduce((n, v) => n + v.durationSec, 0);
   return (
     <Section title="3 hands worth your time" kicker={`Editor’s picks · ${duration(total)} in all`} action={more('/highlights', 'All highlights')}>
@@ -321,7 +317,11 @@ function FollowedPlayers({ ids }: { ids: string[] }) {
           const p = playerById(id);
           const j = journeyOf(id, state.streamMode)[0];
           const alert = followAlert(id, state.streamMode);
-          const hands = handsOf(id, 3);
+          // Not the editor's picks again: each hand appears once on Home.
+          const picked = new Set(mustWatch().map((v) => v.id));
+          const hands = handsOf(id, 12)
+            .filter((v) => !picked.has(v.id))
+            .slice(0, 3);
           return (
             <div key={id} className="grid gap-4 rounded-panel border border-line bg-surface p-4 sm:p-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
               <div>
@@ -378,14 +378,18 @@ export const COLLECTIONS: { id: string; title: string; blurb: string; videos: ()
 ];
 
 function ArchiveCollections() {
+  const { state } = useApp();
+  // Covers avoid videos already shown on Home (Continue watching, Recommended), so no thumbnail appears twice.
+  const shown = new Set([...recommended.map((v) => v.id), ...Object.keys(state.progress)]);
   return (
     <Section title="From the archive" kicker="Curated collections" action={more('/events', 'All classics')}>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {COLLECTIONS.map((c) => {
           const vs = c.videos();
+          const cover = [...vs].reverse().find((v) => !shown.has(v.id)) ?? vs[0];
           return (
             <Link key={c.id} to={`/collections/${c.id}`} className="group relative block aspect-[4/3] overflow-hidden rounded-card bg-surface-2">
-              {vs[0] && <img src={vs[0].thumb} style={thumbStyle(vs[0])} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />}
+              {cover && <img src={cover.thumb} style={thumbStyle(cover)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />}
               <span className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" aria-hidden />
               <span className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
                 <span className="block text-base leading-tight font-bold sm:text-lg">{c.title}</span>
@@ -429,7 +433,8 @@ export function CollectionPage() {
 
 /** Who can watch what, and what a locked video looks like (the plan details come from WSOP+). */
 export function AccessSection() {
-  const sample = catalog.find((v) => v.kind === 'broadcast' && v.access === 'subscriber' && v.status === 'vod');
+  // An earlier day of another event, so the example doesn't repeat a card shown elsewhere on Home.
+  const sample = catalog.find((v) => v.kind === 'broadcast' && v.access === 'subscriber' && v.status === 'vod' && v.eventId === 'lv-plo');
   const rows: [string, string, string][] = [
     ['Free', 'No account needed', 'Selected hand clips and the WSOP Classics channel.'],
     ['With a GGPass account', 'Sign in, no plan', 'More hands, some classic final tables and selected replays.'],

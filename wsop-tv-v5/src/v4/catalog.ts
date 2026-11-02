@@ -3,7 +3,7 @@
 import { archive, classicEvents, dayById, events, finalTableSeats, hands, seatsFor, seriesById } from '../data/mock';
 import { channelById, channels, programAt } from '../data/channels';
 import type { Day, Hand, TourEvent } from '../data/types';
-import { FOOTAGE, tableVideo } from '../lib/media';
+import { FOOTAGE, tableVideo, thumbFor } from '../lib/media';
 import { PROMO_ART, TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
 import { duration, money } from '../lib/format';
 import { VENUE_TZ, fmtDateTime } from '../lib/time';
@@ -56,12 +56,18 @@ export interface Video {
 
 const short = (e: TourEvent) => e.name.replace(' World Championship', '');
 
-// Artwork: fixed picks first, then each pool in catalogue order, so neighbouring cards in a row differ.
-const walk = { table: 0, venue: 0 };
-function artFor(id: string, pool: 'table' | 'venue') {
-  const list = pool === 'table' ? TABLE_ART : VENUE_ART;
-  const a = PROMO_ART[id] ?? list[walk[pool]++ % list.length];
-  return { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit };
+// Artwork, so thumbnails don't repeat: fixed picks first, then each photo once (crops of the same photo count as
+// used), then the broadcast stills (each also used once). Hand clips use the broadcast stills.
+const usedPhotos = new Set(Object.values(PROMO_ART).map((a) => a.src));
+function artFor(id: string, pool: 'table' | 'venue' | 'clip') {
+  const fixed = PROMO_ART[id];
+  if (fixed) return { thumb: fixed.src, thumbPos: fixed.pos, thumbFit: fixed.fit };
+  const a = pool === 'clip' ? undefined : [...(pool === 'table' ? TABLE_ART : VENUE_ART), ...TABLE_ART, ...VENUE_ART].find((x) => !usedPhotos.has(x.src));
+  if (a) {
+    usedPhotos.add(a.src);
+    return { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit };
+  }
+  return { thumb: thumbFor(pool === 'clip' ? `hand:${id}` : `day:${id}`), thumbPos: '50% 50%' };
 }
 const thumbOf = (id: string) => {
   const v = catalog.find((x) => x.id === id);
@@ -138,7 +144,7 @@ function clipVideo(h: Hand, i: number): Video {
     title: h.title,
     subtitle: `${short(ref.event)} · ${ref.day.label}`,
     description: `A key hand from the ${short(ref.event)} ${ref.day.label.toLowerCase()}.`,
-    ...artFor(h.id, 'table'),
+    ...artFor(h.id, 'clip'),
     media: { url: FOOTAGE.ft.url, start: [40, 110, 180, 260, 330][i % 5] },
     durationSec: h.durationSec,
     eventId: ref.event.id,
