@@ -194,8 +194,10 @@ function TonightsMatch() {
   const langs = languagesFor(d.id, now);
   return (
     <section aria-label="Tonight's main match" className="relative overflow-hidden border-b border-line">
-      {v && <img src={v.thumb} style={thumbStyle(v)} alt="" className="absolute inset-0 size-full object-cover opacity-45" />}
-      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/30" aria-hidden />
+      {v && <img src={v.thumb} style={thumbStyle(v)} alt="" className="absolute inset-0 size-full object-cover" />}
+      {/* The photo stays at full strength; only the text side (left) and the bottom edge are darkened for legibility. */}
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.9)_0%,rgba(0,0,0,0.65)_32%,rgba(0,0,0,0.1)_62%,transparent_100%)]" aria-hidden />
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" aria-hidden />
       <Page className="relative max-w-[96rem] py-10 sm:py-14">
         <p className="label text-gold">Tonight’s main match</p>
         <h1 className="mt-2 max-w-3xl text-[2.2rem] leading-[1.02] sm:text-[3.2rem]">
