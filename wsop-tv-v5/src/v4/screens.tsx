@@ -160,7 +160,6 @@ export function HomePage() {
           title="Continue watching"
           videos={progress.map((x) => x.v)}
           progressOf={(v) => (state.progress[v.id] ?? 0) / v.durationSec}
-          action={more('/my-list', 'My List')}
         />
         <StorySoFar />
         <MustWatchHands />
