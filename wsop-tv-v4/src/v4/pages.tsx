@@ -1,14 +1,16 @@
 // v4 — the common watch page, Live, Events, tag pages and Highlights (all built from the catalog and the one card).
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
-import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
+import { Avatar, Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, reminderKey, upNext, type LinearChannel } from '../data/channels';
 import { commentaryFor } from '../data/shows';
 import { ChannelGuide, useProgramReminder } from '../features/channels/Channels';
-import { dayById, eventById, events, seriesById } from '../data/mock';
-import type { TourEvent } from '../data/types';
-import { dayKey, fmtTime } from '../lib/time';
+import { HERO_DAY_ID, dayById, eventById, events, playerById, seriesById } from '../data/mock';
+import type { Day, TourEvent } from '../data/types';
+import { VENUE_TZ, dayKey, fmtDate, fmtTime, tzAbbr } from '../lib/time';
+import { isBroadcasting } from '../lib/broadcast';
+import { STATUS_LABEL, followAlert, handsOf, journeyOf, type JourneyStatus } from './journey';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
@@ -270,23 +272,129 @@ export function HomeRows() {
         .map((x) => videoById(x.kind === 'archive' ? `classic-${x.id}-finaltable` : x.kind === 'event' ? (catalog.find((v) => v.eventId === x.id && v.kind !== 'clip')?.id ?? '') : x.id))
         .filter((v): v is Video => !!v)
     : [];
-  const more = (to: string, label = 'More') => (
-    <Link to={to} className="text-sm font-semibold text-muted hover:text-text">
-      {label} →
-    </Link>
-  );
+  const followed = Object.keys(state.followed);
+  const onHome = new Set([...mustWatch(followed), ...followed.flatMap((id) => followedHands(id))].map((v) => v.id));
   return (
     <>
       <VideoRow title="Continue watching" videos={continuing} progressOf={progressOf} onRemove={removeContinue} />
-      <VideoRow title="Recommended for you" videos={recommendedRow(started)} />
+      <EditorsPicks followed={followed} />
+      {followed.length > 0 && <FollowedPlayers ids={followed} />}
+      <VideoRow title="Recommended for you" videos={recommendedRow(new Set([...started, ...onHome]))} />
       <VideoRow title="My List" videos={mine} action={more('/my-list', 'See all')} />
       <VideoRow title="Classics" videos={classics} action={more('/events')} />
       <VideoRow title="Latest replays" videos={[...replays].reverse().filter((v) => !started.has(v.id))} action={more('/events')} />
-      <VideoRow title="Highlights" videos={highlightClips} action={more('/highlights')} />
+      {/* Not the hands already shown above: each hand appears once on Home. */}
+      <VideoRow title="Highlights" videos={highlightClips.filter((v) => !onHome.has(v.id))} action={more('/highlights')} />
     </>
   );
 }
 const recommendedRow = (skip: Set<string>) => recommended.filter((v) => !skip.has(v.id));
+
+const more = (to: string, label = 'More') => (
+  <Link to={to} className="text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
+    {label} →
+  </Link>
+);
+
+/** A section with an optional small line above the title (from v5). */
+function Section({ title, kicker, action, children }: { title: string; kicker?: string; action?: ReactNode; children: ReactNode }) {
+  return (
+    <section aria-label={title}>
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div>
+          {kicker && <p className="mb-1 text-sm text-muted">{kicker}</p>}
+          <h2 className="text-xl sm:text-2xl">{title}</h2>
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** Editor's picks: three hands, with how long they take — not the followed players' hands, which have their own section. */
+const mustWatch = (followed: string[]) => {
+  const pool = highlightClips.filter((v) => !v.tags.some((t) => followed.some((id) => t.slug === `player-${id}`)));
+  // Three different pictures side by side: skip a hand whose thumbnail is already picked.
+  const picked: Video[] = [];
+  for (const slug of ['bluff', 'all-in', 'hero-fold']) {
+    const v = pool.find((x) => x.tags.some((t) => t.slug === slug) && !picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos));
+    if (v) picked.push(v);
+  }
+  return picked;
+};
+
+function EditorsPicks({ followed }: { followed: string[] }) {
+  const picks = mustWatch(followed);
+  const total = picks.reduce((n, v) => n + v.durationSec, 0);
+  return (
+    <Section title="3 hands worth your time" kicker={`Editor’s picks · ${duration(total)} in all`} action={more('/highlights', 'All highlights')}>
+      <div className="grid gap-5 sm:grid-cols-3">
+        {picks.map((v, i) => (
+          <VideoCard key={v.id} v={v} reason={['The bluff everyone is talking about', 'All-in for the chip lead', 'A fold nobody else makes'][i]} />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** A followed player's most-watched hands on Home. */
+const followedHands = (id: string) => handsOf(id, 3);
+
+/** Followed players: where they are in the series right now, and why each video is here. */
+function FollowedPlayers({ ids }: { ids: string[] }) {
+  const { state } = useApp();
+  return (
+    <Section title="Players you follow">
+      <div className="space-y-6">
+        {ids.map((id) => {
+          const p = playerById(id);
+          const j = journeyOf(id, state.streamMode)[0];
+          const alert = followAlert(id, state.streamMode);
+          return (
+            <div key={id} className="grid gap-4 rounded-panel border border-line bg-surface p-4 sm:p-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
+              <div>
+                <Link to={`/players/${id}`} className="flex items-center gap-3 hover:text-gold-strong">
+                  <Avatar name={p.name} hue={p.hue} photo={p.photo} size={48} />
+                  <span className="text-lg font-bold">{p.name}</span>
+                </Link>
+                {j && <JourneyChip status={j.status} className="mt-3" />}
+                {alert && <p className="mt-2 text-sm text-text/85">{alert}</p>}
+                {j?.status === 'onTable' && (
+                  <Link to={`/watch/${j.day.id}`} className="mt-3 inline-block">
+                    <Button size="sm" variant="primary" tabIndex={-1}>
+                      <Icon name="play" size={14} /> Watch their table
+                    </Button>
+                  </Link>
+                )}
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {followedHands(id).map((v) => (
+                  <VideoCard key={v.id} v={v} reason={`Because you follow ${p.name.split(' ')[0]}`} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Section>
+  );
+}
+
+function JourneyChip({ status, className }: { status: JourneyStatus; className?: string }) {
+  return (
+    <span
+      className={cx(
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold',
+        status === 'onTable' ? 'bg-live/15 text-live' : status === 'stillIn' ? 'bg-gold-dim text-gold-strong' : 'bg-surface-3 text-muted',
+        className,
+      )}
+    >
+      {status === 'onTable' && <i className="live-dot size-1.5 rounded-full bg-live" aria-hidden />}
+      {STATUS_LABEL[status]}
+    </span>
+  );
+}
 
 /** My List page: everything saved, newest first, in the same cards. */
 export function MyListPage() {
@@ -315,7 +423,28 @@ export function MyListPage() {
   );
 }
 
-// ---- Live -------------------------------------------------------------------------------------------
+// ---- Live & Schedule ------------------------------------------------------------------------------------
+
+/** "Live & Schedule": what's on now, every broadcast by date, and the 24/7 channel guide, as three tabs. */
+function LiveTabs({ active }: { active: 'now' | 'schedule' | 'guide' }) {
+  const tab = (on: boolean) => cx('-mb-px border-b-2 px-1 pb-2.5 text-[15px] font-semibold transition-colors duration-150', on ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text');
+  return (
+    <div>
+      <h1 className="text-title">Live & Schedule</h1>
+      <nav aria-label="Live" className="mt-3 flex gap-6 border-b border-line">
+        <Link to="/live" className={tab(active === 'now')} aria-current={active === 'now' ? 'page' : undefined}>
+          Live now
+        </Link>
+        <Link to="/schedule" className={tab(active === 'schedule')} aria-current={active === 'schedule' ? 'page' : undefined}>
+          Schedule
+        </Link>
+        <Link to="/schedule/channels" className={tab(active === 'guide')} aria-current={active === 'guide' ? 'page' : undefined}>
+          Channel guide
+        </Link>
+      </nav>
+    </div>
+  );
+}
 
 /** Seconds into the broadcast at the live edge: a channel counts from the start of what's on, an event from its day's start. */
 function liveEdgeFor(v: Video, at: number) {
@@ -346,7 +475,8 @@ export function LivePage() {
     .sort((a, b) => a.start - b.start)
     .slice(0, 6);
   return (
-    <Page className="max-w-[96rem] py-4 sm:py-6">
+    <Page className="max-w-[96rem] space-y-6 py-4 sm:py-6">
+      <LiveTabs active="now" />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0">
           <div className="overflow-hidden rounded-panel">
@@ -395,7 +525,7 @@ export function LivePage() {
           <section aria-label="Coming up">
             <div className="mb-2 flex items-end justify-between">
               <h2 className="font-sans text-base font-bold normal-case">Coming up</h2>
-              <Link to="/tournaments" className="text-sm font-semibold text-muted hover:text-text">
+              <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
                 Full schedule →
               </Link>
             </div>
@@ -444,10 +574,10 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
 const BREAKS = ['Coming Up', 'A continuación'];
 
 /**
- * Schedule: pick a channel (cards with what's on now) and a date, see that channel's day in time order,
+ * Channel guide: pick a channel (cards with what's on now) and a date, see that channel's day in time order,
  * then every channel side by side in the guide below.
  */
-export function SchedulePage() {
+export function ChannelGuidePage() {
   const { state } = useApp();
   const now = useTick(30_000);
   const remind = useProgramReminder();
@@ -468,8 +598,8 @@ export function SchedulePage() {
   };
   return (
     <Page className="max-w-[96rem]">
-      <h1 className="text-title">Tournaments</h1>
-      <p className="mt-1 text-sm text-muted">All times in your time zone.</p>
+      <LiveTabs active="guide" />
+      <p className="mt-3 text-sm text-muted">All times in your time zone.</p>
 
       {/* 24/7 channels: the channel's picture, what's on, its time slot, and Watch now. Selecting a card shows its day below. */}
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" role="tablist" aria-label="Channel">
@@ -535,6 +665,106 @@ export function SchedulePage() {
 
       <ChannelGuide now={now} active={ch.id} onSelect={setChId} from={from} />
     </Page>
+  );
+}
+
+/** Schedule: live now first, then every broadcast by date; earlier days folded at the bottom (from v5). */
+export function SchedulePage() {
+  const { state } = useApp();
+  const now = useTick(30_000);
+  const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
+  const all = events.flatMap((e) => e.days.map((d) => ({ e, d }))).sort((a, b) => a.d.start.localeCompare(b.d.start));
+  const liveNow = all.filter((x) => isBroadcasting(status(x.d)));
+  const coming = all.filter((x) => status(x.d) === 'upcoming');
+  const today = dayKey(now, state.tz);
+  const past = all.filter((x) => status(x.d) === 'vod' && dayKey(x.d.start, state.tz) >= dayKeyShift(today, -7)).reverse();
+  const byDate = new Map<string, typeof coming>();
+  for (const x of coming) {
+    const k = dayKey(x.d.start, state.tz);
+    byDate.set(k, [...(byDate.get(k) ?? []), x]);
+  }
+  return (
+    <Page className="max-w-[96rem] space-y-10">
+      <div>
+        <LiveTabs active="schedule" />
+        <p className="mt-3 text-sm text-muted">Times in your time zone ({tzAbbr(state.tz)}).</p>
+      </div>
+      {liveNow.length > 0 && (
+        <Section title="Live now">
+          <ScheduleList items={liveNow} status={status} />
+        </Section>
+      )}
+      {[...byDate.entries()].map(([k, items]) => (
+        <Section key={k} title={fmtDate(items[0].d.start, state.tz)}>
+          <ScheduleList items={items} status={status} />
+        </Section>
+      ))}
+      {past.length > 0 && (
+        <details className="group rounded-panel border border-line bg-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold">
+            Earlier this week · {past.length} replays
+            <Icon name="chevron" size={18} className="text-muted transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-line p-3">
+            <ScheduleList items={past} status={status} />
+          </div>
+        </details>
+      )}
+    </Page>
+  );
+}
+
+const dayKeyShift = (k: string, n: number) => new Date(Date.parse(`${k}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+
+function ScheduleList({ items, status }: { items: { e: TourEvent; d: Day }[]; status: (d: Day) => Day['status'] }) {
+  const { state, set, toast, signedIn, requireLogin } = useApp();
+  return (
+    <ol className="divide-y divide-line overflow-hidden rounded-panel border border-line bg-surface">
+      {items.map(({ e, d }) => {
+        const st = status(d);
+        const title = `${e.name.replace(' World Championship', '')} · ${d.label}`;
+        const key = `day:${d.id}`;
+        const on = state.reminders.includes(key);
+        const toggle = () => {
+          if (!signedIn) return requireLogin({ reason: 'Sign in to get a reminder.' });
+          set((x) => ({ reminders: on ? x.reminders.filter((k) => k !== key) : [...x.reminders, key] }));
+          toast(on ? 'Reminder removed' : `We'll remind you before ${title} starts`);
+        };
+        return (
+          <li key={d.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+            <span className="w-24 shrink-0 font-bold tnum">
+              {fmtTime(d.start, state.tz)}
+              <span className="block text-xs font-normal text-muted">{fmtTime(d.start, VENUE_TZ)} in Las Vegas</span>
+            </span>
+            <span className="min-w-0 flex-1">
+              <Link to={`/events/${e.id}`} className="block truncate font-semibold hover:text-gold-strong">
+                {title}
+              </Link>
+              <span className="block truncate text-xs text-muted">
+                {seriesById(e.seriesId).name} · {d.tables.length} table{d.tables.length === 1 ? '' : 's'} · {duration(d.durationMin * 60)}
+              </span>
+            </span>
+            {isBroadcasting(st) ? (
+              <Link to={`/watch/${d.id}`}>
+                <Button size="sm" variant="primary" tabIndex={-1}>
+                  <Icon name="play" size={14} /> Watch live
+                </Button>
+              </Link>
+            ) : st === 'upcoming' ? (
+              <Button size="sm" variant={on ? 'secondary' : 'outline'} onClick={toggle} aria-pressed={on}>
+                <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
+              </Button>
+            ) : (
+              <Link to={`/watch/${d.id}`}>
+                <Button size="sm" variant="secondary" tabIndex={-1}>
+                  Watch replay
+                </Button>
+              </Link>
+            )}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -628,10 +858,10 @@ export function EventPage() {
   );
 }
 
-// ---- 24/7 channel cards (Home and Tournaments) ---------------------------------------------------------
+// ---- 24/7 channel cards (Home and Channel guide) --------------------------------------------------------
 
 /**
- * One 24/7 channel: its picture, what's on, the channel and when it ends, and Watch now. On Tournaments the card
+ * One 24/7 channel: its picture, what's on, the channel and when it ends, and Watch now. On the Channel guide the card
  * selects the channel (`onSelect`); on Home the whole card opens it on Live.
  */
 function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: number; selected?: boolean; onSelect?: () => void }) {

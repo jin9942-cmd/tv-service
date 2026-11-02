@@ -24,7 +24,7 @@ export const players: Player[] = [
   P('p01', 'Mateo Valcourt', 'France', 'FR', 4, 14_820_400, 3_412, 210),
   P('p02', 'Yuna Kagami', 'Japan', 'JP', 2, 6_130_250, 2_986, 330),
   P('p03', 'Diego Albarrán', 'Mexico', 'MX', 1, 3_960_900, 2_104, 140),
-  P('p04', 'Seo-yeon Han', 'South Korea', 'KR', 3, 9_270_000, 3_190, 270),
+  { ...P('p04', 'Daniel Negreanu', 'Canada', 'CA', 3, 9_270_000, 3_190, 270), photo: `${import.meta.env.BASE_URL}promo/negreanu-avatar.webp` },
   P('p05', 'Callum Breck', 'United Kingdom', 'GB', 0, 1_482_300, 1_377, 20),
   P('p06', 'Inês Duarte', 'Portugal', 'PT', 1, 2_210_800, 1_650, 170),
   P('p07', 'Noah Whitfield', 'United States', 'US', 7, 27_940_000, 3_655, 0),
