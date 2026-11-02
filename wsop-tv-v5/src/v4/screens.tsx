@@ -13,8 +13,9 @@ import { chips, duration, money } from '../lib/format';
 import { isBroadcasting, isOnAir, tableDelay } from '../lib/broadcast';
 import { NotFound } from '../pages/NotFound';
 import { HowToWatchBand } from '../pages/tv';
-import { KindChip, VideoCard, VideoRow, rowGrid } from './detail';
-import { catalog, channelVideo, classics, clipsOf, eventDays, highlightClips, isLive, recommended, replays, tablePlayers, thumbStyle, videoById, type Video } from './catalog';
+import { KindChip, VideoCard, VideoRow, rowGrid, useDetail } from './detail';
+import { HERO_IMAGES } from '../lib/brand';
+import { catalog, channelVideo, classics, clipsOf, eventDays, highlightClips, isLive, recommended, replays, thumbStyle, videoById, type Video } from './catalog';
 import { STATUS_LABEL, followAlert, handsOf, journeyOf, type JourneyStatus } from './journey';
 
 const short = (name: string) => name.replace(' World Championship', '');
@@ -153,7 +154,7 @@ export function HomePage() {
   const recs = recommended.filter((v) => !started.has(v.id) && !mustWatch().some((p) => p.id === v.id));
   return (
     <>
-      <TonightsMatch />
+      <PromoBanner />
       <Page className="max-w-[96rem] space-y-14 py-10">
         <VideoRow
           title="Continue watching"
@@ -180,63 +181,97 @@ function reasonFor(v: Video): string {
   return v.stage === 'Final Table' ? 'More final table strategy' : 'Because you watched the Main Event';
 }
 
-/** "Tonight's main match": who's playing, what's at stake, when it airs. */
-function TonightsMatch() {
+/**
+ * Home promotion banner, wsop.com style: still photos (no autoplay) with the title, a line of facts, one promo line and
+ * the actions beside them. It promotes fixed picks (this year's Main Event, the archive) and is independent of the
+ * channel cards below.
+ */
+function PromoBanner() {
   const { state } = useApp();
-  // Re-render as the broadcast state changes (live now / starts at).
-  useTick(15_000);
-  const hero = dayById(HERO_DAY_ID)!;
-  const st = state.streamMode;
-  const live = isOnAir(st);
-  const up = upcomingDays()[0];
-  const e = live || isBroadcasting(st) ? hero.event : up.e;
-  const d = live || isBroadcasting(st) ? hero.day : up.d;
-  const v = videoById(d.id);
-  const seats = tablePlayers(d);
-  const clips = clipsOf(e.id).slice(0, 3);
-  return (
-    <section aria-label="Tonight's main match" className="relative overflow-hidden border-b border-line">
-      {v && <img src={v.thumb} style={{ ...thumbStyle(v), filter: 'brightness(1.12)' }} alt="" className="absolute inset-0 size-full object-cover" />}
-      {/* The photo stays bright: only the text side (left) and the bottom edge are shaded, so the text still reads. */}
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.8)_0%,rgba(0,0,0,0.55)_35%,rgba(0,0,0,0.15)_58%,transparent_72%)]" aria-hidden />
-      <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/70 to-transparent" aria-hidden />
-      <Page className="relative flex min-h-[26rem] max-w-[96rem] flex-col justify-end py-10 [text-shadow:0_1px_10px_rgba(0,0,0,0.85)] sm:min-h-[34rem] sm:py-14 lg:min-h-[38rem]">
-        <p className="label text-gold">Tonight’s main match</p>
-        <h1 className="mt-2 max-w-3xl text-[2.2rem] leading-[1.02] sm:text-[3.2rem]">
-          {short(e.name)} · {d.label}
-        </h1>
-        {/* One line: what's at stake, when, and who (delay and languages are on the watch screen). */}
-        <p className="mt-3 max-w-3xl text-[15px] text-white/85">
-          <b className="text-white">{money(e.firstPrize)} and the bracelet</b>
-          <span className="mx-2 text-white/40">·</span>
-          {live ? 'Live now' : `${fmtDate(d.start, state.tz)} · ${fmtTime(d.start, state.tz)}`}
-          <span className="mx-2 text-white/40">·</span>
-          {seats.slice(0, 2).map((id, i) => (
-            <span key={id}>
-              {i > 0 && ', '}
-              <Link to={`/players/${id}`} className="hover:text-gold-strong hover:underline">
-                {playerById(id).name}
-              </Link>
-            </span>
-          ))}
-          {e.remaining > 2 && ` and ${e.remaining - 2} more`}
-        </p>
-        <div className="mt-7 flex flex-wrap gap-3">
-          <Link to={`/watch/${d.id}`}>
+  const { open: openDetail } = useDetail();
+  const [slide, setSlide] = useState(0);
+  const { event, day } = dayById(HERO_DAY_ID)!;
+  const live = isOnAir(state.streamMode);
+  const slides = [
+    {
+      img: HERO_IMAGES.finalTable,
+      pos: '50% 60%',
+      kicker: live ? 'Live now · Final table' : 'Main Event · Final table',
+      title: `Main Event ${day.label}`,
+      facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
+      line: 'Live from Las Vegas · Hole cards on a 30-minute delay',
+      actions: (
+        <>
+          <Link to={`/watch/${HERO_DAY_ID}`}>
             <Button variant="primary" size="lg" tabIndex={-1}>
-              <Icon name="play" size={18} /> {live ? 'Watch live' : 'Details'}
+              <Icon name="play" size={18} /> Watch
             </Button>
           </Link>
-          {clips.length > 0 && (
-            <Link to={`/watch/${clips[0].id}?catchup=${e.id}`}>
-              <Button variant="outline" size="lg" tabIndex={-1}>
-                Catch up first · {clips.length} hands, {duration(clips.reduce((n, c) => n + c.durationSec, 0))}
-              </Button>
-            </Link>
-          )}
+          {/* Details opens the popup layer over the home page (no page change). */}
+          <Button variant="secondary" size="lg" onClick={() => openDetail(HERO_DAY_ID)}>
+            Details
+          </Button>
+        </>
+      ),
+    },
+    {
+      img: HERO_IMAGES.portrait,
+      pos: '50% 20%',
+      kicker: 'WSOP Archive',
+      title: 'Every final table, on demand',
+      facts: ['Classics', 'Full broadcasts', 'Key hands'],
+      line: 'Every final table from 2019 to 2025, with every key hand',
+      actions: (
+        <Link to="/events">
+          <Button variant="primary" size="lg" tabIndex={-1}>
+            <Icon name="play" size={18} /> Watch
+          </Button>
+        </Link>
+      ),
+    },
+  ];
+  const sl = slides[slide];
+  return (
+    <div className="relative overflow-hidden bg-black" aria-roledescription="carousel" aria-label="Featured">
+      {/* Ambient fill: the same photo, blurred and dimmed, across the whole banner, so the photo never ends in a hard edge. */}
+      <img key={'bg-' + sl.img} src={sl.img} alt="" aria-hidden className="absolute inset-0 hidden size-full scale-110 object-cover opacity-50 blur-3xl md:block" />
+      <div className="absolute inset-0 hidden bg-black/50 md:block" aria-hidden />
+      {/* Photo: on top on phones; on wider screens it sits inside the same content width as the menu, text and cards
+          (right side of that box), so it never drifts to the window edge on wide screens. Feathered on every side. */}
+      <div className="md:absolute md:inset-0 md:mx-auto md:max-w-content md:px-8">
+        <div className="hero-photo relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-8 md:aspect-auto md:w-[64%]">
+          <img key={sl.img} src={sl.img} alt="" className="size-full object-cover" style={{ objectPosition: sl.pos }} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:hidden" aria-hidden />
+        </div>
+      </div>
+      <Page className="relative flex flex-col justify-end pt-2 pb-14 md:min-h-[min(34rem,46vw)] md:pt-12 md:pb-16">
+        {/* Every block has a fixed height, so the title and the buttons stay put when the slide changes. */}
+        <div className="max-w-xl" aria-live="polite">
+          <div className="flex h-[4.9rem] items-end sm:h-[6.94rem]">
+            <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
+          </div>
+          <p className="mt-3 flex min-h-[2.75rem] flex-wrap content-start items-center gap-x-2 gap-y-1 text-sm font-medium text-text/85 lg:min-h-[1.25rem]">
+            {sl.facts.map((x, i) => (
+              <span key={i} className="inline-flex items-center gap-2">
+                {i > 0 && <span className="text-subtle">·</span>}
+                {x}
+              </span>
+            ))}
+          </p>
+          {/* One promo line, never more (fixed height, so the buttons stay put). */}
+          <p className="mt-3 line-clamp-2 h-[2.8rem] text-[15px] leading-[1.4rem] text-text/75 sm:line-clamp-1 sm:h-[1.4rem]">{sl.line}</p>
+          <div className="mt-6 flex gap-2">{sl.actions}</div>
         </div>
       </Page>
-    </section>
+      {/* Slide dots only (no arrows), centred along the bottom edge; each has a tall hit area for touch. */}
+      <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2 md:bottom-6">
+        {slides.map((x, i) => (
+          <button key={i} onClick={() => setSlide(i)} aria-label={`Slide ${i + 1}: ${x.kicker}`} aria-current={i === slide} className="group flex h-6 items-center">
+            <span className={cx('block h-1 rounded-full transition-all duration-200', i === slide ? 'w-8 bg-gold' : 'w-5 bg-white/30 group-hover:bg-white/60')} />
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
