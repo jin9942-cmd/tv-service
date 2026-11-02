@@ -3,7 +3,8 @@
 import { archive, classicEvents, dayById, events, finalTableSeats, hands, seatsFor, seriesById } from '../data/mock';
 import { channelById, channels, programAt } from '../data/channels';
 import type { Day, Hand, TourEvent } from '../data/types';
-import { FOOTAGE, tableVideo, thumbFor } from '../lib/media';
+import { FOOTAGE, tableVideo } from '../lib/media';
+import { PROMO_ART, TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
 import { duration, money } from '../lib/format';
 import { VENUE_TZ, fmtDateTime } from '../lib/time';
 import { isOnAir } from '../lib/broadcast';
@@ -27,6 +28,10 @@ export interface Video {
   subtitle: string;
   description: string;
   thumb: string;
+  /** Crop of the thumbnail (CSS object-position). */
+  thumbPos: string;
+  /** 'contain' for cut-out artwork (shown whole on a backdrop). */
+  thumbFit?: 'contain';
   media: { url: string; start: number };
   durationSec: number;
   eventId?: string;
@@ -50,6 +55,18 @@ export interface Video {
 }
 
 const short = (e: TourEvent) => e.name.replace(' World Championship', '');
+
+// Artwork: fixed picks first, then each pool in catalogue order, so neighbouring cards in a row differ.
+const walk = { table: 0, venue: 0 };
+function artFor(id: string, pool: 'table' | 'venue') {
+  const list = pool === 'table' ? TABLE_ART : VENUE_ART;
+  const a = PROMO_ART[id] ?? list[walk[pool]++ % list.length];
+  return { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit };
+}
+const thumbOf = (id: string) => {
+  const v = catalog.find((x) => x.id === id);
+  return v && { thumb: v.thumb, thumbPos: v.thumbPos, thumbFit: v.thumbFit };
+};
 const HERO_DAY = 'lv-main-finaltable';
 
 const GAME_TAG: Record<TourEvent['game'], Tag> = {
@@ -97,7 +114,7 @@ function dayVideo(e: TourEvent, d: Day, i: number): Video {
       : d.label === 'Final Table'
         ? `The final table of the ${short(e)} — ${e.entrants.toLocaleString('en-US')} entries, ${money(e.firstPrize)} and the bracelet to the winner.`
         : `${d.label} of the ${short(e)}, from the feature table.`,
-    thumb: thumbFor(classic ? `archive:${a?.id}` : `day:${d.id}`),
+    ...artFor(d.id, d.label === 'Final Table' || classic ? 'table' : 'venue'),
     media: { url: v.url, start: v.start },
     durationSec: d.durationMin * 60,
     eventId: e.id,
@@ -121,7 +138,7 @@ function clipVideo(h: Hand, i: number): Video {
     title: h.title,
     subtitle: `${short(ref.event)} · ${ref.day.label}`,
     description: `A key hand from the ${short(ref.event)} ${ref.day.label.toLowerCase()}.`,
-    thumb: thumbFor(`hand:${h.id}`),
+    ...artFor(h.id, 'table'),
     media: { url: FOOTAGE.ft.url, start: [40, 110, 180, 260, 330][i % 5] },
     durationSec: h.durationSec,
     eventId: ref.event.id,
@@ -159,7 +176,8 @@ export function channelVideo(channelId: string, at: number): Video | undefined {
     title: p.title,
     subtitle: ch.name,
     description: p.subtitle,
-    thumb: m.poster,
+    // A channel showing a broadcast or a classic uses that video's image, so the same content looks the same everywhere.
+    ...((p.dayId && thumbOf(p.dayId)) || (p.archiveId && thumbOf(`classic-${p.archiveId}-finaltable`)) || { thumb: TABLE_ART[p.seed % TABLE_ART.length].src, thumbPos: TABLE_ART[p.seed % TABLE_ART.length].pos, thumbFit: TABLE_ART[p.seed % TABLE_ART.length].fit }),
     media: { url: m.video, start: m.start },
     durationSec: Math.round((p.end - p.start) / 1000),
     eventId: ref?.event.id,
@@ -252,3 +270,6 @@ export function kindLabel(v: Video, live: boolean): string {
 /** Broadcast days of an event in order (episodes, Resume and "Next broadcast"). */
 export const eventDays = (eventId: string) => days.filter((x) => x.eventId === eventId);
 export const clipsOf = (eventId: string) => highlightClips.filter((v) => v.eventId === eventId);
+
+/** Inline style for a video's thumbnail: its crop, or a cut-out shown whole on a backdrop. */
+export const thumbStyle = (v: Pick<Video, 'thumbPos' | 'thumbFit'>) => artStyle({ pos: v.thumbPos, fit: v.thumbFit });

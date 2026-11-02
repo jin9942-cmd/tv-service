@@ -1,4 +1,5 @@
 // Reusable UI primitives. All colours come from the design tokens in styles/theme.css.
+import { BRACELET_ICON } from '../lib/brand';
 import { useEffect, useId, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import type { Access, StreamStatus } from '../data/types';
 import { initials } from '../lib/format';
@@ -109,17 +110,10 @@ export function AccessBadge({ access, locked, size = 'sm', live, onArt }: { acce
   );
 }
 
-// ---- bracelet (hand-drawn SVG, not an emoji) ---------------------------------------------------
+// ---- bracelet (the real WSOP bracelet image) ---------------------------------------------------
 
 export function BraceletIcon({ size = 18, className, title }: { size?: number; className?: string; title?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" className={cx('shrink-0 text-gold', className)} role={title ? 'img' : undefined} aria-label={title} aria-hidden={title ? undefined : true}>
-      <ellipse cx="12" cy="13" rx="9" ry="6" fill="none" stroke="currentColor" strokeWidth="2" />
-      <ellipse cx="12" cy="13" rx="5.6" ry="3.2" fill="none" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.2" />
-      <rect x="8.6" y="4.4" width="6.8" height="4.6" rx="1.3" fill="currentColor" />
-      <rect x="10.4" y="5.6" width="3.2" height="2.2" rx="0.6" fill="var(--color-bg)" />
-    </svg>
-  );
+  return <img src={BRACELET_ICON} width={size} height={size} alt={title ?? ''} aria-hidden={title ? undefined : true} className={cx('shrink-0 object-contain', className)} />;
 }
 
 export function BraceletCount({ n, size = 16 }: { n: number; size?: number }) {

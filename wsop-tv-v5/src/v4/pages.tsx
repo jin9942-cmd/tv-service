@@ -13,7 +13,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, KindChip, TagList, VideoCard, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { byTag, channelVideo, clipsOf, eventDays, isLive, kindLabel, relatedTo, videoById, type Video } from './catalog';
+import { byTag, channelVideo, clipsOf, eventDays, isLive, kindLabel, relatedTo, thumbStyle, videoById, type Video } from './catalog';
 import { languagesFor } from './screens';
 
 // ---- watch ------------------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ function WatchView({ v, live, liveEdge, channelId, now, startAt, catchup }: { v:
               {eventClips.map((c) => (
                 <li key={c.id}>
                   <Link to={`/watch/${c.id}`} className="flex items-center gap-3 px-3 py-2.5 hover:bg-surface-2">
-                    <img src={c.thumb} alt="" className="aspect-video w-24 shrink-0 rounded-chip object-cover" />
+                    <img src={c.thumb} style={thumbStyle(c)} alt="" className="aspect-video w-24 shrink-0 rounded-chip object-cover" />
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold">{c.title}</span>
                     <span className="text-xs text-muted tnum">{duration(c.durationSec)}</span>
                   </Link>
@@ -289,7 +289,7 @@ function WatchView({ v, live, liveEdge, channelId, now, startAt, catchup }: { v:
                 <li key={x.id}>
                   <Link to={`/watch/${x.id}`} className="group flex gap-3">
                     <span className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2">
-                      <img src={x.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+                      <img src={x.thumb} style={thumbStyle(x)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
                       {isLive(x, state.streamMode) ? <LiveTag className="absolute top-1.5 left-1.5" /> : <KindChip label={kindLabel(x, false)} className="absolute top-1.5 left-1.5" />}
                     </span>
                     <span className="min-w-0">

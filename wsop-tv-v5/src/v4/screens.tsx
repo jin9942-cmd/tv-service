@@ -14,7 +14,7 @@ import { isBroadcasting, isOnAir, tableDelay } from '../lib/broadcast';
 import { NotFound } from '../pages/NotFound';
 import { HowToWatchBand } from '../pages/tv';
 import { KindChip, VideoCard, VideoRow, rowGrid } from './detail';
-import { catalog, channelVideo, classics, clipsOf, eventDays, highlightClips, isLive, recommended, replays, tablePlayers, videoById, type Video } from './catalog';
+import { catalog, channelVideo, classics, clipsOf, eventDays, highlightClips, isLive, recommended, replays, tablePlayers, thumbStyle, videoById, type Video } from './catalog';
 import { STATUS_LABEL, followAlert, handsOf, journeyOf, type JourneyStatus } from './journey';
 
 const short = (name: string) => name.replace(' World Championship', '');
@@ -194,7 +194,7 @@ function TonightsMatch() {
   const langs = languagesFor(d.id, now);
   return (
     <section aria-label="Tonight's main match" className="relative overflow-hidden border-b border-line">
-      {v && <img src={v.thumb} alt="" className="absolute inset-0 size-full object-cover opacity-45" />}
+      {v && <img src={v.thumb} style={thumbStyle(v)} alt="" className="absolute inset-0 size-full object-cover opacity-45" />}
       <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/30" aria-hidden />
       <Page className="relative max-w-[96rem] py-10 sm:py-14">
         <p className="label text-gold">Tonight’s main match</p>
@@ -386,7 +386,7 @@ function ArchiveCollections() {
           const vs = c.videos();
           return (
             <Link key={c.id} to={`/collections/${c.id}`} className="group relative block aspect-[4/3] overflow-hidden rounded-card bg-surface-2">
-              {vs[0] && <img src={vs[0].thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />}
+              {vs[0] && <img src={vs[0].thumb} style={thumbStyle(vs[0])} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />}
               <span className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" aria-hidden />
               <span className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
                 <span className="block text-base leading-tight font-bold sm:text-lg">{c.title}</span>
@@ -458,7 +458,7 @@ export function AccessSection() {
         <div>
           <p className="mb-2 text-sm text-muted">Not in your plan yet? It looks like this:</p>
           <div className="relative overflow-hidden rounded-card">
-            <img src={sample.thumb} alt="" className="aspect-video w-full object-cover opacity-60" />
+            <img src={sample.thumb} style={thumbStyle(sample)} alt="" className="aspect-video w-full object-cover opacity-60" />
             <KindChip label="Full replay" className="absolute top-2 left-2" />
             <span className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-black/75 text-white">
               <Icon name="lock" size={14} />
@@ -701,7 +701,7 @@ function EventCard({ e }: { e: TourEvent }) {
   return (
     <Link to={`/events/${e.id}`} className="group block min-w-0">
       <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-        <img src={cover.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+        <img src={cover.thumb} style={thumbStyle(cover)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
         {live ? <LiveTag className="absolute top-2 left-2" /> : <KindChip label="Event" className="absolute top-2 left-2" />}
       </span>
       <span className="mt-2 block truncate text-[15px] font-semibold group-hover:text-gold-strong">{short(e.name)}</span>

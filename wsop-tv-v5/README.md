@@ -17,6 +17,8 @@
 | Spoilers | Spoiler-free offered on Browse, Search and the event centre; chip counts, players left and the story's chip leader are hidden while it's on. |
 | Differentiators | Catch up with key hands then Join live, Full / Condensed / Highlights, event centre (facts, blinds, chip counts, coming days, all broadcasts), My List as the personal hub (resume, followed players' status, reminders, saved), Shorts (vertical clips), clip → moment in the full broadcast, Academy link (mock). |
 
+Artwork: the design-proposal, banner and venue photos from v4 (the AI belt replaced by the real WSOP bracelet), plus a UKIPT table and a WPC stage shot; the bracelet count uses the bracelet image.
+
 Not built: multiview, PokerStake tracking, timestamped hand bookmarks beyond My List.
 
 ---
