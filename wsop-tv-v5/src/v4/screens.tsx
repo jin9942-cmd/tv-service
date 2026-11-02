@@ -195,35 +195,41 @@ function TonightsMatch() {
   return (
     <section aria-label="Tonight's main match" className="relative overflow-hidden border-b border-line">
       {v && <img src={v.thumb} style={thumbStyle(v)} alt="" className="absolute inset-0 size-full object-cover" />}
-      {/* The photo stays at full strength; only the text side (left) and the bottom edge are darkened for legibility. */}
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.9)_0%,rgba(0,0,0,0.65)_32%,rgba(0,0,0,0.1)_62%,transparent_100%)]" aria-hidden />
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" aria-hidden />
+      {/* A light overall overlay, a stronger one behind the text (left) and a fade at the bottom, so the text reads over the photo. */}
+      <div className="absolute inset-0 bg-black/30" aria-hidden />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.8)_30%,rgba(0,0,0,0.35)_60%,transparent_85%)]" aria-hidden />
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/85 to-transparent" aria-hidden />
       <Page className="relative max-w-[96rem] py-10 sm:py-14">
         <p className="label text-gold">Tonight’s main match</p>
         <h1 className="mt-2 max-w-3xl text-[2.2rem] leading-[1.02] sm:text-[3.2rem]">
           {short(e.name)} · {d.label}
         </h1>
-        <div className="mt-5 grid max-w-3xl gap-4 sm:grid-cols-3">
-          <Fact k="What's at stake" val={`${money(e.firstPrize)} and the bracelet`} />
-          <Fact k={live ? 'On air' : 'Starts'} val={live ? (delay ? `Now · ${delay}-min delay` : 'Now') : `${fmtDate(d.start, state.tz)} · ${fmtTime(d.start, state.tz)}`} />
-          <Fact k="Watch in" val={langs.join(' · ')} />
-        </div>
-        <div className="mt-5">
-          <p className="text-sm text-muted">At the table</p>
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {seats.map((id) => {
-              const p = playerById(id);
-              return (
-                <li key={id}>
-                  <Link to={`/players/${id}`} className="flex items-center gap-2 rounded-full bg-white/10 py-1 pr-3 pl-1 text-sm font-semibold hover:bg-white/20">
-                    <Avatar name={p.name} hue={p.hue} size={26} /> {p.name}
-                    {state.followed[id] && <Icon name="check" size={14} className="text-gold" />}
+        {/* Plain lines of text, no boxes or chips. */}
+        <dl className="mt-4 max-w-3xl space-y-1.5 text-[15px] text-white/90">
+          <div className="flex flex-wrap gap-x-2">
+            <dt className="text-white/60">At stake</dt>
+            <dd className="font-semibold">{money(e.firstPrize)} and the bracelet</dd>
+          </div>
+          <div className="flex flex-wrap gap-x-2">
+            <dt className="text-white/60">{live ? 'On air' : 'Starts'}</dt>
+            <dd className="font-semibold">
+              {live ? (delay ? `Now · ${delay}-min delay` : 'Now') : `${fmtDate(d.start, state.tz)} · ${fmtTime(d.start, state.tz)}`} · {langs.join(', ')}
+            </dd>
+          </div>
+          <div className="flex flex-wrap gap-x-2">
+            <dt className="text-white/60">At the table</dt>
+            <dd>
+              {seats.map((id, i) => (
+                <span key={id}>
+                  {i > 0 && ', '}
+                  <Link to={`/players/${id}`} className="font-semibold hover:text-gold-strong hover:underline">
+                    {playerById(id).name}
                   </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+                </span>
+              ))}
+            </dd>
+          </div>
+        </dl>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link to={`/watch/${d.id}`}>
             <Button variant="primary" size="lg" tabIndex={-1}>
@@ -240,15 +246,6 @@ function TonightsMatch() {
         </div>
       </Page>
     </section>
-  );
-}
-
-function Fact({ k, val }: { k: string; val: string }) {
-  return (
-    <div className="rounded-card border border-white/15 bg-black/40 px-3 py-2.5">
-      <p className="text-[11px] font-semibold tracking-wide text-subtle uppercase">{k}</p>
-      <p className="mt-0.5 font-bold">{val}</p>
-    </div>
   );
 }
 
