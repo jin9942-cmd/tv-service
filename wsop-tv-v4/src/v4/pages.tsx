@@ -143,39 +143,69 @@ function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: bool
   );
 }
 
-/** 24/7 channels: what's on now, what's next, and the other channels. */
+/** 24/7 channels: a clear Now playing block (with how far in it is), Up next, and what's on the other channels. */
 function OnThisChannel({ channelId, now }: { channelId: string; now: number }) {
   const { state } = useApp();
   const ch = channelById(channelId)!;
   const p = programAt(ch.id, now);
-  const next = upNext(ch.id, now, 4);
+  const next = upNext(ch.id, now, 8)
+    .filter((x) => !['Coming Up', 'A continuación'].includes(x.title))
+    .slice(0, 3);
+  const label = 'text-[11px] font-bold tracking-wider text-subtle uppercase';
+  const left = p ? Math.max(1, Math.round((p.end - now) / 60_000)) : 0;
+  const done = p ? (now - p.start) / (p.end - p.start) : 0;
   return (
-    <section aria-label="On this channel" className="rounded-panel border border-line bg-surface p-4">
-      <p className="text-sm font-bold">{ch.name}</p>
+    <section aria-label="On this channel" className="overflow-hidden rounded-panel border border-line bg-surface">
+      <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+        <h2 className="font-sans text-lg font-bold normal-case">{ch.name}</h2>
+        <span className={label}>24/7 channel</span>
+      </div>
       {p && (
-        <div className="mt-3">
-          <p className="flex items-center gap-2 text-xs text-muted tnum">
-            <LiveTag /> {fmtTime(p.start, state.tz)} – {fmtTime(p.end, state.tz)}
+        <div className="border-b border-gold/40 bg-gold-dim px-4 py-4">
+          <p className="flex items-center gap-2">
+            <LiveTag />
+            <span className="text-xs font-bold tracking-wider text-gold-strong uppercase">Now playing</span>
           </p>
-          <p className="mt-1 font-semibold">{p.title}</p>
+          <p className="mt-2 text-lg leading-snug font-bold">{p.title}</p>
+          <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/15">
+            <div className="h-full bg-gold" style={{ width: `${Math.min(100, done * 100)}%` }} />
+          </div>
+          <p className="mt-1.5 flex justify-between text-xs text-muted tnum">
+            <span>
+              {fmtTime(p.start, state.tz)} – {fmtTime(p.end, state.tz)}
+            </span>
+            <span>{left >= 60 ? `${Math.floor(left / 60)}h ${left % 60}m` : `${left} min`} left</span>
+          </p>
         </div>
       )}
-      <ol className="mt-3 divide-y divide-line border-t border-line">
-        {next.map((x) => (
-          <li key={x.id} className="flex gap-3 py-2 text-sm">
-            <span className="w-16 shrink-0 text-muted tnum">{fmtTime(x.start, state.tz)}</span>
-            <span className="min-w-0 truncate">{x.title}</span>
-          </li>
-        ))}
-      </ol>
-      <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
-        {channels
-          .filter((c) => c.id !== ch.id)
-          .map((c) => (
-            <Link key={c.id} to={`/watch/ch-${c.id}`} className="rounded-full border border-line-strong px-3 py-1 text-xs font-semibold hover:border-text">
-              {c.name}
-            </Link>
+      <div className="px-4 py-4">
+        <p className={label}>Up next</p>
+        <ol className="mt-2 space-y-2.5">
+          {next.map((x) => (
+            <li key={x.id} className="flex gap-3 text-[15px]">
+              <span className="w-[4.5rem] shrink-0 font-semibold tnum">{fmtTime(x.start, state.tz)}</span>
+              <span className="min-w-0 truncate text-text/85">{x.title}</span>
+            </li>
           ))}
+        </ol>
+      </div>
+      <div className="border-t border-line px-4 py-4">
+        <p className={label}>Other channels</p>
+        <ul className="mt-2 space-y-1">
+          {channels
+            .filter((c) => c.id !== ch.id)
+            .map((c) => (
+              <li key={c.id}>
+                <Link to={`/watch/ch-${c.id}`} className="group -mx-2 flex items-center gap-3 rounded-chip px-2 py-2 hover:bg-surface-2">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold group-hover:text-gold-strong">{c.name}</span>
+                    <span className="block truncate text-xs text-muted">Now: {programAt(c.id, now)?.title ?? '—'}</span>
+                  </span>
+                  <Icon name="play" size={14} className="shrink-0 text-subtle group-hover:text-text" />
+                </Link>
+              </li>
+            ))}
+        </ul>
       </div>
     </section>
   );
