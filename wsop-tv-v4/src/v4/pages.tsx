@@ -617,7 +617,7 @@ function SeasonLine({ off }: { off: boolean }) {
   const { state } = useApp();
   const runningId = runningSeries(off)?.id;
   return (
-    <Section title="Season schedule" kicker="WSOP runs 3–4 series a year, about three weeks each">
+    <Section title="Season schedule">
       <ol className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {SEASON.map((s) => {
           const live = s.id === runningId;
