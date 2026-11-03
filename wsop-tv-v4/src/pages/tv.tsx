@@ -31,8 +31,9 @@ export function TvHome() {
     <>
       <section className="border-b border-line" aria-label="Featured">
         <PromoBanner />
-        {/* The four 24/7 channels, right under the banner (no section title). */}
+        {/* The four 24/7 channels, right under the banner. */}
         <Page className="pt-5 pb-6">
+          <h2 className="mb-3 text-xl sm:text-2xl">24/7 On-Demand</h2>
           <TodayCards now={now} />
         </Page>
       </section>

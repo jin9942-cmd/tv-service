@@ -1,7 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
-import { ChannelRedirect, EventPage, EventsPage, HighlightsPage, ChannelGuidePage, LivePage, MyListPage, SchedulePage, TagPage, WatchPage } from './v4/pages';
+import { ChannelRedirect, EventPage, EventsPage, HighlightsPage, LivePage, MyListPage, TagPage, WatchPage } from './v4/pages';
 import { DetailProvider } from './v4/detail';
 import { TvHome, TvHowToWatch, TvShowDetail, TvShows } from './pages/tv';
 import { TvClassic } from './pages/poker';
@@ -33,10 +33,10 @@ export default function App() {
             <Route path="live/channels/:channelId" element={<ChannelRedirect />} />
             <Route path="watch/:dayId" element={<WatchPage />} />
             <Route path="tag/:slug" element={<TagPage />} />
-            <Route path="schedule" element={<SchedulePage />} />
-            <Route path="schedule/channels" element={<ChannelGuidePage />} />
-            {/* The old Tournaments page is now the Channel guide tab. */}
-            <Route path="tournaments" element={<Navigate to="/schedule/channels" replace />} />
+            {/* Schedule, channel guide and Tournaments are now part of Latest Shows & Events. */}
+            <Route path="schedule" element={<Navigate to="/events" replace />} />
+            <Route path="schedule/channels" element={<Navigate to="/events" replace />} />
+            <Route path="tournaments" element={<Navigate to="/events" replace />} />
             <Route path="shows" element={<TvShows />} />
             <Route path="shows/:showId" element={<TvShowDetail />} />
             <Route path="video" element={<Hands />} />

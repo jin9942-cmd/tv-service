@@ -3,9 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
-import { channelById, channels, programAt, programs, reminderKey, upNext, type LinearChannel } from '../data/channels';
-import { commentaryFor } from '../data/shows';
-import { ChannelGuide, useProgramReminder } from '../features/channels/Channels';
+import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
 import { HERO_DAY_ID, dayById, eventById, events, seriesById } from '../data/mock';
 import type { Day, TourEvent } from '../data/types';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, tzAbbr } from '../lib/time';
@@ -360,28 +358,7 @@ export function MyListPage() {
   );
 }
 
-// ---- Live & Schedule ------------------------------------------------------------------------------------
-
-/** "Live & Schedule": what's on now, every broadcast by date, and the 24/7 channel guide, as three tabs. */
-function LiveTabs({ active }: { active: 'now' | 'schedule' | 'guide' }) {
-  const tab = (on: boolean) => cx('-mb-px border-b-2 px-1 pb-2.5 text-[15px] font-semibold transition-colors duration-150', on ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text');
-  return (
-    <div>
-      <h1 className="text-title">Live & Schedule</h1>
-      <nav aria-label="Live" className="mt-3 flex gap-6 border-b border-line">
-        <Link to="/live" className={tab(active === 'now')} aria-current={active === 'now' ? 'page' : undefined}>
-          Live now
-        </Link>
-        <Link to="/schedule" className={tab(active === 'schedule')} aria-current={active === 'schedule' ? 'page' : undefined}>
-          Schedule
-        </Link>
-        <Link to="/schedule/channels" className={tab(active === 'guide')} aria-current={active === 'guide' ? 'page' : undefined}>
-          Channel guide
-        </Link>
-      </nav>
-    </div>
-  );
-}
+// ---- Live -------------------------------------------------------------------------------------------
 
 /** Seconds into the broadcast at the live edge: a channel counts from the start of what's on, an event from its day's start. */
 function liveEdgeFor(v: Video, at: number) {
@@ -412,8 +389,7 @@ export function LivePage() {
     .sort((a, b) => a.start - b.start)
     .slice(0, 6);
   return (
-    <Page className="max-w-[96rem] space-y-6 py-4 sm:py-6">
-      <LiveTabs active="now" />
+    <Page className="max-w-[96rem] py-4 sm:py-6">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0">
           <div className="overflow-hidden rounded-panel">
@@ -462,7 +438,7 @@ export function LivePage() {
           <section aria-label="Coming up">
             <div className="mb-2 flex items-end justify-between">
               <h2 className="font-sans text-base font-bold normal-case">Coming up</h2>
-              <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
+              <Link to="/events" className="text-sm font-semibold text-muted hover:text-text">
                 Full schedule →
               </Link>
             </div>
@@ -510,148 +486,39 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
 
 const BREAKS = ['Coming Up', 'A continuación'];
 
-/**
- * Channel guide: pick a channel (cards with what's on now) and a date, see that channel's day in time order,
- * then every channel side by side in the guide below.
- */
-export function ChannelGuidePage() {
+/** The schedule as a list: what's live now, then every coming broadcast by date (top of Latest Shows & Events). */
+function ScheduleSections() {
   const { state } = useApp();
-  const now = useTick(30_000);
-  const remind = useProgramReminder();
-  const today = dayKey(now, state.tz);
-  // One chip per date that has programmes, from today on (a week ahead).
-  const dates = [...new Set(programs.map((p) => dayKey(p.start, state.tz)))].filter((k) => k >= today).slice(0, 7);
-  const [date, setDate] = useState(dates[0]);
-  const [chId, setChId] = useState(channels[0].id);
-  const ch = channelById(chId)!;
-  const ofDay = programs.filter((p) => dayKey(p.start, state.tz) === date);
-  const list = ofDay.filter((p) => p.channelId === ch.id && !BREAKS.includes(p.title)).sort((a, b) => a.start - b.start);
-  // The guide follows the selected date: next 8 hours today, the whole day on a later date.
-  const firstOfDay = Math.min(...ofDay.map((p) => p.start));
-  const from = date === today ? undefined : firstOfDay - (firstOfDay % 3_600_000);
-  const label = (k: string) => {
-    const at = Date.parse(`${k}T12:00:00Z`);
-    return { wd: new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' }).format(at), md: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(at) };
-  };
-  return (
-    <Page className="max-w-[96rem]">
-      <LiveTabs active="guide" />
-      <p className="mt-3 text-sm text-muted">All times in your time zone.</p>
-
-      {/* 24/7 channels: the channel's picture, what's on, its time slot, and Watch now. Selecting a card shows its day below. */}
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" role="tablist" aria-label="Channel">
-        {channels.map((c) => (
-          <ChannelCard key={c.id} c={c} now={now} selected={c.id === ch.id} onSelect={() => setChId(c.id)} />
-        ))}
-      </div>
-
-      <div className="hscroll mt-4" role="tablist" aria-label="Date">
-        {dates.map((k) => {
-          const l = label(k);
-          const on = k === date;
-          return (
-            <button key={k} role="tab" aria-selected={on} onClick={() => setDate(k)} className={cx('flex w-[4.5rem] flex-col items-center rounded-card border py-1.5 transition-colors duration-150', on ? 'border-gold bg-gold-dim text-text' : 'border-line-strong text-muted hover:text-text')}>
-              <span className="text-[11px] font-semibold uppercase">{l.wd}</span>
-              <span className="text-sm font-bold tnum">{l.md}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <ol className="mt-4 divide-y divide-line overflow-hidden rounded-panel border border-line bg-surface">
-        {list.map((p) => {
-          const isNow = p.start <= now && now < p.end;
-          const past = p.end <= now;
-          const on = state.reminders.includes(reminderKey(p));
-          const team = commentaryFor(p);
-          return (
-            <li key={p.id} className={cx('flex items-center gap-4 px-4 py-3', isNow && 'bg-gold-dim', past && 'opacity-55')}>
-              <span className="w-[4.5rem] shrink-0 text-sm font-bold tnum">{fmtTime(p.start, state.tz)}</span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2">
-                  {isNow && <LiveTag />}
-                  <span className="truncate text-[15px] font-semibold">{p.title}</span>
-                </span>
-                <span className="block truncate text-xs text-muted">
-                  {p.subtitle}
-                  {team && <span className="text-subtle"> · {team}</span>}
-                </span>
-              </span>
-              {isNow ? (
-                <Link to={`/live?v=ch-${ch.id}`}>
-                  <Button size="sm" variant="primary" tabIndex={-1}>
-                    <Icon name="play" size={14} /> Watch
-                  </Button>
-                </Link>
-              ) : (
-                !past && (
-                  <button
-                    onClick={() => remind(p, ch)}
-                    aria-pressed={on}
-                    aria-label={on ? `Reminder set for ${p.title}` : `Remind me about ${p.title}`}
-                    className={cx('inline-flex size-9 shrink-0 items-center justify-center rounded-chip border transition-colors duration-150', on ? 'border-gold bg-gold-dim text-gold-strong' : 'border-line-strong text-muted hover:text-text')}
-                  >
-                    <Icon name="bell" size={16} />
-                  </button>
-                )
-              )}
-            </li>
-          );
-        })}
-      </ol>
-
-      <ChannelGuide now={now} active={ch.id} onSelect={setChId} from={from} />
-    </Page>
-  );
-}
-
-/** Schedule: live now first, then every broadcast by date; earlier days folded at the bottom (from v5). */
-export function SchedulePage() {
-  const { state } = useApp();
-  const now = useTick(30_000);
+  useTick(30_000);
   const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
   const all = events.flatMap((e) => e.days.map((d) => ({ e, d }))).sort((a, b) => a.d.start.localeCompare(b.d.start));
   const liveNow = all.filter((x) => isBroadcasting(status(x.d)));
   const coming = all.filter((x) => status(x.d) === 'upcoming');
-  const today = dayKey(now, state.tz);
-  const past = all.filter((x) => status(x.d) === 'vod' && dayKey(x.d.start, state.tz) >= dayKeyShift(today, -7)).reverse();
   const byDate = new Map<string, typeof coming>();
   for (const x of coming) {
     const k = dayKey(x.d.start, state.tz);
     byDate.set(k, [...(byDate.get(k) ?? []), x]);
   }
   return (
-    <Page className="max-w-[96rem] space-y-10">
-      <div>
-        <LiveTabs active="schedule" />
-        <p className="mt-3 text-sm text-muted">Times in your time zone ({tzAbbr(state.tz)}).</p>
-      </div>
+    <>
       {liveNow.length > 0 && (
-        <Section title="Live now">
+        <Section title="Live now" action={more('/live', 'Open the live player')}>
           <ScheduleList items={liveNow} status={status} />
         </Section>
       )}
-      {[...byDate.entries()].map(([k, items]) => (
-        <Section key={k} title={fmtDate(items[0].d.start, state.tz)}>
-          <ScheduleList items={items} status={status} />
-        </Section>
-      ))}
-      {past.length > 0 && (
-        <details className="group rounded-panel border border-line bg-surface">
-          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold">
-            Earlier this week · {past.length} replays
-            <Icon name="chevron" size={18} className="text-muted transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="border-t border-line p-3">
-            <ScheduleList items={past} status={status} />
-          </div>
-        </details>
-      )}
-    </Page>
+      <Section title="Schedule" kicker={`Times in your time zone (${tzAbbr(state.tz)})`}>
+        <div className="space-y-5">
+          {[...byDate.entries()].map(([k, items]) => (
+            <div key={k}>
+              <h3 className="mb-2 text-sm font-bold tracking-wide text-muted uppercase">{fmtDate(items[0].d.start, state.tz)}</h3>
+              <ScheduleList items={items} status={status} />
+            </div>
+          ))}
+        </div>
+      </Section>
+    </>
   );
 }
-
-const dayKeyShift = (k: string, n: number) => new Date(Date.parse(`${k}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 
 function ScheduleList({ items, status }: { items: { e: TourEvent; d: Day }[]; status: (d: Day) => Day['status'] }) {
   const { state, set, toast, signedIn, requireLogin } = useApp();
@@ -728,13 +595,17 @@ function EventCard({ e }: { e: TourEvent }) {
   );
 }
 
-/** Events: this series by tournament, then WSOP Classics. */
+/**
+ * Latest Shows & Events (PokerGO-style, one menu for live, schedule and events): what's live now, the schedule as a
+ * list by date, then this series by tournament and WSOP Classics.
+ */
 export function EventsPage() {
   const withVideo = events.filter((e) => eventVideos(e.id).length);
   const bySeries = [...new Set(withVideo.map((e) => e.seriesId))];
   return (
     <Page className="max-w-[96rem] space-y-12">
-      <h1 className="text-title">Events</h1>
+      <h1 className="text-title">Latest Shows & Events</h1>
+      <ScheduleSections />
       {bySeries.map((sid) => (
         <section key={sid} aria-label={seriesById(sid).name}>
           <h2 className="mb-3 text-xl sm:text-2xl">{seriesById(sid).name}</h2>
@@ -772,7 +643,7 @@ export function EventPage() {
     <Page className="max-w-[96rem] space-y-10">
       <div>
         <Link to="/events" className="text-sm text-muted hover:text-text">
-          ← Events
+          ← Latest Shows & Events
         </Link>
         <h1 className="mt-2 text-title">{e.name.replace(' World Championship', '')}</h1>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -795,7 +666,7 @@ export function EventPage() {
   );
 }
 
-// ---- 24/7 channel cards (Home and Channel guide) --------------------------------------------------------
+// ---- 24/7 channel cards (Home) -------------------------------------------------------------------------
 
 /**
  * One 24/7 channel: its picture, what's on, the channel and when it ends, and Watch now. On the Channel guide the card
