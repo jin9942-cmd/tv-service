@@ -490,8 +490,7 @@ type ScheduleItem = { e: TourEvent; d: Day };
 
 /** "Tuesday, November 3" in the viewer's time zone. */
 const longDate = (at: string, tz: string) => new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz }).format(new Date(at));
-const monthOf = (at: string, tz: string) => new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', timeZone: tz }).format(new Date(at));
-const monthLabel = (at: string, tz: string) => new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: tz }).format(new Date(at));
+const dayPart = (at: string, tz: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', { ...o, timeZone: tz }).format(new Date(at));
 
 /** A broadcast day's picture: its own video, else the event's, else a venue photo. */
 function dayArt(e: TourEvent, d: Day) {
@@ -500,53 +499,77 @@ function dayArt(e: TourEvent, d: Day) {
 }
 
 /**
- * The schedule (top of Events): filters for past broadcasts, everything coming up, or one month; a full date heading
- * per day; what's live now sits under today, highlighted.
+ * The broadcast calendar (top of Events): a strip of broadcast days (the last week of replays through everything coming
+ * up), then the chosen day as a timeline: time on the left, the broadcast and its action on the right.
  */
 function ScheduleSections() {
   const { state } = useApp();
   useTick(30_000);
   const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
   const all = events.flatMap((e) => e.days.map((d) => ({ e, d }))).sort((x, y) => x.d.start.localeCompare(y.d.start));
-  const upcoming = all.filter((x) => isBroadcasting(status(x.d)) || status(x.d) === 'upcoming');
-  const past = all.filter((x) => status(x.d) === 'vod').reverse().slice(0, 12);
-  const months = [...new Map(upcoming.map((x) => [monthOf(x.d.start, state.tz), monthLabel(x.d.start, state.tz)])).entries()];
-  const [filter, setFilter] = useState<string>('upcoming');
-  const list = filter === 'past' ? past : filter === 'upcoming' ? upcoming : upcoming.filter((x) => monthOf(x.d.start, state.tz) === filter);
   const byDate = new Map<string, ScheduleItem[]>();
-  for (const x of list) {
+  for (const x of all) {
     const k = dayKey(x.d.start, state.tz);
     byDate.set(k, [...(byDate.get(k) ?? []), x]);
   }
-  const chip = (on: boolean) => cx('h-10 shrink-0 border-r border-line px-4 text-sm font-bold tracking-wide uppercase transition-colors duration-150 last:border-r-0', on ? 'bg-gold-dim text-gold-strong' : 'text-muted hover:text-text');
-  const filters: [string, string][] = [['past', 'Past broadcasts'], ['upcoming', 'All upcoming'], ...months];
+  const today = dayKey(Date.now(), state.tz);
+  const keys = [...byDate.keys()];
+  const firstNext = keys.findIndex((k) => k >= today);
+  const from = Math.max(0, (firstNext < 0 ? keys.length : firstNext) - 7);
+  const days = keys.slice(from);
+  const [picked, setPicked] = useState(() => (byDate.has(today) ? today : (keys[firstNext] ?? keys[keys.length - 1])));
+  const strip = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = strip.current;
+    const on = el?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (el && on) el.scrollLeft = on.offsetLeft - el.offsetLeft - (el.clientWidth - on.offsetWidth) / 2;
+  }, []);
+  const items = byDate.get(picked) ?? [];
   return (
-    <Section title="Schedule" kicker={`Times in your time zone (${tzAbbr(state.tz)})`} action={more('/live', 'Open the live player')}>
-      <div className="flex w-fit max-w-full overflow-x-auto rounded-card border border-line" role="tablist" aria-label="Show broadcasts">
-        {filters.map(([k, label]) => (
-          <button key={k} role="tab" aria-selected={filter === k} onClick={() => setFilter(k)} className={chip(filter === k)}>
-            {label}
-          </button>
-        ))}
+    <Section title="Broadcast calendar" kicker={`Pick a day · times in ${tzAbbr(state.tz)}`} action={more('/live', 'Open the live player')}>
+      <div ref={strip} className="hscroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Broadcast days">
+        {days.map((k) => {
+          const first = byDate.get(k)![0].d.start;
+          const on = k === picked;
+          const live = byDate.get(k)!.some((x) => isBroadcasting(status(x.d)));
+          const past = k < today;
+          return (
+            <button
+              key={k}
+              role="tab"
+              aria-selected={on}
+              onClick={() => setPicked(k)}
+              className={cx(
+                'relative flex w-[4.5rem] shrink-0 flex-col items-center rounded-card border py-2.5 transition-colors duration-150',
+                on ? 'border-gold bg-gold-dim text-gold-strong' : 'border-line bg-surface hover:border-line-strong',
+                past && !on && 'text-subtle',
+              )}
+            >
+              <span className="text-[11px] font-bold tracking-wide uppercase">{k === today ? 'Today' : dayPart(first, state.tz, { weekday: 'short' })}</span>
+              <span className="text-2xl leading-tight font-bold tnum">{dayPart(first, state.tz, { day: 'numeric' })}</span>
+              <span className="text-[11px] uppercase">{dayPart(first, state.tz, { month: 'short' })}</span>
+              {live && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-live" aria-label="Live now" />}
+            </button>
+          );
+        })}
       </div>
-      <div className="mt-6 space-y-7">
-        {[...byDate.values()].map((items) => (
-          <div key={items[0].d.id}>
-            <h3 className="mb-3 font-sans text-lg font-bold normal-case sm:text-xl">{longDate(items[0].d.start, state.tz)}</h3>
-            <ScheduleList items={items} status={status} />
-          </div>
-        ))}
-        {!byDate.size && <p className="text-sm text-muted">Nothing scheduled here yet.</p>}
+      <div className="mt-6 flex items-baseline justify-between gap-3">
+        <h3 className="font-sans text-lg font-bold normal-case sm:text-xl">{items[0] ? longDate(items[0].d.start, state.tz) : ''}</h3>
+        <span className="text-sm text-muted">
+          {items.length} broadcast{items.length === 1 ? '' : 's'}
+        </span>
       </div>
+      <ScheduleList items={items} status={status} />
     </Section>
   );
 }
 
+/** One day as a timeline: the start time on the left, a dot on the line (red while live), the broadcast on the right. */
 function ScheduleList({ items, status }: { items: ScheduleItem[]; status: (d: Day) => Day['status'] }) {
   const { state, set, toast, signedIn, requireLogin } = useApp();
   return (
-    <ol className="space-y-3">
-      {items.map(({ e, d }) => {
+    <ol className="mt-4">
+      {items.map(({ e, d }, i) => {
         const st = status(d);
         const live = isBroadcasting(st);
         const title = `${e.name.replace(' World Championship', '')} · ${d.label}`;
@@ -559,41 +582,48 @@ function ScheduleList({ items, status }: { items: ScheduleItem[]; status: (d: Da
         };
         const art = dayArt(e, d);
         return (
-          <li key={d.id} className={cx('flex flex-wrap items-center gap-x-4 gap-y-3 rounded-panel border p-3 sm:flex-nowrap', live ? 'border-gold/50 bg-gold-dim' : 'border-line bg-surface')}>
-            <Link to={live || st === 'vod' ? `/watch/${d.id}` : `/events/${e.id}`} className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-chip bg-surface-2 sm:w-44" tabIndex={-1} aria-hidden>
-              <img src={art.src} style={artStyle(art)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-              {live && <LiveTag className="absolute top-1.5 left-1.5" />}
-            </Link>
-            <div className="min-w-0 flex-1">
-              <Link to={`/events/${e.id}`} className="line-clamp-2 text-base font-semibold hover:text-gold-strong sm:text-lg">
-                {title}
-              </Link>
-              <p className="mt-1 text-sm text-muted tnum">
-                <b className="font-semibold text-text">{fmtTime(d.start, state.tz)} {tzAbbr(state.tz, d.start)}</b>
-                <span className="text-subtle"> · {fmtTime(d.start, VENUE_TZ)} in Las Vegas</span>
-              </p>
-              <p className="mt-0.5 truncate text-xs text-muted">
-                {seriesById(e.seriesId).name} · {d.tables.length} table{d.tables.length === 1 ? '' : 's'} · {duration(d.durationMin * 60)}
-              </p>
+          <li key={d.id} className="grid grid-cols-[5rem_1fr] gap-x-4 sm:grid-cols-[7.5rem_1fr]">
+            <div className="pt-3 text-right">
+              <b className="block text-base font-bold tnum sm:text-lg">{fmtTime(d.start, state.tz)}</b>
+              <span className="block text-xs text-subtle tnum">{fmtTime(d.start, VENUE_TZ)} Las Vegas</span>
             </div>
-            <div className="w-full shrink-0 sm:w-auto">
-              {live ? (
-                <Link to={`/watch/${d.id}`}>
-                  <Button size="sm" variant="primary" tabIndex={-1}>
-                    <Icon name="play" size={14} /> Watch live
-                  </Button>
+            <div className={cx('relative border-l border-line pl-5', i < items.length - 1 && 'pb-4')}>
+              <span className={cx('absolute top-5 -left-[5px] size-2.5 rounded-full', live ? 'bg-live' : st === 'upcoming' ? 'bg-gold' : 'bg-line-strong')} aria-hidden />
+              <div className={cx('flex items-center gap-4 rounded-panel border p-4', live ? 'border-gold/50 bg-gold-dim' : 'border-line bg-surface')}>
+                <div className="min-w-0 flex-1">
+                  <span className={cx('text-[11px] font-bold tracking-wide uppercase', live ? 'text-live' : st === 'upcoming' ? 'text-gold-strong' : 'text-subtle')}>
+                    {live ? 'On now' : st === 'upcoming' ? 'Coming up' : 'Replay'}
+                  </span>
+                  <Link to={`/events/${e.id}`} className="mt-0.5 line-clamp-2 block text-base font-semibold hover:text-gold-strong sm:text-lg">
+                    {title}
+                  </Link>
+                  <p className="mt-0.5 truncate text-xs text-muted">
+                    {seriesById(e.seriesId).name} · {d.tables.length} table{d.tables.length === 1 ? '' : 's'} · {duration(d.durationMin * 60)}
+                  </p>
+                  <div className="mt-3">
+                    {live ? (
+                      <Link to={`/watch/${d.id}`}>
+                        <Button size="sm" variant="primary" tabIndex={-1}>
+                          <Icon name="play" size={14} /> Watch live
+                        </Button>
+                      </Link>
+                    ) : st === 'upcoming' ? (
+                      <Button size="sm" variant={on ? 'secondary' : 'outline'} onClick={toggle} aria-pressed={on}>
+                        <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
+                      </Button>
+                    ) : (
+                      <Link to={`/watch/${d.id}`}>
+                        <Button size="sm" variant="secondary" tabIndex={-1}>
+                          <Icon name="play" size={14} /> Watch replay
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+                <Link to={live || st === 'vod' ? `/watch/${d.id}` : `/events/${e.id}`} className="relative hidden aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2 sm:block lg:w-52" tabIndex={-1} aria-hidden>
+                  <img src={art.src} style={artStyle(art)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
                 </Link>
-              ) : st === 'upcoming' ? (
-                <Button size="sm" variant={on ? 'secondary' : 'outline'} onClick={toggle} aria-pressed={on}>
-                  <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
-                </Button>
-              ) : (
-                <Link to={`/watch/${d.id}`}>
-                  <Button size="sm" variant="secondary" tabIndex={-1}>
-                    Watch replay
-                  </Button>
-                </Link>
-              )}
+              </div>
             </div>
           </li>
         );
