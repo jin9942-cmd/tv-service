@@ -8,16 +8,16 @@ import { DemoControls } from '../features/demo/DemoControls';
 import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
 
 
-// v4: Latest Shows & Events (live now, the schedule as a list, events and classics), short clips, and WSOP+ (wsop.com).
+// v4: Events (live now, the schedule as a list, events and classics), short clips, and WSOP+ (wsop.com).
 // How to Watch lives in the footer; My List in the My menu.
 export const NAV = [
   { to: '/', label: 'Home', icon: 'star', end: true },
-  { to: '/events', label: 'Latest Shows & Events', short: 'Shows', icon: 'grid2' },
+  { to: '/events', label: 'Events', icon: 'grid2' },
   { to: '/highlights', label: 'Highlights', icon: 'grid4' },
 ] as const;
 
 const MOBILE_NAV = ['/', '/events', '/highlights'];
-/** Latest Shows & Events stays selected on the live player, which it links to. */
+/** Events stays selected on the live player, which it links to. */
 const navOn = (to: string, isActive: boolean, path: string) => isActive || (to === '/events' && path.startsWith('/live'));
 /** WSOP+ lives on wsop.com: it opens there in a new tab. */
 const WSOP_PLUS_URL = 'https://www.wsop.com/plus/';
@@ -156,7 +156,7 @@ export function Layout() {
         {NAV.filter((n) => MOBILE_NAV.includes(n.to)).map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold', navOn(n.to, isActive, loc.pathname) ? 'text-gold' : 'text-muted')}>
             <Icon name={n.icon} size={20} />
-            {'short' in n ? n.short : n.label}
+            {n.label}
           </NavLink>
         ))}
         <button className="flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold text-muted" onClick={() => setMenu(true)} aria-label="More">

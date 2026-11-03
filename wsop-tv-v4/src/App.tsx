@@ -33,7 +33,7 @@ export default function App() {
             <Route path="live/channels/:channelId" element={<ChannelRedirect />} />
             <Route path="watch/:dayId" element={<WatchPage />} />
             <Route path="tag/:slug" element={<TagPage />} />
-            {/* Schedule, channel guide and Tournaments are now part of Latest Shows & Events. */}
+            {/* Schedule, channel guide and Tournaments are now part of Events. */}
             <Route path="schedule" element={<Navigate to="/events" replace />} />
             <Route path="schedule/channels" element={<Navigate to="/events" replace />} />
             <Route path="tournaments" element={<Navigate to="/events" replace />} />

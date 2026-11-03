@@ -486,7 +486,7 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
 
 const BREAKS = ['Coming Up', 'A continuación'];
 
-/** The schedule as a list: what's live now, then every coming broadcast by date (top of Latest Shows & Events). */
+/** The schedule as a list: what's live now, then every coming broadcast by date (top of Events). */
 function ScheduleSections() {
   const { state } = useApp();
   useTick(30_000);
@@ -596,7 +596,7 @@ function EventCard({ e }: { e: TourEvent }) {
 }
 
 /**
- * Latest Shows & Events (PokerGO-style, one menu for live, schedule and events): what's live now, the schedule as a
+ * Events: one menu for live, schedule and events: what's live now, the schedule as a
  * list by date, then this series by tournament and WSOP Classics.
  */
 export function EventsPage() {
@@ -604,29 +604,66 @@ export function EventsPage() {
   const bySeries = [...new Set(withVideo.map((e) => e.seriesId))];
   return (
     <Page className="max-w-[96rem] space-y-12">
-      <h1 className="text-title">Latest Shows & Events</h1>
+      <h1 className="text-title">Events</h1>
       <ScheduleSections />
       {bySeries.map((sid) => (
-        <section key={sid} aria-label={seriesById(sid).name}>
-          <h2 className="mb-3 text-xl sm:text-2xl">{seriesById(sid).name}</h2>
-          <div className={rowGrid}>
-            {withVideo
-              .filter((e) => e.seriesId === sid)
-              .map((e) => (
-                <EventCard key={e.id} e={e} />
-              ))}
-          </div>
-        </section>
+        <ScrollRow key={sid} title={seriesById(sid).name}>
+          {withVideo
+            .filter((e) => e.seriesId === sid)
+            .map((e) => (
+              <EventCard key={e.id} e={e} />
+            ))}
+        </ScrollRow>
       ))}
-      <section aria-label="WSOP Classics">
-        <h2 className="mb-3 text-xl sm:text-2xl">WSOP Classics</h2>
-        <div className={rowGrid}>
-          {classics.map((v) => (
-            <VideoCard key={v.id} v={v} />
-          ))}
-        </div>
-      </section>
+      <ScrollRow title="WSOP Classics">
+        {classics.map((v) => (
+          <VideoCard key={v.id} v={v} />
+        ))}
+      </ScrollRow>
     </Page>
+  );
+}
+
+/**
+ * One row that scrolls sideways (four cards in view on wide screens), with ‹ › buttons beside the title on screens
+ * with a mouse; touch screens just swipe.
+ */
+function ScrollRow({ title, children }: { title: string; children: ReactNode }) {
+  const track = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: true, end: false });
+  const update = () => {
+    const el = track.current;
+    if (el) setEdges({ start: el.scrollLeft < 4, end: el.scrollLeft + el.clientWidth > el.scrollWidth - 4 });
+  };
+  useEffect(() => {
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  const page = (dir: 1 | -1) => {
+    const el = track.current;
+    if (el) el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: 'smooth' });
+  };
+  const arrow = 'flex size-9 items-center justify-center rounded-full border border-line-strong text-text transition-colors duration-150 hover:border-text disabled:opacity-30 disabled:hover:border-line-strong';
+  return (
+    <section aria-label={title}>
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <h2 className="text-xl sm:text-2xl">{title}</h2>
+        {!(edges.start && edges.end) && (
+          <div className="hidden gap-2 [@media(hover:hover)]:flex">
+            <button className={arrow} onClick={() => page(-1)} disabled={edges.start} aria-label={`Scroll ${title} back`}>
+              <Icon name="chevron" size={18} className="rotate-180" />
+            </button>
+            <button className={arrow} onClick={() => page(1)} disabled={edges.end} aria-label={`Scroll ${title} forward`}>
+              <Icon name="chevron" size={18} />
+            </button>
+          </div>
+        )}
+      </div>
+      <div ref={track} onScroll={update} className="hscroll gap-5 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1.25rem)/2)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -643,7 +680,7 @@ export function EventPage() {
     <Page className="max-w-[96rem] space-y-10">
       <div>
         <Link to="/events" className="text-sm text-muted hover:text-text">
-          ← Latest Shows & Events
+          ← Events
         </Link>
         <h1 className="mt-2 text-title">{e.name.replace(' World Championship', '')}</h1>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
