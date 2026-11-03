@@ -135,8 +135,6 @@ export function BraceletCount({ n, size = 16 }: { n: number; size?: number }) {
 
 const PATHS: Record<string, string> = {
   play: 'M8 5v14l11-7z',
-  /** Opens in a new tab (arrow out of a box). */
-  external: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
   pause: 'M6 5h4v14H6zM14 5h4v14h-4z',
   back10: 'M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z',
   fwd10: 'M12 5V2l5 4-5 4V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z',
@@ -172,7 +170,7 @@ const PATHS: Record<string, string> = {
   card: 'M3 6h18v12H3zM3 10h18',
   shield: 'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z',
 };
-const STROKE = new Set(['external', 'plus', 'history', 'card', 'shield', 'check', 'close', 'chevron', 'back', 'full', 'tv', 'audio', 'mute', 'cc', 'globe', 'calendar', 'menu', 'layers', 'grid1', 'grid2', 'grid4']);
+const STROKE = new Set(['plus', 'history', 'card', 'shield', 'check', 'close', 'chevron', 'back', 'full', 'tv', 'audio', 'mute', 'cc', 'globe', 'calendar', 'menu', 'layers', 'grid1', 'grid2', 'grid4']);
 
 export function Icon({ name, size = 20, className }: { name: keyof typeof PATHS | string; size?: number; className?: string }) {
   const stroke = STROKE.has(name);

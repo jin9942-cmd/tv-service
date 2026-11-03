@@ -103,8 +103,8 @@ export function Layout() {
                 )}
               </NavLink>
             ))}
-            <a href={WSOP_PLUS_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-chip px-3 py-1.5 text-[15px] font-medium whitespace-nowrap text-text/70 transition-colors duration-150 hover:text-text">
-              WSOP+ <Icon name="external" size={13} aria-hidden />
+            <a href={WSOP_PLUS_URL} target="_blank" rel="noopener noreferrer" className="rounded-chip px-3 py-1.5 text-[15px] font-medium whitespace-nowrap text-text/70 transition-colors duration-150 hover:text-text">
+              WSOP+
               <span className="sr-only">(opens in a new tab)</span>
             </a>
           </nav>
@@ -136,7 +136,7 @@ export function Layout() {
               ))}
               <li>
                 <a href={WSOP_PLUS_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-chip px-3 py-2.5 text-sm font-semibold text-muted hover:text-text">
-                  <Icon name="star" size={16} /> WSOP+ <Icon name="external" size={13} aria-hidden />
+                  <Icon name="star" size={16} /> WSOP+
                   <span className="sr-only">(opens in a new tab)</span>
                 </a>
               </li>
