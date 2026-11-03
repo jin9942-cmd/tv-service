@@ -5,8 +5,8 @@ import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
 import { HERO_DAY_ID, dayById, eventById, events, series, seriesById } from '../data/mock';
-import type { Day, Series, TourEvent } from '../data/types';
-import { VENUE_TZ, dayKey, fmtTime, tzAbbr } from '../lib/time';
+import type { Day, TourEvent } from '../data/types';
+import { fmtDate, fmtTime } from '../lib/time';
 import { isBroadcasting } from '../lib/broadcast';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
@@ -516,16 +516,6 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
 
 const BREAKS = ['Coming Up', 'A continuación'];
 
-type ScheduleItem = { e: TourEvent; d: Day };
-
-/** "Tuesday, November 3" in the viewer's time zone. */
-const longDate = (at: string, tz: string) => new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz }).format(new Date(at));
-/** A broadcast day's picture: its own video, else the event's, else a venue photo. */
-function dayArt(e: TourEvent, d: Day) {
-  const v = catalog.find((x) => x.dayId === d.id) ?? catalog.find((x) => x.eventId === e.id && x.kind === 'broadcast');
-  return v ? { src: v.thumb, pos: v.thumbPos, fit: v.thumbFit } : VENUE_ART[0];
-}
-
 const DAY_MS = 86_400_000;
 const shortDate = (at: string, tz: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: tz }).format(new Date(at));
 const dateRange = (s: { start: string; end: string }, tz: string) => `${shortDate(s.start, tz)} – ${shortDate(s.end, tz)}`;
@@ -538,148 +528,100 @@ const SEASON: SeasonStop[] = [
   { id: 'wi27', name: '2027 Winter Festival', city: 'Atlantic City, NJ', start: new Date(Date.now() + 110 * DAY_MS).toISOString(), end: new Date(Date.now() + 131 * DAY_MS).toISOString(), art: VENUE_ART[1] },
 ];
 
-const itemsOf = (sid: string) =>
-  events
-    .filter((e) => e.seriesId === sid)
-    .flatMap((e) => e.days.map((d) => ({ e, d })))
-    .sort((x, y) => x.d.start.localeCompare(y.d.start));
+/** The series running now (none in the between-series preview). */
+const runningSeries = (off: boolean) => (off ? undefined : series.find((s) => Date.parse(s.start) <= Date.now() && Date.now() <= Date.parse(s.end)));
 
-/**
- * The top of Events, built around the series (3–4 a year, about three weeks each) rather than a calendar of days:
- * while a series runs, what's on today and what's left of it; between series, the next one with a countdown and the
- * last one's replays. A season line below shows the whole year. `?season=off` previews the between-series view.
- */
-function SeriesSpotlight() {
-  const { state } = useApp();
-  useTick(30_000);
-  const [params, setParams] = useSearchParams();
-  const off = params.get('season') === 'off';
-  const now = Date.now();
-  const running = off ? undefined : series.find((s) => Date.parse(s.start) <= now && now <= Date.parse(s.end));
-  const next = SEASON.find((s) => Date.parse(s.start) > now && s.id !== running?.id);
-  const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
-  const preview = (
-    <div className="flex w-fit rounded-card border border-line text-xs font-bold tracking-wide uppercase" role="group" aria-label="Demo: preview">
-      {[
-        ['', 'During a series'],
-        ['off', 'Between series'],
-      ].map(([k, label]) => (
-        <button key={k} aria-pressed={(k === 'off') === off} onClick={() => setParams(k ? { season: k } : {}, { replace: true })} className={cx('h-8 px-3', (k === 'off') === off ? 'bg-surface-2 text-text' : 'text-subtle hover:text-text')}>
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-  return (
-    <div className="space-y-10">
-      {running ? <RunningSeries s={running} status={status} action={preview} /> : <NextSeries stop={next} action={preview} />}
-      <SeasonLine runningId={running?.id} off={off} />
-    </div>
-  );
-}
-
-/** A series in progress: its card with how far along it is, today's broadcasts, and the broadcast days still to come. */
-function RunningSeries({ s, status, action }: { s: Series; status: (d: Day) => Day['status']; action: ReactNode }) {
-  const { state } = useApp();
-  const all = itemsOf(s.id);
-  const today = dayKey(Date.now(), state.tz);
-  const todays = all.filter((x) => dayKey(x.d.start, state.tz) === today || isBroadcasting(status(x.d)));
-  const ahead = all.filter((x) => dayKey(x.d.start, state.tz) > today && !todays.includes(x));
-  const byDate = new Map<string, ScheduleItem[]>();
-  for (const x of ahead) {
-    const k = dayKey(x.d.start, state.tz);
-    byDate.set(k, [...(byDate.get(k) ?? []), x]);
-  }
-  const total = Math.round((Date.parse(s.end) - Date.parse(s.start)) / DAY_MS);
-  const dayN = Math.min(total, Math.floor((Date.now() - Date.parse(s.start)) / DAY_MS) + 1);
-  return (
-    <Section title={s.name} kicker={`On now · ${s.city} · ${dateRange(s, state.tz)}`} action={action}>
-      <div className="flex items-center gap-3 text-sm text-muted">
-        <LiveTag />
-        <span className="tnum">
-          Day {dayN} of {total}
-        </span>
-        <span className="h-1.5 max-w-xs flex-1 overflow-hidden rounded-full bg-surface-3">
-          <span className="block h-full bg-gold" style={{ width: `${(dayN / total) * 100}%` }} />
-        </span>
-      </div>
-      <div className="mt-6 flex items-baseline justify-between gap-3">
-        <h3 className="font-sans text-lg font-bold normal-case sm:text-xl">Today</h3>
-        <span className="text-sm text-muted">Times in {tzAbbr(state.tz)}</span>
-      </div>
-      {todays.length ? <ScheduleList items={todays} status={status} /> : <p className="mt-3 text-sm text-muted">No broadcasts today. The next one is below.</p>}
-      {byDate.size > 0 && (
-        <>
-          <h3 className="mt-8 font-sans text-lg font-bold normal-case sm:text-xl">Still to come in this series</h3>
-          {[...byDate.values()].map((items) => (
-            <div key={items[0].d.id} className="mt-4">
-              <p className="mb-1 text-sm font-semibold text-muted">{longDate(items[0].d.start, state.tz)}</p>
-              <ScheduleList items={items} status={status} />
-            </div>
-          ))}
-        </>
-      )}
-    </Section>
-  );
-}
-
-/** Between series: the next one with a countdown and a reminder, then the last one's replays. */
-function NextSeries({ stop, action }: { stop?: SeasonStop; action: ReactNode }) {
+/** A reminder toggle (sign-in required), kept in `state.reminders` under `key`. */
+function useReminder(key: string, what: string) {
   const { state, set, toast, signedIn, requireLogin } = useApp();
-  const last = [...series].reverse().find((s) => Date.parse(s.start) <= Date.now()) ?? series[0];
-  const lastReplays = replays.filter((v) => eventById(v.eventId!)?.seriesId === last.id);
-  if (!stop) return null;
-  const days = Math.max(1, Math.ceil((Date.parse(stop.start) - Date.now()) / DAY_MS));
-  const key = `series:${stop.id}`;
   const on = state.reminders.includes(key);
   const toggle = () => {
     if (!signedIn) return requireLogin({ reason: 'Sign in to get a reminder.' });
     set((x) => ({ reminders: on ? x.reminders.filter((k) => k !== key) : [...x.reminders, key] }));
-    toast(on ? 'Reminder removed' : `We'll let you know when ${stop.name} goes live`);
+    toast(on ? 'Reminder removed' : `We'll remind you before ${what} starts`);
   };
+  return [on, toggle] as const;
+}
+
+/**
+ * The one box at the top of Events. While a series runs: it's live, how far along it is, the live broadcasts to jump
+ * into and the next one. Between series: the next series, when it starts, and a reminder.
+ */
+function NowBanner({ off }: { off: boolean }) {
+  const { state } = useApp();
+  useTick(30_000);
+  const running = runningSeries(off);
+  const stop = running ? SEASON.find((s) => s.id === running.id)! : SEASON.find((s) => Date.parse(s.start) > Date.now())!;
+  const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
+  const items = events.filter((e) => e.seriesId === running?.id).flatMap((e) => e.days.map((d) => ({ e, d })));
+  const live = items.filter((x) => isBroadcasting(status(x.d)));
+  const next = items.filter((x) => status(x.d) === 'upcoming').sort((a, b) => a.d.start.localeCompare(b.d.start))[0];
+  const titleOf = (x: { e: TourEvent; d: Day }) => `${x.e.name.replace(' World Championship', '')} · ${x.d.label}`;
+  const [nextOn, toggleNext] = useReminder(next ? `day:${next.d.id}` : '', next ? titleOf(next) : '');
+  const [stopOn, toggleStop] = useReminder(`series:${stop.id}`, stop.name);
+  const total = Math.round((Date.parse(stop.end) - Date.parse(stop.start)) / DAY_MS);
+  const dayN = Math.min(total, Math.floor((Date.now() - Date.parse(stop.start)) / DAY_MS) + 1);
+  const days = Math.max(1, Math.ceil((Date.parse(stop.start) - Date.now()) / DAY_MS));
   return (
-    <div className="space-y-10">
-      <Section title="Next series" kicker="No live broadcasts right now" action={action}>
-        <div className="relative overflow-hidden rounded-panel border border-line">
-          <img src={stop.art.src} style={artStyle(stop.art)} alt="" className="absolute inset-0 size-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/20" />
-          <div className="relative flex min-h-64 flex-col justify-end gap-2 p-6 sm:p-8">
-            <p className="text-sm font-bold tracking-wide text-gold-strong uppercase">
-              Starts in {days} day{days === 1 ? '' : 's'}
-            </p>
-            <h3 className="text-2xl sm:text-4xl">{stop.name}</h3>
-            <p className="text-muted">
-              {stop.city} · {dateRange(stop, state.tz)}
-            </p>
-            <div className="mt-2">
-              <Button variant={on ? 'secondary' : 'primary'} onClick={toggle} aria-pressed={on}>
-                <Icon name={on ? 'check' : 'bell'} size={16} /> {on ? 'Reminder set' : 'Notify me when it goes live'}
-              </Button>
+    <section aria-label={running ? 'Live now' : 'Next series'} className="relative overflow-hidden rounded-panel border border-line">
+      <img src={stop.art.src} style={artStyle(stop.art)} alt="" className="absolute inset-0 size-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/30" />
+      <div className="relative max-w-2xl p-6 sm:p-8">
+        {running ? (
+          <p className="flex items-center gap-2 text-sm font-bold text-text">
+            <LiveTag /> Live now · Day {dayN} of {total}
+          </p>
+        ) : (
+          <p className="text-sm font-bold tracking-wide text-gold-strong uppercase">Next series · starts in {days} days</p>
+        )}
+        <h2 className="mt-2 text-2xl sm:text-4xl">{stop.name}</h2>
+        <p className="mt-1 text-muted">
+          {stop.city} · {dateRange(stop, state.tz)}
+        </p>
+        {running ? (
+          <>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {live.map((x) => (
+                <Link key={x.d.id} to={`/watch/${x.d.id}`}>
+                  <Button variant="primary" tabIndex={-1}>
+                    <Icon name="play" size={16} /> {titleOf(x)}
+                  </Button>
+                </Link>
+              ))}
             </div>
+            {next && (
+              <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
+                <span>
+                  Next: <b className="font-semibold text-text">{titleOf(next)}</b> · {fmtDate(next.d.start, state.tz)} {fmtTime(next.d.start, state.tz)}
+                </span>
+                <Button size="sm" variant={nextOn ? 'secondary' : 'outline'} onClick={toggleNext} aria-pressed={nextOn}>
+                  <Icon name={nextOn ? 'check' : 'bell'} size={14} /> {nextOn ? 'Reminder set' : 'Remind me'}
+                </Button>
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="mt-5">
+            <Button variant={stopOn ? 'secondary' : 'primary'} onClick={toggleStop} aria-pressed={stopOn}>
+              <Icon name={stopOn ? 'check' : 'bell'} size={16} /> {stopOn ? 'Reminder set' : 'Notify me when it goes live'}
+            </Button>
           </div>
-        </div>
-      </Section>
-      {lastReplays.length > 0 && (
-        <ScrollRow title={`Catch up on ${last.name}`}>
-          {lastReplays.map((v) => (
-            <VideoCard key={v.id} v={v} />
-          ))}
-        </ScrollRow>
-      )}
-    </div>
+        )}
+      </div>
+    </section>
   );
 }
 
-/** The whole season on one line: replays for past series, live for the running one, dates for the ones ahead. */
-function SeasonLine({ runningId, off }: { runningId?: string; off: boolean }) {
+/** The year's series on one line: replays for past ones, live for the running one, dates for the ones ahead. */
+function SeasonLine({ off }: { off: boolean }) {
   const { state } = useApp();
-  const now = Date.now();
+  const runningId = runningSeries(off)?.id;
   return (
-    <Section title="This season" kicker="3–4 series a year, about three weeks each">
+    <Section title="Season schedule" kicker="WSOP runs 3–4 series a year, about three weeks each">
       <ol className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {SEASON.map((s) => {
           const live = s.id === runningId;
-          const past = !live && (Date.parse(s.end) < now || (off && Date.parse(s.start) <= now));
+          const past = !live && Date.parse(s.start) <= Date.now();
           const first = events.find((e) => e.seriesId === s.id);
           const body = (
             <>
@@ -698,83 +640,15 @@ function SeasonLine({ runningId, off }: { runningId?: string; off: boolean }) {
   );
 }
 
-/** One day as a timeline: the start time on the left, a dot on the line (red while live), the broadcast on the right. */
-function ScheduleList({ items, status }: { items: ScheduleItem[]; status: (d: Day) => Day['status'] }) {
-  const { state, set, toast, signedIn, requireLogin } = useApp();
-  return (
-    <ol className="mt-4">
-      {items.map(({ e, d }, i) => {
-        const st = status(d);
-        const live = isBroadcasting(st);
-        const title = `${e.name.replace(' World Championship', '')} · ${d.label}`;
-        const key = `day:${d.id}`;
-        const on = state.reminders.includes(key);
-        const toggle = () => {
-          if (!signedIn) return requireLogin({ reason: 'Sign in to get a reminder.' });
-          set((x) => ({ reminders: on ? x.reminders.filter((k) => k !== key) : [...x.reminders, key] }));
-          toast(on ? 'Reminder removed' : `We'll remind you before ${title} starts`);
-        };
-        const art = dayArt(e, d);
-        return (
-          <li key={d.id} className="grid grid-cols-[5rem_1fr] gap-x-4 sm:grid-cols-[7.5rem_1fr]">
-            <div className="pt-3 text-right">
-              <b className="block text-base font-bold tnum sm:text-lg">{fmtTime(d.start, state.tz)}</b>
-              <span className="block text-xs text-subtle tnum">{fmtTime(d.start, VENUE_TZ)} Las Vegas</span>
-            </div>
-            <div className={cx('relative border-l border-line pl-5', i < items.length - 1 && 'pb-4')}>
-              <span className={cx('absolute top-5 -left-[5px] size-2.5 rounded-full', live ? 'bg-live' : st === 'upcoming' ? 'bg-gold' : 'bg-line-strong')} aria-hidden />
-              <div className={cx('flex items-center gap-4 rounded-panel border p-4', live ? 'border-gold/50 bg-gold-dim' : 'border-line bg-surface')}>
-                <div className="min-w-0 flex-1">
-                  <span className={cx('text-[11px] font-bold tracking-wide uppercase', live ? 'text-live' : st === 'upcoming' ? 'text-gold-strong' : 'text-subtle')}>
-                    {live ? 'On now' : st === 'upcoming' ? 'Coming up' : 'Replay'}
-                  </span>
-                  <Link to={`/events/${e.id}`} className="mt-0.5 line-clamp-2 block text-base font-semibold hover:text-gold-strong sm:text-lg">
-                    {title}
-                  </Link>
-                  <p className="mt-0.5 truncate text-xs text-muted">
-                    {seriesById(e.seriesId).name} · {d.tables.length} table{d.tables.length === 1 ? '' : 's'} · {duration(d.durationMin * 60)}
-                  </p>
-                  <div className="mt-3">
-                    {live ? (
-                      <Link to={`/watch/${d.id}`}>
-                        <Button size="sm" variant="primary" tabIndex={-1}>
-                          <Icon name="play" size={14} /> Watch live
-                        </Button>
-                      </Link>
-                    ) : st === 'upcoming' ? (
-                      <Button size="sm" variant={on ? 'secondary' : 'outline'} onClick={toggle} aria-pressed={on}>
-                        <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
-                      </Button>
-                    ) : (
-                      <Link to={`/watch/${d.id}`}>
-                        <Button size="sm" variant="secondary" tabIndex={-1}>
-                          <Icon name="play" size={14} /> Watch replay
-                        </Button>
-                      </Link>
-                    )}
-                  </div>
-                </div>
-                <Link to={live || st === 'vod' ? `/watch/${d.id}` : `/events/${e.id}`} className="relative hidden aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2 sm:block lg:w-52" tabIndex={-1} aria-hidden>
-                  <img src={art.src} style={artStyle(art)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-                </Link>
-              </div>
-            </div>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
 // ---- Events -----------------------------------------------------------------------------------------
 
 const eventVideos = (id: string) => catalog.filter((v) => v.eventId === id && v.kind === 'broadcast');
 
-function EventCard({ e }: { e: TourEvent }) {
+function EventCard({ e, off }: { e: TourEvent; off?: boolean }) {
   const { state } = useApp();
   const list = eventVideos(e.id);
   const cover = list.find((v) => v.title.endsWith('Final Table')) ?? list[list.length - 1];
-  const live = list.some((v) => isLive(v, state.streamMode));
+  const live = !off && list.some((v) => isLive(v, state.streamMode));
   return (
     <Link to={`/events/${e.id}`} className="group block min-w-0">
       <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
@@ -790,30 +664,43 @@ function EventCard({ e }: { e: TourEvent }) {
 }
 
 /**
- * Events: one menu for live, schedule and events: what's live now, the schedule as a
- * list by date, then this series by tournament and WSOP Classics.
+ * Events, top to bottom: one box saying what's live now (or when the next series starts), the series' tournaments,
+ * the season's series, and WSOP Classics. `?season=off` previews the page between series.
  */
 export function EventsPage() {
+  const [params, setParams] = useSearchParams();
+  const off = params.get('season') === 'off';
   const withVideo = events.filter((e) => eventVideos(e.id).length);
   const bySeries = [...new Set(withVideo.map((e) => e.seriesId))];
+  const running = runningSeries(off);
   return (
     <Page className="max-w-[96rem] space-y-12">
-      <h1 className="text-title">Events</h1>
-      <SeriesSpotlight />
+      <div>
+        <h1 className="text-title">Events</h1>
+        <p className="mt-1 text-muted">WSOP tournaments: watch them live, or catch up on the replays.</p>
+      </div>
+      <NowBanner off={off} />
       {bySeries.map((sid) => (
-        <ScrollRow key={sid} title={seriesById(sid).name}>
+        <ScrollRow key={sid} title={`${seriesById(sid).name}${sid === running?.id ? '' : ' · Replays'}`}>
           {withVideo
             .filter((e) => e.seriesId === sid)
             .map((e) => (
-              <EventCard key={e.id} e={e} />
+              <EventCard key={e.id} e={e} off={off} />
             ))}
         </ScrollRow>
       ))}
+      <SeasonLine off={off} />
       <ScrollRow title="WSOP Classics">
         {classics.map((v) => (
           <VideoCard key={v.id} v={v} />
         ))}
       </ScrollRow>
+      <p className="border-t border-line pt-4 text-xs text-subtle">
+        Demo:{' '}
+        <button onClick={() => setParams(off ? {} : { season: 'off' }, { replace: true })} className="underline hover:text-text">
+          {off ? 'show the page during a series' : 'preview the page between series'}
+        </button>
+      </p>
     </Page>
   );
 }
