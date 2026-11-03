@@ -4,8 +4,8 @@ import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
-import { HERO_DAY_ID, dayById, eventById, events, seriesById } from '../data/mock';
-import type { Day, TourEvent } from '../data/types';
+import { HERO_DAY_ID, dayById, eventById, events, series, seriesById } from '../data/mock';
+import type { Day, Series, TourEvent } from '../data/types';
 import { VENUE_TZ, dayKey, fmtTime, tzAbbr } from '../lib/time';
 import { isBroadcasting } from '../lib/broadcast';
 import { duration, money } from '../lib/format';
@@ -13,7 +13,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { CHANNEL_ART, VENUE_ART, artStyle } from '../lib/brand';
+import { CHANNEL_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
@@ -490,76 +490,180 @@ type ScheduleItem = { e: TourEvent; d: Day };
 
 /** "Tuesday, November 3" in the viewer's time zone. */
 const longDate = (at: string, tz: string) => new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz }).format(new Date(at));
-const dayPart = (at: string, tz: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', { ...o, timeZone: tz }).format(new Date(at));
-
 /** A broadcast day's picture: its own video, else the event's, else a venue photo. */
 function dayArt(e: TourEvent, d: Day) {
   const v = catalog.find((x) => x.dayId === d.id) ?? catalog.find((x) => x.eventId === e.id && x.kind === 'broadcast');
   return v ? { src: v.thumb, pos: v.thumbPos, fit: v.thumbFit } : VENUE_ART[0];
 }
 
+const DAY_MS = 86_400_000;
+const shortDate = (at: string, tz: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: tz }).format(new Date(at));
+const dateRange = (s: { start: string; end: string }, tz: string) => `${shortDate(s.start, tz)} – ${shortDate(s.end, tz)}`;
+
+/** The year's series, one line each: the ones with broadcasts, plus last spring's and next year's (no broadcasts here). */
+type SeasonStop = { id: string; name: string; city: string; start: string; end: string; art: Art };
+const SEASON: SeasonStop[] = [
+  { id: 'sp26', name: '2026 Spring Open', city: 'Los Angeles, CA', start: new Date(Date.now() - 200 * DAY_MS).toISOString(), end: new Date(Date.now() - 179 * DAY_MS).toISOString(), art: VENUE_ART[3] },
+  ...series.map((s, i) => ({ ...s, art: VENUE_ART[i === 0 ? 0 : 2] })),
+  { id: 'wi27', name: '2027 Winter Festival', city: 'Atlantic City, NJ', start: new Date(Date.now() + 110 * DAY_MS).toISOString(), end: new Date(Date.now() + 131 * DAY_MS).toISOString(), art: VENUE_ART[1] },
+];
+
+const itemsOf = (sid: string) =>
+  events
+    .filter((e) => e.seriesId === sid)
+    .flatMap((e) => e.days.map((d) => ({ e, d })))
+    .sort((x, y) => x.d.start.localeCompare(y.d.start));
+
 /**
- * The broadcast calendar (top of Events): a strip of broadcast days (the last week of replays through everything coming
- * up), then the chosen day as a timeline: time on the left, the broadcast and its action on the right.
+ * The top of Events, built around the series (3–4 a year, about three weeks each) rather than a calendar of days:
+ * while a series runs, what's on today and what's left of it; between series, the next one with a countdown and the
+ * last one's replays. A season line below shows the whole year. `?season=off` previews the between-series view.
  */
-function ScheduleSections() {
+function SeriesSpotlight() {
   const { state } = useApp();
   useTick(30_000);
+  const [params, setParams] = useSearchParams();
+  const off = params.get('season') === 'off';
+  const now = Date.now();
+  const running = off ? undefined : series.find((s) => Date.parse(s.start) <= now && now <= Date.parse(s.end));
+  const next = SEASON.find((s) => Date.parse(s.start) > now && s.id !== running?.id);
   const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
-  const all = events.flatMap((e) => e.days.map((d) => ({ e, d }))).sort((x, y) => x.d.start.localeCompare(y.d.start));
+  const preview = (
+    <div className="flex w-fit rounded-card border border-line text-xs font-bold tracking-wide uppercase" role="group" aria-label="Demo: preview">
+      {[
+        ['', 'During a series'],
+        ['off', 'Between series'],
+      ].map(([k, label]) => (
+        <button key={k} aria-pressed={(k === 'off') === off} onClick={() => setParams(k ? { season: k } : {}, { replace: true })} className={cx('h-8 px-3', (k === 'off') === off ? 'bg-surface-2 text-text' : 'text-subtle hover:text-text')}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+  return (
+    <div className="space-y-10">
+      {running ? <RunningSeries s={running} status={status} action={preview} /> : <NextSeries stop={next} action={preview} />}
+      <SeasonLine runningId={running?.id} off={off} />
+    </div>
+  );
+}
+
+/** A series in progress: its card with how far along it is, today's broadcasts, and the broadcast days still to come. */
+function RunningSeries({ s, status, action }: { s: Series; status: (d: Day) => Day['status']; action: ReactNode }) {
+  const { state } = useApp();
+  const all = itemsOf(s.id);
+  const today = dayKey(Date.now(), state.tz);
+  const todays = all.filter((x) => dayKey(x.d.start, state.tz) === today || isBroadcasting(status(x.d)));
+  const ahead = all.filter((x) => dayKey(x.d.start, state.tz) > today && !todays.includes(x));
   const byDate = new Map<string, ScheduleItem[]>();
-  for (const x of all) {
+  for (const x of ahead) {
     const k = dayKey(x.d.start, state.tz);
     byDate.set(k, [...(byDate.get(k) ?? []), x]);
   }
-  const today = dayKey(Date.now(), state.tz);
-  const keys = [...byDate.keys()];
-  const firstNext = keys.findIndex((k) => k >= today);
-  const from = Math.max(0, (firstNext < 0 ? keys.length : firstNext) - 7);
-  const days = keys.slice(from);
-  const [picked, setPicked] = useState(() => (byDate.has(today) ? today : (keys[firstNext] ?? keys[keys.length - 1])));
-  const strip = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = strip.current;
-    const on = el?.querySelector<HTMLElement>('[aria-selected="true"]');
-    if (el && on) el.scrollLeft = on.offsetLeft - el.offsetLeft - (el.clientWidth - on.offsetWidth) / 2;
-  }, []);
-  const items = byDate.get(picked) ?? [];
+  const total = Math.round((Date.parse(s.end) - Date.parse(s.start)) / DAY_MS);
+  const dayN = Math.min(total, Math.floor((Date.now() - Date.parse(s.start)) / DAY_MS) + 1);
   return (
-    <Section title="Broadcast calendar" kicker={`Pick a day · times in ${tzAbbr(state.tz)}`} action={more('/live', 'Open the live player')}>
-      <div ref={strip} className="hscroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Broadcast days">
-        {days.map((k) => {
-          const first = byDate.get(k)![0].d.start;
-          const on = k === picked;
-          const live = byDate.get(k)!.some((x) => isBroadcasting(status(x.d)));
-          const past = k < today;
-          return (
-            <button
-              key={k}
-              role="tab"
-              aria-selected={on}
-              onClick={() => setPicked(k)}
-              className={cx(
-                'relative flex w-[4.5rem] shrink-0 flex-col items-center rounded-card border py-2.5 transition-colors duration-150',
-                on ? 'border-gold bg-gold-dim text-gold-strong' : 'border-line bg-surface hover:border-line-strong',
-                past && !on && 'text-subtle',
-              )}
-            >
-              <span className="text-[11px] font-bold tracking-wide uppercase">{k === today ? 'Today' : dayPart(first, state.tz, { weekday: 'short' })}</span>
-              <span className="text-2xl leading-tight font-bold tnum">{dayPart(first, state.tz, { day: 'numeric' })}</span>
-              <span className="text-[11px] uppercase">{dayPart(first, state.tz, { month: 'short' })}</span>
-              {live && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-live" aria-label="Live now" />}
-            </button>
-          );
-        })}
-      </div>
-      <div className="mt-6 flex items-baseline justify-between gap-3">
-        <h3 className="font-sans text-lg font-bold normal-case sm:text-xl">{items[0] ? longDate(items[0].d.start, state.tz) : ''}</h3>
-        <span className="text-sm text-muted">
-          {items.length} broadcast{items.length === 1 ? '' : 's'}
+    <Section title={s.name} kicker={`On now · ${s.city} · ${dateRange(s, state.tz)}`} action={action}>
+      <div className="flex items-center gap-3 text-sm text-muted">
+        <LiveTag />
+        <span className="tnum">
+          Day {dayN} of {total}
+        </span>
+        <span className="h-1.5 max-w-xs flex-1 overflow-hidden rounded-full bg-surface-3">
+          <span className="block h-full bg-gold" style={{ width: `${(dayN / total) * 100}%` }} />
         </span>
       </div>
-      <ScheduleList items={items} status={status} />
+      <div className="mt-6 flex items-baseline justify-between gap-3">
+        <h3 className="font-sans text-lg font-bold normal-case sm:text-xl">Today</h3>
+        <span className="text-sm text-muted">Times in {tzAbbr(state.tz)}</span>
+      </div>
+      {todays.length ? <ScheduleList items={todays} status={status} /> : <p className="mt-3 text-sm text-muted">No broadcasts today. The next one is below.</p>}
+      {byDate.size > 0 && (
+        <>
+          <h3 className="mt-8 font-sans text-lg font-bold normal-case sm:text-xl">Still to come in this series</h3>
+          {[...byDate.values()].map((items) => (
+            <div key={items[0].d.id} className="mt-4">
+              <p className="mb-1 text-sm font-semibold text-muted">{longDate(items[0].d.start, state.tz)}</p>
+              <ScheduleList items={items} status={status} />
+            </div>
+          ))}
+        </>
+      )}
+    </Section>
+  );
+}
+
+/** Between series: the next one with a countdown and a reminder, then the last one's replays. */
+function NextSeries({ stop, action }: { stop?: SeasonStop; action: ReactNode }) {
+  const { state, set, toast, signedIn, requireLogin } = useApp();
+  const last = [...series].reverse().find((s) => Date.parse(s.start) <= Date.now()) ?? series[0];
+  const lastReplays = replays.filter((v) => eventById(v.eventId!)?.seriesId === last.id);
+  if (!stop) return null;
+  const days = Math.max(1, Math.ceil((Date.parse(stop.start) - Date.now()) / DAY_MS));
+  const key = `series:${stop.id}`;
+  const on = state.reminders.includes(key);
+  const toggle = () => {
+    if (!signedIn) return requireLogin({ reason: 'Sign in to get a reminder.' });
+    set((x) => ({ reminders: on ? x.reminders.filter((k) => k !== key) : [...x.reminders, key] }));
+    toast(on ? 'Reminder removed' : `We'll let you know when ${stop.name} goes live`);
+  };
+  return (
+    <div className="space-y-10">
+      <Section title="Next series" kicker="No live broadcasts right now" action={action}>
+        <div className="relative overflow-hidden rounded-panel border border-line">
+          <img src={stop.art.src} style={artStyle(stop.art)} alt="" className="absolute inset-0 size-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/20" />
+          <div className="relative flex min-h-64 flex-col justify-end gap-2 p-6 sm:p-8">
+            <p className="text-sm font-bold tracking-wide text-gold-strong uppercase">
+              Starts in {days} day{days === 1 ? '' : 's'}
+            </p>
+            <h3 className="text-2xl sm:text-4xl">{stop.name}</h3>
+            <p className="text-muted">
+              {stop.city} · {dateRange(stop, state.tz)}
+            </p>
+            <div className="mt-2">
+              <Button variant={on ? 'secondary' : 'primary'} onClick={toggle} aria-pressed={on}>
+                <Icon name={on ? 'check' : 'bell'} size={16} /> {on ? 'Reminder set' : 'Notify me when it goes live'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Section>
+      {lastReplays.length > 0 && (
+        <ScrollRow title={`Catch up on ${last.name}`}>
+          {lastReplays.map((v) => (
+            <VideoCard key={v.id} v={v} />
+          ))}
+        </ScrollRow>
+      )}
+    </div>
+  );
+}
+
+/** The whole season on one line: replays for past series, live for the running one, dates for the ones ahead. */
+function SeasonLine({ runningId, off }: { runningId?: string; off: boolean }) {
+  const { state } = useApp();
+  const now = Date.now();
+  return (
+    <Section title="This season" kicker="3–4 series a year, about three weeks each">
+      <ol className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {SEASON.map((s) => {
+          const live = s.id === runningId;
+          const past = !live && (Date.parse(s.end) < now || (off && Date.parse(s.start) <= now));
+          const first = events.find((e) => e.seriesId === s.id);
+          const body = (
+            <>
+              <span className={cx('text-[11px] font-bold tracking-wide uppercase', live ? 'text-live' : past ? 'text-subtle' : 'text-gold-strong')}>{live ? '● Live now' : past ? 'Replays' : 'Coming up'}</span>
+              <span className="mt-1 block truncate font-semibold">{s.name}</span>
+              <span className="mt-0.5 block truncate text-xs text-muted">
+                {s.city} · {dateRange(s, state.tz)}
+              </span>
+            </>
+          );
+          const box = cx('block h-full rounded-card border p-4', live ? 'border-gold/50 bg-gold-dim' : 'border-line bg-surface', first && 'hover:border-line-strong');
+          return <li key={s.id}>{first ? <Link to={`/events/${first.id}`} className={box}>{body}</Link> : <div className={box}>{body}</div>}</li>;
+        })}
+      </ol>
     </Section>
   );
 }
@@ -665,7 +769,7 @@ export function EventsPage() {
   return (
     <Page className="max-w-[96rem] space-y-12">
       <h1 className="text-title">Events</h1>
-      <ScheduleSections />
+      <SeriesSpotlight />
       {bySeries.map((sid) => (
         <ScrollRow key={sid} title={seriesById(sid).name}>
           {withVideo

@@ -46,8 +46,8 @@ export const players: Player[] = [
 // ---- series & events ----------------------------------------------------------------------
 
 export const series: Series[] = [
-  { id: 'lv26', name: '2026 Summer Championship', venue: 'Convention Center Arena', city: 'Las Vegas, NV', tz: 'America/Los_Angeles', start: iso(-24 * 34), end: iso(24 * 12) },
-  { id: 'eu26', name: '2026 Autumn Classic', venue: 'Grand Hall', city: 'Prague, CZ', tz: 'Europe/Prague', start: iso(24 * 26), end: iso(24 * 38) },
+  { id: 'lv26', name: '2026 Summer Championship', venue: 'Convention Center Arena', city: 'Las Vegas, NV', tz: 'America/Los_Angeles', start: iso(-24 * 11), end: iso(24 * 10) },
+  { id: 'eu26', name: '2026 Autumn Classic', venue: 'Grand Hall', city: 'Prague, CZ', tz: 'Europe/Prague', start: iso(24 * 27), end: iso(24 * 47) },
 ];
 
 /** A final table is a single table, so its extra streams are camera feeds of that table; earlier days have outer tables. */
