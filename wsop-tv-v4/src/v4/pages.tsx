@@ -6,14 +6,14 @@ import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
 import { HERO_DAY_ID, dayById, eventById, events, seriesById } from '../data/mock';
 import type { Day, TourEvent } from '../data/types';
-import { VENUE_TZ, dayKey, fmtDate, fmtTime, tzAbbr } from '../lib/time';
+import { VENUE_TZ, dayKey, fmtTime, tzAbbr } from '../lib/time';
 import { isBroadcasting } from '../lib/broadcast';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { CHANNEL_ART, artStyle } from '../lib/brand';
+import { CHANNEL_ART, VENUE_ART, artStyle } from '../lib/brand';
 import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
@@ -486,46 +486,69 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
 
 const BREAKS = ['Coming Up', 'A continuación'];
 
-/** The schedule as a list: what's live now, then every coming broadcast by date (top of Events). */
+type ScheduleItem = { e: TourEvent; d: Day };
+
+/** "Tuesday, November 3" in the viewer's time zone. */
+const longDate = (at: string, tz: string) => new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz }).format(new Date(at));
+const monthOf = (at: string, tz: string) => new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', timeZone: tz }).format(new Date(at));
+const monthLabel = (at: string, tz: string) => new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: tz }).format(new Date(at));
+
+/** A broadcast day's picture: its own video, else the event's, else a venue photo. */
+function dayArt(e: TourEvent, d: Day) {
+  const v = catalog.find((x) => x.dayId === d.id) ?? catalog.find((x) => x.eventId === e.id && x.kind === 'broadcast');
+  return v ? { src: v.thumb, pos: v.thumbPos, fit: v.thumbFit } : VENUE_ART[0];
+}
+
+/**
+ * The schedule (top of Events): filters for past broadcasts, everything coming up, or one month; a full date heading
+ * per day; what's live now sits under today, highlighted.
+ */
 function ScheduleSections() {
   const { state } = useApp();
   useTick(30_000);
   const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
-  const all = events.flatMap((e) => e.days.map((d) => ({ e, d }))).sort((a, b) => a.d.start.localeCompare(b.d.start));
-  const liveNow = all.filter((x) => isBroadcasting(status(x.d)));
-  const coming = all.filter((x) => status(x.d) === 'upcoming');
-  const byDate = new Map<string, typeof coming>();
-  for (const x of coming) {
+  const all = events.flatMap((e) => e.days.map((d) => ({ e, d }))).sort((x, y) => x.d.start.localeCompare(y.d.start));
+  const upcoming = all.filter((x) => isBroadcasting(status(x.d)) || status(x.d) === 'upcoming');
+  const past = all.filter((x) => status(x.d) === 'vod').reverse().slice(0, 12);
+  const months = [...new Map(upcoming.map((x) => [monthOf(x.d.start, state.tz), monthLabel(x.d.start, state.tz)])).entries()];
+  const [filter, setFilter] = useState<string>('upcoming');
+  const list = filter === 'past' ? past : filter === 'upcoming' ? upcoming : upcoming.filter((x) => monthOf(x.d.start, state.tz) === filter);
+  const byDate = new Map<string, ScheduleItem[]>();
+  for (const x of list) {
     const k = dayKey(x.d.start, state.tz);
     byDate.set(k, [...(byDate.get(k) ?? []), x]);
   }
+  const chip = (on: boolean) => cx('h-10 shrink-0 border-r border-line px-4 text-sm font-bold tracking-wide uppercase transition-colors duration-150 last:border-r-0', on ? 'bg-gold-dim text-gold-strong' : 'text-muted hover:text-text');
+  const filters: [string, string][] = [['past', 'Past broadcasts'], ['upcoming', 'All upcoming'], ...months];
   return (
-    <>
-      {liveNow.length > 0 && (
-        <Section title="Live now" action={more('/live', 'Open the live player')}>
-          <ScheduleList items={liveNow} status={status} />
-        </Section>
-      )}
-      <Section title="Schedule" kicker={`Times in your time zone (${tzAbbr(state.tz)})`}>
-        <div className="space-y-5">
-          {[...byDate.entries()].map(([k, items]) => (
-            <div key={k}>
-              <h3 className="mb-2 text-sm font-bold tracking-wide text-muted uppercase">{fmtDate(items[0].d.start, state.tz)}</h3>
-              <ScheduleList items={items} status={status} />
-            </div>
-          ))}
-        </div>
-      </Section>
-    </>
+    <Section title="Schedule" kicker={`Times in your time zone (${tzAbbr(state.tz)})`} action={more('/live', 'Open the live player')}>
+      <div className="flex w-fit max-w-full overflow-x-auto rounded-card border border-line" role="tablist" aria-label="Show broadcasts">
+        {filters.map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={filter === k} onClick={() => setFilter(k)} className={chip(filter === k)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-6 space-y-7">
+        {[...byDate.values()].map((items) => (
+          <div key={items[0].d.id}>
+            <h3 className="mb-3 font-sans text-lg font-bold normal-case sm:text-xl">{longDate(items[0].d.start, state.tz)}</h3>
+            <ScheduleList items={items} status={status} />
+          </div>
+        ))}
+        {!byDate.size && <p className="text-sm text-muted">Nothing scheduled here yet.</p>}
+      </div>
+    </Section>
   );
 }
 
-function ScheduleList({ items, status }: { items: { e: TourEvent; d: Day }[]; status: (d: Day) => Day['status'] }) {
+function ScheduleList({ items, status }: { items: ScheduleItem[]; status: (d: Day) => Day['status'] }) {
   const { state, set, toast, signedIn, requireLogin } = useApp();
   return (
-    <ol className="divide-y divide-line overflow-hidden rounded-panel border border-line bg-surface">
+    <ol className="space-y-3">
       {items.map(({ e, d }) => {
         const st = status(d);
+        const live = isBroadcasting(st);
         const title = `${e.name.replace(' World Championship', '')} · ${d.label}`;
         const key = `day:${d.id}`;
         const on = state.reminders.includes(key);
@@ -534,37 +557,44 @@ function ScheduleList({ items, status }: { items: { e: TourEvent; d: Day }[]; st
           set((x) => ({ reminders: on ? x.reminders.filter((k) => k !== key) : [...x.reminders, key] }));
           toast(on ? 'Reminder removed' : `We'll remind you before ${title} starts`);
         };
+        const art = dayArt(e, d);
         return (
-          <li key={d.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-            <span className="w-24 shrink-0 font-bold tnum">
-              {fmtTime(d.start, state.tz)}
-              <span className="block text-xs font-normal text-muted">{fmtTime(d.start, VENUE_TZ)} in Las Vegas</span>
-            </span>
-            <span className="min-w-0 flex-1">
-              <Link to={`/events/${e.id}`} className="block truncate font-semibold hover:text-gold-strong">
+          <li key={d.id} className={cx('flex flex-wrap items-center gap-x-4 gap-y-3 rounded-panel border p-3 sm:flex-nowrap', live ? 'border-gold/50 bg-gold-dim' : 'border-line bg-surface')}>
+            <Link to={live || st === 'vod' ? `/watch/${d.id}` : `/events/${e.id}`} className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-chip bg-surface-2 sm:w-44" tabIndex={-1} aria-hidden>
+              <img src={art.src} style={artStyle(art)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+              {live && <LiveTag className="absolute top-1.5 left-1.5" />}
+            </Link>
+            <div className="min-w-0 flex-1">
+              <Link to={`/events/${e.id}`} className="line-clamp-2 text-base font-semibold hover:text-gold-strong sm:text-lg">
                 {title}
               </Link>
-              <span className="block truncate text-xs text-muted">
+              <p className="mt-1 text-sm text-muted tnum">
+                <b className="font-semibold text-text">{fmtTime(d.start, state.tz)} {tzAbbr(state.tz, d.start)}</b>
+                <span className="text-subtle"> · {fmtTime(d.start, VENUE_TZ)} in Las Vegas</span>
+              </p>
+              <p className="mt-0.5 truncate text-xs text-muted">
                 {seriesById(e.seriesId).name} · {d.tables.length} table{d.tables.length === 1 ? '' : 's'} · {duration(d.durationMin * 60)}
-              </span>
-            </span>
-            {isBroadcasting(st) ? (
-              <Link to={`/watch/${d.id}`}>
-                <Button size="sm" variant="primary" tabIndex={-1}>
-                  <Icon name="play" size={14} /> Watch live
+              </p>
+            </div>
+            <div className="w-full shrink-0 sm:w-auto">
+              {live ? (
+                <Link to={`/watch/${d.id}`}>
+                  <Button size="sm" variant="primary" tabIndex={-1}>
+                    <Icon name="play" size={14} /> Watch live
+                  </Button>
+                </Link>
+              ) : st === 'upcoming' ? (
+                <Button size="sm" variant={on ? 'secondary' : 'outline'} onClick={toggle} aria-pressed={on}>
+                  <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
                 </Button>
-              </Link>
-            ) : st === 'upcoming' ? (
-              <Button size="sm" variant={on ? 'secondary' : 'outline'} onClick={toggle} aria-pressed={on}>
-                <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
-              </Button>
-            ) : (
-              <Link to={`/watch/${d.id}`}>
-                <Button size="sm" variant="secondary" tabIndex={-1}>
-                  Watch replay
-                </Button>
-              </Link>
-            )}
+              ) : (
+                <Link to={`/watch/${d.id}`}>
+                  <Button size="sm" variant="secondary" tabIndex={-1}>
+                    Watch replay
+                  </Button>
+                </Link>
+              )}
+            </div>
           </li>
         );
       })}
