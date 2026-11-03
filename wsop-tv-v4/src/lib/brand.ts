@@ -56,7 +56,7 @@ export const VENUE_ART: Art[] = [
 export const CHANNEL_ART: Record<string, Art> = {
   wsop1: TABLE_ART[0],
   wsop2: TABLE_ART[1],
-  'wsop-es': art(`${PROMO}poker-room.png`),
+  hands: TABLE_ART[3],
   classics: TABLE_ART[5],
 };
 

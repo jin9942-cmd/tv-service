@@ -42,11 +42,12 @@ export interface Program {
   seed: number;
 }
 
+/** Four topic channels: one subject each, around the clock. */
 export const channels: LinearChannel[] = [
-  { id: 'wsop1', number: 1, name: 'WSOP TV 1', short: 'WSOP 1', tagline: 'Main Event & feature tables · English', lang: 'EN', hue: 40 },
-  { id: 'wsop2', number: 2, name: 'WSOP TV 2', short: 'WSOP 2', tagline: 'High rollers & side events · English', lang: 'EN', hue: 210 },
-  { id: 'wsop-es', number: 3, name: 'WSOP Español', short: 'WSOP ES', tagline: 'Main Event en español', lang: 'ES', hue: 0 },
-  { id: 'classics', number: 4, name: 'WSOP Classics', short: 'Classics', tagline: 'Final tables & best hands, 24/7 · free', lang: 'EN', hue: 150, free: true },
+  { id: 'wsop1', number: 1, name: 'Main Event', short: 'Main Event', tagline: 'The Main Event, live and on replay', lang: 'EN', hue: 40 },
+  { id: 'wsop2', number: 2, name: 'Final Tables', short: 'Final Tables', tagline: 'Every final table of the series', lang: 'EN', hue: 210 },
+  { id: 'hands', number: 3, name: 'Best Hands', short: 'Best Hands', tagline: 'Big pots, bluffs and bad beats, nonstop · free', lang: 'EN', hue: 0, free: true },
+  { id: 'classics', number: 4, name: 'WSOP Classics', short: 'Classics', tagline: 'Legendary final tables from past series · free', lang: 'EN', hue: 150, free: true },
 ];
 
 export const channelById = (id: string) => channels.find((c) => c.id === id);
@@ -62,11 +63,11 @@ const SLOT = 30 * M;
 export const GUIDE_START = Math.floor((T0 - 12 * H) / SLOT) * SLOT;
 export const GUIDE_END = GUIDE_START + (12 + 7 * 24) * H;
 
-/** Live coverage each channel carries (broadcast day ids, in order). The Spanish channel simulcasts the Main Event. */
+/** Live coverage each channel carries (broadcast day ids, in order): Main Event days on Main Event, final tables on Final Tables. */
 const CARRIAGE: Record<string, string[]> = {
   wsop1: [HERO_DAY_ID],
-  wsop2: ['lv-hr-finaltable', 'lv-ppc-day1a', 'lv-ppc-day2'],
-  'wsop-es': [HERO_DAY_ID],
+  wsop2: ['lv-hr-finaltable'],
+  hands: [],
   classics: [],
 };
 
@@ -85,30 +86,26 @@ const FILLERS: Record<string, Filler[]> = {
   wsop1: [
     studio('The Rail · Final Table Preview', 'Studio show · stacks, storylines and picks', 60, 1),
     replay('lv-main-day3', 120, 'Main Event · Day 3 Encore'),
-    highlights('Hand of the Day', 'The biggest pots of the last 24 hours', 30, 2),
     replay('lv-main-day2', 120),
-    replay('lv-mm-finaltable', 120),
-    highlights('Bracelet Moments', 'Every winning hand of the week', 30, 3),
+    replay('lv-main-day1a', 120),
   ],
   wsop2: [
-    replay('lv-hr-day2', 120),
-    highlights('High Roller Hands', 'Six-figure pots, cut down to the action', 30, 4),
+    replay('lv-mm-finaltable', 120),
+    highlights('Bracelet Moments', 'Every winning hand of the week', 30, 3),
     replay('lv-plo-finaltable', 120),
-    studio('The Rail · Side Event Recap', 'Studio show · results from every table', 60, 5),
     replay('lv-tc-finaltable', 120),
+    studio('The Rail · Final Table Recap', 'Studio show · how every final table was won', 60, 5),
+    replay('lv-ladies-finaltable', 120),
   ],
-  'wsop-es': [
-    studio('La Mesa · Previa de la mesa final', 'Programa de estudio en español', 60, 6),
-    replay('lv-main-day3', 120, 'Main Event · Día 3 (repetición)', 'Repetición · comentarios en español'),
-    highlights('Lo mejor del día', 'Las manos más grandes, en español', 30, 7),
-    replay('lv-ladies-finaltable', 120, 'Ladies Championship · Mesa final', 'Repetición · comentarios en español'),
-  ],
-  classics: [
-    ...archive.slice(0, 3).map<Filler>((a) => ({ kind: 'classic', title: `${a.year} ${a.title}`, subtitle: `${a.subtitle} · edited for TV`, access: 'free', archiveId: a.id, min: 120, seed: a.year })),
+  hands: [
+    highlights('Hand of the Day', 'The biggest pots of the last 24 hours', 30, 2),
     highlights('Greatest Bluffs', 'Ten of the boldest bluffs ever filmed', 30, 8),
-    ...archive.slice(3).map<Filler>((a) => ({ kind: 'classic', title: `${a.year} ${a.title}`, subtitle: `${a.subtitle} · edited for TV`, access: 'free', archiveId: a.id, min: 120, seed: a.year })),
+    highlights('High Roller Hands', 'Six-figure pots, cut down to the action', 30, 4),
+    highlights('All-in Showdowns', 'Everything in the middle, cards on their backs', 30, 6),
     highlights('Bad Beat Hall of Fame', 'One-outers, runner-runners and the stories behind them', 30, 9),
+    highlights('Hero Calls', 'The calls that took nerve, and were right', 30, 7),
   ],
+  classics: archive.map<Filler>((a) => ({ kind: 'classic', title: `${a.year} ${a.title}`, subtitle: `${a.subtitle} · edited for TV`, access: 'free', archiveId: a.id, min: 120, seed: a.year })),
 };
 
 function build(ch: LinearChannel): Program[] {

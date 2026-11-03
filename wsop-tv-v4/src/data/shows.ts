@@ -20,7 +20,7 @@ export const shows: Show[] = [
     id: 'wsop-live',
     title: 'WSOP Live',
     tagline: 'Final tables, live from Las Vegas',
-    description: 'Live coverage from the feature table, with hole cards, chip counts and commentary. The Main Event airs on WSOP TV 1 in English and WSOP Español in Spanish; high rollers and side events on WSOP TV 2.',
+    description: 'Live coverage from the feature table, with hole cards, chip counts and commentary. The Main Event airs on the Main Event channel; the other final tables on Final Tables.',
     kind: 'live',
     match: (p) => p.kind === 'live',
     art: 'broadcast',
@@ -98,13 +98,13 @@ export const shows: Show[] = [
     art: 'broadcast',
   },
   {
-    id: 'wsop-en-espanol',
-    title: 'WSOP en Español',
-    tagline: 'La Mesa y lo mejor del día',
-    description: 'El programa de estudio y las mejores manos del día, con comentarios en español en WSOP Español.',
-    kind: 'studio',
-    match: (p) => p.channelId === 'wsop-es' && (p.kind === 'studio' || p.title === 'Lo mejor del día'),
-    art: 'people',
+    id: 'all-in-showdowns',
+    title: 'All-in Showdowns',
+    tagline: 'Everything in the middle',
+    description: 'The all-ins that decided tournaments, from the shove to the river.',
+    kind: 'highlights',
+    match: (p) => p.title === 'All-in Showdowns',
+    art: 'hands',
   },
 ];
 
@@ -116,7 +116,6 @@ export const showOf = (p: Program) => shows.find((s) => s.match(p));
 
 /** Who's on the call (fictional commentary teams), as poker schedules list it. */
 export function commentaryFor(p: Program): string | null {
-  if (p.channelId === 'wsop-es') return p.kind === 'live' || p.kind === 'replay' ? 'Comentarios: Marta Ríos y Pablo Vega' : p.kind === 'studio' ? 'Presenta: Marta Ríos' : null;
   if (p.kind === 'live' || p.kind === 'replay') return `Commentary: ${p.channelId === 'wsop2' ? 'Sam Okoye & Jules Laurent' : 'Ava Marsh & Leo Grant'}`;
   if (p.kind === 'studio') return 'Host: Ava Marsh';
   if (p.kind === 'classic') return 'Original broadcast commentary';
