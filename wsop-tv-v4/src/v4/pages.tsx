@@ -623,39 +623,26 @@ const editorsTheme = () => {
   return { title: 'Folds nobody else makes', note: 'Big hands, laid down. Three folds that saved a tournament life, and how the players knew.', picks: picked };
 };
 
-/** Editor's picks: the lead hand large (picture with its runtime, then the title and the editor's note), two more as compact rows. */
+/** Editor's picks: the editor's note beside the week's three hands, side by side. */
 function EditorsPicks() {
   const { title, note, picks } = editorsTheme();
-  const [lead, ...rest] = picks;
-  if (!lead) return null;
+  if (!picks.length) return null;
   const total = picks.reduce((n, v) => n + v.durationSec, 0);
-  const thumb = (v: Video, cls: string) => (
-    <span className={cx('relative block aspect-video overflow-hidden rounded-card bg-surface-2', cls)}>
-      <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-      <span className="absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>
-    </span>
-  );
   return (
-    <Section title={title} kicker={`Editor’s picks · this week’s theme · ${duration(total)} in all`} action={more('/videos', 'All highlights')}>
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <Link to={`/watch/${lead.id}`} className="group block min-w-0">
-          {thumb(lead, '')}
-          <span className="mt-3 block text-xl leading-snug font-bold group-hover:text-gold-strong">{lead.title}</span>
-          <span className="mt-1 block text-sm text-muted">{lead.subtitle}</span>
-        </Link>
-        <div className="flex flex-col gap-4">
-          <p className="rounded-card border border-line bg-surface p-4 text-[15px] leading-relaxed text-text/85">
-            <span className="mb-1 block text-[11px] font-bold tracking-wide text-gold-strong uppercase">From the editor</span>
+    <Section title={title} kicker="Editor’s picks · this week’s theme" action={more('/videos', 'All highlights')}>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
+        <div className="flex flex-col justify-between gap-3 rounded-card border border-line bg-surface p-4">
+          <p className="text-[15px] leading-relaxed text-text/85">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-wide text-gold-strong uppercase">From the editor</span>
             {note}
           </p>
-          {rest.map((v) => (
-            <Link key={v.id} to={`/watch/${v.id}`} className="group flex min-w-0 items-center gap-3">
-              {thumb(v, 'w-40 shrink-0 sm:w-48')}
-              <span className="min-w-0">
-                <span className="line-clamp-2 text-[15px] leading-snug font-semibold group-hover:text-gold-strong">{v.title}</span>
-                <span className="mt-0.5 block truncate text-xs text-muted">{v.subtitle}</span>
-              </span>
-            </Link>
+          <p className="text-sm text-muted tnum">
+            {picks.length} hands · {duration(total)} in all
+          </p>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-3">
+          {picks.map((v) => (
+            <VideoCard key={v.id} v={v} />
           ))}
         </div>
       </div>
