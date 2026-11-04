@@ -1,7 +1,7 @@
 // v4 — WSOP TV, OTT-standard (Netflix / YouTube): promotion banner, 24/7 channels, then the rows; plus the
 // schedule, shows and how to watch. Labels stay minimal.
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
 import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
 import { HERO_DAY_ID, dayById, hands } from '../data/mock';
@@ -16,7 +16,7 @@ import { Button, Icon, Page, SectionHeader, cx } from '../components/ui';
 import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
-import { HomeRows, TodayCards } from '../v4/pages';
+import { HomeRows, SeasonStrip, TodayCards } from '../v4/pages';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
 const isBreak = (p: Program) => BREAK_TITLES.includes(p.title);
@@ -26,12 +26,18 @@ const showPoster = (s: Show) => thumbFor(`show:${s.id}`, s.art);
 
 export function TvHome() {
   const now = useTick(15_000);
+  // Demo: ?season=off previews Home between series.
+  const [params, setParams] = useSearchParams();
+  const off = params.get('season') === 'off';
   return (
     <>
       <section className="border-b border-line" aria-label="Featured">
         <PromoBanner />
-        {/* The four 24/7 channels, right under the banner. */}
-        <Page className="pt-5 pb-6">
+        {/* The season (live series or the next one), then the four 24/7 channels. */}
+        <Page className="pt-5">
+          <SeasonStrip off={off} />
+        </Page>
+        <Page className="pt-6 pb-6">
           <h2 className="mb-3 text-xl sm:text-2xl">24/7 On-Demand</h2>
           <TodayCards now={now} />
         </Page>
@@ -41,6 +47,12 @@ export function TvHome() {
       <Page className="space-y-12 py-10">
         <HomeRows />
         <HowToWatchBand />
+        <p className="border-t border-line pt-4 text-xs text-subtle">
+          Demo:{' '}
+          <button onClick={() => setParams(off ? {} : { season: 'off' }, { replace: true })} className="underline hover:text-text">
+            {off ? 'show Home during a series' : 'preview Home between series'}
+          </button>
+        </p>
       </Page>
     </>
   );
@@ -110,7 +122,7 @@ function PromoBanner() {
       facts: ['Classics', 'Full broadcasts', 'Key hands'],
       line: 'Every final table from 2019 to 2025, with every key hand',
       actions: (
-        <Link to="/events">
+        <Link to="/videos/replays?series=classics">
           <Button variant="primary" size="lg" tabIndex={-1}>
             <Icon name="play" size={18} /> Watch
           </Button>

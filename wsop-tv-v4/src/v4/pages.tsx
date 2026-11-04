@@ -1,4 +1,5 @@
-// v4 — the common watch page, Live, Events, tag pages and Highlights (all built from the catalog and the one card).
+// v4 — the common watch page, Live, Videos (Highlights / Replays), the schedule, tag pages and the Home season strip
+// (all built from the catalog and the one card).
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
@@ -6,7 +7,7 @@ import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
 import { HERO_DAY_ID, dayById, eventById, events, series, seriesById } from '../data/mock';
 import type { Day, TourEvent } from '../data/types';
-import { VENUE_TZ, fmtDate, fmtTime, tzAbbr } from '../lib/time';
+import { VENUE_TZ, dayKey, fmtDate, fmtTime, tzAbbr } from '../lib/time';
 import { isBroadcasting } from '../lib/broadcast';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
@@ -350,7 +351,7 @@ export function TagPage() {
   );
 }
 
-// ---- Highlights ------------------------------------------------------------------------------
+// ---- Videos ------------------------------------------------------------------------------------------
 
 const HAND_FILTERS = [
   ['all', 'All'],
@@ -361,15 +362,45 @@ const HAND_FILTERS = [
   ['hero-fold', 'Hero fold'],
 ] as const;
 
-export function HighlightsPage() {
-  const [f, setF] = useState<string>('all');
-  const list = f === 'all' ? highlightClips : highlightClips.filter((v) => v.tags.some((t) => t.slug === f));
+const chip = (on: boolean) => cx('h-9 shrink-0 rounded-full border px-4 text-sm font-semibold', on ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text');
+
+/** Videos: the Highlights tab (hand clips) and the Replays tab (series → event → broadcast). */
+export function VideosPage({ tab }: { tab: 'highlights' | 'replays' }) {
+  const tabs = [
+    ['/videos', 'Highlights', 'highlights'],
+    ['/videos/replays', 'Replays', 'replays'],
+  ] as const;
   return (
     <Page className="max-w-[96rem]">
-      <h1 className="text-title">Highlights</h1>
-      <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Hand type">
-        {HAND_FILTERS.map(([k, label]) => (
-          <button key={k} role="tab" aria-selected={f === k} onClick={() => setF(k)} className={cx('h-9 rounded-full border px-4 text-sm font-semibold', f === k ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text')}>
+      <h1 className="text-title">Videos</h1>
+      <nav className="mt-4 flex gap-6 border-b border-line" aria-label="Videos">
+        {tabs.map(([to, label, k]) => (
+          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-[3px] pb-2.5 text-[15px] font-semibold', tab === k ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text')}>
+            {label}
+          </Link>
+        ))}
+      </nav>
+      {tab === 'highlights' ? <HighlightsTab /> : <ReplaysTab />}
+    </Page>
+  );
+}
+
+/** Hand clips by views; "This series" (first, only while a series runs) narrows them to its events. */
+function HighlightsTab() {
+  const [f, setF] = useState<string>('all');
+  const running = runningSeries(false);
+  const filters: (readonly [string, string])[] = [...(running ? [['series', 'This series'] as const] : []), ...HAND_FILTERS];
+  const list =
+    f === 'all'
+      ? highlightClips
+      : f === 'series'
+        ? highlightClips.filter((v) => eventById(v.eventId!)?.seriesId === running?.id)
+        : highlightClips.filter((v) => v.tags.some((t) => t.slug === f));
+  return (
+    <>
+      <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Hand type">
+        {filters.map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={f === k} onClick={() => setF(k)} className={chip(f === k)}>
             {label}
           </button>
         ))}
@@ -379,7 +410,40 @@ export function HighlightsPage() {
           <VideoCard key={v.id} v={v} />
         ))}
       </div>
-    </Page>
+    </>
+  );
+}
+
+/** Events worth a card: ones with broadcasts, or (in the running series) with broadcasts still to come. */
+const eventsOf = (sid: string) => events.filter((e) => e.seriesId === sid && (eventVideos(e.id).length || e.days.some((d) => d.status === 'upcoming')));
+
+/** Series with broadcasts: the running one first, then the most recent. WSOP Classics comes last. */
+const replaySeries = () => {
+  const running = runningSeries(false);
+  return series
+    .filter((x) => events.some((e) => e.seriesId === x.id && eventVideos(e.id).length))
+    .sort((a, b) => (a.id === running?.id ? -1 : b.id === running?.id ? 1 : b.start.localeCompare(a.start)));
+};
+
+/** Replays: pick a series (kept in ?series=), then its events; WSOP Classics shows the classic broadcasts. */
+function ReplaysTab() {
+  const [params, setParams] = useSearchParams();
+  const list = replaySeries();
+  const sid = params.get('series') === 'classics' ? 'classics' : (list.find((x) => x.id === params.get('series')) ?? list[0])?.id;
+  const options: [string, string][] = [...list.map((x) => [x.id, x.name] as [string, string]), ['classics', 'WSOP Classics']];
+  return (
+    <>
+      <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Series">
+        {options.map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={sid === k} onClick={() => setParams({ series: k })} className={chip(sid === k)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className={cx(rowGrid, 'mt-6')}>
+        {sid === 'classics' ? classics.map((v) => <VideoCard key={v.id} v={v} />) : eventsOf(sid ?? '').map((e) => <EventCard key={e.id} e={e} />)}
+      </div>
+    </>
   );
 }
 
@@ -422,9 +486,9 @@ export function HomeRows() {
       <EditorsPicks />
       <VideoRow title="Recommended for you" videos={recommendedRow(new Set([...started, ...onHome]))} />
       <VideoRow title="My List" videos={mine} action={more('/my-list', 'See all')} />
-      <VideoRow title="Latest replays" videos={[...replays].reverse().filter((v) => !started.has(v.id))} action={more('/events')} />
+      <VideoRow title="Latest replays" videos={[...replays].reverse().filter((v) => !started.has(v.id))} action={more('/videos/replays')} />
       {/* Not the hands already shown above: each hand appears once on Home. */}
-      <VideoRow title="Highlights" videos={highlightClips.filter((v) => !onHome.has(v.id))} action={more('/highlights')} />
+      <VideoRow title="Highlights" videos={highlightClips.filter((v) => !onHome.has(v.id))} action={more('/videos')} />
     </>
   );
 }
@@ -467,7 +531,7 @@ function EditorsPicks() {
   const picks = mustWatch();
   const total = picks.reduce((n, v) => n + v.durationSec, 0);
   return (
-    <Section title="3 hands worth your time" kicker={`Editor’s picks · ${duration(total)} in all`} action={more('/highlights', 'All highlights')}>
+    <Section title="3 hands worth your time" kicker={`Editor’s picks · ${duration(total)} in all`} action={more('/videos', 'All highlights')}>
       <div className="grid gap-5 sm:grid-cols-3">
         {picks.map((v, i) => (
           <VideoCard key={v.id} v={v} reason={['The bluff everyone is talking about', 'All-in for the chip lead', 'A fold nobody else makes'][i]} />
@@ -584,7 +648,7 @@ export function LivePage() {
           <section aria-label="Coming up">
             <div className="mb-2 flex items-end justify-between">
               <h2 className="font-sans text-base font-bold normal-case">Coming up</h2>
-              <Link to="/events" className="text-sm font-semibold text-muted hover:text-text">
+              <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
                 Full schedule →
               </Link>
             </div>
@@ -659,11 +723,13 @@ function useReminder(key: string, what: string) {
   return [on, toggle] as const;
 }
 
+const titleOf = (x: { e: TourEvent; d: Day }) => `${x.e.name.replace(' World Championship', '')} · ${x.d.label}`;
+
 /**
- * The one box at the top of Events. While a series runs: it's live, how far along it is, the live broadcasts to jump
- * into and the next one. Between series: the next series, when it starts, and a reminder.
+ * Home's season strip, a low band under the banner. While a series runs: live, how far along, the live broadcasts and
+ * the next one. Between series: the next series and when it starts. Both link to the full schedule.
  */
-function NowBanner({ off }: { off: boolean }) {
+export function SeasonStrip({ off }: { off: boolean }) {
   const { state } = useApp();
   useTick(30_000);
   const running = runningSeries(off);
@@ -672,59 +738,55 @@ function NowBanner({ off }: { off: boolean }) {
   const items = events.filter((e) => e.seriesId === running?.id).flatMap((e) => e.days.map((d) => ({ e, d })));
   const live = items.filter((x) => isBroadcasting(status(x.d)));
   const next = items.filter((x) => status(x.d) === 'upcoming').sort((a, b) => a.d.start.localeCompare(b.d.start))[0];
-  const titleOf = (x: { e: TourEvent; d: Day }) => `${x.e.name.replace(' World Championship', '')} · ${x.d.label}`;
   const [nextOn, toggleNext] = useReminder(next ? `day:${next.d.id}` : '', next ? titleOf(next) : '');
   const [stopOn, toggleStop] = useReminder(`series:${stop.id}`, stop.name);
   const total = Math.round((Date.parse(stop.end) - Date.parse(stop.start)) / DAY_MS);
   const dayN = Math.min(total, Math.floor((Date.now() - Date.parse(stop.start)) / DAY_MS) + 1);
   const days = Math.max(1, Math.ceil((Date.parse(stop.start) - Date.now()) / DAY_MS));
   return (
-    <section aria-label={running ? 'Live now' : 'Next series'} className="relative overflow-hidden rounded-panel border border-line">
-      <img src={stop.art.src} style={artStyle(stop.art)} alt="" className="absolute inset-0 size-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/30" />
-      <div className="relative max-w-2xl p-6 sm:p-8">
+    <section aria-label={running ? 'Live now' : 'Next series'} className={cx('rounded-panel border px-4 py-3', running ? 'border-gold/40 bg-gold-dim' : 'border-line bg-surface')}>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {running ? (
-          <p className="flex items-center gap-2 text-sm font-bold text-text">
-            <LiveTag /> Live now · Day {dayN} of {total}
+          <p className="flex items-center gap-2 text-sm font-bold">
+            <LiveTag /> Day {dayN} of {total}
           </p>
         ) : (
           <p className="text-sm font-bold tracking-wide text-gold-strong uppercase">Next series · starts in {days} days</p>
         )}
-        <h2 className="mt-2 text-2xl sm:text-4xl">{stop.name}</h2>
-        <p className="mt-1 text-muted">
-          {stop.city} · {dateRange(stop, state.tz)}
+        <p className="min-w-0 text-sm text-muted">
+          <b className="font-semibold text-text">{stop.name}</b> · {stop.city} · {dateRange(stop, state.tz)}
         </p>
+        <span className="ml-auto">{more('/schedule', 'Full schedule')}</span>
+      </div>
+      <div className="mt-2.5 flex flex-wrap items-center gap-2">
         {running ? (
           <>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {live.map((x) => (
-                <Link key={x.d.id} to={`/watch/${x.d.id}`}>
-                  <Button variant="primary" tabIndex={-1}>
-                    <Icon name="play" size={16} /> {titleOf(x)}
-                  </Button>
-                </Link>
-              ))}
-            </div>
+            {live.map((x) => (
+              <Link key={x.d.id} to={`/watch/${x.d.id}`}>
+                <Button size="sm" variant="primary" tabIndex={-1}>
+                  <Icon name="play" size={14} /> {titleOf(x)}
+                </Button>
+              </Link>
+            ))}
             {next && (
-              <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted sm:ml-2">
                 <span>
                   Next:{' '}
                   <Link to={`/watch/${next.d.id}`} className="font-semibold text-text underline-offset-4 hover:underline">
                     {titleOf(next)}
-                  </Link> · {fmtDate(next.d.start, state.tz)} {fmtTime(next.d.start, state.tz)}
+                  </Link>{' '}
+                  · {fmtDate(next.d.start, state.tz)} {fmtTime(next.d.start, state.tz)}
                 </span>
                 <Button size="sm" variant={nextOn ? 'secondary' : 'outline'} onClick={toggleNext} aria-pressed={nextOn}>
                   <Icon name={nextOn ? 'check' : 'bell'} size={14} /> {nextOn ? 'Reminder set' : 'Remind me'}
                 </Button>
-              </p>
+              </span>
             )}
           </>
         ) : (
-          <div className="mt-5">
-            <Button variant={stopOn ? 'secondary' : 'primary'} onClick={toggleStop} aria-pressed={stopOn}>
-              <Icon name={stopOn ? 'check' : 'bell'} size={16} /> {stopOn ? 'Reminder set' : 'Notify me when it goes live'}
-            </Button>
-          </div>
+          <Button size="sm" variant={stopOn ? 'secondary' : 'primary'} onClick={toggleStop} aria-pressed={stopOn}>
+            <Icon name={stopOn ? 'check' : 'bell'} size={14} /> {stopOn ? 'Reminder set' : 'Notify me when it goes live'}
+          </Button>
         )}
       </div>
     </section>
@@ -732,9 +794,10 @@ function NowBanner({ off }: { off: boolean }) {
 }
 
 /** The year's series on one line: replays for past ones, live for the running one, dates for the ones ahead. */
-function SeasonLine({ off }: { off: boolean }) {
+function SeasonLine() {
   const { state } = useApp();
-  const runningId = runningSeries(off)?.id;
+  const runningId = runningSeries(false)?.id;
+  const withReplays = new Set(replaySeries().map((x) => x.id));
   return (
     <Section title="Season schedule">
       <ol className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -751,8 +814,9 @@ function SeasonLine({ off }: { off: boolean }) {
               </span>
             </>
           );
-          const box = cx('block h-full rounded-card border p-4', live ? 'border-gold/50 bg-gold-dim' : 'border-line bg-surface', first && 'hover:border-line-strong');
-          return <li key={s.id}>{first ? <Link to={`/events/${first.id}`} className={box}>{body}</Link> : <div className={box}>{body}</div>}</li>;
+          const box = cx('block h-full rounded-card border p-4', live ? 'border-gold/50 bg-gold-dim' : 'border-line bg-surface', 'hover:border-line-strong');
+          const to = withReplays.has(s.id) ? `/videos/replays?series=${s.id}` : first ? `/events/${first.id}` : undefined;
+          return <li key={s.id}>{to ? <Link to={to} className={box}>{body}</Link> : <div className={box}>{body}</div>}</li>;
         })}
       </ol>
     </Section>
@@ -763,13 +827,13 @@ function SeasonLine({ off }: { off: boolean }) {
 
 const eventVideos = (id: string) => catalog.filter((v) => v.eventId === id && v.kind === 'broadcast');
 
-function EventCard({ e, off }: { e: TourEvent; off?: boolean }) {
+function EventCard({ e }: { e: TourEvent }) {
   const { state } = useApp();
   const list = eventVideos(e.id);
   const cover = list.find((v) => v.title.endsWith('Final Table')) ?? list[list.length - 1];
   const art = cover ? { src: cover.thumb, pos: cover.thumbPos, fit: cover.thumbFit } : dayArt(e, e.days[0]);
   const ahead = e.days.filter((d) => d.status === 'upcoming').length;
-  const live = !off && list.some((v) => isLive(v, state.streamMode));
+  const live = list.some((v) => isLive(v, state.streamMode));
   return (
     <Link to={`/events/${e.id}`} className="group block min-w-0">
       <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
@@ -784,88 +848,82 @@ function EventCard({ e, off }: { e: TourEvent; off?: boolean }) {
   );
 }
 
-/**
- * Events, top to bottom: one box saying what's live now (or when the next series starts), the series' tournaments,
- * the season's series, and WSOP Classics. `?season=off` previews the page between series.
- */
-export function EventsPage() {
-  const [params, setParams] = useSearchParams();
-  const off = params.get('season') === 'off';
-  const withVideo = events.filter((e) => eventVideos(e.id).length || e.days.some((d) => d.status === 'upcoming'));
-  const bySeries = [...new Set(withVideo.map((e) => e.seriesId))];
-  const running = runningSeries(off);
+/** Schedule (out of the menu; from Home's season strip and Live): live now, what's coming by date, the season's series. */
+export function SchedulePage() {
+  const { state } = useApp();
+  const now = useTick(30_000);
+  const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
+  const all = events.flatMap((e) => e.days.map((d) => ({ e, d }))).sort((a, b) => a.d.start.localeCompare(b.d.start));
+  const liveNow = all.filter((x) => isBroadcasting(status(x.d)));
+  const byDate = new Map<string, ScheduleItem[]>();
+  for (const x of all.filter((x) => status(x.d) === 'upcoming')) {
+    const k = dayKey(x.d.start, state.tz);
+    byDate.set(k, [...(byDate.get(k) ?? []), x]);
+  }
   return (
-    <Page className="max-w-[96rem] space-y-12">
+    <Page className="max-w-[96rem] space-y-10">
       <div>
-        <h1 className="text-title">Events</h1>
-        <p className="mt-1 text-muted">WSOP tournaments: watch them live, or catch up on the replays.</p>
+        <h1 className="text-title">Schedule</h1>
+        <p className="mt-1 text-sm text-muted">
+          Times in your time zone ({tzAbbr(state.tz, new Date(now))}).
+        </p>
       </div>
-      <NowBanner off={off} />
-      {bySeries.map((sid) => (
-        <ScrollRow key={sid} title={`${seriesById(sid).name}${sid === running?.id ? '' : Date.parse(seriesById(sid).start) > Date.now() ? ' · Coming up' : ' · Replays'}`}>
-          {withVideo
-            .filter((e) => e.seriesId === sid)
-            .map((e) => (
-              <EventCard key={e.id} e={e} off={off} />
-            ))}
-        </ScrollRow>
+      {liveNow.length > 0 && (
+        <Section title="Live now">
+          <ScheduleList items={liveNow} status={status} />
+        </Section>
+      )}
+      {[...byDate.values()].map((items) => (
+        <Section key={items[0].d.id} title={fmtDate(items[0].d.start, state.tz)}>
+          <ScheduleList items={items} status={status} />
+        </Section>
       ))}
-      <SeasonLine off={off} />
-      <ScrollRow title="WSOP Classics">
-        {classics.map((v) => (
-          <VideoCard key={v.id} v={v} />
-        ))}
-      </ScrollRow>
-      <p className="border-t border-line pt-4 text-xs text-subtle">
-        Demo:{' '}
-        <button onClick={() => setParams(off ? {} : { season: 'off' }, { replace: true })} className="underline hover:text-text">
-          {off ? 'show the page during a series' : 'preview the page between series'}
-        </button>
-      </p>
+      <SeasonLine />
     </Page>
   );
 }
 
-/**
- * One row that scrolls sideways (four cards in view on wide screens), with ‹ › buttons beside the title on screens
- * with a mouse; touch screens just swipe.
- */
-function ScrollRow({ title, children }: { title: string; children: ReactNode }) {
-  const track = useRef<HTMLDivElement>(null);
-  const [edges, setEdges] = useState({ start: true, end: false });
-  const update = () => {
-    const el = track.current;
-    if (el) setEdges({ start: el.scrollLeft < 4, end: el.scrollLeft + el.clientWidth > el.scrollWidth - 4 });
-  };
-  useEffect(() => {
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-  const page = (dir: 1 | -1) => {
-    const el = track.current;
-    if (el) el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: 'smooth' });
-  };
-  const arrow = 'flex size-9 items-center justify-center rounded-full border border-line-strong text-text transition-colors duration-150 hover:border-text disabled:opacity-30 disabled:hover:border-line-strong';
+type ScheduleItem = { e: TourEvent; d: Day };
+
+/** Schedule rows: start time (yours and Las Vegas), the broadcast (opens it, or its waiting screen), and one action. */
+function ScheduleList({ items, status }: { items: ScheduleItem[]; status: (d: Day) => Day['status'] }) {
+  const { state } = useApp();
   return (
-    <section aria-label={title}>
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <h2 className="text-xl sm:text-2xl">{title}</h2>
-        {!(edges.start && edges.end) && (
-          <div className="hidden gap-2 [@media(hover:hover)]:flex">
-            <button className={arrow} onClick={() => page(-1)} disabled={edges.start} aria-label={`Scroll ${title} back`}>
-              <Icon name="chevron" size={18} className="rotate-180" />
-            </button>
-            <button className={arrow} onClick={() => page(1)} disabled={edges.end} aria-label={`Scroll ${title} forward`}>
-              <Icon name="chevron" size={18} />
-            </button>
-          </div>
-        )}
-      </div>
-      <div ref={track} onScroll={update} className="hscroll gap-5 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1.25rem)/2)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
-        {children}
-      </div>
-    </section>
+    <ol className="divide-y divide-line overflow-hidden rounded-panel border border-line bg-surface">
+      {items.map(({ e, d }) => (
+        <ScheduleRow key={d.id} e={e} d={d} st={status(d)} tz={state.tz} />
+      ))}
+    </ol>
+  );
+}
+
+function ScheduleRow({ e, d, st, tz }: { e: TourEvent; d: Day; st: Day['status']; tz: string }) {
+  const title = titleOf({ e, d });
+  const [on, toggle] = useReminder(`day:${d.id}`, title);
+  return (
+    <li className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 hover:bg-surface-2">
+      <span className="w-24 shrink-0 font-bold tnum">
+        {fmtTime(d.start, tz)}
+        <span className="block text-xs font-normal text-muted">{fmtTime(d.start, VENUE_TZ)} in Las Vegas</span>
+      </span>
+      <Link to={`/watch/${d.id}`} className="min-w-0 flex-1">
+        <span className="block truncate font-semibold hover:text-gold-strong">{title}</span>
+        <span className="block truncate text-xs text-muted">
+          {seriesById(e.seriesId).name} · {d.tables.length} table{d.tables.length === 1 ? '' : 's'} · {duration(d.durationMin * 60)}
+        </span>
+      </Link>
+      {isBroadcasting(st) ? (
+        <Link to={`/watch/${d.id}`}>
+          <Button size="sm" variant="primary" tabIndex={-1}>
+            <Icon name="play" size={14} /> Watch live
+          </Button>
+        </Link>
+      ) : (
+        <Button size="sm" variant={on ? 'secondary' : 'outline'} onClick={toggle} aria-pressed={on}>
+          <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
+        </Button>
+      )}
+    </li>
   );
 }
 
@@ -882,8 +940,8 @@ export function EventPage() {
   return (
     <Page className="max-w-[96rem] space-y-10">
       <div>
-        <Link to="/events" className="text-sm text-muted hover:text-text">
-          ← Events
+        <Link to={`/videos/replays?series=${e.seriesId}`} className="text-sm text-muted hover:text-text">
+          ← Replays
         </Link>
         <h1 className="mt-2 text-title">{e.name.replace(' World Championship', '')}</h1>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">

@@ -1,8 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
-import { ChannelRedirect, EventPage, EventsPage, HighlightsPage, LivePage, MyListPage, TagPage, WatchPage } from './v4/pages';
-import { DetailProvider } from './v4/detail';
+import { ChannelRedirect, EventPage, LivePage, MyListPage, SchedulePage, TagPage, VideosPage, WatchPage } from './v4/pages';
 import { TvHome, TvHowToWatch, TvShowDetail, TvShows } from './pages/tv';
 import { TvClassic } from './pages/poker';
 import { SeriesList } from './pages/Series';
@@ -21,7 +20,6 @@ export default function App() {
   return (
     <AppProvider>
       <HashRouter>
-        <DetailProvider>
         <Routes>
           {/* External-domain mock, full screen and outside the app shell. */}
           <Route path="/auth/ggpass" element={<GGPassFlow />} />
@@ -33,22 +31,25 @@ export default function App() {
             <Route path="live/channels/:channelId" element={<ChannelRedirect />} />
             <Route path="watch/:dayId" element={<WatchPage />} />
             <Route path="tag/:slug" element={<TagPage />} />
-            {/* Schedule, channel guide and Tournaments are now part of Events. */}
-            <Route path="schedule" element={<Navigate to="/events" replace />} />
-            <Route path="schedule/channels" element={<Navigate to="/events" replace />} />
-            <Route path="tournaments" element={<Navigate to="/events" replace />} />
+            {/* The schedule is out of the menu (Home's season strip and Live link to it). */}
+            <Route path="schedule" element={<SchedulePage />} />
+            <Route path="schedule/channels" element={<Navigate to="/schedule" replace />} />
+            <Route path="tournaments" element={<Navigate to="/schedule" replace />} />
+            {/* Videos: Highlights and Replays (series → event → broadcast). */}
+            <Route path="videos" element={<VideosPage tab="highlights" />} />
+            <Route path="videos/replays" element={<VideosPage tab="replays" />} />
             <Route path="shows" element={<TvShows />} />
             <Route path="shows/:showId" element={<TvShowDetail />} />
             <Route path="video" element={<Hands />} />
             <Route path="how-to-watch" element={<TvHowToWatch />} />
             <Route path="series" element={<SeriesList />} />
-            <Route path="events" element={<EventsPage />} />
+            <Route path="events" element={<Navigate to="/videos/replays" replace />} />
             <Route path="events/:eventId" element={<EventPage />} />
             <Route path="players" element={<Players />} />
             <Route path="players/:playerId" element={<PlayerProfile />} />
             <Route path="hands" element={<Hands />} />
-            <Route path="archive" element={<Navigate to="/events" replace />} />
-            <Route path="highlights" element={<HighlightsPage />} />
+            <Route path="archive" element={<Navigate to="/videos/replays?series=classics" replace />} />
+            <Route path="highlights" element={<Navigate to="/videos" replace />} />
             <Route path="classics/:classicId" element={<TvClassic />} />
             <Route path="account" element={<Account />} />
             <Route path="plans" element={<Plans />} />
@@ -59,7 +60,6 @@ export default function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
-        </DetailProvider>
       </HashRouter>
     </AppProvider>
   );
