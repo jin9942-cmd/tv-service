@@ -243,7 +243,7 @@ export { catalog };
 
 // ---- Home rows ---------------------------------------------------------------------------------------
 
-/** Home rows: Continue watching, Recommended, My List, Classics, Latest replays, Highlights. */
+/** Home rows: Continue watching, Recommended, My List, Latest replays, Highlights. */
 export function HomeRows() {
   const { state, set, toast, signedIn } = useApp();
   const progressOf = (v: Video) => (state.progress[v.id] ? state.progress[v.id] / v.durationSec : undefined);
@@ -278,7 +278,6 @@ export function HomeRows() {
       <EditorsPicks />
       <VideoRow title="Recommended for you" videos={recommendedRow(new Set([...started, ...onHome]))} />
       <VideoRow title="My List" videos={mine} action={more('/my-list', 'See all')} />
-      <VideoRow title="Classics" videos={classics} action={more('/events')} />
       <VideoRow title="Latest replays" videos={[...replays].reverse().filter((v) => !started.has(v.id))} action={more('/events')} />
       {/* Not the hands already shown above: each hand appears once on Home. */}
       <VideoRow title="Highlights" videos={highlightClips.filter((v) => !onHome.has(v.id))} action={more('/highlights')} />
