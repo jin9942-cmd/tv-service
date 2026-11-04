@@ -99,7 +99,7 @@ const INITIAL: AppState = {
   includedFrom: 'basic',
   wsopPlusRecord: null,
   revealed: [],
-  recentSearches: ['Negreanu', 'final table', 'bluff'],
+  recentSearches: ['Han', 'final table', 'bluff'],
   myList: [
     { kind: 'day', id: 'lv-hr-day2', addedAt: 3 },
     { kind: 'hand', id: 'h05', addedAt: 2 },

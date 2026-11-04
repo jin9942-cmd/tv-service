@@ -80,7 +80,7 @@ export function PlayerProfile() {
         / <span className="text-text">{p.name}</span>
       </nav>
       <section className="flex flex-col gap-6 rounded-panel border border-line bg-surface p-6 md:flex-row md:items-center">
-        <Avatar name={p.name} hue={p.hue} photo={p.photo} size={112} ring={p.bracelets > 0} />
+        <Avatar name={p.name} hue={p.hue} size={112} ring={p.bracelets > 0} />
         <div className="flex-1">
           <p className="flex items-center gap-2 text-sm text-muted">
             <CountryCode cc={p.cc} /> {p.country}

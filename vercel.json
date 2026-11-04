@@ -5,6 +5,7 @@
     { "source": "/v3", "destination": "/v3/", "permanent": false },
     { "source": "/v4", "destination": "/v4/", "permanent": false },
     { "source": "/v5", "destination": "/v5/", "permanent": false },
-    { "source": "/:path((?!v2/|v2$|v3/|v3$|v4/|v4$|v5/|v5$).*)", "destination": "/v2/", "permanent": false }
+    { "source": "/v6", "destination": "/v6/", "permanent": false },
+    { "source": "/:path((?!v2/|v2$|v3/|v3$|v4/|v4$|v5/|v5$|v6/|v6$).*)", "destination": "/v2/", "permanent": false }
   ]
 }

@@ -8,7 +8,7 @@ import { duration, money } from '../lib/format';
 import { VENUE_TZ, fmtDateTime } from '../lib/time';
 import { isOnAir } from '../lib/broadcast';
 import { mediaFor } from '../features/channels/Channels';
-import { PLAYER_ART, PROMO_ART, TABLE_ART, VENUE_ART } from '../lib/brand';
+import { PROMO_ART, TABLE_ART, VENUE_ART } from '../lib/brand';
 import type { StreamStatus } from '../data/types';
 
 export type VideoKind = 'broadcast' | 'classic' | 'clip' | 'channel';
@@ -144,11 +144,6 @@ function clipVideo(h: Hand, i: number): Video {
 
 const days: Video[] = [...events, ...classicEvents].flatMap((e) => e.days.filter((d) => d.status !== 'upcoming').map((d, i) => dayVideo(e, d, i)));
 const clips: Video[] = hands.map(clipVideo);
-// A player the demo has photos of: their most-watched clips show those photos, each photo once.
-for (const [playerId, photos] of Object.entries(PLAYER_ART)) {
-  const theirs = clips.filter((v) => v.tags.some((t) => t.slug === `player-${playerId}`)).sort((a, b) => b.views - a.views);
-  photos.forEach((a, i) => theirs[i] && Object.assign(theirs[i], { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit }));
-}
 /** Everything on demand or live from an event (channels are built on request, since what's on changes). */
 export const catalog: Video[] = [...days, ...clips];
 

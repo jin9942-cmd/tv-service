@@ -52,11 +52,11 @@ export const VENUE_ART: Art[] = [
   art(`${PROMO}poker-room.png`, '80% 50%'),
   art(`${PROMO}venue-horseshoe.png`, '15% 50%'),
 ];
-/** Each 24/7 channel's own picture (the Channel guide's channel cards). */
+/** Each 24/7 channel's own picture (the Tournaments page's channel cards). */
 export const CHANNEL_ART: Record<string, Art> = {
   wsop1: TABLE_ART[0],
   wsop2: TABLE_ART[1],
-  hands: TABLE_ART[3],
+  'wsop-es': art(`${PROMO}poker-room.png`),
   classics: TABLE_ART[5],
 };
 
@@ -69,9 +69,4 @@ export const PROMO_ART: Record<string, Art> = {
   'classic-a5-finaltable': TABLE_ART[3],
   'classic-a1-finaltable': TABLE_ART[7],
   'classic-a4-finaltable': TABLE_ART[5],
-};
-
-/** Photos of the players the demo has pictures of: their hand clips use these, in turn. */
-export const PLAYER_ART: Record<string, Art[]> = {
-  p04: [art(`${PROMO}negreanu-gg.png`, '50% 35%'), art(`${PROMO}negreanu-bracelet.webp`, '50% 30%'), art(`${PROMO}negreanu-hoodie.webp`, '60% 35%'), art(`${PROMO}negreanu-smile.png`, '45% 30%')],
 };

@@ -115,7 +115,7 @@ export function PlayerTile({ player, className }: { player: Player; className?: 
   return (
     <Link to={`/players/${player.id}`} className={cx('group flex w-36 flex-col items-center gap-1.5 rounded-card px-1 py-2 text-center sm:w-40', className)}>
       <span className="mb-1.5 transition-transform duration-200 group-hover:scale-105">
-        <Avatar name={player.name} hue={player.hue} photo={player.photo} size={88} vivid />
+        <Avatar name={player.name} hue={player.hue} size={88} vivid />
       </span>
       <span className="line-clamp-2 text-sm leading-snug font-bold group-hover:text-gold-strong">{player.name}</span>
       <span className="text-xs text-muted tnum">

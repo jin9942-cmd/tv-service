@@ -8,17 +8,17 @@ import { DemoControls } from '../features/demo/DemoControls';
 import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
 
 
-// v4: Home (season strip, 24/7 channels, rows), Videos (highlights and replays) and WSOP+ (wsop.com).
-// The schedule opens from Home; How to Watch lives in the footer; My List and Account in the My menu.
+// v4: live (events and 24/7 channels), tournaments (the schedule by date), replays by event, short clips.
+// How to Watch lives in the footer; My List in the My menu.
 export const NAV = [
   { to: '/', label: 'Home', icon: 'star', end: true },
-  { to: '/videos', label: 'Videos', icon: 'grid4' },
+  { to: '/live', label: 'Live', icon: 'tv' },
+  { to: '/tournaments', label: 'Tournaments', icon: 'calendar' },
+  { to: '/events', label: 'Events', icon: 'grid2' },
+  { to: '/highlights', label: 'Highlights', icon: 'grid4' },
 ] as const;
 
-/** Videos stays selected on its tabs and on an event's page, which Replays links to. */
-const navOn = (to: string, isActive: boolean, path: string) => isActive || (to === '/videos' && (path.startsWith('/videos') || path.startsWith('/events/')));
-/** WSOP+ lives on wsop.com: it opens there in a new tab. */
-const WSOP_PLUS_URL = 'https://www.wsop.com/plus/';
+const MOBILE_NAV = ['/', '/live', '/tournaments', '/events', '/highlights'];
 
 export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (
@@ -31,8 +31,7 @@ export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
 
 export function Layout() {
   const { state, set, toast, signedIn, requireLogin, login, toasts } = useApp();
-  // The header menu: every item (hamburger), or only the My items (My on the mobile tab bar).
-  const [menu, setMenu] = useState<false | 'all' | 'my'>(false);
+  const [menu, setMenu] = useState(false);
   const loc = useLocation();
   useEffect(() => {
     setMenu(false);
@@ -95,17 +94,13 @@ export function Layout() {
                 key={n.to}
                 to={n.to}
                 end={'end' in n}
-                className={({ isActive }) => cx('rounded-chip px-3 py-1.5 text-[15px] font-medium whitespace-nowrap transition-colors duration-150', navOn(n.to, isActive, loc.pathname) ? 'text-text' : 'text-text/70 hover:text-text')}
+                className={({ isActive }) => cx('rounded-chip px-3 py-1.5 text-[15px] font-medium whitespace-nowrap transition-colors duration-150', isActive ? 'text-text' : 'text-text/70 hover:text-text')}
               >
                 {({ isActive }) => (
-                  <span className={cx('relative', navOn(n.to, isActive, loc.pathname) && 'after:absolute after:-bottom-[21px] after:left-0 after:h-[3px] after:w-full after:bg-gold')}>{n.label}</span>
+                  <span className={cx('relative', isActive && 'after:absolute after:-bottom-[21px] after:left-0 after:h-[3px] after:w-full after:bg-gold')}>{n.label}</span>
                 )}
               </NavLink>
             ))}
-            <a href={WSOP_PLUS_URL} target="_blank" rel="noopener noreferrer" className="rounded-chip px-3 py-1.5 text-[15px] font-medium whitespace-nowrap text-text/70 transition-colors duration-150 hover:text-text">
-              WSOP+
-              <span className="sr-only">(opens in a new tab)</span>
-            </a>
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <NavLink to="/search" aria-label="Search" title="Search" className={({ isActive }) => cx('rounded-chip p-2 transition-colors duration-150', isActive ? 'text-gold' : 'text-muted hover:text-text')}>
@@ -118,27 +113,21 @@ export function Layout() {
                 Sign in
               </Button>
             )}
-            <button className="rounded-chip p-2 text-muted hover:text-text lg:hidden" aria-label="Open menu" aria-expanded={menu === 'all'} onClick={() => setMenu((m) => (m === 'all' ? false : 'all'))}>
+            <button className="rounded-chip p-2 text-muted hover:text-text lg:hidden" aria-label="Open menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}>
               <Icon name="menu" />
             </button>
           </div>
         </div>
         {menu && (
-          <nav aria-label={menu === 'my' ? 'My' : 'Main (menu)'} className="border-t border-line bg-surface lg:hidden">
+          <nav aria-label="Main (menu)" className="border-t border-line bg-surface lg:hidden">
             <ul className="mx-auto grid max-w-content grid-cols-2 gap-1 px-gutter py-3 sm:grid-cols-4 sm:px-6">
-              {[...(menu === 'my' ? [] : [...NAV, { to: '/search', label: 'Search', icon: 'search' }]), { to: '/my-list', label: 'My List', icon: 'plus' }, { to: '/account', label: 'Account', icon: 'user' }].map((n) => (
+              {[...NAV, { to: '/search', label: 'Search', icon: 'search' }, { to: '/my-list', label: 'My List', icon: 'plus' }, { to: '/account', label: 'Account', icon: 'user' }].map((n) => (
                 <li key={n.to}>
                   <NavLink to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex items-center gap-2 rounded-chip px-3 py-2.5 text-sm font-semibold', isActive ? 'bg-surface-3 text-text' : 'text-muted hover:text-text')}>
                     <Icon name={n.icon} size={16} /> {n.label}
                   </NavLink>
                 </li>
               ))}
-              <li>
-                <a href={WSOP_PLUS_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-chip px-3 py-2.5 text-sm font-semibold text-muted hover:text-text">
-                  <Icon name="star" size={16} /> WSOP+
-                  <span className="sr-only">(opens in a new tab)</span>
-                </a>
-              </li>
             </ul>
           </nav>
         )}
@@ -151,16 +140,16 @@ export function Layout() {
       <Footer />
 
       {/* Mobile bottom navigation */}
-      <nav aria-label="Main (mobile)" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-line bg-bg/95 backdrop-blur md:hidden">
-        {[...NAV, { to: '/search', label: 'Search', icon: 'search' }].map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold', navOn(n.to, isActive, loc.pathname) ? 'text-gold' : 'text-muted')}>
+      <nav aria-label="Main (mobile)" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-line bg-bg/95 backdrop-blur md:hidden">
+        {NAV.filter((n) => MOBILE_NAV.includes(n.to)).map((n) => (
+          <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold', isActive ? 'text-gold' : 'text-muted')}>
             <Icon name={n.icon} size={20} />
             {n.label}
           </NavLink>
         ))}
-        <button className={cx('flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold', menu === 'my' ? 'text-gold' : 'text-muted')} onClick={() => setMenu((m) => (m === 'my' ? false : 'my'))} aria-expanded={menu === 'my'} aria-label="My">
-          <Icon name="user" size={20} />
-          My
+        <button className="flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold text-muted" onClick={() => setMenu(true)} aria-label="More">
+          <Icon name="menu" size={20} />
+          More
         </button>
       </nav>
 

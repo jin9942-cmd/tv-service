@@ -82,7 +82,7 @@ export function ChipCounts({ stacks, spoilerKey, bb, live }: { stacks: SeatStack
                 <i className="absolute inset-y-0 left-0 bg-gold/10 transition-[width] duration-500" style={{ width: `${(s.stack / max) * 100}%` }} aria-hidden />
                 <div className="relative flex items-center gap-2.5">
                   <span className="w-4 text-xs font-bold text-subtle tnum">{i + 1}</span>
-                  <Avatar name={p.name} hue={p.hue} photo={p.photo} size={26} />
+                  <Avatar name={p.name} hue={p.hue} size={26} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-semibold">{p.name}</span>
                     <CountryCode cc={p.cc} />
@@ -120,7 +120,7 @@ function CurrentHandTab({ phase, hand }: { phase: number; hand: CurrentHand }) {
         { p: b, cards: h.bCards, eq: eq.b },
       ].map((x) => (
         <div key={x.p.id} className="flex items-center gap-3 rounded-chip bg-surface-2 p-2.5">
-          <Avatar name={x.p.name} hue={x.p.hue} photo={x.p.photo} size={34} />
+          <Avatar name={x.p.name} hue={x.p.hue} size={34} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{x.p.name}</p>
             <p className="text-xs text-gold-strong tnum">{x.cards}</p>

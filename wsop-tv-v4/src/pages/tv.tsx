@@ -1,7 +1,7 @@
 // v4 — WSOP TV, OTT-standard (Netflix / YouTube): promotion banner, 24/7 channels, then the rows; plus the
 // schedule, shows and how to watch. Labels stay minimal.
 import { useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
 import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
 import { HERO_DAY_ID, dayById, hands } from '../data/mock';
@@ -12,11 +12,12 @@ import { money } from '../lib/format';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
 import { HandCard } from '../components/cards';
-import { Button, Icon, LiveTag, Page, SectionHeader, cx } from '../components/ui';
+import { Button, Icon, Page, SectionHeader, cx } from '../components/ui';
 import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
-import { HomeRows, SeasonStrip, TodayCards } from '../v4/pages';
+import { HomeRows, TodayCards } from '../v4/pages';
+import { useDetail } from '../v4/detail';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
 const isBreak = (p: Program) => BREAK_TITLES.includes(p.title);
@@ -26,19 +27,12 @@ const showPoster = (s: Show) => thumbFor(`show:${s.id}`, s.art);
 
 export function TvHome() {
   const now = useTick(15_000);
-  // Demo: ?season=off previews Home between series.
-  const [params, setParams] = useSearchParams();
-  const off = params.get('season') === 'off';
   return (
     <>
       <section className="border-b border-line" aria-label="Featured">
         <PromoBanner />
-        {/* The season (live series or the next one), then the four 24/7 channels. */}
-        <Page className="pt-5">
-          <SeasonStrip off={off} />
-        </Page>
-        <Page className="pt-6 pb-6">
-          <h2 className="mb-3 text-xl sm:text-2xl">24/7 On-Demand</h2>
+        {/* The four 24/7 channels, right under the banner (no section title). */}
+        <Page className="pt-5 pb-6">
           <TodayCards now={now} />
         </Page>
       </section>
@@ -47,12 +41,6 @@ export function TvHome() {
       <Page className="space-y-12 py-10">
         <HomeRows />
         <HowToWatchBand />
-        <p className="border-t border-line pt-4 text-xs text-subtle">
-          Demo:{' '}
-          <button onClick={() => setParams(off ? {} : { season: 'off' }, { replace: true })} className="underline hover:text-text">
-            {off ? 'show Home during a series' : 'preview Home between series'}
-          </button>
-        </p>
       </Page>
     </>
   );
@@ -95,6 +83,7 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
  */
 function PromoBanner() {
   const { state } = useApp();
+  const { open: openDetail } = useDetail();
   const [slide, setSlide] = useState(0);
   const { event, day } = dayById(HERO_DAY_ID)!;
   const live = isOnAir(state.streamMode);
@@ -102,16 +91,22 @@ function PromoBanner() {
     {
       img: HERO_IMAGES.finalTable,
       pos: '50% 60%',
-      kicker: '2026 Summer Championship',
+      kicker: live ? 'Live now · Final table' : 'Main Event · Final table',
       title: `Main Event ${day.label}`,
       facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
       line: 'Live from Las Vegas · Hole cards on a 30-minute delay',
       actions: (
-        <Link to={`/watch/${HERO_DAY_ID}`}>
-          <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
-            <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch'}
+        <>
+          <Link to={`/watch/${HERO_DAY_ID}`}>
+            <Button variant="primary" size="lg" tabIndex={-1}>
+              <Icon name="play" size={18} /> Watch
+            </Button>
+          </Link>
+          {/* Details opens the popup layer over the home page (no page change). */}
+          <Button variant="secondary" size="lg" onClick={() => openDetail(HERO_DAY_ID)}>
+            Details
           </Button>
-        </Link>
+        </>
       ),
     },
     {
@@ -122,9 +117,9 @@ function PromoBanner() {
       facts: ['Classics', 'Full broadcasts', 'Key hands'],
       line: 'Every final table from 2019 to 2025, with every key hand',
       actions: (
-        <Link to="/videos/replays?series=classics">
-          <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
-            <Icon name="play" size={18} /> Browse classics
+        <Link to="/events">
+          <Button variant="primary" size="lg" tabIndex={-1}>
+            <Icon name="play" size={18} /> Watch
           </Button>
         </Link>
       ),
@@ -151,7 +146,6 @@ function PromoBanner() {
             <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
           </div>
           <p className="mt-3 flex min-h-[2.75rem] flex-wrap content-start items-center gap-x-2 gap-y-1 text-sm font-medium text-text/85 lg:min-h-[1.25rem]">
-            {slide === 0 && live && <LiveTag />}
             {sl.facts.map((x, i) => (
               <span key={i} className="inline-flex items-center gap-2">
                 {i > 0 && <span className="text-subtle">·</span>}

@@ -24,7 +24,7 @@ export const players: Player[] = [
   P('p01', 'Mateo Valcourt', 'France', 'FR', 4, 14_820_400, 3_412, 210),
   P('p02', 'Yuna Kagami', 'Japan', 'JP', 2, 6_130_250, 2_986, 330),
   P('p03', 'Diego Albarrán', 'Mexico', 'MX', 1, 3_960_900, 2_104, 140),
-  { ...P('p04', 'Daniel Negreanu', 'Canada', 'CA', 3, 9_270_000, 3_190, 270), photo: `${import.meta.env.BASE_URL}promo/negreanu-avatar.webp` },
+  P('p04', 'Seo-yeon Han', 'South Korea', 'KR', 3, 9_270_000, 3_190, 270),
   P('p05', 'Callum Breck', 'United Kingdom', 'GB', 0, 1_482_300, 1_377, 20),
   P('p06', 'Inês Duarte', 'Portugal', 'PT', 1, 2_210_800, 1_650, 170),
   P('p07', 'Noah Whitfield', 'United States', 'US', 7, 27_940_000, 3_655, 0),
@@ -46,8 +46,8 @@ export const players: Player[] = [
 // ---- series & events ----------------------------------------------------------------------
 
 export const series: Series[] = [
-  { id: 'lv26', name: '2026 Summer Championship', venue: 'Convention Center Arena', city: 'Las Vegas, NV', tz: 'America/Los_Angeles', start: iso(-24 * 11), end: iso(24 * 10) },
-  { id: 'eu26', name: '2026 Autumn Classic', venue: 'Grand Hall', city: 'Prague, CZ', tz: 'Europe/Prague', start: iso(24 * 27), end: iso(24 * 47) },
+  { id: 'lv26', name: '2026 Summer Championship', venue: 'Convention Center Arena', city: 'Las Vegas, NV', tz: 'America/Los_Angeles', start: iso(-24 * 34), end: iso(24 * 12) },
+  { id: 'eu26', name: '2026 Autumn Classic', venue: 'Grand Hall', city: 'Prague, CZ', tz: 'Europe/Prague', start: iso(24 * 26), end: iso(24 * 38) },
 ];
 
 /** A final table is a single table, so its extra streams are camera feeds of that table; earlier days have outer tables. */

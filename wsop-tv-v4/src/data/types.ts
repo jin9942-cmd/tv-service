@@ -20,8 +20,6 @@ export interface Player {
   /** Most recent finishes: event id + place. */
   recent: { eventId: string; place: number; prize: number }[];
   hue: number;
-  /** Profile photo (only for the few players the demo has photos of); others show initials. */
-  photo?: string;
 }
 
 export interface Series {

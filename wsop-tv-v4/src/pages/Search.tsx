@@ -237,7 +237,7 @@ function ResultRow({ it }: { it: SearchItem }) {
       <Link to={it.url} className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
         {p ? (
           <span className="flex w-20 shrink-0 justify-center sm:w-28">
-            <Avatar name={p.name} hue={p.hue} photo={p.photo} size={44} vivid />
+            <Avatar name={p.name} hue={p.hue} size={44} vivid />
           </span>
         ) : (
           <span className="relative aspect-video w-20 shrink-0 overflow-hidden rounded-[6px] bg-surface-3 sm:w-28">
