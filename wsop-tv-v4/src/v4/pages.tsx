@@ -495,7 +495,7 @@ export function HomeRows() {
   );
 }
 
-/** Continue watching: big pictures with a thick progress bar and Resume, the time left under the title; one sideways line. */
+/** Continue watching: big pictures with a thick progress bar, the time left beside the title; one sideways line. */
 function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; onRemove: (v: Video) => void }) {
   if (!items.length) return null;
   return (
@@ -509,10 +509,6 @@ function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; 
               <Link to={`/watch/${v.id}`} className="block" aria-label={`Resume ${v.title}`}>
                 <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
                   <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-                  <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" aria-hidden />
-                  <span className="absolute bottom-4 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-[13px] font-semibold text-white group-hover:bg-gold" aria-hidden>
-                    <Icon name="play" size={14} /> Resume
-                  </span>
                   <span className="absolute inset-x-0 bottom-0 h-1.5 bg-white/20">
                     <i className="block h-full bg-gold" style={{ width: `${pct}%` }} />
                   </span>
