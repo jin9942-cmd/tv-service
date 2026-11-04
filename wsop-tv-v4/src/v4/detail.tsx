@@ -171,7 +171,7 @@ export function About({ v }: { v: Video }) {
 /**
  * The one card used everywhere: thumbnail (only LIVE on it) and title → play. The detail popup opens only from the home banner.
  */
-export function VideoCard({ v, progress, onRemove, className }: { v: Video; progress?: number; /** Continue Watching: show a remove (×) button. */ onRemove?: () => void; className?: string }) {
+export function VideoCard({ v, progress, onRemove, className, reason }: { v: Video; progress?: number; /** Continue Watching: show a remove (×) button. */ onRemove?: () => void; className?: string; /** Why it's here, under the title (e.g. "Because you follow …"). */ reason?: string }) {
   const { state } = useApp();
   const live = isLive(v, state.streamMode);
   return (
@@ -190,6 +190,8 @@ export function VideoCard({ v, progress, onRemove, className }: { v: Video; prog
         <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
           <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
           {live && <LiveTag className="absolute top-2 left-2" />}
+          {/* Runtime on the artwork (not for live or 24/7 channels, which have no fixed length). */}
+          {!live && v.kind !== 'channel' && <span className="absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>}
           <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden>
             <span className="flex size-12 items-center justify-center rounded-full bg-black/60 text-white">
               <Icon name="play" size={22} />
@@ -205,6 +207,7 @@ export function VideoCard({ v, progress, onRemove, className }: { v: Video; prog
       <Link to={`/watch/${v.id}`} className="mt-2 block min-w-0">
         <span className="line-clamp-2 text-[15px] leading-snug font-semibold group-hover:text-gold-strong">{v.title}</span>
         <span className="mt-0.5 block truncate text-xs text-muted">{v.subtitle}</span>
+        {reason && <span className="mt-1 block truncate text-xs font-semibold text-gold-strong">{reason}</span>}
       </Link>
     </div>
   );
