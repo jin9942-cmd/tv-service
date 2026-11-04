@@ -856,7 +856,8 @@ export function SeasonStrip({ off }: { off: boolean }) {
   const stop = running ? SEASON.find((s) => s.id === running.id)! : SEASON.find((s) => Date.parse(s.start) > Date.now())!;
   const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
   const items = events.filter((e) => e.seriesId === running?.id).flatMap((e) => e.days.map((d) => ({ e, d })));
-  const live = items.filter((x) => isBroadcasting(status(x.d)));
+  // The banner above already features the Main Event: only the other live broadcasts get a button here.
+  const live = items.filter((x) => isBroadcasting(status(x.d)) && x.d.id !== HERO_DAY_ID);
   const next = items.filter((x) => status(x.d) === 'upcoming').sort((a, b) => a.d.start.localeCompare(b.d.start))[0];
   const [nextOn, toggleNext] = useReminder(next ? `day:${next.d.id}` : '', next ? titleOf(next) : '');
   const [stopOn, toggleStop] = useReminder(`series:${stop.id}`, stop.name);
@@ -881,6 +882,7 @@ export function SeasonStrip({ off }: { off: boolean }) {
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
         {running ? (
           <>
+            {live.length > 0 && <span className="text-sm text-muted">Also live:</span>}
             {live.map((x) => (
               <Link key={x.d.id} to={`/watch/${x.d.id}`}>
                 <Button size="sm" variant="primary" tabIndex={-1}>

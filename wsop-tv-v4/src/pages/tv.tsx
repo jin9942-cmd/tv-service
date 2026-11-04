@@ -12,7 +12,7 @@ import { money } from '../lib/format';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
 import { HandCard } from '../components/cards';
-import { Button, Icon, Page, SectionHeader, cx } from '../components/ui';
+import { Button, Icon, LiveTag, Page, SectionHeader, cx } from '../components/ui';
 import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
@@ -102,14 +102,14 @@ function PromoBanner() {
     {
       img: HERO_IMAGES.finalTable,
       pos: '50% 60%',
-      kicker: live ? 'Live now · Final table' : 'Main Event · Final table',
+      kicker: '2026 Summer Championship',
       title: `Main Event ${day.label}`,
       facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
       line: 'Live from Las Vegas · Hole cards on a 30-minute delay',
       actions: (
         <Link to={`/watch/${HERO_DAY_ID}`}>
-          <Button variant="primary" size="lg" tabIndex={-1}>
-            <Icon name="play" size={18} /> Watch
+          <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
+            <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch'}
           </Button>
         </Link>
       ),
@@ -123,8 +123,8 @@ function PromoBanner() {
       line: 'Every final table from 2019 to 2025, with every key hand',
       actions: (
         <Link to="/videos/replays?series=classics">
-          <Button variant="primary" size="lg" tabIndex={-1}>
-            <Icon name="play" size={18} /> Watch
+          <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
+            <Icon name="play" size={18} /> Browse classics
           </Button>
         </Link>
       ),
@@ -147,8 +147,13 @@ function PromoBanner() {
       <Page className="relative flex flex-col justify-end pt-2 pb-14 md:min-h-[min(34rem,46vw)] md:pt-12 md:pb-16">
         {/* Every block has a fixed height, so the title and the buttons stay put when the slide changes. */}
         <div className="max-w-xl" aria-live="polite">
-          <div className="flex h-[4.9rem] items-end sm:h-[6.94rem]">
-            <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
+          {/* Kicker (LIVE on the live slide), then the title on at most two lines. */}
+          <p className="flex h-6 items-center gap-2 text-[13px] font-bold tracking-wide text-text/85 uppercase">
+            {slide === 0 && live && <LiveTag />}
+            {sl.kicker}
+          </p>
+          <div className="mt-2 flex h-[4.6rem] items-end sm:h-[5.75rem]">
+            <h1 className="line-clamp-2 max-w-[13ch] text-[2.25rem] leading-[1.02] text-balance sm:text-[2.8rem]">{sl.title}</h1>
           </div>
           <p className="mt-3 flex min-h-[2.75rem] flex-wrap content-start items-center gap-x-2 gap-y-1 text-sm font-medium text-text/85 lg:min-h-[1.25rem]">
             {sl.facts.map((x, i) => (
