@@ -495,31 +495,36 @@ export function HomeRows() {
   );
 }
 
-/** Continue watching: wide compact cards, the picture with its progress and how much is left. */
+/** Continue watching: big pictures with a thick progress bar and Resume, the time left under the title; one sideways line. */
 function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; onRemove: (v: Video) => void }) {
   if (!items.length) return null;
   return (
     <Section title="Continue watching">
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {items.slice(0, 6).map(({ v, sec }) => {
+      <ul className="hscroll gap-5 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1.25rem)/2)] lg:[&>*]:w-[calc((100%-2.5rem)/3)]">
+        {items.map(({ v, sec }) => {
           const left = Math.max(60, v.durationSec - sec);
+          const pct = Math.min(100, Math.round((sec / v.durationSec) * 100));
           return (
-            <li key={v.id} className="group relative flex items-center gap-3 rounded-card border border-line bg-surface p-2 hover:border-line-strong">
-              <Link to={`/watch/${v.id}`} className="relative aspect-video w-36 shrink-0 overflow-hidden rounded-chip bg-surface-2 sm:w-40" aria-label={`Continue ${v.title}`}>
-                <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-                <span className="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden>
-                  <Icon name="play" size={22} />
+            <li key={v.id} className="group relative min-w-0">
+              <Link to={`/watch/${v.id}`} className="block" aria-label={`Resume ${v.title}`}>
+                <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+                  <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+                  <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" aria-hidden />
+                  <span className="absolute bottom-4 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-[13px] font-semibold text-white group-hover:bg-gold" aria-hidden>
+                    <Icon name="play" size={14} /> Resume
+                  </span>
+                  <span className="absolute inset-x-0 bottom-0 h-1.5 bg-white/20">
+                    <i className="block h-full bg-gold" style={{ width: `${pct}%` }} />
+                  </span>
                 </span>
-                <span className="absolute inset-x-0 bottom-0 h-1 bg-white/15">
-                  <i className="block h-full bg-gold" style={{ width: `${Math.min(100, Math.round((sec / v.durationSec) * 100))}%` }} />
+                <span className="mt-2 flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 truncate text-[15px] font-semibold group-hover:text-gold-strong">{v.title}</span>
+                  <span className="shrink-0 text-xs text-muted tnum">{left >= 3600 ? `${Math.floor(left / 3600)}h ${Math.round((left % 3600) / 60)}m left` : `${Math.round(left / 60)} min left`}</span>
                 </span>
+                <span className="mt-0.5 block truncate text-xs text-subtle">{v.subtitle}</span>
               </Link>
-              <Link to={`/watch/${v.id}`} className="min-w-0 flex-1 pr-7">
-                <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{v.title}</span>
-                <span className="mt-1 block text-xs text-muted tnum">{left >= 3600 ? `${Math.floor(left / 3600)}h ${Math.round((left % 3600) / 60)}m left` : `${Math.round(left / 60)} min left`}</span>
-              </Link>
-              <button onClick={() => onRemove(v)} aria-label={`Remove ${v.title} from Continue Watching`} title="Remove from Continue Watching" className="absolute top-2 right-2 rounded-full p-1 text-subtle hover:bg-surface-3 hover:text-text">
-                <Icon name="close" size={14} />
+              <button onClick={() => onRemove(v)} aria-label={`Remove ${v.title} from Continue Watching`} title="Remove from Continue Watching" className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-black focus-visible:opacity-100 [@media(hover:none)]:opacity-100">
+                <Icon name="close" size={16} />
               </button>
             </li>
           );
