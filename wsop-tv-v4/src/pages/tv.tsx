@@ -17,7 +17,6 @@ import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/cha
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
 import { HomeRows, TodayCards } from '../v4/pages';
-import { useDetail } from '../v4/detail';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
 const isBreak = (p: Program) => BREAK_TITLES.includes(p.title);
@@ -84,7 +83,6 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
  */
 function PromoBanner() {
   const { state } = useApp();
-  const { open: openDetail } = useDetail();
   const [slide, setSlide] = useState(0);
   const { event, day } = dayById(HERO_DAY_ID)!;
   const live = isOnAir(state.streamMode);
@@ -97,17 +95,11 @@ function PromoBanner() {
       facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
       line: 'Live from Las Vegas · Hole cards on a 30-minute delay',
       actions: (
-        <>
-          <Link to={`/watch/${HERO_DAY_ID}`}>
-            <Button variant="primary" size="lg" tabIndex={-1}>
-              <Icon name="play" size={18} /> Watch
-            </Button>
-          </Link>
-          {/* Details opens the popup layer over the home page (no page change). */}
-          <Button variant="secondary" size="lg" onClick={() => openDetail(HERO_DAY_ID)}>
-            Details
+        <Link to={`/watch/${HERO_DAY_ID}`}>
+          <Button variant="primary" size="lg" tabIndex={-1}>
+            <Icon name="play" size={18} /> Watch
           </Button>
-        </>
+        </Link>
       ),
     },
     {
