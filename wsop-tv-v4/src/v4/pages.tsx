@@ -490,7 +490,7 @@ export function HomeRows() {
       <MyListRow videos={mine} />
       <VideoRow title="Latest replays" videos={[...replays].reverse().filter((v) => !started.has(v.id))} action={more('/videos/replays')} />
       {/* Not the hands already shown above: each hand appears once on Home. */}
-      <TopTen videos={highlightClips.filter((v) => !onHome.has(v.id)).slice(0, 10)} />
+      <PopularRow videos={highlightClips.filter((v) => !onHome.has(v.id)).slice(0, 10)} />
     </>
   );
 }
@@ -572,26 +572,15 @@ function MyListRow({ videos }: { videos: Video[] }) {
   );
 }
 
-/** Top 10 hands by views: a big rank beside each card, scrolling sideways. */
-function TopTen({ videos }: { videos: Video[] }) {
+/** Popular videos: the most-watched hands, scrolling sideways in the standard card. */
+function PopularRow({ videos }: { videos: Video[] }) {
   return (
-    <Section title="Top 10 hands this week" kicker="Most watched" action={more('/videos')}>
-      <ol className="hscroll gap-4 pb-1">
-        {videos.map((v, i) => (
-          <li key={v.id} className="flex w-[17rem] shrink-0 items-end sm:w-[19rem]">
-            <span className="-mr-3 w-16 shrink-0 text-right text-[5.5rem] leading-[0.8] font-black text-transparent tnum [-webkit-text-stroke:2px_var(--color-line-strong)]" aria-hidden>
-              {i + 1}
-            </span>
-            <Link to={`/watch/${v.id}`} className="group relative z-10 min-w-0 flex-1" aria-label={`Number ${i + 1}: ${v.title}`}>
-              <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-                <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-                <span className="absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>
-              </span>
-              <span className="mt-1.5 block truncate text-sm font-semibold group-hover:text-gold-strong">{v.title}</span>
-            </Link>
-          </li>
+    <Section title="Popular videos" action={more('/videos')}>
+      <div className="hscroll gap-5 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1.25rem)/2)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
+        {videos.map((v) => (
+          <VideoCard key={v.id} v={v} />
         ))}
-      </ol>
+      </div>
     </Section>
   );
 }
@@ -629,31 +618,39 @@ const editorsTheme = () => {
   return { title: 'Folds nobody else makes', note: 'Big hands, laid down. Three folds that saved a tournament life, and how the players knew.', picks: picked };
 };
 
-/** Editor's picks, magazine layout: the lead hand large with the editor's note, two more beside it. */
+/** Editor's picks: the lead hand large (picture with its runtime, then the title and the editor's note), two more as compact rows. */
 function EditorsPicks() {
   const { title, note, picks } = editorsTheme();
   const [lead, ...rest] = picks;
   if (!lead) return null;
   const total = picks.reduce((n, v) => n + v.durationSec, 0);
+  const thumb = (v: Video, cls: string) => (
+    <span className={cx('relative block aspect-video overflow-hidden rounded-card bg-surface-2', cls)}>
+      <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+      <span className="absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>
+    </span>
+  );
   return (
     <Section title={title} kicker={`Editor’s picks · this week’s theme · ${duration(total)} in all`} action={more('/videos', 'All highlights')}>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <Link to={`/watch/${lead.id}`} className="group relative block overflow-hidden rounded-panel bg-surface-2">
-          <span className="relative block aspect-video">
-            <img src={lead.thumb} style={artStyle({ pos: lead.thumbPos, fit: lead.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.02]" />
-            <span className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" aria-hidden />
-          </span>
-          <span className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-            <span className="flex items-center gap-2 text-xs font-bold tracking-wide text-gold-strong uppercase">
-              <Icon name="play" size={14} /> {duration(lead.durationSec)}
-            </span>
-            <span className="mt-1.5 block text-xl leading-snug font-bold sm:text-2xl">{lead.title}</span>
-            <span className="mt-1.5 line-clamp-2 block max-w-xl text-sm text-text/80">{note}</span>
-          </span>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <Link to={`/watch/${lead.id}`} className="group block min-w-0">
+          {thumb(lead, '')}
+          <span className="mt-3 block text-xl leading-snug font-bold group-hover:text-gold-strong">{lead.title}</span>
+          <span className="mt-1 block text-sm text-muted">{lead.subtitle}</span>
         </Link>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+        <div className="flex flex-col gap-4">
+          <p className="rounded-card border border-line bg-surface p-4 text-[15px] leading-relaxed text-text/85">
+            <span className="mb-1 block text-[11px] font-bold tracking-wide text-gold-strong uppercase">From the editor</span>
+            {note}
+          </p>
           {rest.map((v) => (
-            <VideoCard key={v.id} v={v} />
+            <Link key={v.id} to={`/watch/${v.id}`} className="group flex min-w-0 items-center gap-3">
+              {thumb(v, 'w-40 shrink-0 sm:w-48')}
+              <span className="min-w-0">
+                <span className="line-clamp-2 text-[15px] leading-snug font-semibold group-hover:text-gold-strong">{v.title}</span>
+                <span className="mt-0.5 block truncate text-xs text-muted">{v.subtitle}</span>
+              </span>
+            </Link>
           ))}
         </div>
       </div>
