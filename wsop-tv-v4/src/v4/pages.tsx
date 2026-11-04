@@ -15,7 +15,7 @@ import { NotFound } from '../pages/NotFound';
 import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
 import { CHANNEL_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
-import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
+import { byTag, catalog, channelVideo, classics, highlightClips, isLive, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -451,10 +451,13 @@ export { catalog };
 
 // ---- Home rows ---------------------------------------------------------------------------------------
 
-/** Home rows: Continue watching, Editor's picks, Recommended, My List, Latest replays, Highlights. */
+/**
+ * Home rows, each its own shape so the page has a rhythm: Continue watching (wide, time left), Editor's picks (one
+ * theme, magazine layout), Recommended (classic final tables, wide), My List (small), Latest replays (standard) and
+ * Top 10 hands (ranked).
+ */
 export function HomeRows() {
   const { state, set, toast, signedIn } = useApp();
-  const progressOf = (v: Video) => (state.progress[v.id] ? state.progress[v.id] / v.durationSec : undefined);
   // Remove one video from Continue Watching (with Undo).
   const removeContinue = (v: Video) => {
     const before = state.progress;
@@ -470,29 +473,128 @@ export function HomeRows() {
     ? Object.entries(state.progress)
         .map(([id, sec]) => ({ v: videoById(id), sec }))
         .filter((x): x is { v: Video; sec: number } => !!x.v && x.sec / x.v.durationSec < 0.95)
-        .map((x) => x.v)
     : [];
-  const started = new Set(continuing.map((v) => v.id));
+  const started = new Set(continuing.map((x) => x.v.id));
   const mine = signedIn
     ? [...state.myList]
         .sort((a, b) => b.addedAt - a.addedAt)
         .map((x) => videoById(x.kind === 'archive' ? `classic-${x.id}-finaltable` : x.kind === 'event' ? (catalog.find((v) => v.eventId === x.id && v.kind !== 'clip')?.id ?? '') : x.id))
         .filter((v): v is Video => !!v)
     : [];
-  const onHome = new Set(mustWatch().map((v) => v.id));
+  const onHome = new Set(editorsTheme().picks.map((v) => v.id));
   return (
     <>
-      <VideoRow title="Continue watching" videos={continuing} progressOf={progressOf} onRemove={removeContinue} />
+      <ContinueRow items={continuing} onRemove={removeContinue} />
       <EditorsPicks />
-      <VideoRow title="Recommended for you" videos={recommendedRow(new Set([...started, ...onHome]))} />
-      <VideoRow title="My List" videos={mine} action={more('/my-list', 'See all')} />
+      <RecommendedRow because={continuing[0]?.v} skip={started} />
+      <MyListRow videos={mine} />
       <VideoRow title="Latest replays" videos={[...replays].reverse().filter((v) => !started.has(v.id))} action={more('/videos/replays')} />
       {/* Not the hands already shown above: each hand appears once on Home. */}
-      <VideoRow title="Highlights" videos={highlightClips.filter((v) => !onHome.has(v.id))} action={more('/videos')} />
+      <TopTen videos={highlightClips.filter((v) => !onHome.has(v.id)).slice(0, 10)} />
     </>
   );
 }
-const recommendedRow = (skip: Set<string>) => recommended.filter((v) => !skip.has(v.id));
+
+/** Continue watching: wide compact cards, the picture with its progress and how much is left. */
+function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; onRemove: (v: Video) => void }) {
+  if (!items.length) return null;
+  return (
+    <Section title="Continue watching">
+      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {items.slice(0, 6).map(({ v, sec }) => {
+          const left = Math.max(60, v.durationSec - sec);
+          return (
+            <li key={v.id} className="group relative flex items-center gap-3 rounded-card border border-line bg-surface p-2 hover:border-line-strong">
+              <Link to={`/watch/${v.id}`} className="relative aspect-video w-36 shrink-0 overflow-hidden rounded-chip bg-surface-2 sm:w-40" aria-label={`Continue ${v.title}`}>
+                <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+                <span className="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden>
+                  <Icon name="play" size={22} />
+                </span>
+                <span className="absolute inset-x-0 bottom-0 h-1 bg-white/15">
+                  <i className="block h-full bg-gold" style={{ width: `${Math.min(100, Math.round((sec / v.durationSec) * 100))}%` }} />
+                </span>
+              </Link>
+              <Link to={`/watch/${v.id}`} className="min-w-0 flex-1 pr-7">
+                <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{v.title}</span>
+                <span className="mt-1 block text-xs text-muted tnum">{left >= 3600 ? `${Math.floor(left / 3600)}h ${Math.round((left % 3600) / 60)}m left` : `${Math.round(left / 60)} min left`}</span>
+              </Link>
+              <button onClick={() => onRemove(v)} aria-label={`Remove ${v.title} from Continue Watching`} title="Remove from Continue Watching" className="absolute top-2 right-2 rounded-full p-1 text-subtle hover:bg-surface-3 hover:text-text">
+                <Icon name="close" size={14} />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  );
+}
+
+/** Recommended: classic full final tables (long watches, unlike the editor's short hands), two wide cards with the story. */
+function RecommendedRow({ because, skip }: { because?: Video; skip: Set<string> }) {
+  const picks = classics.filter((v) => !skip.has(v.id)).slice(0, 4);
+  return (
+    <Section title="Recommended for you" kicker={because ? `Because you watched ${because.title}` : 'Full final tables from past series'} action={more('/videos/replays?series=classics', 'All classics')}>
+      <div className="grid gap-5 md:grid-cols-2">
+        {picks.map((v) => (
+          <Link key={v.id} to={`/watch/${v.id}`} className="group flex min-w-0 flex-col gap-3 sm:flex-row">
+            <span className="relative aspect-video w-full shrink-0 overflow-hidden rounded-card bg-surface-2 sm:w-[55%]">
+              <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+              <span className="absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>
+            </span>
+            <span className="min-w-0 sm:py-1">
+              <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">Full final table</span>
+              <span className="mt-1 block text-lg leading-snug font-bold group-hover:text-gold-strong">{v.title}</span>
+              <span className="mt-1.5 line-clamp-3 block text-sm text-muted">{v.description}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** My List: small cards, six across, like a shelf. */
+function MyListRow({ videos }: { videos: Video[] }) {
+  if (!videos.length) return null;
+  return (
+    <Section title="My List" action={more('/my-list', 'See all')}>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+        {videos.slice(0, 6).map((v) => (
+          <Link key={v.id} to={`/watch/${v.id}`} className="group min-w-0">
+            <span className="relative block aspect-video overflow-hidden rounded-chip bg-surface-2">
+              <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+            </span>
+            <span className="mt-1.5 block truncate text-[13px] font-semibold group-hover:text-gold-strong">{v.title}</span>
+          </Link>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** Top 10 hands by views: a big rank beside each card, scrolling sideways. */
+function TopTen({ videos }: { videos: Video[] }) {
+  return (
+    <Section title="Top 10 hands this week" kicker="Most watched" action={more('/videos')}>
+      <ol className="hscroll gap-4 pb-1">
+        {videos.map((v, i) => (
+          <li key={v.id} className="flex w-[17rem] shrink-0 items-end sm:w-[19rem]">
+            <span className="-mr-3 w-16 shrink-0 text-right text-[5.5rem] leading-[0.8] font-black text-transparent tnum [-webkit-text-stroke:2px_var(--color-line-strong)]" aria-hidden>
+              {i + 1}
+            </span>
+            <Link to={`/watch/${v.id}`} className="group relative z-10 min-w-0 flex-1" aria-label={`Number ${i + 1}: ${v.title}`}>
+              <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+                <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+                <span className="absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>
+              </span>
+              <span className="mt-1.5 block truncate text-sm font-semibold group-hover:text-gold-strong">{v.title}</span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </Section>
+  );
+}
 
 const more = (to: string, label = 'More') => (
   <Link to={to} className="text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
@@ -516,26 +618,44 @@ function Section({ title, kicker, action, children }: { title: string; kicker?: 
   );
 }
 
-/** Editor's picks: three hands, with how long they take. */
-const mustWatch = () => {
-  // Three different pictures side by side: skip a hand whose thumbnail is already picked.
+/** Editor's picks: one theme a week, three hands on it (different pictures side by side). */
+const editorsTheme = () => {
+  const slug = 'hero-fold';
   const picked: Video[] = [];
-  for (const slug of ['bluff', 'all-in', 'hero-fold']) {
-    const v = highlightClips.find((x) => x.tags.some((t) => t.slug === slug) && !picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos));
-    if (v) picked.push(v);
-  }
-  return picked;
+  const fits = (x: Video) => !picked.includes(x) && !picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos);
+  for (const x of highlightClips.filter((v) => v.tags.some((t) => t.slug === slug))) if (picked.length < 3 && fits(x)) picked.push(x);
+  // A short week: fill with the most-watched hands.
+  for (const x of highlightClips) if (picked.length < 3 && fits(x)) picked.push(x);
+  return { title: 'Folds nobody else makes', note: 'Big hands, laid down. Three folds that saved a tournament life, and how the players knew.', picks: picked };
 };
 
+/** Editor's picks, magazine layout: the lead hand large with the editor's note, two more beside it. */
 function EditorsPicks() {
-  const picks = mustWatch();
+  const { title, note, picks } = editorsTheme();
+  const [lead, ...rest] = picks;
+  if (!lead) return null;
   const total = picks.reduce((n, v) => n + v.durationSec, 0);
   return (
-    <Section title="3 hands worth your time" kicker={`Editor’s picks · ${duration(total)} in all`} action={more('/videos', 'All highlights')}>
-      <div className="grid gap-5 sm:grid-cols-3">
-        {picks.map((v, i) => (
-          <VideoCard key={v.id} v={v} reason={['The bluff everyone is talking about', 'All-in for the chip lead', 'A fold nobody else makes'][i]} />
-        ))}
+    <Section title={title} kicker={`Editor’s picks · this week’s theme · ${duration(total)} in all`} action={more('/videos', 'All highlights')}>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <Link to={`/watch/${lead.id}`} className="group relative block overflow-hidden rounded-panel bg-surface-2">
+          <span className="relative block aspect-video">
+            <img src={lead.thumb} style={artStyle({ pos: lead.thumbPos, fit: lead.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.02]" />
+            <span className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" aria-hidden />
+          </span>
+          <span className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+            <span className="flex items-center gap-2 text-xs font-bold tracking-wide text-gold-strong uppercase">
+              <Icon name="play" size={14} /> {duration(lead.durationSec)}
+            </span>
+            <span className="mt-1.5 block text-xl leading-snug font-bold sm:text-2xl">{lead.title}</span>
+            <span className="mt-1.5 line-clamp-2 block max-w-xl text-sm text-text/80">{note}</span>
+          </span>
+        </Link>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+          {rest.map((v) => (
+            <VideoCard key={v.id} v={v} />
+          ))}
+        </div>
       </div>
     </Section>
   );
