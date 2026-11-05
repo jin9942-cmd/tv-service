@@ -1,7 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
-import { ChannelRedirect, CollectionPage, EventPage, LivePage, MyListPage, SchedulePage, ShortsRedirect, TagPage, VideosPage, WatchPage } from './v4/pages';
+import { ChannelRedirect, CollectionPage, EventPage, LivePage, MyListPage, SchedulePage, SeriesSchedulePage, ShortsRedirect, TagPage, VideosPage, WatchPage } from './v4/pages';
 import { TvHome, TvHowToWatch, TvShowDetail, TvShows } from './pages/tv';
 import { TvClassic } from './pages/poker';
 import { SeriesList } from './pages/Series';
@@ -34,6 +34,7 @@ export default function App() {
             <Route path="tag/:slug" element={<TagPage />} />
             {/* The schedule is out of the menu (Home's season strip and Live link to it). */}
             <Route path="schedule" element={<SchedulePage />} />
+            <Route path="schedule/:seriesId" element={<SeriesSchedulePage />} />
             <Route path="schedule/channels" element={<Navigate to="/schedule" replace />} />
             <Route path="tournaments" element={<Navigate to="/schedule" replace />} />
             {/* Videos: Highlights and Replays (series → event → broadcast). */}
