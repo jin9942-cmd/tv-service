@@ -109,7 +109,7 @@ function PromoBanner() {
       actions: (
         <Link to="/videos/replays?series=classics">
           <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
-            <Icon name="play" size={18} /> Browse classics
+            <Icon name="play" size={18} /> Watch final tables
           </Button>
         </Link>
       ),
