@@ -1134,7 +1134,8 @@ export function SchedulePage() {
   return (
     <Page className="max-w-[72rem]">
       <h1 className="sr-only">Schedule</h1>
-      <header className="flex flex-col gap-5 rounded-panel border border-line bg-surface p-5 sm:flex-row sm:items-center">
+      <SeasonTimeline current={s} now={now} />
+      <header className="mt-6 flex flex-col gap-5 rounded-panel border border-line bg-surface p-5 sm:flex-row sm:items-center">
         <img src={s.art.src} style={artStyle(s.art)} alt="" className="aspect-video w-full shrink-0 rounded-card object-cover sm:w-48" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -1143,7 +1144,7 @@ export function SchedulePage() {
               {st === 'live' ? 'Now running' : st === 'upcoming' ? 'Upcoming' : 'Past'}
             </span>
           </div>
-          <SeriesPicker current={s} />
+          <h2 className="mt-1 text-2xl sm:text-3xl">{s.name}</h2>
           <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[15px]">
             <span className="font-semibold text-gold-strong tnum">
               {shortDate(s.start, state.tz)} – {shortDate(s.end, state.tz)}
@@ -1187,37 +1188,67 @@ export function SchedulePage() {
   );
 }
 
-/** The series name, which opens a menu of the year's series (running, upcoming, past). */
-function SeriesPicker({ current }: { current: SeriesStop }) {
+/**
+ * The season at a glance: the year's series in date order, always on view. The running one carries LIVE and how far
+ * it has got (Day 21 of 31); one ahead says when it starts; one that is over offers its replays. The chosen series is
+ * outlined, and the header and broadcast table below follow it. On phones the cards scroll sideways, the chosen one in view.
+ */
+function SeasonTimeline({ current, now }: { current: SeriesStop; now: number }) {
   const { state } = useApp();
-  const now = Date.now();
-  const [open, setOpen] = useState(false);
-  const order = { live: 0, upcoming: 1, past: 2 } as const;
-  const list = [...SEASON].sort((a, b) => order[seriesState(a, now)] - order[seriesState(b, now)] || a.start.localeCompare(b.start));
+  const list = [...SEASON].sort((a, b) => a.start.localeCompare(b.start));
+  const holder = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    // After layout settles (fonts, page fade-in), so the measurement is the final one.
+    const t = window.setTimeout(() => {
+      const box = holder.current;
+      const on = box?.querySelector<HTMLElement>('[aria-current="page"]')?.closest('li');
+      if (box && on) box.scrollLeft += on.getBoundingClientRect().left - box.getBoundingClientRect().left - (box.clientWidth - on.offsetWidth) / 2;
+    }, 150);
+    return () => window.clearTimeout(t);
+  }, [current.id]);
+  const md = (iso: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: state.tz }).format(new Date(iso));
+  const yr = (iso: string) => new Intl.DateTimeFormat('en-US', { year: 'numeric', timeZone: state.tz }).format(new Date(iso));
   return (
-    <div className="relative mt-1">
-      <button onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} className="inline-flex items-center gap-2 text-left text-2xl font-bold hover:text-gold-strong sm:text-3xl">
-        {current.name}
-        <Icon name="chevron" size={20} className={cx('shrink-0 transition-transform', open ? '-rotate-90' : 'rotate-90')} />
-      </button>
-      {open && (
-        <ul role="menu" className="absolute top-full left-0 z-20 mt-2 w-80 max-w-[90vw] rounded-card border border-line-strong bg-surface-2 py-1 shadow-2xl">
-          {list.map((x) => {
-            const st = seriesState(x, now);
-            return (
-              <li key={x.id}>
-                <Link role="menuitem" to={`/schedule/${x.id}`} onClick={() => setOpen(false)} className={cx('block px-4 py-2.5 hover:bg-surface-3', x.id === current.id && 'bg-surface-3')}>
-                  <span className="block text-sm font-semibold">{x.name}</span>
-                  <span className="block text-xs text-muted tnum">
-                    {st === 'live' ? 'Now running' : st === 'upcoming' ? 'Upcoming' : 'Past'} · {shortDate(x.start, state.tz)} – {shortDate(x.end, state.tz)}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
+    <nav aria-label="This season">
+      <ol ref={holder} className="hscroll gap-3 [&>*]:w-[72%] sm:grid sm:grid-cols-4 sm:overflow-visible sm:[&>*]:w-auto">
+        {list.map((x) => {
+          const st = seriesState(x, now);
+          const start = Date.parse(x.start);
+          const end = Date.parse(x.end);
+          const total = Math.round((end - start) / DAY_MS) + 1;
+          const day = Math.min(total, Math.floor((now - start) / DAY_MS) + 1);
+          const left = Math.ceil((start - now) / DAY_MS);
+          const on = x.id === current.id;
+          const pct = st === 'live' ? (day / total) * 100 : st === 'past' ? 100 : 0;
+          return (
+            <li key={x.id}>
+              <Link
+                to={`/schedule/${x.id}`}
+                aria-current={on ? 'page' : undefined}
+                className={cx(
+                  'block h-full rounded-card border bg-surface px-4 py-3 transition-colors',
+                  on ? 'border-gold ring-1 ring-gold' : 'border-line hover:border-line-strong hover:bg-surface-2',
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <span className={cx('truncate text-[15px] font-bold', st === 'past' && !on && 'text-text/75')}>{x.name.replace(/^\d{4} /, '')}</span>
+                </span>
+                <span className="mt-0.5 block text-xs text-muted tnum">
+                  {md(x.start)} – {md(x.end)}, {yr(x.end)}
+                </span>
+                <span className={cx('mt-2 flex items-center gap-2 text-xs font-semibold tnum', st === 'live' ? 'text-live' : st === 'upcoming' ? 'text-text/85' : 'text-muted')}>
+                  {st === 'live' && <LiveTag />}
+                  {st === 'live' ? `Day ${day} of ${total}` : st === 'upcoming' ? (left <= 1 ? 'Starts tomorrow' : `Starts in ${left} days`) : 'Replays'}
+                </span>
+                <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-surface-3" aria-hidden>
+                  <span className={cx('block h-full rounded-full', st === 'live' ? 'bg-live' : 'bg-line-strong')} style={{ width: `${pct}%` }} />
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }
 
