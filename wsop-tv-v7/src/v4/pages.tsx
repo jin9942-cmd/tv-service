@@ -453,7 +453,7 @@ export { catalog };
 // ---- Home rows ---------------------------------------------------------------------------------------
 
 /**
- * v7 Home rows: Continue watching, My List, Editor's pick (best final tables), Recommended for you, Latest replays,
+ * v7 Home rows: Coming up (right after the 24/7 channels: now, then next), Continue watching, My List, Editor's pick (best final tables), Recommended for you, Latest replays,
  * Highlights (automatic, by hand type) and Shorts. No video appears in two rows.
  */
 export function HomeRows() {
@@ -497,6 +497,7 @@ export function HomeRows() {
   const pick = photoPicker(shown);
   return (
     <>
+      <ComingUpRow />
       <ContinueRow items={continuing} onRemove={removeContinue} />
       <MyListRow videos={myRow} />
       <EditorsPick picks={picks} />
@@ -505,6 +506,57 @@ export function HomeRows() {
       <HighlightsRow pool={highlightPool} skip={shown} />
       <ShortsRow videos={shorts} pick={pick} />
     </>
+  );
+}
+
+/** Coming up: the next live broadcasts — date and time on the picture, a countdown and Remind me; each opens its countdown. */
+function ComingUpRow() {
+  const now = useTick(30_000);
+  const next = events
+    .flatMap((e) => e.days.filter((d) => d.status === 'upcoming').map((d) => ({ e, d })))
+    .sort((a, b) => a.d.start.localeCompare(b.d.start))
+    .slice(0, 4);
+  if (!next.length) return null;
+  // Broadcasts not aired yet have no picture of their own: each card gets a different photo of play.
+  const pick = photoPicker(new Set());
+  return (
+    <Section title="Coming up" action={more('/schedule', 'Full schedule')}>
+      <div className={rowGrid}>
+        {next.map((x) => (
+          <ComingUpCard key={x.d.id} {...x} now={now} pic={pick()} />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function ComingUpCard({ e, d, now, pic }: ScheduleItem & { now: number; pic: Pic }) {
+  const { state } = useApp();
+  const title = titleOf({ e, d });
+  const [on, toggle] = useReminder(`day:${d.id}`, title);
+  const mins = Math.max(0, Math.round((Date.parse(d.start) - now) / 60_000));
+  const days = Math.round(mins / 1440);
+  const inText = mins >= 1440 ? `in ${days} day${days === 1 ? '' : 's'}` : mins >= 60 ? `in ${Math.floor(mins / 60)}h ${mins % 60}m` : `in ${mins} min`;
+  return (
+    <div className="group min-w-0">
+      <Link to={`/watch/${d.id}`} className="relative block aspect-video overflow-hidden rounded-card bg-surface-2" aria-label={`${title}, ${inText}`}>
+        <img src={pic.thumb} style={artStyle({ pos: pic.thumbPos, fit: pic.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover opacity-45 transition-transform duration-200 group-hover:scale-[1.03]" />
+        <span className="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <span className="text-[11px] font-bold tracking-wider text-gold-strong uppercase">{fmtDate(d.start, state.tz)}</span>
+          <span className="mt-0.5 text-2xl font-black tnum">{fmtTime(d.start, state.tz)}</span>
+          <span className="mt-0.5 text-xs text-white/75 tnum">{inText}</span>
+        </span>
+      </Link>
+      <div className="mt-2 flex items-start justify-between gap-2">
+        <Link to={`/watch/${d.id}`} className="min-w-0">
+          <span className="block truncate text-[15px] font-semibold group-hover:text-gold-strong">{title}</span>
+          <span className="mt-0.5 block truncate text-xs text-muted">{seriesById(e.seriesId).name}</span>
+        </Link>
+        <button onClick={toggle} aria-pressed={on} aria-label={on ? `Reminder set for ${title}` : `Remind me about ${title}`} title={on ? 'Reminder set' : 'Remind me'} className={cx('flex size-9 shrink-0 items-center justify-center rounded-full border', on ? 'border-gold bg-gold-dim text-gold-strong' : 'border-line-strong text-muted hover:text-text')}>
+          <Icon name={on ? 'check' : 'bell'} size={16} />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -1234,52 +1286,6 @@ function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: nu
         </Link>
       </div>
     </div>
-  );
-}
-
-/**
- * The next live broadcast, in a strip right under the home banner (never over its photo): what and when, a live
- * countdown, Remind me and the schedule.
- */
-export function NextLiveStrip() {
-  const { state } = useApp();
-  const now = useTick(1000);
-  const next = events
-    .flatMap((e) => e.days.filter((d) => d.status === 'upcoming').map((d) => ({ e, d })))
-    .sort((a, b) => a.d.start.localeCompare(b.d.start))[0];
-  const title = next ? titleOf(next) : '';
-  const [on, toggle] = useReminder(next ? `day:${next.d.id}` : 'none', title);
-  if (!next) return null;
-  return (
-    <aside aria-label="Next live" className="border-b border-line bg-surface">
-      <div className="mx-auto flex max-w-content flex-wrap items-center gap-x-6 gap-y-3 px-gutter py-4 sm:px-6 lg:px-8">
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] text-gold-strong uppercase">
-            <i className="size-1.5 rounded-full bg-gold" aria-hidden /> Next live
-          </p>
-          <p className="mt-0.5 flex flex-wrap items-baseline gap-x-3">
-            <Link to={`/watch/${next.d.id}`} className="truncate text-lg font-bold hover:text-gold-strong">
-              {title}
-            </Link>
-            <span className="text-sm text-muted tnum">
-              {fmtDate(next.d.start, state.tz)} · {fmtTime(next.d.start, state.tz)} {tzAbbr(state.tz, next.d.start)}
-            </span>
-          </p>
-        </div>
-        <p className="text-2xl font-black tracking-tight tnum sm:text-3xl" role="timer" aria-label="Starts in">
-          <span className="mr-2 align-middle text-xs font-semibold tracking-normal text-muted">Starts in</span>
-          {countdownText(Date.parse(next.d.start) - now)}
-        </p>
-        <div className="flex items-center gap-3">
-          <Button size="sm" variant={on ? 'secondary' : 'primary'} onClick={toggle} aria-pressed={on}>
-            <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
-          </Button>
-          <Link to="/schedule" className="text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
-            Schedule →
-          </Link>
-        </div>
-      </div>
-    </aside>
   );
 }
 
