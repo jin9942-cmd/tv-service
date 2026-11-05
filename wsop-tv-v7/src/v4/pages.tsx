@@ -675,31 +675,19 @@ function photoPicker(skip: Set<string>) {
   };
 }
 
-/** Highlights: hand clips, filled automatically, with the hand-type chips of Videos > Highlights. */
+/** Highlights: hand clips, filled automatically (the hand-type filters are on Videos > Highlights). */
 function HighlightsRow({ pool, skip }: { pool: Video[]; skip: Set<string> }) {
-  const [f, setF] = useState<string>('all');
   // Photos instead of the look-alike broadcast stills, so the same face doesn't fill the row.
   const pick = photoPicker(skip);
-  const list = (f === 'all' ? pool : pool.filter((v) => v.tags.some((t) => t.slug === f))).slice(0, 4).map((v) => ({ ...v, ...pick(v) }));
-  if (!pool.length) return null;
+  const list = pool.slice(0, 4).map((v) => ({ ...v, ...pick(v) }));
+  if (!list.length) return null;
   return (
     <Section title="Highlights" action={more('/videos', 'All highlights')}>
-      <div className="-mt-1 mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Hand type">
-        {HAND_FILTERS.map(([k, label]) => (
-          <button key={k} role="tab" aria-selected={f === k} onClick={() => setF(k)} className={chip(f === k)}>
-            {label}
-          </button>
+      <div className={rowGrid}>
+        {list.map((v) => (
+          <VideoCard key={v.id} v={v} />
         ))}
       </div>
-      {list.length ? (
-        <div className={rowGrid}>
-          {list.map((v) => (
-            <VideoCard key={v.id} v={v} />
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted">No hands of this type yet — see all highlights in Videos.</p>
-      )}
     </Section>
   );
 }
