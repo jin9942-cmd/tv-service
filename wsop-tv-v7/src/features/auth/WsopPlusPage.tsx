@@ -1,15 +1,27 @@
-// WSOP+ under the WSOP TV menu (v7): the wsop.com/plus page as the WSOP team gave it — the membership banner over a
-// photo collage, then "Choose your plan" with WSOP Academy, WSOP Live and ClubGG rows for Free, Basic and Premium.
-// Get Started goes through the WSOP+ join mock and comes back; nothing is charged in the demo.
+// WSOP+ under the WSOP TV menu (v7): the wsop.com/plus page as the WSOP team gave it — the membership banner on the
+// wsop.com/plus banner image (no Sign up button), "Choose your plan" with WSOP Academy, WSOP Live and ClubGG rows for Free,
+// Basic and Premium, the FAQ, and the closing band. Get Started goes through the WSOP+ join mock and comes back; nothing
+// is charged in the demo.
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { memberTier, useApp } from '../../state/app';
 import type { PaidTier } from '../../data/policy';
-import { HERO_IMAGES } from '../../lib/brand';
 import { Icon, cx } from '../../components/ui';
 
 const PROMO = `${import.meta.env.BASE_URL}promo/`;
-/** Banner collage (photos from the v3–v6 demos), dimmed behind the title. */
-const COLLAGE = [`${PROMO}champion.png`, `${PROMO}bracelet-win.png`, HERO_IMAGES.portrait, `${PROMO}negreanu-gg.png`, `${PROMO}bracelet.webp`];
+/** The wsop.com/plus banner and closing-band images. */
+const HERO_BG = `${PROMO}plus-hero-bg.webp`;
+const CTA_BG = `${PROMO}plus-cta-bg.webp`;
+
+/** wsop.com/plus FAQ. The first answer is wsop.com's; the others are short demo answers. */
+const FAQ: [string, string][] = [
+  ['Which products and services are part of the WSOP+ subscription?', 'WSOP Academy, WSOP Live, and ClubGG are included in the WSOP+ subscription. Additional products and services may be added in the future.'],
+  ['What subscription options does WSOP+ offer?', 'Free, WSOP+ Basic ($9.99 / month) and WSOP+ Premium ($49.99 / month). See Choose your plan above for what each includes.'],
+  ['Do I need a GG Pass account to sign up for WSOP+?', 'Yes. WSOP+ runs on your GG Pass account — the same account you sign in to WSOP TV with.'],
+  ['How can I manage my subscription?', 'From your WSOP+ account: change plan, update your payment method or see your billing history.'],
+  ['Can I cancel my subscription at any time?', 'Yes. You keep your benefits until the end of the period you have paid for.'],
+  ['Can I receive a refund on my subscription?', 'Refunds follow the WSOP+ Terms of Service.'],
+];
 
 type Col = 'free' | 'basic' | 'premium';
 const PLANS: { id: Col; name: string; price: string; popular?: boolean }[] = [
@@ -62,12 +74,8 @@ export function WsopPlusPage() {
   return (
     <>
       <section aria-label="WSOP+ membership" className="relative overflow-hidden">
-        <div className="absolute inset-0 grid grid-cols-3 gap-1 sm:grid-cols-5" aria-hidden>
-          {COLLAGE.map((src, i) => (
-            <img key={src} src={src} alt="" className={cx('size-full object-cover', i > 2 && 'hidden sm:block')} />
-          ))}
-        </div>
-        <div className="absolute inset-0 bg-black/70" aria-hidden />
+        <img src={HERO_BG} alt="" aria-hidden className="absolute inset-0 size-full object-cover" />
+        <div className="absolute inset-0 bg-black/45" aria-hidden />
         <div className="relative mx-auto flex max-w-content flex-col items-center px-gutter py-16 text-center sm:py-20">
           <h1 className="text-[2.6rem] leading-none text-[#e0402c] sm:text-[4.2rem]">WSOP+ Membership</h1>
           <p className="mt-3 font-display text-[1.6rem] leading-tight uppercase sm:text-[2.6rem]">Get the best out of your WSOP experience</p>
@@ -133,6 +141,37 @@ export function WsopPlusPage() {
         </div>
         <p className="mt-8 text-center text-[13px] text-text/80">Be on the lookout! New subscriber benefits coming soon!</p>
       </section>
+      <Faq />
+
+      <section aria-label="Your seat at the table is waiting" className="relative overflow-hidden">
+        <img src={CTA_BG} alt="" aria-hidden className="absolute inset-0 size-full object-cover" />
+        <div className="absolute inset-0 bg-black/40" aria-hidden />
+        <div className="relative mx-auto max-w-content px-gutter py-14 text-center">
+          <h2 className="text-2xl sm:text-4xl">Your seat at the table is waiting</h2>
+          <p className="mt-2 text-sm text-white/85">Subscribe today to get the best out of your WSOP experience</p>
+        </div>
+      </section>
     </>
+  );
+}
+
+/** Frequently asked questions: one open at a time, the first open to start. */
+function Faq() {
+  const [open, setOpen] = useState(0);
+  return (
+    <section aria-label="Frequently asked questions" className="mx-auto max-w-[56rem] px-gutter pb-16 sm:px-6">
+      <h2 className="text-center text-2xl sm:text-3xl">Frequently asked questions</h2>
+      <ul className="mt-8 border-t border-line">
+        {FAQ.map(([q, a], i) => (
+          <li key={q} className="border-b border-line">
+            <button onClick={() => setOpen(open === i ? -1 : i)} aria-expanded={open === i} className="flex w-full items-center justify-between gap-4 px-3 py-5 text-left text-[15px] font-medium">
+              {q}
+              <Icon name="chevron" size={18} className={cx('shrink-0 transition-transform', open === i ? '-rotate-90' : 'rotate-90')} />
+            </button>
+            {open === i && <p className="px-3 pb-5 text-sm leading-relaxed text-muted">• {a}</p>}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
