@@ -1241,8 +1241,11 @@ function BroadcastRow({ e, d, st, venueTz }: ScheduleItem & { st: Day['status'];
             <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
           </Button>
         ) : (
-          <Link to={`/watch/${d.id}`} className="text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
-            Replay →
+          // On demand: a Watch button (grey, so Watch live stays the one red button in the table).
+          <Link to={`/watch/${d.id}`}>
+            <Button size="sm" variant="secondary" tabIndex={-1}>
+              <Icon name="play" size={14} /> Watch
+            </Button>
           </Link>
         )}
       </td>
