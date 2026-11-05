@@ -554,27 +554,6 @@ const editorsFinalTables = () => {
   return picked;
 };
 
-/**
- * The Curated collections area sits on its own band — a warm tinted panel with a gold rule and
- * a "From the archive" label — so it reads as chosen by people, apart from the personal and automatic rows.
- */
-function EditorialBand({ label, title, action, children }: { label: string; title: string; action?: ReactNode; children: ReactNode }) {
-  return (
-    <section aria-label={title} className="relative overflow-hidden rounded-panel border border-gold/30 bg-[linear-gradient(135deg,#2a2010_0%,#16130c_45%,#0f0f10_100%)] p-5 sm:p-6">
-      <span className="absolute inset-y-0 left-0 w-1 bg-gold" aria-hidden />
-      {/* One line: the title with its label beside it. */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h2 className="text-xl sm:text-2xl">{title}</h2>
-          <EditorialLabel>{label}</EditorialLabel>
-        </div>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
-
 function EditorsPick({ picks }: { picks: Video[] }) {
   if (!picks.length) return null;
   const total = picks.reduce((n, v) => n + v.durationSec, 0);
@@ -642,43 +621,31 @@ function photoPicker(skip: Set<string>) {
   };
 }
 
-/** Curated collections as playlists (YouTube style): a stacked cover with the video count, the title, View full playlist. */
+/** Curated collections: single cards like the rows above, with the video count on the picture. */
 function CollectionsRow({ skip, pick }: { skip: Set<string>; pick: (own?: Pic) => Pic }) {
   return (
-    <EditorialBand label="From the archive" title="Curated collections">
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <Section title="Curated collections" label="From the archive">
+      <div className={rowGrid}>
         {COLLECTIONS.map((c) => {
           const vs = c.videos();
           // A photo from the collection the rows above don't show, else another photo not on the page.
           const own = [...vs].reverse().find((v) => !skip.has(v.id) && !isStill(v.thumb));
           const cover = pick(own);
           return (
-            <div key={c.id} className="group min-w-0">
-              <Link to={`/collections/${c.id}`} className="relative block pt-2" aria-label={`${c.title}, playlist of ${vs.length} videos`}>
-                {/* The stack behind the cover marks it as a playlist. */}
-                <span className="absolute inset-x-4 top-0 h-3 rounded-t-card bg-white/15" aria-hidden />
-                <span className="absolute inset-x-2 top-1 h-3 rounded-t-card bg-white/25" aria-hidden />
-                <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-                  <img src={cover.thumb} style={artStyle({ pos: cover.thumbPos, fit: cover.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-                  <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">
-                    <Icon name="layers" size={12} /> {vs.length} videos
-                  </span>
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-sm font-bold opacity-0 transition-opacity group-hover:opacity-100" aria-hidden>
-                    <Icon name="play" size={16} /> Play all
-                  </span>
+            <Link key={c.id} to={`/collections/${c.id}`} className="group block min-w-0">
+              <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+                <img src={cover.thumb} style={artStyle({ pos: cover.thumbPos, fit: cover.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+                <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">
+                  <Icon name="layers" size={12} /> {vs.length} videos
                 </span>
-              </Link>
-              <Link to={`/collections/${c.id}`} className="mt-2.5 block truncate text-[15px] font-bold hover:text-gold-strong">
-                {c.title}
-              </Link>
-              <Link to={`/collections/${c.id}`} className="mt-1 inline-block text-xs font-semibold text-gold-strong hover:underline">
-                View full playlist
-              </Link>
-            </div>
+              </span>
+              <span className="mt-2 block truncate text-[15px] font-semibold group-hover:text-gold-strong">{c.title}</span>
+              <span className="mt-0.5 block truncate text-xs text-muted">{c.blurb}</span>
+            </Link>
           );
         })}
       </div>
-    </EditorialBand>
+    </Section>
   );
 }
 
