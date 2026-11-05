@@ -5,7 +5,7 @@ import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
-import { HERO_DAY_ID, dayById, eventById, events, finalTableSeats, playerById, seatsFor, series, seriesById } from '../data/mock';
+import { HERO_DAY_ID, dayById, eventById, events, series, seriesById } from '../data/mock';
 import type { Day, TourEvent } from '../data/types';
 import { VENUE_TZ, fmtDate, fmtTime, tzAbbr } from '../lib/time';
 import { isBroadcasting } from '../lib/broadcast';
@@ -1105,8 +1105,7 @@ function useScheduleView<T>(items: T[], isPast: (x: T) => boolean, aheadKey: (x:
 
 /**
  * Schedule, season first. While a series is live it opens on that series' broadcasts by date — times (yours and Las
- * Vegas), who is expected at the table (followed players starred, a My players filter) and Watch live / Remind me —
- * with the year's series below. Between series it is the list of series.
+ * Vegas), buy-in and game, and Watch live / Remind me — with the year's series below. Between series it is the list of series.
  */
 export function SchedulePage() {
   const now = useTick(60_000);
@@ -1153,22 +1152,14 @@ function SeriesList() {
   );
 }
 
-/** Players expected at a broadcast's feature table, biggest stacks first (followed players first). */
-const featuredPlayers = (d: Day, followed: Record<string, unknown>) => {
-  const ids = (d.id === HERO_DAY_ID ? finalTableSeats : seatsFor(d.id)).map((x) => x.playerId);
-  return [...ids.filter((id) => followed[id]), ...ids.filter((id) => !followed[id])].slice(0, 3);
-};
-
-/** The live series: a compact header, the menu (plus My players), then its broadcasts under date headings. */
+/** The live series: a compact header, the menu, then its broadcasts under date headings. */
 function LiveSeriesSchedule({ s }: { s: SeriesStop }) {
   const { state } = useApp();
   const now = useTick(30_000);
-  const [mine, setMine] = useState(false);
   const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
   const all = events
     .filter((e) => e.seriesId === s.id)
     .flatMap((e) => e.days.map((d) => ({ e, d })))
-    .filter((x) => !mine || featuredPlayers(x.d, state.followed).some((id) => state.followed[id]))
     .sort((a, b) => a.d.start.localeCompare(b.d.start));
   const { view, setView, shown, aheadMonths, pastMonths } = useScheduleView(
     all,
@@ -1193,13 +1184,7 @@ function LiveSeriesSchedule({ s }: { s: SeriesStop }) {
         </span>
       </div>
       <ScheduleBar view={view} onChange={setView} ahead={aheadMonths} past={pastMonths} />
-      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-        <label className="inline-flex cursor-pointer items-center gap-2">
-          <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} className="size-4 accent-[var(--color-gold)]" />
-          Only players I follow
-        </label>
-        <span className="text-xs text-muted">Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with Las Vegas time.</span>
-      </div>
+      <p className="mt-3 text-xs text-muted">Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with Las Vegas time.</p>
       <div className="mt-6 space-y-8">
         {[...byDate.entries()].map(([date, items]) => (
           <section key={date} aria-label={date}>
@@ -1211,19 +1196,18 @@ function LiveSeriesSchedule({ s }: { s: SeriesStop }) {
             </ol>
           </section>
         ))}
-        {!byDate.size && <p className="text-sm text-muted">{mine ? (Object.keys(state.followed).length ? 'None of the players you follow are expected on a broadcast here.' : 'Follow players on their profile to see their broadcasts here.') : 'Nothing scheduled here.'}</p>}
+        {!byDate.size && <p className="text-sm text-muted">Nothing scheduled here.</p>}
       </div>
     </>
   );
 }
 
-/** One broadcast: time (yours / Las Vegas), title, expected players (★ followed), and Watch live / Remind me / Replay. */
+/** One broadcast: time (yours / Las Vegas), title, buy-in and game, and Watch live / Remind me / Replay. */
 function SeasonRow({ e, d, st }: ScheduleItem & { st: Day['status'] }) {
   const { state } = useApp();
   const title = titleOf({ e, d });
   const [on, toggle] = useReminder(`day:${d.id}`, title);
   const live = isBroadcasting(st);
-  const players = featuredPlayers(d, state.followed);
   return (
     <li className={cx('flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3.5', live ? 'bg-live/5' : 'bg-surface')}>
       <span className="w-24 shrink-0 tnum">
@@ -1239,15 +1223,6 @@ function SeasonRow({ e, d, st }: ScheduleItem & { st: Day['status'] }) {
           <span className="text-xs text-muted">
             {e.buyIn ? money(e.buyIn) : 'Invitational'} · {e.game}
           </span>
-        </span>
-        <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-          {players.map((id) => (
-            <Link key={id} to={`/players/${id}`} className={cx('inline-flex items-center gap-1 hover:underline', state.followed[id] ? 'font-semibold text-gold-strong' : 'text-text/80')}>
-              {state.followed[id] && <Icon name="star" size={12} />}
-              {playerById(id).name}
-            </Link>
-          ))}
-          {players.length > 0 && <span className="text-xs text-subtle">at the table</span>}
         </span>
       </span>
       <span className="shrink-0">
