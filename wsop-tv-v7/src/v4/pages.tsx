@@ -1011,8 +1011,8 @@ function EventCard({ e }: { e: TourEvent }) {
 }
 
 /**
- * Schedule, in the wsop.com/schedule style: a filter bar (All · Live · Past · Upcoming), then the broadcasts as cards
- * under month headings — live now first, then earlier broadcasts (newest first), then what's coming. A live card carries
+ * Schedule, in the wsop.com/schedule style: a filter bar (All · Live · Upcoming · Past), then the broadcasts as cards
+ * under month headings — live now first, then what's coming, then earlier broadcasts (newest first). A live card carries
  * the LIVE icon; an upcoming card counts down and opens its waiting screen (timer and Remind me).
  */
 type ScheduleFilter = 'all' | 'live' | 'replays' | 'upcoming';
@@ -1031,8 +1031,8 @@ export function SchedulePage() {
   const tabs: [ScheduleFilter, string, number][] = [
     ['all', 'All', liveNow.length + earlier.length + upcoming.length],
     ['live', 'Live', liveNow.length],
-    ['replays', 'Past', earlier.length],
     ['upcoming', 'Upcoming', upcoming.length],
+    ['replays', 'Past', earlier.length],
   ];
   const show = (k: ScheduleFilter) => f === 'all' || f === k;
   return (
@@ -1055,9 +1055,9 @@ export function SchedulePage() {
             ))}
           </ScheduleGroup>
         )}
-        {show('replays') && earlier.length > 0 && (
-          <ScheduleGroup title="Past" sub="Earlier broadcasts — watch the full replay">
-            {byMonth(earlier, state.tz).map(([m, items]) => (
+        {show('upcoming') && upcoming.length > 0 && (
+          <ScheduleGroup title="Upcoming" sub="Open one for the countdown, or set a reminder">
+            {byMonth(upcoming, state.tz).map(([m, items]) => (
               <MonthBlock key={m} month={m}>
                 {items.map((x) => (
                   <ScheduleCard key={x.d.id} {...x} st={status(x.d)} now={now} />
@@ -1066,9 +1066,9 @@ export function SchedulePage() {
             ))}
           </ScheduleGroup>
         )}
-        {show('upcoming') && upcoming.length > 0 && (
-          <ScheduleGroup title="Upcoming" sub="Open one for the countdown, or set a reminder">
-            {byMonth(upcoming, state.tz).map(([m, items]) => (
+        {show('replays') && earlier.length > 0 && (
+          <ScheduleGroup title="Past" sub="Earlier broadcasts — watch the full replay">
+            {byMonth(earlier, state.tz).map(([m, items]) => (
               <MonthBlock key={m} month={m}>
                 {items.map((x) => (
                   <ScheduleCard key={x.d.id} {...x} st={status(x.d)} now={now} />
