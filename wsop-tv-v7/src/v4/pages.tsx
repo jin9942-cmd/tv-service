@@ -1340,11 +1340,10 @@ export function EventPage() {
 // ---- 24/7 channel cards (Home) -------------------------------------------------------------------------
 
 /**
- * One 24/7 channel: its picture, what's on, the channel and when it ends, and Watch now. On the Channel guide the card
+ * One 24/7 channel: its picture, what's on, the channel (no end time) and Watch now. On the Channel guide the card
  * selects the channel (`onSelect`); on Home the whole card opens it on Live.
  */
 function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: number; selected?: boolean; onSelect?: () => void }) {
-  const { state } = useApp();
   const p = programAt(c.id, now);
   const a = CHANNEL_ART[c.id];
   const hit = "block w-full min-w-0 text-left after:absolute after:inset-0 after:content-['']";
@@ -1355,7 +1354,6 @@ function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: nu
       </span>
       <span className="mt-0.5 block truncate text-sm text-muted tnum">
         {c.name}
-        {p && ` · until ${fmtTime(p.end, state.tz)}`}
       </span>
     </>
   );
