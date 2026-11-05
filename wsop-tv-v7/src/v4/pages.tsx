@@ -1238,10 +1238,10 @@ function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: nu
 }
 
 /**
- * Home banner: the next live broadcast as its own card (bottom right of the banner on wide screens, under the buttons on
- * phones) — what, when, a live countdown, Remind me and the schedule.
+ * The next live broadcast, in a strip right under the home banner (never over its photo): what and when, a live
+ * countdown, Remind me and the schedule.
  */
-export function NextLiveCard({ className }: { className?: string }) {
+export function NextLiveStrip() {
   const { state } = useApp();
   const now = useTick(1000);
   const next = events
@@ -1251,26 +1251,33 @@ export function NextLiveCard({ className }: { className?: string }) {
   const [on, toggle] = useReminder(next ? `day:${next.d.id}` : 'none', title);
   if (!next) return null;
   return (
-    <aside aria-label="Next live" className={cx('w-full rounded-panel border border-white/15 bg-black/75 p-4 backdrop-blur-md sm:w-80', className)}>
-      <p className="flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] text-gold-strong uppercase">
-        <i className="size-1.5 rounded-full bg-gold" aria-hidden /> Next live
-      </p>
-      <Link to={`/watch/${next.d.id}`} className="mt-1.5 block text-lg leading-snug font-bold hover:text-gold-strong">
-        {title}
-      </Link>
-      <p className="mt-0.5 text-sm text-white/70 tnum">
-        {fmtDate(next.d.start, state.tz)} · {fmtTime(next.d.start, state.tz)} {tzAbbr(state.tz, next.d.start)}
-      </p>
-      <p className="mt-3 text-3xl font-black tracking-tight tnum" role="timer" aria-label="Starts in">
-        {countdownText(Date.parse(next.d.start) - now)}
-      </p>
-      <div className="mt-3 flex items-center gap-3">
-        <Button size="sm" variant={on ? 'secondary' : 'primary'} onClick={toggle} aria-pressed={on}>
-          <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
-        </Button>
-        <Link to="/schedule" className="text-sm font-semibold text-white/75 hover:text-white">
-          Schedule →
-        </Link>
+    <aside aria-label="Next live" className="border-b border-line bg-surface">
+      <div className="mx-auto flex max-w-content flex-wrap items-center gap-x-6 gap-y-3 px-gutter py-4 sm:px-6 lg:px-8">
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] text-gold-strong uppercase">
+            <i className="size-1.5 rounded-full bg-gold" aria-hidden /> Next live
+          </p>
+          <p className="mt-0.5 flex flex-wrap items-baseline gap-x-3">
+            <Link to={`/watch/${next.d.id}`} className="truncate text-lg font-bold hover:text-gold-strong">
+              {title}
+            </Link>
+            <span className="text-sm text-muted tnum">
+              {fmtDate(next.d.start, state.tz)} · {fmtTime(next.d.start, state.tz)} {tzAbbr(state.tz, next.d.start)}
+            </span>
+          </p>
+        </div>
+        <p className="text-2xl font-black tracking-tight tnum sm:text-3xl" role="timer" aria-label="Starts in">
+          <span className="mr-2 align-middle text-xs font-semibold tracking-normal text-muted">Starts in</span>
+          {countdownText(Date.parse(next.d.start) - now)}
+        </p>
+        <div className="flex items-center gap-3">
+          <Button size="sm" variant={on ? 'secondary' : 'primary'} onClick={toggle} aria-pressed={on}>
+            <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
+          </Button>
+          <Link to="/schedule" className="text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
+            Schedule →
+          </Link>
+        </div>
       </div>
     </aside>
   );

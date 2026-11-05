@@ -16,7 +16,7 @@ import { Button, Icon, LiveTag, Page, SectionHeader, cx } from '../components/ui
 import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
-import { HomeRows, NextLiveCard, TodayCards } from '../v4/pages';
+import { HomeRows, NextLiveStrip, TodayCards } from '../v4/pages';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
 const isBreak = (p: Program) => BREAK_TITLES.includes(p.title);
@@ -31,6 +31,8 @@ export function TvHome() {
       {/* v7 Home: the banner (with the next live broadcast), the 24/7 channels, then the rows (Continue watching … Shorts). */}
       <section className="border-b border-line" aria-label="Featured">
         <PromoBanner />
+        {/* The next live broadcast, right under the live banner (not over its photo, not in the 24/7 channels). */}
+        <NextLiveStrip />
         <Page className="pt-6 pb-6">
           <h2 className="mb-3 text-xl sm:text-2xl">24/7 On-Demand</h2>
           <TodayCards now={now} />
@@ -148,8 +150,6 @@ function PromoBanner() {
           <p className="mt-3 line-clamp-2 h-[2.8rem] text-[15px] leading-[1.4rem] text-text/75 sm:line-clamp-1 sm:h-[1.4rem]">{sl.line}</p>
           <div className="mt-6 flex gap-2">{sl.actions}</div>
         </div>
-        {/* The next live broadcast belongs with the live banner (not the 24/7 channels): its own card, bottom right. */}
-        <NextLiveCard className="mt-6 md:absolute md:right-8 md:bottom-16 md:mt-0" />
       </Page>
       {/* Slide dots only (no arrows), centred along the bottom edge; each has a tall hit area for touch. */}
       <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2 md:bottom-6">
