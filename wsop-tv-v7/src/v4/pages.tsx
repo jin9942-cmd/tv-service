@@ -1036,219 +1036,156 @@ const SEASON: SeriesStop[] = [
 const seriesState = (s: SeriesStop, now: number) => (Date.parse(s.start) <= now && now <= Date.parse(s.end) ? 'live' : Date.parse(s.start) > now ? 'upcoming' : 'past');
 const shortDate = (iso: string, tz: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric', timeZone: tz }).format(new Date(iso));
 
-/** Month key (YYYY-MM) of a date in the viewer's time zone, and its tab label ("November", "January 2027"). */
-const monthKey = (iso: string | number, tz: string) => new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', timeZone: tz }).format(new Date(iso)).slice(0, 7);
-const monthLabel = (key: string, tz: string, now: number) => {
-  const d = new Date(`${key}-15T12:00:00Z`);
-  const sameYear = key.slice(0, 4) === monthKey(now, tz).slice(0, 4);
-  return new Intl.DateTimeFormat('en-US', { month: 'long', ...(sameYear ? {} : { year: 'numeric' }), timeZone: 'UTC' }).format(d);
-};
-
-/** What the schedule menu shows: everything ahead (live included), one month ahead, or the past (all, or one month). */
-type ScheduleView = { kind: 'upcoming' } | { kind: 'month'; key: string } | { kind: 'past'; key?: string };
-
 /**
- * The schedule menu, PokerGO style: Past ▾ (a menu of past months) · All upcoming · one tab per month ahead.
- */
-function ScheduleBar({ view, onChange, ahead, past }: { view: ScheduleView; onChange: (v: ScheduleView) => void; ahead: string[]; past: string[] }) {
-  const { state } = useApp();
-  const now = Date.now();
-  const [open, setOpen] = useState(false);
-  const seg = (on: boolean) => cx('h-11 px-4 text-sm font-bold whitespace-nowrap uppercase transition-colors sm:px-5', on ? 'bg-gold text-ink' : 'text-text/85 hover:bg-surface-3');
-  return (
-    <div className="relative mt-4">
-      <div className="inline-flex max-w-full overflow-x-auto rounded-card border border-line-strong bg-surface [&>*+*]:border-l [&>*+*]:border-line-strong" role="tablist" aria-label="Schedule">
-        <button role="tab" aria-selected={view.kind === 'past'} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={cx(seg(view.kind === 'past'), 'inline-flex items-center gap-1.5')}>
-          {view.kind === 'past' && view.key ? monthLabel(view.key, state.tz, now) : 'Past'}
-          <Icon name="chevron" size={14} className="rotate-90" />
-        </button>
-        <button role="tab" aria-selected={view.kind === 'upcoming'} onClick={() => (onChange({ kind: 'upcoming' }), setOpen(false))} className={seg(view.kind === 'upcoming')}>
-          All upcoming
-        </button>
-        {ahead.map((k) => (
-          <button key={k} role="tab" aria-selected={view.kind === 'month' && view.key === k} onClick={() => (onChange({ kind: 'month', key: k }), setOpen(false))} className={seg(view.kind === 'month' && view.key === k)}>
-            {monthLabel(k, state.tz, now)}
-          </button>
-        ))}
-      </div>
-      {open && (
-        <ul role="menu" className="absolute top-12 left-0 z-20 min-w-48 rounded-card border border-line-strong bg-surface-2 py-1 shadow-2xl">
-          <li>
-            <button role="menuitem" onClick={() => (onChange({ kind: 'past' }), setOpen(false))} className="block w-full px-4 py-2 text-left text-sm hover:bg-surface-3">
-              All past
-            </button>
-          </li>
-          {past.map((k) => (
-            <li key={k}>
-              <button role="menuitem" onClick={() => (onChange({ kind: 'past', key: k }), setOpen(false))} className="block w-full px-4 py-2 text-left text-sm hover:bg-surface-3">
-                {monthLabel(k, state.tz, now)}
-              </button>
-            </li>
-          ))}
-          {!past.length && <li className="px-4 py-2 text-sm text-muted">Nothing yet</li>}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/** Items for a menu choice: ahead ones (live included) by `aheadKey`, past ones by `pastKey`, newest first. */
-function useScheduleView<T>(items: T[], isPast: (x: T) => boolean, aheadKey: (x: T) => string, pastKey: (x: T) => string) {
-  const [view, setView] = useState<ScheduleView>({ kind: 'upcoming' });
-  const ahead = items.filter((x) => !isPast(x));
-  const gone = items.filter(isPast).reverse();
-  const aheadMonths = [...new Set(ahead.map(aheadKey))];
-  const pastMonths = [...new Set(gone.map(pastKey))];
-  const shown = view.kind === 'upcoming' ? ahead : view.kind === 'month' ? ahead.filter((x) => aheadKey(x) === view.key) : view.key ? gone.filter((x) => pastKey(x) === view.key) : gone;
-  return { view, setView, shown, aheadMonths, pastMonths };
-}
-
-/**
- * Schedule: one series at a time, laid out like wsop.com's series page — a header (picture, tag, name, dates, venue) with
- * a series picker, the PokerGO-style menu (Past ▾ · All upcoming · months), then an event-schedule table for viewers:
- * date block (your time and the venue's local time), event and broadcast, buy-in, game, and Watch live / Remind me / Replay.
- * \`/schedule\` opens the series that is running (else the next one); \`/schedule/:seriesId\` opens a given one.
+ * Schedule: the season's series in date order, each a fold (picture, state, name, dates, venue). The running series is
+ * open on arrival (else the next one); `/schedule/:seriesId` opens a given one. Open, a series shows its broadcasts
+ * still to come (live first), with the ones already shown folded under "Earlier broadcasts".
  */
 export function SchedulePage() {
   const { seriesId } = useParams();
-  const { state } = useApp();
   const now = useTick(60_000);
   const byStart = [...SEASON].sort((a, b) => a.start.localeCompare(b.start));
-  const s =
+  const first =
     SEASON.find((x) => x.id === seriesId) ??
     SEASON.find((x) => seriesState(x, now) === 'live') ??
     byStart.find((x) => seriesState(x, now) === 'upcoming') ??
     byStart[byStart.length - 1];
-  const st = seriesState(s, now);
-  const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
-  const all = events
-    .filter((e) => e.seriesId === s.id)
-    .flatMap((e) => e.days.map((d) => ({ e, d })))
-    .sort((a, b) => a.d.start.localeCompare(b.d.start));
-  const { view, setView, shown, aheadMonths, pastMonths } = useScheduleView(
-    all,
-    (x) => status(x.d) === 'vod',
-    (x) => monthKey(x.d.start, state.tz),
-    (x) => monthKey(x.d.start, state.tz),
-  );
+  const [open, setOpen] = useState<Set<string>>(() => new Set([first.id]));
+  useEffect(() => setOpen((o) => (o.has(first.id) ? o : new Set([...o, first.id]))), [first.id]);
+  const toggle = (id: string) =>
+    setOpen((o) => {
+      const n = new Set(o);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   return (
     <Page className="max-w-[72rem]">
-      <h1 className="sr-only">Schedule</h1>
-      <SeasonTimeline current={s} now={now} />
-      <header className="mt-6 flex flex-col gap-5 rounded-panel border border-line bg-surface p-5 sm:flex-row sm:items-center">
-        <img src={s.art.src} style={artStyle(s.art)} alt="" className="aspect-video w-full shrink-0 rounded-card object-cover sm:w-48" />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold tracking-wider text-gold-strong uppercase">Bracelet series</span>
-            <span className={cx('rounded-[4px] border px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase', st === 'live' ? 'border-gold/60 text-gold-strong' : 'border-line-strong text-muted')}>
-              {st === 'live' ? 'Now running' : st === 'upcoming' ? 'Upcoming' : 'Past'}
-            </span>
-          </div>
-          <h2 className="mt-1 text-2xl sm:text-3xl">{s.name}</h2>
-          <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[15px]">
-            <span className="font-semibold text-gold-strong tnum">
-              {shortDate(s.start, state.tz)} – {shortDate(s.end, state.tz)}
-            </span>
-            <span className="text-text/85">{s.venue}</span>
-            <span className="text-muted">{s.city}</span>
-          </p>
-        </div>
-      </header>
-
-      <section aria-label="Broadcast schedule" className="mt-8">
-        <h2 className="text-xl sm:text-2xl">Broadcast schedule</h2>
-        <p className="mt-1 text-sm text-muted">
-          Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with local time in {s.city.split(',')[0]}.
-        </p>
-        {all.length > 0 && <ScheduleBar view={view} onChange={setView} ahead={aheadMonths} past={pastMonths} />}
-        {shown.length ? (
-          <div className="mt-4 overflow-x-auto rounded-panel border border-line">
-            <table className="w-full min-w-[44rem] text-left text-sm">
-              <thead className="bg-surface-2 text-xs text-muted">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Date</th>
-                  <th className="px-4 py-3 font-semibold">Event</th>
-                  <th className="px-4 py-3 font-semibold">Buy-in</th>
-                  <th className="px-4 py-3 font-semibold">Game</th>
-                  <th className="px-4 py-3" aria-label="Watch" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {shown.map(({ e, d }) => (
-                  <BroadcastRow key={d.id} e={e} d={d} st={status(d)} venueTz={s.tz ?? VENUE_TZ} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="mt-4 rounded-panel border border-line bg-surface p-5 text-sm text-muted">{all.length ? 'Nothing scheduled here.' : 'The broadcast schedule is announced closer to the series.'}</p>
-        )}
-      </section>
+      <h1 className="text-2xl sm:text-3xl">Schedule</h1>
+      <p className="mt-1 text-sm text-muted">This season's series. Open one to see its broadcasts.</p>
+      <div className="mt-5 flex flex-col gap-3">
+        {byStart.map((x) => (
+          <SeriesFold key={x.id} s={x} open={open.has(x.id)} onToggle={() => toggle(x.id)} now={now} />
+        ))}
+      </div>
     </Page>
   );
 }
 
 /**
- * The season at a glance: the year's series in date order, always on view. The running one carries LIVE and how far
- * it has got (Day 21 of 31); one ahead says when it starts; one that is over offers its replays. The chosen series is
- * outlined, and the header and broadcast table below follow it. On phones the cards scroll sideways, the chosen one in view.
+ * One series as a fold: the bar (picture, state, name, dates, venue, and a Show / Hide button) is always on view;
+ * open, it holds the series' broadcast schedule. The running series opens by itself, the past and later ones stay folded.
  */
-function SeasonTimeline({ current, now }: { current: SeriesStop; now: number }) {
+function SeriesFold({ s, open, onToggle, now }: { s: SeriesStop; open: boolean; onToggle: () => void; now: number }) {
   const { state } = useApp();
-  const list = [...SEASON].sort((a, b) => a.start.localeCompare(b.start));
-  const holder = useRef<HTMLOListElement>(null);
-  useEffect(() => {
-    // After layout settles (fonts, page fade-in), so the measurement is the final one.
-    const t = window.setTimeout(() => {
-      const box = holder.current;
-      const on = box?.querySelector<HTMLElement>('[aria-current="page"]')?.closest('li');
-      if (box && on) box.scrollLeft += on.getBoundingClientRect().left - box.getBoundingClientRect().left - (box.clientWidth - on.offsetWidth) / 2;
-    }, 150);
-    return () => window.clearTimeout(t);
-  }, [current.id]);
-  const md = (iso: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: state.tz }).format(new Date(iso));
-  const yr = (iso: string) => new Intl.DateTimeFormat('en-US', { year: 'numeric', timeZone: state.tz }).format(new Date(iso));
+  const st = seriesState(s, now);
+  const left = Math.ceil((Date.parse(s.start) - now) / DAY_MS);
+  const total = Math.round((Date.parse(s.end) - Date.parse(s.start)) / DAY_MS) + 1;
+  const day = Math.min(total, Math.floor((now - Date.parse(s.start)) / DAY_MS) + 1);
+  const bodyId = `fold-${s.id}`;
   return (
-    <nav aria-label="This season">
-      <ol ref={holder} className="hscroll gap-3 [&>*]:w-[72%] sm:grid sm:grid-cols-4 sm:overflow-visible sm:[&>*]:w-auto">
-        {list.map((x) => {
-          const st = seriesState(x, now);
-          const start = Date.parse(x.start);
-          const end = Date.parse(x.end);
-          const total = Math.round((end - start) / DAY_MS) + 1;
-          const day = Math.min(total, Math.floor((now - start) / DAY_MS) + 1);
-          const left = Math.ceil((start - now) / DAY_MS);
-          const on = x.id === current.id;
-          const pct = st === 'live' ? (day / total) * 100 : st === 'past' ? 100 : 0;
-          return (
-            <li key={x.id}>
-              <Link
-                to={`/schedule/${x.id}`}
-                aria-current={on ? 'page' : undefined}
-                className={cx(
-                  'block h-full rounded-card border bg-surface px-4 py-3 transition-colors',
-                  on ? 'border-gold ring-1 ring-gold' : 'border-line hover:border-line-strong hover:bg-surface-2',
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  <span className={cx('truncate text-[15px] font-bold', st === 'past' && !on && 'text-text/75')}>{x.name.replace(/^\d{4} /, '')}</span>
-                </span>
-                <span className="mt-0.5 block text-xs text-muted tnum">
-                  {md(x.start)} – {md(x.end)}, {yr(x.end)}
-                </span>
-                <span className={cx('mt-2 flex items-center gap-2 text-xs font-semibold tnum', st === 'live' ? 'text-live' : st === 'upcoming' ? 'text-text/85' : 'text-muted')}>
-                  {st === 'live' && <LiveTag />}
-                  {st === 'live' ? `Day ${day} of ${total}` : st === 'upcoming' ? (left <= 1 ? 'Starts tomorrow' : `Starts in ${left} days`) : 'Replays'}
-                </span>
-                <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-surface-3" aria-hidden>
-                  <span className={cx('block h-full rounded-full', st === 'live' ? 'bg-live' : 'bg-line-strong')} style={{ width: `${pct}%` }} />
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
+    <section aria-label={s.name} className={cx('overflow-hidden rounded-panel border bg-surface', st === 'live' ? 'border-gold/70' : 'border-line')}>
+      <button onClick={onToggle} aria-expanded={open} aria-controls={bodyId} className="flex w-full items-center gap-4 p-3 text-left hover:bg-surface-2 sm:p-4">
+        <img src={s.art.src} style={artStyle(s.art)} alt="" className={cx('aspect-video shrink-0 rounded-card object-cover', open ? 'w-28 sm:w-40' : 'w-20 sm:w-28', st === 'past' && 'opacity-70')} />
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            {st === 'live' ? (
+              <LiveTag />
+            ) : (
+              <span className="rounded-[4px] border border-line-strong px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-muted uppercase">{st === 'upcoming' ? 'Upcoming' : 'Past'}</span>
+            )}
+            <span className={cx('text-xs font-semibold tnum', st === 'live' ? 'text-live' : 'text-muted')}>
+              {st === 'live' ? `Day ${day} of ${total}` : st === 'upcoming' ? (left <= 1 ? 'Starts tomorrow' : `Starts in ${left} days`) : 'Replays'}
+            </span>
+          </span>
+          <span className={cx('mt-1 block font-bold', open ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg', st === 'past' && !open && 'text-text/80')}>{s.name}</span>
+          <span className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted sm:text-sm">
+            <span className="tnum">{shortDate(s.start, state.tz)} – {shortDate(s.end, state.tz)}</span>
+            <span className="hidden sm:inline">{s.venue} · {s.city}</span>
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-text/85">
+          <span className="hidden sm:inline">{open ? 'Hide' : 'Schedule'}</span>
+          <span className="grid size-9 place-items-center rounded-full border border-line-strong">
+            <Icon name="chevron" size={18} className={cx('transition-transform', open ? '-rotate-90' : 'rotate-90')} />
+          </span>
+        </span>
+      </button>
+      {open && (
+        <div id={bodyId} className="border-t border-line px-3 pt-4 pb-5 sm:px-5">
+          <SeriesSchedule s={s} now={now} />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * A series' broadcasts: the ones still to come (live included) in date order, then the ones already shown, folded
+ * under "Earlier broadcasts (n)", newest first, each with its replay. A series that is over lists its replays only.
+ */
+function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
+  const { state } = useApp();
+  const st = seriesState(s, now);
+  const [showEarlier, setShowEarlier] = useState(false);
+  const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
+  const all = events
+    .filter((e) => e.seriesId === s.id)
+    .flatMap((e) => e.days.map((d) => ({ e, d })))
+    .sort((a, b) => a.d.start.localeCompare(b.d.start));
+  const ahead = all.filter((x) => status(x.d) !== 'vod');
+  const earlier = all.filter((x) => status(x.d) === 'vod').reverse();
+  const table = (rows: ScheduleItem[]) => (
+    <div className="mt-3 overflow-x-auto rounded-panel border border-line">
+      <table className="w-full min-w-[44rem] text-left text-sm">
+        <thead className="bg-surface-2 text-xs text-muted">
+          <tr>
+            <th className="px-4 py-3 font-semibold">Date</th>
+            <th className="px-4 py-3 font-semibold">Event</th>
+            <th className="px-4 py-3 font-semibold">Buy-in</th>
+            <th className="px-4 py-3 font-semibold">Game</th>
+            <th className="px-4 py-3" aria-label="Watch" />
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {rows.map(({ e, d }) => (
+            <BroadcastRow key={d.id} e={e} d={d} st={status(d)} venueTz={s.tz ?? VENUE_TZ} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+  if (!all.length)
+    return (
+      <p className="rounded-panel border border-line bg-surface-2 p-5 text-sm text-muted">
+        {st === 'past' ? 'Replays of this series are in Videos.' : 'The broadcast schedule is announced closer to the series.'}
+      </p>
+    );
+  return (
+    <>
+      <p className="text-sm text-muted">
+        Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with local time in {s.city.split(',')[0]}.
+      </p>
+      {ahead.length > 0 && table(ahead)}
+      {earlier.length > 0 &&
+        (ahead.length === 0 ? (
+          table(earlier)
+        ) : (
+          <div className="mt-4">
+            <button
+              onClick={() => setShowEarlier((o) => !o)}
+              aria-expanded={showEarlier}
+              className="flex w-full items-center justify-between rounded-card border border-line bg-surface-2 px-4 py-3 text-left text-sm font-semibold hover:bg-surface-3"
+            >
+              <span>
+                Earlier broadcasts <span className="font-normal text-muted">({earlier.length}) · replays</span>
+              </span>
+              <Icon name="chevron" size={18} className={cx('transition-transform', showEarlier ? '-rotate-90' : 'rotate-90')} />
+            </button>
+            {showEarlier && table(earlier)}
+          </div>
+        ))}
+    </>
   );
 }
 
