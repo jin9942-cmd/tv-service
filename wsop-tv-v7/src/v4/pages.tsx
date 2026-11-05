@@ -1057,7 +1057,7 @@ function ScheduleBar({ view, onChange, ahead, past }: { view: ScheduleView; onCh
   const seg = (on: boolean) => cx('h-11 px-4 text-sm font-bold whitespace-nowrap uppercase transition-colors sm:px-5', on ? 'bg-gold text-ink' : 'text-text/85 hover:bg-surface-3');
   return (
     <div className="relative mt-4">
-      <div className="flex overflow-x-auto rounded-card border border-line-strong bg-surface [&>*+*]:border-l [&>*+*]:border-line-strong" role="tablist" aria-label="Schedule">
+      <div className="inline-flex max-w-full overflow-x-auto rounded-card border border-line-strong bg-surface [&>*+*]:border-l [&>*+*]:border-line-strong" role="tablist" aria-label="Schedule">
         <button role="tab" aria-selected={view.kind === 'past'} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={cx(seg(view.kind === 'past'), 'inline-flex items-center gap-1.5')}>
           {view.kind === 'past' && view.key ? monthLabel(view.key, state.tz, now) : 'Past'}
           <Icon name="chevron" size={14} className="rotate-90" />
@@ -1192,18 +1192,14 @@ function LiveSeriesSchedule({ s }: { s: SeriesStop }) {
           {shortDate(s.start, state.tz)} – {shortDate(s.end, state.tz)} · {s.venue}, {s.city}
         </span>
       </div>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="min-w-0 flex-1">
-          <ScheduleBar view={view} onChange={setView} ahead={aheadMonths} past={pastMonths} />
-        </div>
-        <button onClick={() => setMine((m) => !m)} aria-pressed={mine} className={cx(chip(mine), 'inline-flex h-11 items-center gap-1.5')}>
-          <Icon name="star" size={14} /> My players
-        </button>
+      <ScheduleBar view={view} onChange={setView} ahead={aheadMonths} past={pastMonths} />
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+        <label className="inline-flex cursor-pointer items-center gap-2">
+          <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} className="size-4 accent-[var(--color-gold)]" />
+          Only players I follow
+        </label>
+        <span className="text-xs text-muted">Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with Las Vegas time.</span>
       </div>
-      <p className="mt-2 text-xs text-muted">
-        Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with Las Vegas time.
-        {mine && !Object.keys(state.followed).length && ' Follow players on their profile to use My players.'}
-      </p>
       <div className="mt-6 space-y-8">
         {[...byDate.entries()].map(([date, items]) => (
           <section key={date} aria-label={date}>
@@ -1215,7 +1211,7 @@ function LiveSeriesSchedule({ s }: { s: SeriesStop }) {
             </ol>
           </section>
         ))}
-        {!byDate.size && <p className="text-sm text-muted">{mine ? 'None of the players you follow are expected on a broadcast here.' : 'Nothing scheduled here.'}</p>}
+        {!byDate.size && <p className="text-sm text-muted">{mine ? (Object.keys(state.followed).length ? 'None of the players you follow are expected on a broadcast here.' : 'Follow players on their profile to see their broadcasts here.') : 'Nothing scheduled here.'}</p>}
       </div>
     </>
   );
