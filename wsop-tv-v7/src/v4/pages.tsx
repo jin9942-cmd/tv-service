@@ -1129,7 +1129,7 @@ function SeriesFold({ s, open, onToggle, now }: { s: SeriesStop; open: boolean; 
   return (
     <section aria-label={s.name} className={cx('overflow-hidden rounded-panel border bg-surface', st === 'live' ? 'border-gold/70' : 'border-line')}>
       <button onClick={onToggle} aria-expanded={open} aria-controls={bodyId} className="flex w-full items-center gap-4 p-3 text-left hover:bg-surface-2 sm:p-4">
-        <img src={s.art.src} style={artStyle(s.art)} alt="" className={cx('aspect-video shrink-0 rounded-card object-cover', open ? 'w-28 sm:w-40' : 'w-20 sm:w-28', st === 'past' && 'opacity-70')} />
+        <img src={s.art.src} style={artStyle(s.art)} alt="" className={cx('aspect-video shrink-0 rounded-card object-cover', 'w-24 sm:w-32', st === 'past' && 'opacity-70')} />
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-2">
             {st === 'live' ? (
@@ -1141,7 +1141,7 @@ function SeriesFold({ s, open, onToggle, now }: { s: SeriesStop; open: boolean; 
               {st === 'live' ? `Day ${day} of ${total}` : st === 'upcoming' ? (left <= 1 ? 'Starts tomorrow' : `Starts in ${left} days`) : 'Replays'}
             </span>
           </span>
-          <span className={cx('mt-1 block font-bold', open ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg', st === 'past' && !open && 'text-text/80')}>{s.name}</span>
+          <span className={cx('mt-1 block font-bold', 'text-lg sm:text-xl', st === 'past' && !open && 'text-text/80')}>{s.name}</span>
           <span className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted sm:text-sm">
             <span className="tnum">{shortDate(s.start, state.tz)} – {shortDate(s.end, state.tz)}</span>
             <span className="hidden sm:inline">{s.venue} · {s.city}</span>
