@@ -557,17 +557,17 @@ const editorsFinalTables = () => {
  * The Curated collections area sits on its own band — a warm tinted panel with a gold rule and
  * a "From the archive" label — so it reads as chosen by people, apart from the personal and automatic rows.
  */
-function EditorialBand({ label, title, note, action, children }: { label: string; title: string; note?: string; action?: ReactNode; children: ReactNode }) {
+function EditorialBand({ label, title, action, children }: { label: string; title: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <section aria-label={title} className="relative overflow-hidden rounded-panel border border-gold/30 bg-[linear-gradient(135deg,#2a2010_0%,#16130c_45%,#0f0f10_100%)] p-5 sm:p-7">
+    <section aria-label={title} className="relative overflow-hidden rounded-panel border border-gold/30 bg-[linear-gradient(135deg,#2a2010_0%,#16130c_45%,#0f0f10_100%)] p-5 sm:p-6">
       <span className="absolute inset-y-0 left-0 w-1 bg-gold" aria-hidden />
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-        <div className="max-w-2xl">
-          <p className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-gold-strong uppercase">
+      {/* One line: the title with its label beside it. */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h2 className="text-xl sm:text-2xl">{title}</h2>
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-gold-strong uppercase">
             <Icon name="star" size={12} /> {label}
-          </p>
-          <h2 className="mt-1.5 text-2xl sm:text-3xl">{title}</h2>
-          {note && <p className="mt-1.5 text-[15px] leading-relaxed text-text/80">{note}</p>}
+          </span>
         </div>
         {action}
       </div>
@@ -656,27 +656,50 @@ function photoPicker(skip: Set<string>) {
   };
 }
 
+/** Curated collections as playlists (YouTube style): a stacked cover with the video count, then the first videos. */
 function CollectionsRow({ skip, pick }: { skip: Set<string>; pick: (own?: Pic) => Pic }) {
   return (
-    <EditorialBand label="From the archive" title="Curated collections" note="Hand-picked sets of the hands and tables people still talk about.">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <EditorialBand label="From the archive" title="Curated collections">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {COLLECTIONS.map((c) => {
           const vs = c.videos();
           // A photo from the collection the rows above don't show, else another photo not on the page.
           const own = [...vs].reverse().find((v) => !skip.has(v.id) && !isStill(v.thumb));
           const cover = pick(own);
           return (
-            <Link key={c.id} to={`/collections/${c.id}`} className="group relative block aspect-[3/4] overflow-hidden rounded-card bg-surface-2 ring-1 ring-gold/25 hover:ring-gold">
-              {cover && <img src={cover.thumb} style={artStyle({ pos: cover.thumbPos, fit: cover.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />}
-              <span className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" aria-hidden />
-              <span className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
-                <span className="mb-2 block h-0.5 w-8 bg-gold" aria-hidden />
-                <span className="block text-base leading-tight font-bold sm:text-xl">{c.title}</span>
-                <span className="mt-1 block text-xs text-white/75">
-                  {vs.length} videos · {c.blurb}
+            <div key={c.id} className="group min-w-0">
+              <Link to={`/collections/${c.id}`} className="relative block pt-2" aria-label={`${c.title}, playlist of ${vs.length} videos`}>
+                {/* The stack behind the cover marks it as a playlist. */}
+                <span className="absolute inset-x-4 top-0 h-3 rounded-t-card bg-white/15" aria-hidden />
+                <span className="absolute inset-x-2 top-1 h-3 rounded-t-card bg-white/25" aria-hidden />
+                <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+                  <img src={cover.thumb} style={artStyle({ pos: cover.thumbPos, fit: cover.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+                  <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">
+                    <Icon name="layers" size={12} /> {vs.length} videos
+                  </span>
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-sm font-bold opacity-0 transition-opacity group-hover:opacity-100" aria-hidden>
+                    <Icon name="play" size={16} /> Play all
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+              <Link to={`/collections/${c.id}`} className="mt-2.5 block truncate text-[15px] font-bold hover:text-gold-strong">
+                {c.title}
+              </Link>
+              <ol className="mt-1.5 space-y-1">
+                {vs.slice(0, 3).map((v, i) => (
+                  <li key={v.id}>
+                    <Link to={`/watch/${v.id}`} className="flex items-baseline gap-2 text-[13px] text-muted hover:text-text">
+                      <span className="w-3 shrink-0 text-subtle tnum">{i + 1}</span>
+                      <span className="min-w-0 flex-1 truncate">{v.title}</span>
+                      <span className="shrink-0 text-[11px] text-subtle tnum">{duration(v.durationSec)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+              <Link to={`/collections/${c.id}`} className="mt-2 inline-block text-xs font-semibold text-gold-strong hover:underline">
+                View full playlist
+              </Link>
+            </div>
           );
         })}
       </div>
