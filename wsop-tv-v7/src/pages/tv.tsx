@@ -28,13 +28,12 @@ export function TvHome() {
   const now = useTick(15_000);
   return (
     <>
-      {/* v7 Home: the banner, the 24/7 channels and what's next, then the rows (Continue watching … Shorts). */}
+      {/* v7 Home: the banner (with the next live broadcast), the 24/7 channels, then the rows (Continue watching … Shorts). */}
       <section className="border-b border-line" aria-label="Featured">
         <PromoBanner />
         <Page className="pt-6 pb-6">
           <h2 className="mb-3 text-xl sm:text-2xl">24/7 On-Demand</h2>
           <TodayCards now={now} />
-          <UpNextLine />
         </Page>
       </section>
       <Page className="space-y-12 py-10">
@@ -148,6 +147,8 @@ function PromoBanner() {
           {/* One promo line, never more (fixed height, so the buttons stay put). */}
           <p className="mt-3 line-clamp-2 h-[2.8rem] text-[15px] leading-[1.4rem] text-text/75 sm:line-clamp-1 sm:h-[1.4rem]">{sl.line}</p>
           <div className="mt-6 flex gap-2">{sl.actions}</div>
+          {/* The next live broadcast belongs with the live banner (not the 24/7 channels). */}
+          <UpNextLine />
         </div>
       </Page>
       {/* Slide dots only (no arrows), centred along the bottom edge; each has a tall hit area for touch. */}

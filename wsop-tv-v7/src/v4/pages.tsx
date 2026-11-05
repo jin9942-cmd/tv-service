@@ -453,8 +453,8 @@ export { catalog };
 // ---- Home rows ---------------------------------------------------------------------------------------
 
 /**
- * v7 Home rows, in this order: Continue watching, Editor's pick (best final tables), My List, Recommended for you,
- * Latest replays, Curated collections, Shorts. No video appears in two rows.
+ * v7 Home rows: Continue watching, My List, Editor's pick (best final tables), Recommended for you, Latest replays,
+ * Highlights (automatic, by hand type) and Shorts. No video appears in two rows.
  */
 export function HomeRows() {
   const { state, set, toast, signedIn } = useApp();
@@ -491,7 +491,9 @@ export function HomeRows() {
   const picks = take(editorsFinalTables(), 3);
   const recs = take(recommended, 4);
   const latest = take([...replays].reverse(), 4);
-  const shorts = take(highlightClips, 10);
+  // Hand clips split between the two hand rows (alternate clips), so Highlights and Shorts never show the same hand.
+  const highlightPool = highlightClips.filter((v, i) => i % 2 === 0 && !shown.has(v.id));
+  const shorts = take(highlightClips.filter((_, i) => i % 2 === 1), 10);
   const pick = photoPicker(shown);
   return (
     <>
@@ -500,7 +502,7 @@ export function HomeRows() {
       <EditorsPick picks={picks} />
       <VideoRow title="Recommended for you" videos={recs} />
       <VideoRow title="Latest replays" videos={latest} action={more('/videos/replays')} />
-      <CollectionsRow skip={shown} pick={pick} />
+      <HighlightsRow pool={highlightPool} skip={shown} />
       <ShortsRow videos={shorts} pick={pick} />
     </>
   );
@@ -621,30 +623,31 @@ function photoPicker(skip: Set<string>) {
   };
 }
 
-/** Curated collections: single cards like the rows above, with the video count on the picture. */
-function CollectionsRow({ skip, pick }: { skip: Set<string>; pick: (own?: Pic) => Pic }) {
+/** Highlights: hand clips, filled automatically, with the hand-type chips of Videos > Highlights. */
+function HighlightsRow({ pool, skip }: { pool: Video[]; skip: Set<string> }) {
+  const [f, setF] = useState<string>('all');
+  // Photos instead of the look-alike broadcast stills, so the same face doesn't fill the row.
+  const pick = photoPicker(skip);
+  const list = (f === 'all' ? pool : pool.filter((v) => v.tags.some((t) => t.slug === f))).slice(0, 4).map((v) => ({ ...v, ...pick(v) }));
+  if (!pool.length) return null;
   return (
-    <Section title="Curated collections" label="From the archive">
-      <div className={rowGrid}>
-        {COLLECTIONS.map((c) => {
-          const vs = c.videos();
-          // A photo from the collection the rows above don't show, else another photo not on the page.
-          const own = [...vs].reverse().find((v) => !skip.has(v.id) && !isStill(v.thumb));
-          const cover = pick(own);
-          return (
-            <Link key={c.id} to={`/collections/${c.id}`} className="group block min-w-0">
-              <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-                <img src={cover.thumb} style={artStyle({ pos: cover.thumbPos, fit: cover.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-                <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">
-                  <Icon name="layers" size={12} /> {vs.length} videos
-                </span>
-              </span>
-              <span className="mt-2 block truncate text-[15px] font-semibold group-hover:text-gold-strong">{c.title}</span>
-              <span className="mt-0.5 block truncate text-xs text-muted">{c.blurb}</span>
-            </Link>
-          );
-        })}
+    <Section title="Highlights" action={more('/videos', 'All highlights')}>
+      <div className="-mt-1 mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Hand type">
+        {HAND_FILTERS.map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={f === k} onClick={() => setF(k)} className={chip(f === k)}>
+            {label}
+          </button>
+        ))}
       </div>
+      {list.length ? (
+        <div className={rowGrid}>
+          {list.map((v) => (
+            <VideoCard key={v.id} v={v} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted">No hands of this type yet — see all highlights in Videos.</p>
+      )}
     </Section>
   );
 }
@@ -1234,7 +1237,7 @@ function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: nu
   );
 }
 
-/** Home: the next broadcast in one line under the 24/7 channels — its countdown screen, and the full schedule. */
+/** Home banner: the next live broadcast in one line — its countdown screen, and the full schedule. */
 export function UpNextLine() {
   const { state } = useApp();
   const now = useTick(30_000);
@@ -1245,16 +1248,16 @@ export function UpNextLine() {
   const mins = Math.max(0, Math.round((Date.parse(next.d.start) - now) / 60_000));
   const inText = mins >= 1440 ? `in ${Math.round(mins / 1440)} days` : mins >= 60 ? `in ${Math.floor(mins / 60)}h ${mins % 60}m` : `in ${mins} min`;
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-card border border-line bg-surface px-4 py-2.5 text-sm">
-      <span className="text-[11px] font-bold tracking-wider text-gold-strong uppercase">Up next</span>
+    <div className="mt-5 inline-flex max-w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-card bg-black/55 px-3.5 py-2 text-sm whitespace-nowrap backdrop-blur-sm">
+      <span className="text-[11px] font-bold tracking-wider text-gold-strong uppercase">Next live</span>
       <Link to={`/watch/${next.d.id}`} className="min-w-0 truncate font-semibold hover:text-gold-strong">
         {titleOf(next)}
       </Link>
       <span className="text-muted tnum">
-        {fmtDate(next.d.start, state.tz)} · {fmtTime(next.d.start, state.tz)} · {inText}
+        {fmtTime(next.d.start, state.tz)} · {inText}
       </span>
-      <Link to="/schedule" className="ml-auto text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
-        Full schedule →
+      <Link to="/schedule" className="text-sm font-semibold whitespace-nowrap text-white/70 hover:text-white">
+        Schedule →
       </Link>
     </div>
   );
