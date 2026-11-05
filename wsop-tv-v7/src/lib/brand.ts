@@ -43,6 +43,12 @@ export const TABLE_ART: Art[] = [
   art(`${PROMO}poker-room.png`),
   art(`${PROMO}final-table-wide.webp`, '88% 50%'),
   art(`${PROMO}ukipt-table.png`),
+  art(`${PROMO}champion-cash.webp`, '50% 35%'),
+  art(`${PROMO}player-cap-headphones.jpg`, '55% 30%'),
+  art(`${PROMO}player-w-sweater.webp`, '50% 30%'),
+  art(`${PROMO}table-crowd.webp`, '50% 35%'),
+  art(`${PROMO}player-thinking.jpg`, '50% 30%'),
+  art(`${PROMO}player-glasses.jpg`, '50% 35%'),
 ];
 /** Venue and room shots — for the earlier tournament days. */
 export const VENUE_ART: Art[] = [
@@ -52,6 +58,7 @@ export const VENUE_ART: Art[] = [
   art(`${PROMO}venue-thunder-valley.png`),
   art(`${PROMO}poker-room.png`, '80% 50%'),
   art(`${PROMO}venue-horseshoe.png`, '15% 50%'),
+  art(`${PROMO}tournament-hall.webp`),
 ];
 /** Each 24/7 channel's own picture (the Channel guide's channel cards). */
 export const CHANNEL_ART: Record<string, Art> = {

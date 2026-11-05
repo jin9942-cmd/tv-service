@@ -51,7 +51,8 @@ const usedPhotos = new Set([...Object.values(PROMO_ART), ...Object.values(PLAYER
 function artFor(id: string, pool: 'table' | 'venue' | 'clip') {
   const fixed = PROMO_ART[id];
   if (fixed) return { thumb: fixed.src, thumbPos: fixed.pos, thumbFit: fixed.fit };
-  const a = pool === 'clip' ? undefined : [...(pool === 'table' ? TABLE_ART : VENUE_ART), ...TABLE_ART, ...VENUE_ART].find((x) => !usedPhotos.has(x.src));
+  // Clips take the table photos the broadcasts left over, then the stills.
+  const a = (pool === 'clip' ? TABLE_ART : [...(pool === 'table' ? TABLE_ART : VENUE_ART), ...TABLE_ART, ...VENUE_ART]).find((x) => !usedPhotos.has(x.src));
   if (a) {
     usedPhotos.add(a.src);
     return { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit };
