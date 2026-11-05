@@ -5,7 +5,7 @@ import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
-import { HERO_DAY_ID, dayById, eventById, events, series, seriesById } from '../data/mock';
+import { HERO_DAY_ID, dayById, eventById, events, finalTableSeats, playerById, seatsFor, series, seriesById } from '../data/mock';
 import type { Day, TourEvent } from '../data/types';
 import { VENUE_TZ, fmtDate, fmtTime, tzAbbr } from '../lib/time';
 import { isBroadcasting } from '../lib/broadcast';
@@ -1103,10 +1103,41 @@ function useScheduleView<T>(items: T[], isPast: (x: T) => boolean, aheadKey: (x:
   return { view, setView, shown, aheadMonths, pastMonths };
 }
 
+/**
+ * Schedule, season first. While a series is live it opens on that series' broadcasts by date — times (yours and Las
+ * Vegas), who is expected at the table (followed players starred, a My players filter) and Watch live / Remind me —
+ * with the year's series below. Between series it is the list of series.
+ */
 export function SchedulePage() {
+  const now = useTick(60_000);
+  const live = SEASON.find((s) => seriesState(s, now) === 'live');
+  const others = [...SEASON].filter((s) => s !== live).sort((a, b) => a.start.localeCompare(b.start));
+  return (
+    <Page className="max-w-[72rem]">
+      <h1 className="text-title">Schedule</h1>
+      {live ? (
+        <>
+          <LiveSeriesSchedule s={live} />
+          <section aria-label="This season" className="mt-14">
+            <h2 className="text-xl sm:text-2xl">This season</h2>
+            <div className="mt-4 space-y-4">
+              {others.map((s) => (
+                <SeriesCard key={s.id} s={s} st={seriesState(s, now)} />
+              ))}
+            </div>
+          </section>
+        </>
+      ) : (
+        <SeriesList />
+      )}
+    </Page>
+  );
+}
+
+/** Between series: every series under the PokerGO-style menu. */
+function SeriesList() {
   const { state } = useApp();
   const now = useTick(60_000);
-  // Live series sit in the current month; upcoming ones in the month they start.
   const sorted = [...SEASON].sort((a, b) => a.start.localeCompare(b.start));
   const { view, setView, shown, aheadMonths, pastMonths } = useScheduleView(
     sorted,
@@ -1115,17 +1146,132 @@ export function SchedulePage() {
     (s) => monthKey(s.start, state.tz),
   );
   return (
-    <Page className="max-w-[72rem]">
-      <h1 className="text-title">Schedule</h1>
+    <>
       <ScheduleBar view={view} onChange={setView} ahead={aheadMonths} past={pastMonths} />
-      <div className="mt-8 space-y-4">
-        {shown.length ? (
-          shown.map((s) => <SeriesCard key={s.id} s={s} st={seriesState(s, now)} />)
-        ) : (
-          <p className="text-sm text-muted">Nothing scheduled here.</p>
-        )}
+      <div className="mt-8 space-y-4">{shown.length ? shown.map((s) => <SeriesCard key={s.id} s={s} st={seriesState(s, now)} />) : <p className="text-sm text-muted">Nothing scheduled here.</p>}</div>
+    </>
+  );
+}
+
+/** Players expected at a broadcast's feature table, biggest stacks first (followed players first). */
+const featuredPlayers = (d: Day, followed: Record<string, unknown>) => {
+  const ids = (d.id === HERO_DAY_ID ? finalTableSeats : seatsFor(d.id)).map((x) => x.playerId);
+  return [...ids.filter((id) => followed[id]), ...ids.filter((id) => !followed[id])].slice(0, 3);
+};
+
+/** The live series: a compact header, the menu (plus My players), then its broadcasts under date headings. */
+function LiveSeriesSchedule({ s }: { s: SeriesStop }) {
+  const { state } = useApp();
+  const now = useTick(30_000);
+  const [mine, setMine] = useState(false);
+  const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
+  const all = events
+    .filter((e) => e.seriesId === s.id)
+    .flatMap((e) => e.days.map((d) => ({ e, d })))
+    .filter((x) => !mine || featuredPlayers(x.d, state.followed).some((id) => state.followed[id]))
+    .sort((a, b) => a.d.start.localeCompare(b.d.start));
+  const { view, setView, shown, aheadMonths, pastMonths } = useScheduleView(
+    all,
+    (x) => status(x.d) === 'vod',
+    (x) => monthKey(x.d.start, state.tz),
+    (x) => monthKey(x.d.start, state.tz),
+  );
+  const byDate = new Map<string, ScheduleItem[]>();
+  for (const x of shown) {
+    const k = fmtDate(x.d.start, state.tz);
+    byDate.set(k, [...(byDate.get(k) ?? []), x]);
+  }
+  return (
+    <>
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <LiveTag />
+        <Link to={`/schedule/${s.id}`} className="text-lg font-bold hover:text-gold-strong">
+          {s.name}
+        </Link>
+        <span className="text-sm text-muted tnum">
+          {shortDate(s.start, state.tz)} – {shortDate(s.end, state.tz)} · {s.venue}, {s.city}
+        </span>
       </div>
-    </Page>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="min-w-0 flex-1">
+          <ScheduleBar view={view} onChange={setView} ahead={aheadMonths} past={pastMonths} />
+        </div>
+        <button onClick={() => setMine((m) => !m)} aria-pressed={mine} className={cx(chip(mine), 'inline-flex h-11 items-center gap-1.5')}>
+          <Icon name="star" size={14} /> My players
+        </button>
+      </div>
+      <p className="mt-2 text-xs text-muted">
+        Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with Las Vegas time.
+        {mine && !Object.keys(state.followed).length && ' Follow players on their profile to use My players.'}
+      </p>
+      <div className="mt-6 space-y-8">
+        {[...byDate.entries()].map(([date, items]) => (
+          <section key={date} aria-label={date}>
+            <h3 className="mb-2 text-base font-bold">{date}</h3>
+            <ol className="divide-y divide-line overflow-hidden rounded-panel border border-line">
+              {items.map((x) => (
+                <SeasonRow key={x.d.id} {...x} st={status(x.d)} />
+              ))}
+            </ol>
+          </section>
+        ))}
+        {!byDate.size && <p className="text-sm text-muted">{mine ? 'None of the players you follow are expected on a broadcast here.' : 'Nothing scheduled here.'}</p>}
+      </div>
+    </>
+  );
+}
+
+/** One broadcast: time (yours / Las Vegas), title, expected players (★ followed), and Watch live / Remind me / Replay. */
+function SeasonRow({ e, d, st }: ScheduleItem & { st: Day['status'] }) {
+  const { state } = useApp();
+  const title = titleOf({ e, d });
+  const [on, toggle] = useReminder(`day:${d.id}`, title);
+  const live = isBroadcasting(st);
+  const players = featuredPlayers(d, state.followed);
+  return (
+    <li className={cx('flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3.5', live ? 'bg-live/5' : 'bg-surface')}>
+      <span className="w-24 shrink-0 tnum">
+        <span className="block text-base font-bold">{fmtTime(d.start, state.tz)}</span>
+        <span className="block text-xs text-muted">{fmtTime(d.start, VENUE_TZ)} Las Vegas</span>
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-2">
+          {live && <LiveTag />}
+          <Link to={`/watch/${d.id}`} className="text-[15px] font-bold hover:text-gold-strong">
+            {title}
+          </Link>
+          <span className="text-xs text-muted">
+            {e.buyIn ? money(e.buyIn) : 'Invitational'} · {e.game}
+          </span>
+        </span>
+        <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          {players.map((id) => (
+            <Link key={id} to={`/players/${id}`} className={cx('inline-flex items-center gap-1 hover:underline', state.followed[id] ? 'font-semibold text-gold-strong' : 'text-text/80')}>
+              {state.followed[id] && <Icon name="star" size={12} />}
+              {playerById(id).name}
+            </Link>
+          ))}
+          {players.length > 0 && <span className="text-xs text-subtle">at the table</span>}
+        </span>
+      </span>
+      <span className="shrink-0">
+        {live ? (
+          <Link to={`/watch/${d.id}`}>
+            <Button size="sm" variant="primary" tabIndex={-1}>
+              <Icon name="play" size={14} /> Watch live
+            </Button>
+          </Link>
+        ) : st === 'upcoming' ? (
+          <Button size="sm" variant={on ? 'secondary' : 'outline'} onClick={toggle} aria-pressed={on}>
+            <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
+          </Button>
+        ) : (
+          <Link to={`/watch/${d.id}`} className="text-sm font-semibold text-muted hover:text-text">
+            Replay →
+          </Link>
+        )}
+      </span>
+    </li>
   );
 }
 

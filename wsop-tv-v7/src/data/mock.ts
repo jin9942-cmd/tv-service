@@ -295,6 +295,10 @@ const FIELD: Record<string, string[]> = {
   'lv-plo-finaltable': ['p14', 'p19', 'p17', 'p01', 'p06'],
   'lv-ladies-finaltable': ['p13', 'p02', 'p09', 'p06', 'p18'],
   'lv-tc-finaltable': ['p01', 'p04', 'p07', 'p19', 'p14'],
+  // Upcoming broadcasts: who is expected at the feature table (shown on the schedule).
+  'lv-ppc-day1a': ['p07', 'p12', 'p02', 'p10', 'p14', 'p05'],
+  'lv-ppc-day2': ['p04', 'p07', 'p14', 'p12', 'p09', 'p02'],
+  'lv-ppc-finaltable': ['p04', 'p14', 'p07', 'p19', 'p01'],
 };
 /** Round to a broadcast-friendly figure (two significant digits). */
 const roundPot = (n: number) => {
