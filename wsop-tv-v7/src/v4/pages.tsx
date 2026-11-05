@@ -386,17 +386,11 @@ export function VideosPage({ tab }: { tab: 'highlights' | 'replays' | 'shorts' }
   );
 }
 
-/** Hand clips by views; "This series" (first, only while a series runs) narrows them to its events. */
+/** Hand clips by views, filtered by hand type (All first). */
 function HighlightsTab() {
   const [f, setF] = useState<string>('all');
-  const running = runningSeries(false);
-  const filters: (readonly [string, string])[] = [...(running ? [['series', 'This series'] as const] : []), ...HAND_FILTERS];
-  const list =
-    f === 'all'
-      ? highlightClips
-      : f === 'series'
-        ? highlightClips.filter((v) => eventById(v.eventId!)?.seriesId === running?.id)
-        : highlightClips.filter((v) => v.tags.some((t) => t.slug === f));
+  const filters = HAND_FILTERS;
+  const list = f === 'all' ? highlightClips : highlightClips.filter((v) => v.tags.some((t) => t.slug === f));
   return (
     <>
       <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Hand type">
