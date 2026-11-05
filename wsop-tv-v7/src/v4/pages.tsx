@@ -1237,29 +1237,42 @@ function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: nu
   );
 }
 
-/** Home banner: the next live broadcast in one line — its countdown screen, and the full schedule. */
-export function UpNextLine() {
+/**
+ * Home banner: the next live broadcast as its own card (bottom right of the banner on wide screens, under the buttons on
+ * phones) — what, when, a live countdown, Remind me and the schedule.
+ */
+export function NextLiveCard({ className }: { className?: string }) {
   const { state } = useApp();
-  const now = useTick(30_000);
+  const now = useTick(1000);
   const next = events
     .flatMap((e) => e.days.filter((d) => d.status === 'upcoming').map((d) => ({ e, d })))
     .sort((a, b) => a.d.start.localeCompare(b.d.start))[0];
+  const title = next ? titleOf(next) : '';
+  const [on, toggle] = useReminder(next ? `day:${next.d.id}` : 'none', title);
   if (!next) return null;
-  const mins = Math.max(0, Math.round((Date.parse(next.d.start) - now) / 60_000));
-  const inText = mins >= 1440 ? `in ${Math.round(mins / 1440)} days` : mins >= 60 ? `in ${Math.floor(mins / 60)}h ${mins % 60}m` : `in ${mins} min`;
   return (
-    <div className="mt-5 inline-flex max-w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-card bg-black/55 px-3.5 py-2 text-sm whitespace-nowrap backdrop-blur-sm">
-      <span className="text-[11px] font-bold tracking-wider text-gold-strong uppercase">Next live</span>
-      <Link to={`/watch/${next.d.id}`} className="min-w-0 truncate font-semibold hover:text-gold-strong">
-        {titleOf(next)}
+    <aside aria-label="Next live" className={cx('w-full rounded-panel border border-white/15 bg-black/75 p-4 backdrop-blur-md sm:w-80', className)}>
+      <p className="flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] text-gold-strong uppercase">
+        <i className="size-1.5 rounded-full bg-gold" aria-hidden /> Next live
+      </p>
+      <Link to={`/watch/${next.d.id}`} className="mt-1.5 block text-lg leading-snug font-bold hover:text-gold-strong">
+        {title}
       </Link>
-      <span className="text-muted tnum">
-        {fmtTime(next.d.start, state.tz)} · {inText}
-      </span>
-      <Link to="/schedule" className="text-sm font-semibold whitespace-nowrap text-white/70 hover:text-white">
-        Schedule →
-      </Link>
-    </div>
+      <p className="mt-0.5 text-sm text-white/70 tnum">
+        {fmtDate(next.d.start, state.tz)} · {fmtTime(next.d.start, state.tz)} {tzAbbr(state.tz, next.d.start)}
+      </p>
+      <p className="mt-3 text-3xl font-black tracking-tight tnum" role="timer" aria-label="Starts in">
+        {countdownText(Date.parse(next.d.start) - now)}
+      </p>
+      <div className="mt-3 flex items-center gap-3">
+        <Button size="sm" variant={on ? 'secondary' : 'primary'} onClick={toggle} aria-pressed={on}>
+          <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
+        </Button>
+        <Link to="/schedule" className="text-sm font-semibold text-white/75 hover:text-white">
+          Schedule →
+        </Link>
+      </div>
+    </aside>
   );
 }
 
