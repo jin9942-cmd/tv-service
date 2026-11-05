@@ -1045,16 +1045,16 @@ function EventCard({ e }: { e: TourEvent }) {
   const cover = list.find((v) => v.title.endsWith('Final Table')) ?? list[list.length - 1];
   const art = cover ? { src: cover.thumb, pos: cover.thumbPos, fit: cover.thumbFit } : dayArt(e, e.days[0]);
   const ahead = e.days.filter((d) => d.status === 'upcoming').length;
-  const live = list.some((v) => isLive(v, state.streamMode));
+  // Replays only: a broadcast that is on air now is not counted, and the card carries no LIVE tag.
+  const replayCount = list.filter((v) => !isLive(v, state.streamMode)).length;
   return (
     <Link to={`/events/${e.id}`} className="group block min-w-0">
       <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
         <img src={art.src} style={artStyle(art)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-        {live && <LiveTag className="absolute top-2 left-2" />}
       </span>
       <span className="mt-2 block truncate text-[15px] font-semibold group-hover:text-gold-strong">{e.name.replace(' World Championship', '')}</span>
       <span className="mt-0.5 block truncate text-xs text-muted">
-        {seriesById(e.seriesId).name} · {list.length ? `${list.length} broadcast${list.length === 1 ? '' : 's'}` : `${ahead} coming up`}
+        {seriesById(e.seriesId).name} · {replayCount ? `${replayCount} replay${replayCount === 1 ? '' : 's'}` : `${ahead} coming up`}
       </span>
     </Link>
   );
