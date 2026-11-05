@@ -55,6 +55,7 @@ export default function App() {
             <Route path="classics/:classicId" element={<TvClassic />} />
             <Route path="account" element={<Account />} />
             <Route path="plans" element={<Plans />} />
+            <Route path="wsop-plus" element={<Plans />} />
             <Route path="devices" element={<Devices />} />
             <Route path="search" element={<Search />} />
             <Route path="my-list" element={<MyListPage />} />

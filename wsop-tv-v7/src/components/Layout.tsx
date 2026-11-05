@@ -8,18 +8,18 @@ import { DemoControls } from '../features/demo/DemoControls';
 import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
 
 
-// v7: Home, Schedule, Videos (highlights and replays) and WSOP+ (wsop.com); Search and My on the right.
+// v7: Home, Schedule, Videos (highlights and replays) and WSOP+ (the membership page, under this menu); Search and My on
+// the right. Phones: the four tabs and My (Search stays in the header).
 // How to Watch lives in the footer; My List and Account in the My menu.
 export const NAV = [
   { to: '/', label: 'Home', icon: 'star', end: true },
   { to: '/schedule', label: 'Schedule', icon: 'calendar' },
   { to: '/videos', label: 'Videos', icon: 'grid4' },
+  { to: '/wsop-plus', label: 'WSOP+', icon: 'star' },
 ] as const;
 
 /** Videos stays selected on its tabs and on an event's page, which Replays links to. */
 const navOn = (to: string, isActive: boolean, path: string) => isActive || (to === '/videos' && (path.startsWith('/videos') || path.startsWith('/events/')));
-/** WSOP+ lives on wsop.com: the menu links straight to it, in the same tab (wsop.com can't be framed). */
-const WSOP_PLUS_URL = 'https://www.wsop.com/plus/';
 
 export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (
@@ -103,9 +103,6 @@ export function Layout() {
                 )}
               </NavLink>
             ))}
-            <a href={WSOP_PLUS_URL} className="rounded-chip px-3 py-1.5 text-[15px] font-medium whitespace-nowrap text-text/70 transition-colors duration-150 hover:text-text">
-              WSOP+
-            </a>
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <NavLink to="/search" aria-label="Search" title="Search" className={({ isActive }) => cx('rounded-chip p-2 transition-colors duration-150', isActive ? 'text-gold' : 'text-muted hover:text-text')}>
@@ -133,11 +130,6 @@ export function Layout() {
                   </NavLink>
                 </li>
               ))}
-              <li>
-                <a href={WSOP_PLUS_URL} className="flex items-center gap-2 rounded-chip px-3 py-2.5 text-sm font-semibold text-muted hover:text-text">
-                  <Icon name="star" size={16} /> WSOP+
-                </a>
-              </li>
             </ul>
           </nav>
         )}
@@ -151,7 +143,7 @@ export function Layout() {
 
       {/* Mobile bottom navigation */}
       <nav aria-label="Main (mobile)" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-bg/95 backdrop-blur md:hidden">
-        {[...NAV, { to: '/search', label: 'Search', icon: 'search' }].map((n) => (
+        {NAV.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2 text-[10.5px] font-semibold', navOn(n.to, isActive, loc.pathname) ? 'text-gold' : 'text-muted')}>
             <Icon name={n.icon} size={20} />
             {n.label}

@@ -5,7 +5,7 @@
 
 ## v7
 
-- **Menu:** Home · Schedule · Videos · WSOP+ (links to https://www.wsop.com/plus/ in the same tab; wsop.com can't be framed), Search and My on the right. Phones: Home · Schedule · Videos · Search · My.
+- **Menu:** Home · Schedule · Videos · WSOP+, Search and My on the right. WSOP+ is the membership page inside WSOP TV, under the TV menu (wsop.com/plus can't be framed): products, the three tiers with what each includes on WSOP TV and across WSOP+, short answers. Phones: Home · Schedule · Videos · WSOP+ · My.
 - **Home:** banner → 24/7 On-Demand → Continue watching → Editor's pick (the best final tables) → My List → Recommended for you → Latest replays → Curated collections (from the archive) → Shorts. No video appears in two rows, and no picture repeats on the page.
 - **Schedule** (wsop.com/schedule style): All · Live · Replays · Upcoming filter, then Live now (LIVE icon), Before live (earlier broadcasts) and Upcoming, under month headings. Upcoming cards count down; opening one shows the full countdown and Remind me.
 - **Videos:** Highlights (filter by hand type) and Replays; every card opens the player.

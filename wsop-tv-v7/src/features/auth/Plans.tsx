@@ -1,5 +1,6 @@
-// WSOP+ membership comparison. WSOP TV has no plans or payments of its own: it shows what each WSOP+ tier includes
-// on WSOP TV (from the "included from" setting) and sends the viewer to WSOP+ to join or upgrade.
+// WSOP+ inside WSOP TV (v7): the membership page under the TV menu (wsop.com/plus can't be framed). What WSOP+ is, the
+// three tiers with what each includes on WSOP TV and across WSOP+, and short answers. WSOP TV has no plans or payments
+// of its own: joining or upgrading goes to WSOP+ and comes back.
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Access } from '../../data/types';
 import { PLATFORMS } from '../../data/platforms';
@@ -21,8 +22,26 @@ import { Button, Icon, Page, cx } from '../../components/ui';
 
 const COLUMNS: Exclude<Tier, 'free'>[] = ['wsopFree', 'basic', 'premium'];
 
+/** What else each tier brings across WSOP+ (WSOP Academy, WSOP Live, ClubGG), in short. */
+const ACROSS: Record<Exclude<Tier, 'free'>, string[]> = {
+  wsopFree: ['Your Poker IQ, and the full WSOP Academy curriculum', 'The first Academy challenger', '10 High Roller Table hands a day', 'The official WSOP app', 'Play with friends and family on ClubGG'],
+  basic: ['The named-pro Academy challengers', '50 High Roller Table hands a day', 'Plus Lounge once a day · Stage 1 once a day', '5% off at the WSOP Store', 'Multi-table on PC/Mac, up to 6 tables', 'PokerCraft, Smart HUD, Rabbit Hunt and more'],
+  premium: ['The apex Academy challenger', 'Unlimited High Roller Table hands', 'Unlimited Plus Lounge and Stage 1 · Final Stage re-entry', 'Special merchandise at the WSOP Store', 'Multi-table on PC/Mac, up to 12 tables', 'PokerCraft, Smart HUD, Rabbit Hunt and more'],
+};
+const PRODUCTS: [string, string, string][] = [
+  ['WSOP TV', 'Live final tables, full replays and hands', 'tv'],
+  ['WSOP Academy', 'Lessons, exams and pro challengers', 'star'],
+  ['WSOP Live', 'Live events and the official app', 'calendar'],
+  ['ClubGG', 'Play online with friends', 'play'],
+];
+const FAQ: [string, string][] = [
+  ['What does WSOP+ include?', 'WSOP TV, WSOP Academy, WSOP Live and ClubGG, under one membership. More may be added later.'],
+  ['Do I need a GGPass account?', 'Yes. WSOP+ runs on your GGPass account — the same sign-in as WSOP TV.'],
+  ['Where do I manage or cancel?', 'In WSOP+. Changes apply to WSOP TV straight away; you can cancel at any time.'],
+];
+
 export function Plans() {
-  const { state, toast, signedIn, requireLogin } = useApp();
+  const { state, signedIn, requireLogin } = useApp();
   const nav = useNavigate();
   const loc = useLocation();
   const ls = loc.state as { returnTo?: string; required?: Tier; access?: Access } | null;
@@ -50,8 +69,21 @@ export function Plans() {
   return (
     <Page className="max-w-5xl">
       <p className="label text-gold">WSOP+ membership</p>
-      <h1 className="mt-1 text-title font-black">WSOP TV is included with WSOP+</h1>
-      <p className="mt-1 text-muted">One GGPass account, one membership. Joining, billing and cancelling all happen in WSOP+ — WSOP TV simply reads your tier.</p>
+      <h1 className="mt-1 text-title font-black">More of WSOP, in one membership</h1>
+      <p className="mt-1 text-muted">One GGPass account, one subscription: watching, learning, live events and playing online. WSOP TV is part of it.</p>
+      <ul className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Included products">
+        {PRODUCTS.map(([name, d, icon]) => (
+          <li key={name} className="flex items-center gap-3 rounded-panel border border-line bg-surface p-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-3 text-gold">
+              <Icon name={icon} size={18} />
+            </span>
+            <span className="min-w-0">
+              <span className="block font-bold">{name}</span>
+              <span className="block text-xs text-muted">{d}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
       {!PRESENTATION && <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-subtle">
         <span className="label rounded-[3px] border border-dashed border-line-strong px-1 py-px text-[9px]">Placeholder</span>
         Tier names, prices and what each tier covers aren’t final · WSOP TV currently included from: <b className="text-muted">{INCLUDED_FROM_LABEL[state.includedFrom]}</b>
@@ -91,12 +123,14 @@ export function Plans() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 border-t border-line pt-3 text-xs text-muted">
-                Plus other WSOP+ benefits ·{' '}
-                <button onClick={() => toast('WSOP+ benefits page (demo)')} className="font-semibold text-gold hover:underline">
-                  See WSOP+
-                </button>
-              </p>
+              <p className="label mt-5 text-[10px] text-subtle">Across WSOP+</p>
+              <ul className="mt-2 space-y-2">
+                {ACROSS[tier].map((x) => (
+                  <li key={x} className="flex items-start gap-2 text-sm text-text/85">
+                    <Icon name="check" size={16} className="mt-0.5 shrink-0 text-subtle" /> {x}
+                  </li>
+                ))}
+              </ul>
 
               <div className="mt-4">
                 {action ? (
@@ -117,6 +151,18 @@ export function Plans() {
           );
         })}
       </div>
+
+      <section aria-label="Questions" className="mt-10">
+        <h2 className="text-xl sm:text-2xl">Questions</h2>
+        <dl className="mt-3 divide-y divide-line rounded-panel border border-line bg-surface">
+          {FAQ.map(([q, a]) => (
+            <div key={q} className="px-4 py-3">
+              <dt className="font-semibold">{q}</dt>
+              <dd className="mt-1 text-sm text-muted">{a}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       <p className="mt-6 text-xs text-subtle">Continue to WSOP+ to join or upgrade; you’ll come straight back and WSOP TV re-checks your membership. No payment is taken in this demo.</p>
     </Page>
