@@ -14,7 +14,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
+import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
@@ -1011,185 +1011,129 @@ function EventCard({ e }: { e: TourEvent }) {
 }
 
 /**
- * Schedule, in the wsop.com/schedule style: a filter bar (All · Live · Upcoming · Past), then the broadcasts as cards
- * under month headings — live now first, then what's coming, then earlier broadcasts (newest first). A live card carries
- * the LIVE icon; an upcoming card counts down and opens its waiting screen (timer and Remind me).
+ * Schedule, as on wsop.com/schedule: the year's series (three or four big ones) as cards under month headings — tag,
+ * name, dates, venue. Only a series that is live carries anything to press: the LIVE badge, its live broadcasts and
+ * Watch live. Upcoming and past series are plain cards (past ones open their replays in Videos).
  */
-type ScheduleFilter = 'all' | 'live' | 'replays' | 'upcoming';
+type ScheduleFilter = 'all' | 'live' | 'upcoming' | 'past';
 type ScheduleItem = { e: TourEvent; d: Day };
+type SeriesStop = { id: string; name: string; venue: string; city: string; start: string; end: string; art: Art };
+
+const DAY_MS = 86_400_000;
+const at = (days: number) => new Date(Date.now() + days * DAY_MS).toISOString();
+/** The year's series: the two with broadcasts in the demo, plus last spring's and next winter's. */
+const SEASON: SeriesStop[] = [
+  { id: 'sp26', name: '2026 Spring Open', venue: 'Bicycle Hotel & Casino', city: 'Los Angeles, CA', start: at(-200), end: at(-179), art: VENUE_ART[3] },
+  ...series.map((s, i) => ({ ...s, art: i === 0 ? TABLE_ART[0] : VENUE_ART[2] })),
+  { id: 'wi27', name: '2027 Winter Festival', venue: 'Boardwalk Hall', city: 'Atlantic City, NJ', start: at(110), end: at(131), art: VENUE_ART[0] },
+];
+
+const seriesState = (s: SeriesStop, now: number) => (Date.parse(s.start) <= now && now <= Date.parse(s.end) ? 'live' : Date.parse(s.start) > now ? 'upcoming' : 'past');
+const MONTH = (tz: string) => new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: tz });
+const shortDate = (iso: string, tz: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric', timeZone: tz }).format(new Date(iso));
 
 export function SchedulePage() {
   const { state } = useApp();
-  const now = useTick(1000);
+  const now = useTick(60_000);
   const [f, setF] = useState<ScheduleFilter>('all');
-  const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
-  const all = events.flatMap((e) => e.days.map((d) => ({ e, d }))).sort((a, b) => a.d.start.localeCompare(b.d.start));
-  const liveNow = all.filter((x) => isBroadcasting(status(x.d)));
-  // Past: the last two weeks of finished broadcasts, newest first.
-  const earlier = all.filter((x) => status(x.d) === 'vod' && Date.parse(x.d.start) > now - 14 * 86_400_000).reverse();
-  const upcoming = all.filter((x) => status(x.d) === 'upcoming');
+  const live = SEASON.filter((s) => seriesState(s, now) === 'live');
+  const upcoming = SEASON.filter((s) => seriesState(s, now) === 'upcoming').sort((a, b) => a.start.localeCompare(b.start));
+  const past = SEASON.filter((s) => seriesState(s, now) === 'past').sort((a, b) => b.start.localeCompare(a.start));
   const tabs: [ScheduleFilter, string, number][] = [
-    ['all', 'All', liveNow.length + earlier.length + upcoming.length],
-    ['live', 'Live', liveNow.length],
+    ['all', 'All', SEASON.length],
+    ['live', 'Live', live.length],
     ['upcoming', 'Upcoming', upcoming.length],
-    ['replays', 'Past', earlier.length],
+    ['past', 'Past', past.length],
   ];
   const show = (k: ScheduleFilter) => f === 'all' || f === k;
+  const groups: [ScheduleFilter, SeriesStop[]][] = [
+    ['live', live],
+    ['upcoming', upcoming],
+    ['past', past],
+  ];
   return (
-    <Page className="max-w-[96rem]">
+    <Page className="max-w-[72rem]">
       <h1 className="text-title">Schedule</h1>
       <div className="mt-4 flex flex-wrap items-center gap-2 border-b border-line pb-4" role="tablist" aria-label="Show">
         {tabs.map(([k, label, n]) => (
           <button key={k} role="tab" aria-selected={f === k} onClick={() => setF(k)} className={chip(f === k)}>
-            {k === 'live' && <i className="live-dot mr-1.5 inline-block size-2 rounded-full bg-live align-middle" aria-hidden />}
             {label} <span className="ml-1 text-xs opacity-70 tnum">{n}</span>
           </button>
         ))}
-        <span className="ml-auto text-sm text-muted">Times in your time zone ({tzAbbr(state.tz, new Date(now))})</span>
       </div>
-      <div className="mt-8 space-y-12">
-        {show('live') && liveNow.length > 0 && (
-          <ScheduleGroup title="Live now" live>
-            {liveNow.map((x) => (
-              <ScheduleCard key={x.d.id} {...x} st={status(x.d)} now={now} />
-            ))}
-          </ScheduleGroup>
-        )}
-        {show('upcoming') && upcoming.length > 0 && (
-          <ScheduleGroup title="Upcoming" sub="Open one for the countdown, or set a reminder">
-            {byMonth(upcoming, state.tz).map(([m, items]) => (
-              <MonthBlock key={m} month={m}>
-                {items.map((x) => (
-                  <ScheduleCard key={x.d.id} {...x} st={status(x.d)} now={now} />
-                ))}
-              </MonthBlock>
-            ))}
-          </ScheduleGroup>
-        )}
-        {show('replays') && earlier.length > 0 && (
-          <ScheduleGroup title="Past" sub="Earlier broadcasts — watch the full replay">
-            {byMonth(earlier, state.tz).map(([m, items]) => (
-              <MonthBlock key={m} month={m}>
-                {items.map((x) => (
-                  <ScheduleCard key={x.d.id} {...x} st={status(x.d)} now={now} />
-                ))}
-              </MonthBlock>
-            ))}
-          </ScheduleGroup>
-        )}
+      <div className="mt-8 space-y-8">
+        {groups
+          .filter(([k, list]) => show(k) && list.length)
+          .flatMap(([, list]) => list)
+          .map((s, i, all) => {
+            const month = MONTH(state.tz).format(new Date(s.start));
+            const head = i === 0 || MONTH(state.tz).format(new Date(all[i - 1].start)) !== month || seriesState(all[i - 1], now) !== seriesState(s, now);
+            return (
+              <div key={s.id}>
+                {head && <p className="mb-3 text-lg font-bold">{month}</p>}
+                <SeriesCard s={s} st={seriesState(s, now)} />
+              </div>
+            );
+          })}
       </div>
     </Page>
   );
 }
 
-const MONTH = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
-/** Items grouped under month headings ("November 2026"), in the order given. */
-function byMonth(items: ScheduleItem[], tz: string): [string, ScheduleItem[]][] {
-  const out = new Map<string, ScheduleItem[]>();
-  for (const x of items) {
-    const k = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: tz }).format(new Date(x.d.start)) || MONTH.format(new Date(x.d.start));
-    out.set(k, [...(out.get(k) ?? []), x]);
-  }
-  return [...out.entries()];
-}
-
-function ScheduleGroup({ title, sub, live, children }: { title: string; sub?: string; live?: boolean; children: ReactNode }) {
-  return (
-    <section aria-label={title}>
-      <h2 className="flex items-center gap-2.5 text-xl sm:text-2xl">
-        {live && <i className="live-dot size-2.5 rounded-full bg-live" aria-hidden />}
-        {title}
-      </h2>
-      {sub && <p className="mt-1 text-sm text-muted">{sub}</p>}
-      <div className="mt-4 space-y-6">{children}</div>
-    </section>
-  );
-}
-
-function MonthBlock({ month, children }: { month: string; children: ReactNode }) {
-  return (
-    <div>
-      <p className="mb-3 text-sm font-bold tracking-wide text-muted uppercase">{month}</p>
-      <div className="grid gap-3 md:grid-cols-2">{children}</div>
-    </div>
-  );
-}
-
-/** Countdown text: "2d 04:12:09" / "04:12:09". */
-const countdownText = (ms: number) => {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const d = Math.floor(s / 86400);
-  const hms = `${pad(Math.floor((s % 86400) / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
-  return d ? `${d}d ${hms}` : hms;
-};
-
-/**
- * One broadcast as a wsop.com-style card: date block, a status label (LIVE with its dot, REPLAY, UPCOMING), the title,
- * series and venue, the time — and Watch live / Watch replay, or the countdown and Remind me.
- */
-function ScheduleCard({ e, d, st, now }: ScheduleItem & { st: Day['status']; now: number }) {
+/** One series, wsop.com style. Live: LIVE badge, what's on air and Watch live. Otherwise: just the facts. */
+function SeriesCard({ s, st }: { s: SeriesStop; st: 'live' | 'upcoming' | 'past' }) {
   const { state } = useApp();
-  const se = seriesById(e.seriesId);
-  const title = titleOf({ e, d });
-  const [on, toggle] = useReminder(`day:${d.id}`, title);
-  const live = isBroadcasting(st);
-  const upcoming = st === 'upcoming';
-  const date = new Date(d.start);
-  const wd = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: state.tz }).format(date);
-  const dd = new Intl.DateTimeFormat('en-US', { day: 'numeric', timeZone: state.tz }).format(date);
-  return (
-    // Live cards span the page, so Watch live sits at their right end; the two-across cards keep it under the title.
-    <div className={cx('flex min-w-0 gap-4 rounded-panel border bg-surface p-4', live ? 'flex-wrap items-center border-live/60 sm:flex-nowrap' : 'border-line')}>
-      <div className="flex w-14 shrink-0 flex-col items-center justify-center rounded-card bg-surface-2 py-2">
-        <span className="text-[11px] font-bold text-muted uppercase">{wd}</span>
-        <span className="text-2xl leading-none font-black tnum">{dd}</span>
-      </div>
+  const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
+  const onAir = st === 'live' ? events.filter((e) => e.seriesId === s.id).flatMap((e) => e.days.filter((d) => isBroadcasting(status(d))).map((d) => ({ e, d }))) : [];
+  const hasReplays = events.some((e) => e.seriesId === s.id && e.days.some((d) => d.status === 'vod'));
+  const body = (
+    <>
+      <img src={s.art.src} style={artStyle(s.art)} alt="" className="aspect-video w-full shrink-0 rounded-card object-cover sm:w-56" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          {live ? (
-            <LiveTag />
-          ) : (
-            <span className={cx('label rounded-[4px] px-1.5 py-0.5 text-[10px]', upcoming ? 'bg-gold-dim text-gold-strong' : 'bg-surface-3 text-muted')}>{upcoming ? 'Upcoming' : 'Replay'}</span>
-          )}
-          <span className="text-xs text-muted tnum">
-            {fmtTime(d.start, state.tz)} · {fmtTime(d.start, VENUE_TZ)} in Las Vegas
-          </span>
+          <span className="rounded-[4px] bg-surface-3 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-muted uppercase">Bracelet series</span>
+          {st === 'live' && <LiveTag />}
         </div>
-        <Link to={`/watch/${d.id}`} className="mt-1.5 block truncate text-[17px] font-bold hover:text-gold-strong">
-          {title}
-        </Link>
-        <p className="mt-0.5 truncate text-sm text-muted">
-          {se.name} · {se.venue}, {se.city}
+        <p className="mt-2 text-xl font-bold">{s.name}</p>
+        <p className="mt-1 text-sm text-text/85 tnum">
+          {shortDate(s.start, state.tz)} – {shortDate(s.end, state.tz)}
         </p>
-        {!live && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {upcoming ? (
-            <>
-              <Link to={`/watch/${d.id}`} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong px-3 text-[13px] font-semibold tnum hover:border-text" aria-label={`Starts in ${countdownText(Date.parse(d.start) - now)} — open the countdown`}>
-                <Icon name="history" size={14} /> {countdownText(Date.parse(d.start) - now)}
-              </Link>
-              <Button size="sm" variant={on ? 'secondary' : 'outline'} onClick={toggle} aria-pressed={on}>
-                <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
-              </Button>
-            </>
-          ) : (
-            <Link to={`/watch/${d.id}`}>
-              <Button size="sm" variant="secondary" tabIndex={-1}>
-                <Icon name="play" size={14} /> Watch replay · {duration(d.durationMin * 60)}
-              </Button>
-            </Link>
-          )}
-        </div>
+        <p className="mt-0.5 text-sm text-muted">
+          {s.venue} · {s.city}
+        </p>
+        {onAir.length > 0 && (
+          <ul className="mt-3 space-y-1.5">
+            {onAir.map(({ e, d }) => (
+              <li key={d.id} className="flex items-center gap-2 text-sm">
+                <i className="live-dot size-1.5 rounded-full bg-live" aria-hidden />
+                <Link to={`/watch/${d.id}`} className="font-semibold hover:text-gold-strong">
+                  {titleOf({ e, d })}
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
-      {live && (
-        <Link to={`/watch/${d.id}`} className="shrink-0 sm:ml-auto">
+    </>
+  );
+  if (st === 'live')
+    return (
+      <div className="flex flex-col gap-4 rounded-panel border border-live/60 bg-surface p-4 sm:flex-row sm:items-center">
+        {body}
+        <Link to={`/watch/${onAir[0]?.d.id ?? HERO_DAY_ID}`} className="shrink-0">
           <Button variant="primary" tabIndex={-1}>
             <Icon name="play" size={16} /> Watch live
           </Button>
         </Link>
-      )}
-    </div>
+      </div>
+    );
+  // Past series with broadcasts open their replays; the rest are information only.
+  return hasReplays && st === 'past' ? (
+    <Link to={`/videos/replays?series=${s.id}`} className="flex flex-col gap-4 rounded-panel border border-line bg-surface p-4 hover:border-line-strong sm:flex-row sm:items-center">
+      {body}
+    </Link>
+  ) : (
+    <div className="flex flex-col gap-4 rounded-panel border border-line bg-surface p-4 sm:flex-row sm:items-center">{body}</div>
   );
 }
 
