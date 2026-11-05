@@ -11,6 +11,7 @@ import { Account } from './pages/Account';
 import { NotFound } from './pages/NotFound';
 import { GGPassFlow } from './features/auth/GGPassFlow';
 import { Plans } from './features/auth/Plans';
+import { WsopPlusPage } from './features/auth/WsopPlusPage';
 import { Devices } from './features/auth/Devices';
 import { Search } from './pages/Search';
 import { MembershipCheck, WsopPlusJoin } from './features/membership/WsopPlus';
@@ -55,7 +56,7 @@ export default function App() {
             <Route path="classics/:classicId" element={<TvClassic />} />
             <Route path="account" element={<Account />} />
             <Route path="plans" element={<Plans />} />
-            <Route path="wsop-plus" element={<Plans />} />
+            <Route path="wsop-plus" element={<WsopPlusPage />} />
             <Route path="devices" element={<Devices />} />
             <Route path="search" element={<Search />} />
             <Route path="my-list" element={<MyListPage />} />
