@@ -548,14 +548,14 @@ function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; 
 const editorsFinalTables = () => {
   const finals = catalog.filter((v) => (v.kind === 'classic' || (v.kind === 'broadcast' && v.status === 'vod')) && v.title.includes('Final Table'));
   const picked: Video[] = [];
-  // Different pictures side by side, and pictures of play (no casino exteriors).
-  for (const x of [...finals].sort((a, b) => b.views - a.views)) if (!EXTERIOR.has(x.thumb) && !picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos)) picked.push(x);
+  // Different pictures side by side.
+  for (const x of [...finals].sort((a, b) => b.views - a.views)) if (!picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos)) picked.push(x);
   return picked;
 };
 
 /**
- * Editorial areas (Editor's pick, Curated collections) sit on their own band — a warm tinted panel with a gold rule and
- * an "Editor's pick" / "Curated" label — so they read as chosen by people, apart from the personal and automatic rows.
+ * The Curated collections area sits on its own band — a warm tinted panel with a gold rule and
+ * a "From the archive" label — so it reads as chosen by people, apart from the personal and automatic rows.
  */
 function EditorialBand({ label, title, note, action, children }: { label: string; title: string; note?: string; action?: ReactNode; children: ReactNode }) {
   return (
@@ -576,49 +576,28 @@ function EditorialBand({ label, title, note, action, children }: { label: string
   );
 }
 
-/** Editor's pick: a big lead final table with the story on the picture, and the next two beside it. */
 function EditorsPick({ picks }: { picks: Video[] }) {
   if (!picks.length) return null;
-  const [lead, ...rest] = picks;
   const total = picks.reduce((n, v) => n + v.durationSec, 0);
   return (
-    <EditorialBand
-      label="Editor’s pick"
-      title="The best final tables"
-      note={`Where bracelets are won: the final tables worth watching start to finish. ${picks.length} picks · ${duration(total)} in all.`}
-      action={more('/collections/final-tables', 'All final tables')}
-    >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <Link to={`/watch/${lead.id}`} className="group relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-          <img src={lead.thumb} style={artStyle({ pos: lead.thumbPos, fit: lead.thumbFit })} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
-          <span className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" aria-hidden />
-          <span className="absolute top-3 left-3 rounded-[4px] bg-gold px-2 py-0.5 text-[11px] font-black tracking-wide text-ink uppercase">No. 1</span>
-          <span className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
-            <span className="block text-xl leading-tight font-bold sm:text-3xl">{lead.title}</span>
-            <span className="mt-1.5 line-clamp-2 block max-w-xl text-sm text-white/80">{lead.description}</span>
-            <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-black">
-              <Icon name="play" size={14} /> Watch · {duration(lead.durationSec)}
-            </span>
-          </span>
-        </Link>
-        <ol className="grid gap-4">
-          {rest.map((v, i) => (
-            <li key={v.id}>
-              <Link to={`/watch/${v.id}`} className="group flex h-full gap-3 rounded-card bg-black/30 p-2.5 hover:bg-black/50 lg:flex-col">
-                <span className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2 lg:w-full">
-                  <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-                  <span className="absolute top-2 left-2 rounded-[4px] bg-black/75 px-1.5 py-0.5 text-[10px] font-black text-gold-strong uppercase">No. {i + 2}</span>
-                </span>
-                <span className="min-w-0">
-                  <span className="line-clamp-2 block text-[15px] font-bold group-hover:text-gold-strong">{v.title}</span>
-                  <span className="mt-0.5 block text-xs text-muted tnum">{duration(v.durationSec)}</span>
-                </span>
-              </Link>
-            </li>
+    <Section title="The best final tables" kicker="Editor’s pick" action={more('/collections/final-tables', 'All final tables')}>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
+        <div className="flex flex-col justify-between gap-3 rounded-card border border-line bg-surface p-4">
+          <p className="text-[15px] leading-relaxed text-text/85">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-wide text-gold-strong uppercase">From the editor</span>
+            Where bracelets are won: the final tables worth watching start to finish, from this series and the archive.
+          </p>
+          <p className="text-sm text-muted tnum">
+            {picks.length} final tables · {duration(total)} in all
+          </p>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-3">
+          {picks.map((v) => (
+            <VideoCard key={v.id} v={v} />
           ))}
-        </ol>
+        </div>
       </div>
-    </EditorialBand>
+    </Section>
   );
 }
 
