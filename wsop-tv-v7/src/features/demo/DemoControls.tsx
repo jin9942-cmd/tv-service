@@ -83,7 +83,6 @@ export function DemoControls() {
               {(
                 [
                   ['live', 'Live'],
-                  ['delayed', 'Delayed'],
                   ['vod', 'VOD'],
                   ['late', 'Late start'],
                   ['interrupted', 'Interrupted'],
@@ -94,7 +93,7 @@ export function DemoControls() {
                 </button>
               ))}
             </div>
-            <p className="mt-1 text-[10.5px] text-sky-200/60">Delayed: feature table 30 min, outer tables 15 min · Outer Table 3 starts late, Outer Table 4 is interrupted (Tables panel).</p>
+            <p className="mt-1 text-[10.5px] text-sky-200/60">Outer Table 3 starts late, Outer Table 4 is interrupted (Tables panel).</p>
           </Group>
 
           <Group label="Region">

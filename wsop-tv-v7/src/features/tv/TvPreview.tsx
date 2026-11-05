@@ -91,7 +91,7 @@ export function TvPreview() {
 function ParityPanel({ platform }: { platform: Platform }) {
   const caps = PLATFORMS[platform];
   const rows: [string, string, boolean | 'partial'][] = [
-    ['Live, Delayed & VOD', 'Supported', true],
+    ['Live & VOD', 'Supported', true],
     ['Hand markers', caps.handMarkers ? 'Supported' : 'Not supported', caps.handMarkers],
     ['Data overlay', caps.overlayMax === 'pro' ? 'Off / Basic / Pro' : 'Off / Basic only', caps.overlayMax === 'pro' ? true : 'partial'],
     ['Multiview', caps.multiview === 1 ? 'Not supported' : `Up to ${caps.multiview} tables`, caps.multiview === 4 ? true : caps.multiview === 1 ? false : 'partial'],

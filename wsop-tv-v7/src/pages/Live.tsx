@@ -44,7 +44,7 @@ function LiveTabs({ active }: { active: 'tournaments' | 'channels' }) {
         <Link to="/live/channels" className={tab(active === 'channels')} aria-current={active === 'channels' ? 'page' : undefined}>
           Channels <span className="rounded-full bg-surface-3 px-1.5 text-[11px] text-muted tnum">{channels.length}</span>
         </Link>
-        <span className="ml-auto hidden text-xs text-subtle sm:inline">{active === 'channels' ? '24/7 channels on a fixed schedule' : 'Every table of every event, live and delayed'}</span>
+        <span className="ml-auto hidden text-xs text-subtle sm:inline">{active === 'channels' ? '24/7 channels on a fixed schedule' : 'Every table of every event, live'}</span>
       </nav>
     </div>
   );

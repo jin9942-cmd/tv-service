@@ -623,7 +623,6 @@ function NowInfo({ ch, p, now }: { ch: LinearChannel; p: Program; now: number })
       </h1>
       <p className="mt-1 text-sm text-muted">
         {p.subtitle}
-        {live && a.delayMin ? ` · airs ${a.delayMin} min behind the tournament floor` : ''}
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {ref && live && (
@@ -704,7 +703,7 @@ function AboutChannels() {
         <li>· Each channel runs 24/7 on a fixed schedule — no rewind. To start over, open the broadcast.</li>
         <li>· Studio, highlight and classic programmes are free to watch.</li>
         <li>· Live and replay programmes need the same membership as the broadcast they carry.</li>
-        <li>· Live coverage airs on the feature-table delay. If it starts late or drops out, the channel stays on with highlights.</li>
+        <li>· If live coverage starts late or drops out, the channel stays on with highlights.</li>
         <li>· Programmes without rights in your region are blacked out; the channel continues after them.</li>
       </ul>
     </section>

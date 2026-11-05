@@ -98,7 +98,7 @@ export const events: TourEvent[] = [
       day('lv-main', 'Day 2', -24 * 4, 660, 'vod', 2),
       day('lv-main', 'Day 3', -24 * 2, 660, 'vod', 4),
       // The hero broadcast: on air now; four tables for multiview. Per-table delays and states are set below.
-      day('lv-main', 'Final Table', -1.5, 540, 'delayed', 4),
+      day('lv-main', 'Final Table', -1.5, 540, 'live', 4),
     ],
   },
   {

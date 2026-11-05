@@ -90,7 +90,7 @@ function PromoBanner() {
       kicker: '2026 Summer Championship',
       title: `Main Event ${day.label}`,
       facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
-      line: 'Live from Las Vegas · Hole cards on a 30-minute delay',
+      line: 'Live from Las Vegas',
       actions: (
         <Link to={`/watch/${HERO_DAY_ID}`}>
           <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
