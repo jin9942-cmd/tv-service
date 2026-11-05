@@ -1,7 +1,6 @@
 // WSOP+ under the WSOP TV menu (v7): the wsop.com/plus page as the WSOP team gave it — the membership banner over a
 // photo collage, then "Choose your plan" with WSOP Academy, WSOP Live and ClubGG rows for Free, Basic and Premium.
 // Get Started goes through the WSOP+ join mock and comes back; nothing is charged in the demo.
-import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { memberTier, useApp } from '../../state/app';
 import type { PaidTier } from '../../data/policy';
@@ -55,7 +54,6 @@ const CHECK: Record<Col, string> = { free: 'text-subtle', basic: 'text-[#d6432f]
 export function WsopPlusPage() {
   const { state, signedIn, requireLogin } = useApp();
   const nav = useNavigate();
-  const plans = useRef<HTMLElement>(null);
   const have = memberTier(state);
   const start = (tier: PaidTier) => {
     if (!signedIn) return requireLogin({ reason: 'WSOP+ runs on your GGPass account. Sign in first, then choose a membership.', returnTo: '/wsop-plus' });
@@ -74,13 +72,10 @@ export function WsopPlusPage() {
           <h1 className="text-[2.6rem] leading-none text-[#e0402c] sm:text-[4.2rem]">WSOP+ Membership</h1>
           <p className="mt-3 font-display text-[1.6rem] leading-tight uppercase sm:text-[2.6rem]">Get the best out of your WSOP experience</p>
           <p className="mt-4 max-w-md text-sm text-white/85">One subscription gives you access to more across poker — live events, learning, watching, staking, and playing online.</p>
-          <button onClick={() => plans.current?.scrollIntoView({ behavior: 'smooth' })} className="mt-7 h-12 w-48 bg-[#d6432f] text-sm font-bold text-white hover:bg-[#e35541]">
-            Sign up now
-          </button>
         </div>
       </section>
 
-      <section ref={plans} aria-label="Choose your plan" className="mx-auto max-w-[70rem] px-gutter py-14 sm:px-6">
+      <section aria-label="Choose your plan" className="mx-auto max-w-[70rem] px-gutter py-14 sm:px-6">
         <h2 className="text-center text-2xl sm:text-3xl">Choose your plan</h2>
         <div className="mt-8 overflow-x-auto">
           <table className="w-full min-w-[46rem] border-separate border-spacing-[3px] text-left text-[13px]">
