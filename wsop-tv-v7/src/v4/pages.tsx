@@ -944,7 +944,7 @@ function EventCard({ e }: { e: TourEvent }) {
 }
 
 /**
- * Schedule, in the wsop.com/schedule style: a filter bar (All · Live · Replays · Upcoming), then the broadcasts as cards
+ * Schedule, in the wsop.com/schedule style: a filter bar (All · Live · Past · Upcoming), then the broadcasts as cards
  * under month headings — live now first, then earlier broadcasts (newest first), then what's coming. A live card carries
  * the LIVE icon; an upcoming card counts down and opens its waiting screen (timer and Remind me).
  */
@@ -958,13 +958,13 @@ export function SchedulePage() {
   const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
   const all = events.flatMap((e) => e.days.map((d) => ({ e, d }))).sort((a, b) => a.d.start.localeCompare(b.d.start));
   const liveNow = all.filter((x) => isBroadcasting(status(x.d)));
-  // Before live: the last two weeks of finished broadcasts, newest first.
+  // Past: the last two weeks of finished broadcasts, newest first.
   const earlier = all.filter((x) => status(x.d) === 'vod' && Date.parse(x.d.start) > now - 14 * 86_400_000).reverse();
   const upcoming = all.filter((x) => status(x.d) === 'upcoming');
   const tabs: [ScheduleFilter, string, number][] = [
     ['all', 'All', liveNow.length + earlier.length + upcoming.length],
     ['live', 'Live', liveNow.length],
-    ['replays', 'Replays', earlier.length],
+    ['replays', 'Past', earlier.length],
     ['upcoming', 'Upcoming', upcoming.length],
   ];
   const show = (k: ScheduleFilter) => f === 'all' || f === k;
@@ -989,7 +989,7 @@ export function SchedulePage() {
           </ScheduleGroup>
         )}
         {show('replays') && earlier.length > 0 && (
-          <ScheduleGroup title="Before live" sub="Earlier broadcasts — watch the full replay">
+          <ScheduleGroup title="Past" sub="Earlier broadcasts — watch the full replay">
             {byMonth(earlier, state.tz).map(([m, items]) => (
               <MonthBlock key={m} month={m}>
                 {items.map((x) => (
