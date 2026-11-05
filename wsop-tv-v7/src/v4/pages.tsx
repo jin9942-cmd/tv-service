@@ -748,38 +748,88 @@ export function ShortsRedirect() {
   return <Navigate to={`/videos/shorts${params.toString() ? `?${params}` : ''}`} replace />;
 }
 
-/** The Shorts tab of Videos: one vertical clip per screen, swipe or scroll to the next; starts at ?start=. */
+/**
+ * The Shorts tab of Videos, YouTube Shorts style: one tall vertical clip at a time in the middle, the title and its
+ * buttons at the bottom left (over the clip on phones), up / down arrows on the right. No likes, comments or sharing.
+ * Scroll, swipe, the arrows or the ↑ ↓ keys move to the next clip; it starts at ?start=.
+ */
 function ShortsFeed() {
   const [params] = useSearchParams();
   const start = params.get('start');
   const list = start ? [...highlightClips.filter((v) => v.id === start), ...highlightClips.filter((v) => v.id !== start)] : highlightClips;
+  const box = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState(0);
+  // The clips take exactly the room left on screen (nothing scrolls but the clips themselves).
+  const [height, setHeight] = useState<number>();
+  useEffect(() => {
+    const fit = () => {
+      const el = box.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const below = document.documentElement.scrollHeight - (top + el.offsetHeight);
+      setHeight(Math.max(320, window.innerHeight - top - below));
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+  const go = (dir: 1 | -1) => box.current?.scrollBy({ top: dir * box.current.clientHeight, behavior: 'smooth' });
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') (e.preventDefault(), go(1));
+      if (e.key === 'ArrowUp') (e.preventDefault(), go(-1));
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, []);
+  const onScroll = () => {
+    const el = box.current;
+    if (el) setAt(Math.round(el.scrollTop / el.clientHeight));
+  };
+  const info = (v: Video) => (
+    <div>
+      <p className="flex items-center gap-2 text-sm font-semibold">
+        <span className="grid size-9 place-items-center rounded-full border border-line bg-black">
+          <img src={`${import.meta.env.BASE_URL}wsop-logo.webp`} alt="" className="w-7" />
+        </span>
+        WSOP TV
+      </p>
+      <h2 className="mt-3 font-sans text-base leading-snug font-bold normal-case md:text-lg">{v.title}</h2>
+      <p className="mt-1 text-sm text-muted">
+        {v.subtitle} · {duration(v.durationSec)}
+      </p>
+    </div>
+  );
+  const arrow = (dir: 1 | -1) => (
+    <button
+      onClick={() => go(dir)}
+      disabled={dir === -1 ? at === 0 : at >= list.length - 1}
+      aria-label={dir === -1 ? 'Previous short' : 'Next short'}
+      className="grid size-12 place-items-center rounded-full bg-surface-3 hover:bg-line-strong disabled:opacity-30"
+    >
+      <Icon name="chevron" size={22} className={dir === -1 ? '-rotate-90' : 'rotate-90'} />
+    </button>
+  );
   return (
-    <>
-      <div className="mx-auto mt-6 h-[calc(100dvh-13rem)] max-w-[24rem] snap-y snap-mandatory overflow-y-auto rounded-panel bg-black" aria-label="Shorts">
+    <div className="relative mt-6">
+      <div ref={box} onScroll={onScroll} style={{ height }} className="h-[calc(100dvh-13rem)] snap-y snap-mandatory overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Shorts">
         {list.map((v) => (
-          <article key={v.id} className="relative h-full snap-start overflow-hidden">
-            <video className="absolute inset-0 size-full object-cover" src={`${v.media.url}#t=${v.media.start}`} poster={v.thumb} muted loop playsInline autoPlay preload="none" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" aria-hidden />
-            <div className="absolute inset-x-0 bottom-0 p-4">
-              <h2 className="font-sans text-lg leading-snug font-bold normal-case">{v.title}</h2>
-              <p className="text-xs text-white/75">
-                {v.subtitle} · {duration(v.durationSec)}
-              </p>
-              <div className="mt-3 flex gap-2">
-                <Link to={`/watch/${v.id}`} className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-black">
-                  Watch the hand
-                </Link>
-                {v.dayId && (
-                  <Link to={`/watch/${v.dayId}`} className="rounded-full border border-white/50 px-3 py-1.5 text-xs font-bold text-white">
-                    Full broadcast
-                  </Link>
-                )}
-              </div>
+          <article key={v.id} className="flex h-full snap-start flex-col pb-2 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-end md:gap-8">
+            <div className="hidden max-w-sm pb-2 md:block">{info(v)}</div>
+            {/* The clip alone: no title or buttons over it. */}
+            <div className="relative mx-auto aspect-[9/16] min-h-0 max-w-full flex-1 overflow-hidden rounded-panel bg-black md:h-full md:flex-none">
+              <video className="absolute inset-0 size-full object-cover" src={`${v.media.url}#t=${v.media.start}`} poster={v.thumb} muted loop playsInline autoPlay preload="none" />
             </div>
+            <div className="pt-3 md:hidden">{info(v)}</div>
+            <div className="hidden md:block" />
           </article>
         ))}
       </div>
-    </>
+      <div className="absolute top-1/2 right-0 hidden -translate-y-1/2 flex-col gap-3 md:flex">
+        {arrow(-1)}
+        {arrow(1)}
+      </div>
+    </div>
   );
 }
 
