@@ -8,7 +8,7 @@ import { duration, money } from '../lib/format';
 import { VENUE_TZ, fmtDateTime } from '../lib/time';
 import { isOnAir } from '../lib/broadcast';
 import { mediaFor } from '../features/channels/Channels';
-import { CHANNEL_ART, PLAYER_ART, PROMO_ART, TABLE_ART, VENUE_ART } from '../lib/brand';
+import { CHANNEL_ART, EXTERIOR, PLAYER_ART, PROMO_ART, TABLE_ART, VENUE_ART } from '../lib/brand';
 import type { StreamStatus } from '../data/types';
 
 export type VideoKind = 'broadcast' | 'classic' | 'clip' | 'channel';
@@ -52,7 +52,9 @@ function artFor(id: string, pool: 'table' | 'venue' | 'clip') {
   const fixed = PROMO_ART[id];
   if (fixed) return { thumb: fixed.src, thumbPos: fixed.pos, thumbFit: fixed.fit };
   // Clips take the table photos the broadcasts left over, then the stills.
-  const a = (pool === 'clip' ? TABLE_ART : [...(pool === 'table' ? TABLE_ART : VENUE_ART), ...TABLE_ART, ...VENUE_ART]).find((x) => !usedPhotos.has(x.src));
+  // Photos of play (room and table shots) before the casino exteriors.
+  const order = pool === 'clip' ? TABLE_ART : [...(pool === 'table' ? TABLE_ART : VENUE_ART.filter((x) => !EXTERIOR.has(x.src))), ...TABLE_ART, ...VENUE_ART];
+  const a = order.find((x) => !usedPhotos.has(x.src));
   if (a) {
     usedPhotos.add(a.src);
     return { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit };

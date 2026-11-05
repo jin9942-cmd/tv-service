@@ -77,7 +77,14 @@ export const PROMO_ART: Record<string, Art> = {
   'classic-a5-finaltable': TABLE_ART[3],
   'classic-a1-finaltable': TABLE_ART[7],
   'classic-a4-finaltable': TABLE_ART[5],
+  // v7: the Main Event's earlier days (Continue watching) show play, not the casino outside.
+  'lv-main-day3': art(`${PROMO}player-w-sweater.webp`, '50% 30%'),
+  'lv-main-day2': art(`${PROMO}tournament-hall.webp`),
+  'lv-main-day1b': art(`${PROMO}table-crowd.webp`, '50% 35%'),
+  'lv-main-day1a': art(`${PROMO}player-thinking.jpg`, '50% 30%'),
 };
+/** Casino exteriors: only after every photo of play has been used. */
+export const EXTERIOR = new Set([`${PROMO}venue-horseshoe.png`, `${PROMO}venue-grand-casino.png`, `${PROMO}venue-thunder-valley.png`]);
 
 /** Photos of the players the demo has pictures of: their hand clips use these, in turn. */
 export const PLAYER_ART: Record<string, Art[]> = {

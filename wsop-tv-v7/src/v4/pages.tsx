@@ -14,7 +14,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { CHANNEL_ART, HERO_IMAGES, TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
+import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
 import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
@@ -491,6 +491,7 @@ export function HomeRows() {
   const recs = take(recommended, 4);
   const latest = take([...replays].reverse(), 4);
   const shorts = take(highlightClips, 10);
+  const pick = photoPicker(shown);
   return (
     <>
       <ContinueRow items={continuing} onRemove={removeContinue} />
@@ -498,8 +499,8 @@ export function HomeRows() {
       <MyListRow videos={myRow} />
       <VideoRow title="Recommended for you" videos={recs} />
       <VideoRow title="Latest replays" videos={latest} action={more('/videos/replays')} />
-      <CollectionsRow skip={shown} />
-      <ShortsRow videos={shorts} />
+      <CollectionsRow skip={shown} pick={pick} />
+      <ShortsRow videos={shorts} pick={pick} />
     </>
   );
 }
@@ -607,20 +608,40 @@ export const COLLECTIONS: { id: string; title: string; blurb: string; videos: ()
 ];
 
 /** Curated collections (from the archive): four tiles, each opening its own page. */
-function CollectionsRow({ skip }: { skip: Set<string> }) {
-  // Pictures already on Home: the banner, the 24/7 channels and the rows above.
-  const usedThumbs = new Set([...Object.values(HERO_IMAGES), ...Object.values(CHANNEL_ART).map((a) => a.src), ...[...skip].map((id) => videoById(id)?.thumb)]);
+/** Broadcast stills come from a handful of CC clips (the same faces again and again), so tiles use photos instead. */
+const isStill = (src: string) => src.includes('/media/');
+type Pic = { thumb: string; thumbPos: string; thumbFit?: 'contain' };
+
+/**
+ * Hands out photos for the tiles at the bottom of Home (collection covers, Shorts): each photo once before any repeats,
+ * ones not already on the page first.
+ */
+function photoPicker(skip: Set<string>) {
+  const onPage = new Set<string>([...Object.values(HERO_IMAGES), ...Object.values(CHANNEL_ART).map((a) => a.src), ...[...skip].map((id) => videoById(id)?.thumb ?? '')]);
+  // One photo per pictured player (several of the same face side by side read as repeats).
+  const pool = [...TABLE_ART, ...Object.values(PLAYER_ART).map((list) => list[0]), ...VENUE_ART.filter((a) => !EXTERIOR.has(a.src))].filter((a, i, all) => all.findIndex((x) => x.src === a.src) === i);
+  const faces = new Set(Object.values(PLAYER_ART).flat().map((a) => a.src));
+  const uses = new Map<string, number>();
+  return (own?: Pic): Pic => {
+    if (own && !isStill(own.thumb) && !faces.has(own.thumb) && !onPage.has(own.thumb) && !uses.has(own.thumb)) {
+      uses.set(own.thumb, 1);
+      return own;
+    }
+    const a = [...pool].sort((x, y) => (uses.get(x.src) ?? 0) - (uses.get(y.src) ?? 0) || Number(onPage.has(x.src)) - Number(onPage.has(y.src)))[0];
+    uses.set(a.src, (uses.get(a.src) ?? 0) + 1);
+    return { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit };
+  };
+}
+
+function CollectionsRow({ skip, pick }: { skip: Set<string>; pick: (own?: Pic) => Pic }) {
   return (
     <Section title="Curated collections" kicker="From the archive">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {COLLECTIONS.map((c) => {
           const vs = c.videos();
-          // The tile shows a video the rows above don't, so no picture appears twice on Home.
-          // Else any photo not on the page.
-          const coverV = [...vs].reverse().find((v) => !skip.has(v.id) && !usedThumbs.has(v.thumb));
-          const free = [...TABLE_ART, ...VENUE_ART].find((a) => !usedThumbs.has(a.src));
-          const cover = coverV ? { thumb: coverV.thumb, thumbPos: coverV.thumbPos, thumbFit: coverV.thumbFit } : free ? { thumb: free.src, thumbPos: free.pos, thumbFit: free.fit } : vs[0];
-          if (cover) usedThumbs.add(cover.thumb);
+          // A photo from the collection the rows above don't show, else another photo not on the page.
+          const own = [...vs].reverse().find((v) => !skip.has(v.id) && !isStill(v.thumb));
+          const cover = pick(own);
           return (
             <Link key={c.id} to={`/collections/${c.id}`} className="group relative block aspect-[4/3] overflow-hidden rounded-card bg-surface-2">
               {cover && <img src={cover.thumb} style={artStyle({ pos: cover.thumbPos, fit: cover.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />}
@@ -666,15 +687,16 @@ export function CollectionPage() {
 // ---- Shorts -------------------------------------------------------------------------------------------
 
 /** Shorts on Home: tall cards in one sideways line; each opens the vertical Shorts feed at that clip. */
-function ShortsRow({ videos }: { videos: Video[] }) {
+function ShortsRow({ videos, pick }: { videos: Video[]; pick: (own?: Pic) => Pic }) {
   if (!videos.length) return null;
+  const pics = videos.map((v) => pick(v));
   return (
     <Section title="Shorts" kicker="Key hands in under a few minutes" action={more('/shorts', 'Watch Shorts')}>
       <ul className="hscroll gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-2.25rem)/4)] lg:[&>*]:w-[calc((100%-4.5rem)/7)]">
-        {videos.map((v) => (
+        {videos.map((v, i) => (
           <li key={v.id} className="min-w-0">
             <Link to={`/shorts?start=${v.id}`} className="group relative block aspect-[9/16] overflow-hidden rounded-card bg-surface-2">
-              <img src={v.thumb} style={{ objectPosition: v.thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+              <img src={pics[i].thumb} style={{ objectPosition: pics[i].thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
               <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" aria-hidden />
               <span className="absolute inset-x-0 bottom-0 p-2.5">
                 <span className="line-clamp-3 text-[13px] leading-snug font-bold">{v.title}</span>
@@ -1071,7 +1093,8 @@ function ScheduleCard({ e, d, st, now }: ScheduleItem & { st: Day['status']; now
   const wd = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: state.tz }).format(date);
   const dd = new Intl.DateTimeFormat('en-US', { day: 'numeric', timeZone: state.tz }).format(date);
   return (
-    <div className={cx('flex min-w-0 gap-4 rounded-panel border bg-surface p-4', live ? 'border-live/60' : 'border-line')}>
+    // Live cards span the page, so Watch live sits at their right end; the two-across cards keep it under the title.
+    <div className={cx('flex min-w-0 gap-4 rounded-panel border bg-surface p-4', live ? 'flex-wrap items-center border-live/60 sm:flex-nowrap' : 'border-line')}>
       <div className="flex w-14 shrink-0 flex-col items-center justify-center rounded-card bg-surface-2 py-2">
         <span className="text-[11px] font-bold text-muted uppercase">{wd}</span>
         <span className="text-2xl leading-none font-black tnum">{dd}</span>
@@ -1093,14 +1116,9 @@ function ScheduleCard({ e, d, st, now }: ScheduleItem & { st: Day['status']; now
         <p className="mt-0.5 truncate text-sm text-muted">
           {se.name} · {se.venue}, {se.city}
         </p>
+        {!live && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {live ? (
-            <Link to={`/watch/${d.id}`}>
-              <Button size="sm" variant="primary" tabIndex={-1}>
-                <Icon name="play" size={14} /> Watch live
-              </Button>
-            </Link>
-          ) : upcoming ? (
+          {upcoming ? (
             <>
               <Link to={`/watch/${d.id}`} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong px-3 text-[13px] font-semibold tnum hover:border-text" aria-label={`Starts in ${countdownText(Date.parse(d.start) - now)} — open the countdown`}>
                 <Icon name="history" size={14} /> {countdownText(Date.parse(d.start) - now)}
@@ -1117,7 +1135,15 @@ function ScheduleCard({ e, d, st, now }: ScheduleItem & { st: Day['status']; now
             </Link>
           )}
         </div>
+        )}
       </div>
+      {live && (
+        <Link to={`/watch/${d.id}`} className="shrink-0 sm:ml-auto">
+          <Button variant="primary" tabIndex={-1}>
+            <Icon name="play" size={16} /> Watch live
+          </Button>
+        </Link>
+      )}
     </div>
   );
 }
