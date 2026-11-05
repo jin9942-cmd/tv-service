@@ -656,7 +656,7 @@ function photoPicker(skip: Set<string>) {
   };
 }
 
-/** Curated collections as playlists (YouTube style): a stacked cover with the video count, then the first videos. */
+/** Curated collections as playlists (YouTube style): a stacked cover with the video count, the title, View full playlist. */
 function CollectionsRow({ skip, pick }: { skip: Set<string>; pick: (own?: Pic) => Pic }) {
   return (
     <EditorialBand label="From the archive" title="Curated collections">
@@ -685,18 +685,7 @@ function CollectionsRow({ skip, pick }: { skip: Set<string>; pick: (own?: Pic) =
               <Link to={`/collections/${c.id}`} className="mt-2.5 block truncate text-[15px] font-bold hover:text-gold-strong">
                 {c.title}
               </Link>
-              <ol className="mt-1.5 space-y-1">
-                {vs.slice(0, 3).map((v, i) => (
-                  <li key={v.id}>
-                    <Link to={`/watch/${v.id}`} className="flex items-baseline gap-2 text-[13px] text-muted hover:text-text">
-                      <span className="w-3 shrink-0 text-subtle tnum">{i + 1}</span>
-                      <span className="min-w-0 flex-1 truncate">{v.title}</span>
-                      <span className="shrink-0 text-[11px] text-subtle tnum">{duration(v.durationSec)}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ol>
-              <Link to={`/collections/${c.id}`} className="mt-2 inline-block text-xs font-semibold text-gold-strong hover:underline">
+              <Link to={`/collections/${c.id}`} className="mt-1 inline-block text-xs font-semibold text-gold-strong hover:underline">
                 View full playlist
               </Link>
             </div>
