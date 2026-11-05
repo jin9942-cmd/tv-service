@@ -132,11 +132,12 @@ function PromoBanner() {
       <Page className="relative flex flex-col justify-end pt-2 pb-14 md:min-h-[min(34rem,46vw)] md:pt-12 md:pb-16">
         {/* Every block has a fixed height, so the title and the buttons stay put when the slide changes. */}
         <div className="max-w-xl" aria-live="polite">
-          <div className="flex h-[4.9rem] items-end sm:h-[6.94rem]">
+          {/* LIVE sits right on top of the title, whether it takes one line or two (fixed box height, so nothing moves). */}
+          <div className="flex h-[6.65rem] flex-col justify-end sm:h-[8.7rem]">
+            {slide === 0 && live && <LiveTag className="mb-2 self-start px-2 py-1 text-xs" />}
             <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
           </div>
           <p className="mt-3 flex min-h-[2.75rem] flex-wrap content-start items-center gap-x-2 gap-y-1 text-sm font-medium text-text/85 lg:min-h-[1.25rem]">
-            {slide === 0 && live && <LiveTag />}
             {sl.facts.map((x, i) => (
               <span key={i} className="inline-flex items-center gap-2">
                 {i > 0 && <span className="text-subtle">·</span>}
