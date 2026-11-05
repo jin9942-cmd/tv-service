@@ -365,10 +365,11 @@ const HAND_FILTERS = [
 const chip = (on: boolean) => cx('h-9 shrink-0 rounded-full border px-4 text-sm font-semibold', on ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text');
 
 /** Videos: the Highlights tab (hand clips) and the Replays tab (series → event → broadcast). */
-export function VideosPage({ tab }: { tab: 'highlights' | 'replays' }) {
+export function VideosPage({ tab }: { tab: 'highlights' | 'replays' | 'shorts' }) {
   const tabs = [
     ['/videos', 'Highlights', 'highlights'],
     ['/videos/replays', 'Replays', 'replays'],
+    ['/videos/shorts', 'Shorts', 'shorts'],
   ] as const;
   return (
     <Page className="max-w-[96rem]">
@@ -380,7 +381,7 @@ export function VideosPage({ tab }: { tab: 'highlights' | 'replays' }) {
           </Link>
         ))}
       </nav>
-      {tab === 'highlights' ? <HighlightsTab /> : <ReplaysTab />}
+      {tab === 'highlights' ? <HighlightsTab /> : tab === 'replays' ? <ReplaysTab /> : <ShortsFeed />}
     </Page>
   );
 }
@@ -486,8 +487,8 @@ export function HomeRows() {
     out.forEach((v) => shown.add(v.id));
     return out;
   };
+  const myRow = take(mine, 4);
   const picks = take(editorsFinalTables(), 3);
-  const myRow = take(mine, 6);
   const recs = take(recommended, 4);
   const latest = take([...replays].reverse(), 4);
   const shorts = take(highlightClips, 10);
@@ -495,8 +496,8 @@ export function HomeRows() {
   return (
     <>
       <ContinueRow items={continuing} onRemove={removeContinue} />
-      <EditorsPick picks={picks} />
       <MyListRow videos={myRow} />
+      <EditorsPick picks={picks} />
       <VideoRow title="Recommended for you" videos={recs} />
       <VideoRow title="Latest replays" videos={latest} action={more('/videos/replays')} />
       <CollectionsRow skip={shown} pick={pick} />
@@ -565,9 +566,7 @@ function EditorialBand({ label, title, action, children }: { label: string; titl
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h2 className="text-xl sm:text-2xl">{title}</h2>
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-gold-strong uppercase">
-            <Icon name="star" size={12} /> {label}
-          </span>
+          <EditorialLabel>{label}</EditorialLabel>
         </div>
         {action}
       </div>
@@ -580,7 +579,7 @@ function EditorsPick({ picks }: { picks: Video[] }) {
   if (!picks.length) return null;
   const total = picks.reduce((n, v) => n + v.durationSec, 0);
   return (
-    <Section title="The best final tables" kicker="Editor’s pick" action={more('/collections/final-tables', 'All final tables')}>
+    <Section title="The best final tables" label="Editor’s pick" action={more('/collections/final-tables', 'All final tables')}>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
         <div className="flex flex-col justify-between gap-3 rounded-card border border-line bg-surface p-4">
           <p className="text-[15px] leading-relaxed text-text/85">
@@ -601,23 +600,9 @@ function EditorsPick({ picks }: { picks: Video[] }) {
   );
 }
 
-/** My List: small cards, six across, like a shelf. */
+/** My List: the standard card, four across (same size as the rows around it). */
 function MyListRow({ videos }: { videos: Video[] }) {
-  if (!videos.length) return null;
-  return (
-    <Section title="My List" action={more('/my-list', 'See all')}>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-        {videos.map((v) => (
-          <Link key={v.id} to={`/watch/${v.id}`} className="group min-w-0">
-            <span className="relative block aspect-video overflow-hidden rounded-chip bg-surface-2">
-              <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-            </span>
-            <span className="mt-1.5 block truncate text-[13px] font-semibold group-hover:text-gold-strong">{v.title}</span>
-          </Link>
-        ))}
-      </div>
-    </Section>
-  );
+  return <VideoRow title="My List" videos={videos} action={more('/my-list', 'See all')} />;
 }
 
 // ---- curated collections ----------------------------------------------------------------------------
@@ -629,6 +614,7 @@ export const COLLECTIONS: { id: string; title: string; blurb: string; videos: ()
   { id: 'all-in', title: 'All-in, everything on the line', blurb: 'Tournament lives decided on one card.', videos: () => withTag('all-in') },
   { id: 'bad-beats', title: 'Bad beats & comebacks', blurb: 'The hands nobody saw coming.', videos: () => withTag('bad-beat') },
 ];
+
 
 /** Curated collections (from the archive): four tiles, each opening its own page. */
 /** Broadcast stills come from a handful of CC clips (the same faces again and again), so tiles use photos instead. */
@@ -727,11 +713,11 @@ function ShortsRow({ videos, pick }: { videos: Video[]; pick: (own?: Pic) => Pic
   if (!videos.length) return null;
   const pics = videos.map((v) => pick(v));
   return (
-    <Section title="Shorts" kicker="Key hands in under a few minutes" action={more('/shorts', 'Watch Shorts')}>
+    <Section title="Shorts" action={more('/videos/shorts', 'Watch Shorts')}>
       <ul className="hscroll gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-2.25rem)/4)] lg:[&>*]:w-[calc((100%-4.5rem)/7)]">
         {videos.map((v, i) => (
           <li key={v.id} className="min-w-0">
-            <Link to={`/shorts?start=${v.id}`} className="group relative block aspect-[9/16] overflow-hidden rounded-card bg-surface-2">
+            <Link to={`/videos/shorts?start=${v.id}`} className="group relative block aspect-[9/16] overflow-hidden rounded-card bg-surface-2">
               <img src={pics[i].thumb} style={{ objectPosition: pics[i].thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
               <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" aria-hidden />
               <span className="absolute inset-x-0 bottom-0 p-2.5">
@@ -746,15 +732,20 @@ function ShortsRow({ videos, pick }: { videos: Video[]; pick: (own?: Pic) => Pic
   );
 }
 
-/** The Shorts feed: one vertical clip per screen, swipe or scroll to the next; starts at ?start=. */
-export function ShortsPage() {
+/** Old /shorts links (with ?start=) land on the Shorts tab of Videos. */
+export function ShortsRedirect() {
+  const [params] = useSearchParams();
+  return <Navigate to={`/videos/shorts${params.toString() ? `?${params}` : ''}`} replace />;
+}
+
+/** The Shorts tab of Videos: one vertical clip per screen, swipe or scroll to the next; starts at ?start=. */
+function ShortsFeed() {
   const [params] = useSearchParams();
   const start = params.get('start');
   const list = start ? [...highlightClips.filter((v) => v.id === start), ...highlightClips.filter((v) => v.id !== start)] : highlightClips;
   return (
-    <Page className="max-w-[96rem]">
-      <h1 className="text-title">Shorts</h1>
-      <div className="mx-auto mt-4 h-[calc(100dvh-13rem)] max-w-[24rem] snap-y snap-mandatory overflow-y-auto rounded-panel bg-black" aria-label="Shorts">
+    <>
+      <div className="mx-auto mt-6 h-[calc(100dvh-13rem)] max-w-[24rem] snap-y snap-mandatory overflow-y-auto rounded-panel bg-black" aria-label="Shorts">
         {list.map((v) => (
           <article key={v.id} className="relative h-full snap-start overflow-hidden">
             <video className="absolute inset-0 size-full object-cover" src={`${v.media.url}#t=${v.media.start}`} poster={v.thumb} muted loop playsInline autoPlay preload="none" />
@@ -778,7 +769,7 @@ export function ShortsPage() {
           </article>
         ))}
       </div>
-    </Page>
+    </>
   );
 }
 
@@ -788,19 +779,27 @@ const more = (to: string, label = 'More') => (
   </Link>
 );
 
-/** A section with an optional small line above the title (from v5). */
-function Section({ title, kicker, action, children }: { title: string; kicker?: string; action?: ReactNode; children: ReactNode }) {
+/** A Home section: the title (editorial ones carry a gold label beside it, as Curated collections does) and a link. */
+function Section({ title, label, action, children }: { title: string; label?: string; action?: ReactNode; children: ReactNode }) {
   return (
     <section aria-label={title}>
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <div>
-          {kicker && <p className="mb-1 text-sm text-muted">{kicker}</p>}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h2 className="text-xl sm:text-2xl">{title}</h2>
+          {label && <EditorialLabel>{label}</EditorialLabel>}
         </div>
         {action}
       </div>
       {children}
     </section>
+  );
+}
+
+function EditorialLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-gold-strong uppercase">
+      <Icon name="star" size={12} /> {children}
+    </span>
   );
 }
 
@@ -1264,6 +1263,32 @@ function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: nu
           <Icon name="play" size={14} /> Watch now
         </Link>
       </div>
+    </div>
+  );
+}
+
+/** Home: the next broadcast in one line under the 24/7 channels — its countdown screen, and the full schedule. */
+export function UpNextLine() {
+  const { state } = useApp();
+  const now = useTick(30_000);
+  const next = events
+    .flatMap((e) => e.days.filter((d) => d.status === 'upcoming').map((d) => ({ e, d })))
+    .sort((a, b) => a.d.start.localeCompare(b.d.start))[0];
+  if (!next) return null;
+  const mins = Math.max(0, Math.round((Date.parse(next.d.start) - now) / 60_000));
+  const inText = mins >= 1440 ? `in ${Math.round(mins / 1440)} days` : mins >= 60 ? `in ${Math.floor(mins / 60)}h ${mins % 60}m` : `in ${mins} min`;
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-card border border-line bg-surface px-4 py-2.5 text-sm">
+      <span className="text-[11px] font-bold tracking-wider text-gold-strong uppercase">Up next</span>
+      <Link to={`/watch/${next.d.id}`} className="min-w-0 truncate font-semibold hover:text-gold-strong">
+        {titleOf(next)}
+      </Link>
+      <span className="text-muted tnum">
+        {fmtDate(next.d.start, state.tz)} · {fmtTime(next.d.start, state.tz)} · {inText}
+      </span>
+      <Link to="/schedule" className="ml-auto text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
+        Full schedule →
+      </Link>
     </div>
   );
 }

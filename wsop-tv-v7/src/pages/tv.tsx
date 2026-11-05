@@ -16,7 +16,7 @@ import { Button, Icon, LiveTag, Page, SectionHeader, cx } from '../components/ui
 import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
-import { HomeRows, TodayCards } from '../v4/pages';
+import { HomeRows, TodayCards, UpNextLine } from '../v4/pages';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
 const isBreak = (p: Program) => BREAK_TITLES.includes(p.title);
@@ -28,12 +28,13 @@ export function TvHome() {
   const now = useTick(15_000);
   return (
     <>
-      {/* v7 Home: the banner, the 24/7 channels, then the rows (Continue watching … Shorts). */}
+      {/* v7 Home: the banner, the 24/7 channels and what's next, then the rows (Continue watching … Shorts). */}
       <section className="border-b border-line" aria-label="Featured">
         <PromoBanner />
         <Page className="pt-6 pb-6">
           <h2 className="mb-3 text-xl sm:text-2xl">24/7 On-Demand</h2>
           <TodayCards now={now} />
+          <UpNextLine />
         </Page>
       </section>
       <Page className="space-y-12 py-10">

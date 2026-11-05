@@ -6,11 +6,10 @@
 ## v7
 
 - **Menu:** Home · Schedule · Videos · WSOP+, Search and My on the right. WSOP+ is the membership page inside WSOP TV, under the TV menu (wsop.com/plus can't be framed): products, the three tiers with what each includes on WSOP TV and across WSOP+, short answers. Phones: Home · Schedule · Videos · WSOP+ · My.
-- **Home:** banner → 24/7 On-Demand → Continue watching → Editor's pick (the best final tables) → My List → Recommended for you → Latest replays → Curated collections (from the archive) → Shorts. No video appears in two rows, and no picture repeats on the page.
+- **Home:** banner → 24/7 On-Demand → Up next (the next broadcast, links to its countdown and the Schedule) → Continue watching → My List → Editor's pick (the best final tables) → Recommended for you → Latest replays → Curated collections (playlists) → Shorts. Editorial rows carry a gold label beside the title; no video appears in two rows.
 - **Schedule** (wsop.com/schedule style): All · Live · Past · Upcoming filter, then Live now (LIVE icon), Past (earlier broadcasts) and Upcoming, under month headings. Upcoming cards count down; opening one shows the full countdown and Remind me.
-- **Videos:** Highlights (filter by hand type) and Replays; every card opens the player.
+- **Videos:** Highlights (filter by hand type), Replays and Shorts (vertical feed; Home's Shorts open here, old `/shorts` links redirect); every card opens the player.
 - **Player page:** DVR (live), volume, speed, quality, My List, tags, video info (tournament, broadcast, game, buy-in …). Related videos on the right: the same tournament newest first, then by shared tags, at most 10.
-- **Shorts:** `#/shorts`, a vertical feed (opens at the clip picked on Home).
 - **Images:** the v3–v6 photos (design proposal, banner, venues, Negreanu), plus the UKIPT and WPC shots from v5; each photo is used once, then the broadcast stills. The bracelet count uses the WSOP bracelet image.
 
 ---
