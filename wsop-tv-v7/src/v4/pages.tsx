@@ -1022,13 +1022,12 @@ const DAY_MS = 86_400_000;
 const at = (days: number) => new Date(Date.now() + days * DAY_MS).toISOString();
 /** The year's series: the two with broadcasts in the demo, plus last spring's and next winter's. */
 const SEASON: SeriesStop[] = [
-  { id: 'sp26', name: '2026 Spring Open', venue: 'Bicycle Hotel & Casino', city: 'Los Angeles, CA', start: at(-200), end: at(-179), art: VENUE_ART[3] },
   // The demo series' dates cover all of their broadcasts.
-  ...series.map((s, i) => {
+  ...series.map((s) => {
     const starts = events.filter((e) => e.seriesId === s.id).flatMap((e) => e.days.map((d) => d.start));
     const first = [s.start, ...starts].sort()[0];
     const last = [s.end, ...starts].sort().pop()!;
-    return { ...s, start: first, end: last, art: i === 0 ? TABLE_ART[0] : VENUE_ART[2] };
+    return { ...s, start: first, end: last, art: s.id === 'lv26' ? TABLE_ART[0] : s.id === 'sp26' ? VENUE_ART[3] : VENUE_ART[2] };
   }),
   { id: 'wi27', name: '2027 Winter Festival', venue: 'Boardwalk Hall', city: 'Atlantic City, NJ', start: at(110), end: at(131), art: VENUE_ART[0] },
 ];
@@ -1163,13 +1162,24 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
     );
   return (
     <>
-      <p className="text-sm text-muted">
-        Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with local time in {s.city.split(',')[0]}.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted">
+          {st === 'past' ? 'Every broadcast is on demand. ' : ''}Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with local time in {s.city.split(',')[0]}.
+        </p>
+        {/* A series that is over: its replays as event cards in Videos. */}
+        {st === 'past' && (
+          <Link to={`/videos/replays?series=${s.id}`}>
+            <Button size="sm" variant="primary" tabIndex={-1}>
+              <Icon name="play" size={14} /> All replays in Videos
+            </Button>
+          </Link>
+        )}
+      </div>
       {ahead.length > 0 && table(ahead)}
       {earlier.length > 0 &&
         (ahead.length === 0 ? (
-          table(earlier)
+          // A series that is over reads as its schedule: first day to last.
+          table([...earlier].reverse())
         ) : (
           <div className="mt-4">
             <button

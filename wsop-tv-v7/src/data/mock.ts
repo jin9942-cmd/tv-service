@@ -46,6 +46,8 @@ export const players: Player[] = [
 // ---- series & events ----------------------------------------------------------------------
 
 export const series: Series[] = [
+  // Last spring's series: over, every broadcast on demand.
+  { id: 'sp26', name: '2026 Spring Open', venue: 'Bicycle Hotel & Casino', city: 'Los Angeles, CA', tz: 'America/Los_Angeles', start: iso(-24 * 200), end: iso(-24 * 179) },
   { id: 'lv26', name: '2026 Summer Championship', venue: 'Convention Center Arena', city: 'Las Vegas, NV', tz: 'America/Los_Angeles', start: iso(-24 * 11), end: iso(24 * 10) },
   { id: 'eu26', name: '2026 Autumn Classic', venue: 'Grand Hall', city: 'Prague, CZ', tz: 'Europe/Prague', start: iso(24 * 27), end: iso(24 * 47) },
 ];
@@ -78,6 +80,54 @@ const day = (eventId: string, label: DayLabel, startH: number, durationMin: numb
 };
 
 export const events: TourEvent[] = [
+  // 2026 Spring Open (over): listed first so the newest replays stay at the front of "Latest replays".
+  {
+    id: 'sp-main',
+    game: 'No-Limit Hold’em', startingStack: 40_000,
+    seriesId: 'sp26',
+    number: 1,
+    name: 'Spring Open Main Event',
+    buyIn: 3_500,
+    entrants: 2_184,
+    prizePool: 6_988_800,
+    firstPrize: 1_150_000,
+    level: 0,
+    remaining: 0,
+    days: [
+      day('sp-main', 'Day 1A', -24 * 197, 600, 'vod'),
+      day('sp-main', 'Day 1B', -24 * 196, 600, 'vod'),
+      day('sp-main', 'Day 2', -24 * 194, 660, 'vod', 2),
+      day('sp-main', 'Final Table', -24 * 191, 540, 'vod'),
+    ],
+  },
+  {
+    id: 'sp-hr',
+    game: 'No-Limit Hold’em', startingStack: 250_000,
+    seriesId: 'sp26',
+    number: 12,
+    name: '$25,000 High Roller',
+    buyIn: 25_000,
+    entrants: 188,
+    prizePool: 4_418_000,
+    firstPrize: 1_237_000,
+    level: 0,
+    remaining: 0,
+    days: [day('sp-hr', 'Day 1A', -24 * 186, 540, 'vod'), day('sp-hr', 'Final Table', -24 * 185, 420, 'vod')],
+  },
+  {
+    id: 'sp-plo',
+    game: 'Pot-Limit Omaha', startingStack: 50_000,
+    seriesId: 'sp26',
+    number: 18,
+    name: '$5,000 Pot-Limit Omaha',
+    buyIn: 5_000,
+    entrants: 642,
+    prizePool: 2_985_300,
+    firstPrize: 612_000,
+    level: 0,
+    remaining: 0,
+    days: [day('sp-plo', 'Day 1A', -24 * 182, 540, 'vod'), day('sp-plo', 'Final Table', -24 * 181, 420, 'vod')],
+  },
   {
     id: 'lv-main',
     game: 'No-Limit Hold’em', startingStack: 60_000, blinds: { sb: 1_500_000, bb: 3_000_000, ante: 3_000_000 },
@@ -229,17 +279,19 @@ export const events: TourEvent[] = [
 // is delayed). Two feeds show broadcast states — one starts late, one is temporarily interrupted.
 // Day 3 (four tables) keeps per-table delays: feature table 30 min, outer tables 15 min.
 {
-  const ft = events[0].days[4];
+  // The Main Event is looked up by id (the Spring Open events come first in the list).
+  const main = events.find((e) => e.id === 'lv-main')!;
+  const ft = main.days[4];
   ft.tables = [
     { id: `${ft.id}-t1`, name: 'Main Feed', main: true, delayMin: 30 },
     { id: `${ft.id}-t2`, name: 'Clean Feed', delayMin: 30 },
     PRESENTATION ? { id: `${ft.id}-t3`, name: 'Player Cam', delayMin: 30 } : { id: `${ft.id}-t3`, name: 'Player Cam', delayMin: 30, state: 'late', expected: iso(0.4) },
     PRESENTATION ? { id: `${ft.id}-t4`, name: 'Overhead Cam', delayMin: 30 } : { id: `${ft.id}-t4`, name: 'Overhead Cam', delayMin: 30, state: 'interrupted' },
   ];
-  const d3 = events[0].days[3];
+  const d3 = main.days[3];
   d3.tables = d3.tables.map((t, i) => ({ ...t, delayMin: i === 0 ? 30 : 15 }));
   // One replay is open to any signed-in account (no subscription needed).
-  events[0].days[0].access = 'signin';
+  main.days[0].access = 'signin';
 }
 /** Demo override "Late start" for the whole hero broadcast: expected start shown to viewers. */
 export const HERO_EXPECTED_START = iso(0.35);
