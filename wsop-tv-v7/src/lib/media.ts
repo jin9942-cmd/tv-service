@@ -1,5 +1,7 @@
 // Real poker footage reused from the v1 demo: Creative Commons videos streamed from Wikimedia Commons, plus stills
 // extracted from them (public/media, see CREDITS.md). Not WSOP footage — the people shown are unrelated to the fictional data.
+import NAS from 'virtual:nas-media';
+
 const WM = 'https://upload.wikimedia.org/wikipedia/commons/';
 const MEDIA = `${import.meta.env.BASE_URL}media/`;
 
@@ -11,7 +13,7 @@ export interface Footage {
   frames: { sec: number; src: string }[];
 }
 
-export const FOOTAGE: Record<'ft' | 'mtl' | 'int' | 'deal', Footage> = {
+const CC: Record<'ft' | 'mtl' | 'int' | 'deal', Footage> = {
   ft: {
     id: 'ft',
     url: WM + 'transcoded/f/fd/Incredibly_Unbelievable_Fold_on_the_World_Poker_Tour.webm/Incredibly_Unbelievable_Fold_on_the_World_Poker_Tour.webm.480p.vp9.webm',
@@ -39,7 +41,28 @@ export const FOOTAGE: Record<'ft' | 'mtl' | 'int' | 'deal', Footage> = {
   },
 };
 
-export const HERO_POSTER = `${MEDIA}hero_ft.jpg`;
+/**
+ * On the local dev server with the WSOP archive cut (vite.config.ts), every footage slot plays a WSOP 2025 clip and
+ * its stills come from the archive; in builds NAS is null and the Creative Commons footage above stays.
+ * 'hl' feeds hand clips and Shorts (Paradise final-table highlights); in builds it is the final-table footage.
+ */
+const nasFootage = (id: string, url: string, frames: string[]): Footage => ({
+  id,
+  url,
+  credit: NAS!.credit,
+  frames: frames.map((src, i) => ({ sec: 40 + i * 60, src })),
+});
+export const FOOTAGE: Record<'ft' | 'mtl' | 'int' | 'deal' | 'hl', Footage> = NAS
+  ? {
+      ft: nasFootage('ft', NAS.video.ft, NAS.stills.broadcast.slice(0, 6)),
+      mtl: nasFootage('mtl', NAS.video.hall, NAS.stills.venue.slice(0, 2)),
+      int: nasFootage('int', NAS.video.int, NAS.stills.people.slice(0, 1)),
+      deal: nasFootage('deal', NAS.video.deal, NAS.stills.hands.slice(0, 1)),
+      hl: nasFootage('hl', NAS.video.hl, NAS.stills.hands.slice(0, 6)),
+    }
+  : { ...CC, hl: CC.ft };
+
+export const HERO_POSTER = NAS ? NAS.hero.finalTable : `${MEDIA}hero_ft.jpg`;
 
 /** Still for a table feed: the feature table uses the final-table footage, outer tables rotate through the rest. */
 export function tableFrame(tableIndex: number, seed = 0): string {
@@ -61,17 +84,19 @@ export type StillPool = 'broadcast' | 'hands' | 'people';
 // Walk each pool with a stride so neighbouring cards come from different scenes.
 const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
 // The stride must share no factor with the pool size, or the walk would repeat a few stills.
-const spread = (list: readonly string[]) => {
+const spreadUrls = (list: readonly string[]) => {
   const stride = [7, 5, 3, 11, 13].find((k) => gcd(k, list.length) === 1) ?? 1;
-  return list.map((_, i) => MEDIA + list[(i * stride) % list.length]);
+  return list.map((_, i) => list[(i * stride) % list.length]);
 };
+const spread = (list: readonly string[]) => spreadUrls(NAS ? list : list.map((x) => MEDIA + x));
+const POOL: Record<StillPool, readonly string[]> = NAS ? { broadcast: NAS.stills.broadcast, hands: NAS.stills.hands, people: NAS.stills.people } : POOLS;
 const ORDER: Record<StillPool, string[]> = {
-  broadcast: spread(POOLS.broadcast),
+  broadcast: spread(POOL.broadcast),
   // Hand clips come from televised tables too; home-game close-ups only once those run out.
-  hands: [...spread(POOLS.broadcast), ...spread(POOLS.hands)],
-  people: spread(POOLS.people),
+  hands: [...spread(POOL.broadcast), ...spread(POOL.hands)],
+  people: spread(POOL.people),
 };
-const EVERY = [...ORDER.broadcast, ...ORDER.people, ...spread(POOLS.hands)];
+const EVERY = [...ORDER.broadcast, ...ORDER.people, ...spread(POOL.hands)];
 
 /** Any still, picked deterministically from a number (scrub previews: table shots only). */
 export function frameFrom(n: number): string {

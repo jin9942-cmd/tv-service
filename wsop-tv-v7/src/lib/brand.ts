@@ -1,9 +1,11 @@
 import type { CSSProperties } from 'react';
+import NAS from 'virtual:nas-media';
 /** WSOP logo image (public/wsop-logo.webp, 216×80, transparent) — resolved against the deploy base path. */
 export const WSOP_LOGO = `${import.meta.env.BASE_URL}wsop-logo.webp`;
 
 /** Home banner photos (public/hero, public/promo): the final table, and Daniel Negreanu at the table. */
-export const HERO_IMAGES = {
+// Local dev with the WSOP archive cut (vite.config.ts): banners and cards use archive stills instead.
+export const HERO_IMAGES = NAS ? NAS.hero : {
   table: `${import.meta.env.BASE_URL}hero/negreanu-table.webp`,
   portrait: `${import.meta.env.BASE_URL}hero/negreanu-portrait.png`,
   finalTable: `${import.meta.env.BASE_URL}promo/final-table-wide.webp`,
@@ -29,7 +31,7 @@ export function artStyle(a: { pos: string; fit?: 'contain' }): CSSProperties {
   return { objectPosition: a.pos, objectFit: 'contain', padding: '7%', background: 'radial-gradient(ellipse at 50% 45%, #3d2b0f 0%, #140e06 55%, #070707 100%)' };
 }
 /** Table, player and trophy shots — for final tables, classics and hand clips. */
-export const TABLE_ART: Art[] = [
+export const TABLE_ART: Art[] = NAS ? [...NAS.stills.broadcast, ...NAS.stills.hands, ...NAS.stills.people].map((x) => art(x)) : [
   art(`${PROMO}final-table-wide.webp`),
   art(`${PROMO}table-candid.png`),
   art(`${PROMO}main-event-stage.png`),
@@ -51,7 +53,7 @@ export const TABLE_ART: Art[] = [
   art(`${PROMO}player-glasses.jpg`, '50% 35%'),
 ];
 /** Venue and room shots — for the earlier tournament days. */
-export const VENUE_ART: Art[] = [
+export const VENUE_ART: Art[] = NAS ? NAS.stills.venue.map((x) => art(x)) : [
   art(`${PROMO}venue-horseshoe.png`),
   art(`${PROMO}poker-room.png`, '20% 50%'),
   art(`${PROMO}venue-grand-casino.png`),
@@ -65,11 +67,11 @@ export const CHANNEL_ART: Record<string, Art> = {
   wsop1: TABLE_ART[0],
   wsop2: TABLE_ART[1],
   hands: TABLE_ART[3],
-  classics: art(`${PROMO}wpc-stage.png`, '50% 35%'),
+  classics: NAS ? TABLE_ART[8] : art(`${PROMO}wpc-stage.png`, '50% 35%'),
 };
 
 /** Fixed picks for the videos people see first (the rest walk the pools in order). */
-export const PROMO_ART: Record<string, Art> = {
+export const PROMO_ART: Record<string, Art> = NAS ? {} : {
   'lv-main-finaltable': TABLE_ART[0],
   'lv-hr-finaltable': TABLE_ART[1],
   'lv-mm-finaltable': TABLE_ART[6],
@@ -87,7 +89,7 @@ export const PROMO_ART: Record<string, Art> = {
 export const EXTERIOR = new Set([`${PROMO}venue-horseshoe.png`, `${PROMO}venue-grand-casino.png`, `${PROMO}venue-thunder-valley.png`]);
 
 /** Photos of the players the demo has pictures of: their hand clips use these, in turn. */
-export const PLAYER_ART: Record<string, Art[]> = {
+export const PLAYER_ART: Record<string, Art[]> = NAS ? {} : {
   p04: [art(`${PROMO}negreanu-gg.png`, '50% 35%'), art(`${PROMO}negreanu-bracelet.webp`, '50% 30%'), art(`${PROMO}negreanu-hoodie.webp`, '60% 35%'), art(`${PROMO}negreanu-smile.png`, '45% 30%')],
 };
 

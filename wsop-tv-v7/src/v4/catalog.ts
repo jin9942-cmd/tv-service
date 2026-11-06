@@ -139,7 +139,7 @@ function clipVideo(h: Hand, i: number): Video {
     subtitle: `${short(ref.event)} · ${ref.day.label}`,
     description: `A key hand from the ${short(ref.event)} ${ref.day.label.toLowerCase()}.`,
     ...artFor(h.id, 'clip'),
-    media: { url: FOOTAGE.ft.url, start: [40, 110, 180, 260, 330][i % 5] },
+    media: { url: FOOTAGE.hl.url, start: [40, 110, 180, 260, 330][i % 5] },
     durationSec: h.durationSec,
     eventId: ref.event.id,
     dayId: h.dayId,
