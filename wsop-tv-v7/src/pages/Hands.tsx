@@ -5,7 +5,7 @@ import { HandCard } from '../components/cards';
 import { EmptyState, FilterChip, Page, Segmented, Skeleton } from '../components/ui';
 import { HAND_META, HandGlyph } from '../features/player/markers';
 
-const FILTERS: HandType[] = ['allin', 'bigpot', 'bluff', 'badbeat', 'herofold'];
+const FILTERS: HandType[] = ['bluff', 'herocall', 'cooler', 'badbeat', 'bigpot', 'winning'];
 
 export function Hands() {
   const [types, setTypes] = useState<HandType[]>([]);

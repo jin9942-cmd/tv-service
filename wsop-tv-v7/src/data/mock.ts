@@ -371,17 +371,18 @@ export const finalTableSeats: { playerId: string; stack: number }[] = [
 // ---- hands (30) -----------------------------------------------------------------------------
 
 const HAND_TITLES: Record<HandType, string[]> = {
-  allin: ['Ace-king against queens for the chip lead', 'Short stack moves in from the button', 'Four-way all-in before the flop', 'Pocket pair races two overcards', 'Shove over a three-bet, snap call', 'Jam from the small blind', 'Covered all-in, ace-high holds', 'Flush draw against top pair, all in on the flop'],
-  bigpot: ['The biggest pot of the day', 'Three streets of value with the nut straight', 'Set over set', 'Overpair meets the nut flush draw', 'The pot that decided the chip lead', 'River overbet with the nuts', 'Turned straight against top two pair'],
   bluff: ['Triple-barrel with seven-high', 'River bluff on a scare card', 'Float the flop, raise the turn', 'Blocker bluff on a four-flush board', 'Check-raise bluff on a paired board', 'Repping the straight on the river'],
+  herocall: ['Hero call with ace-high', 'Picking off the river bluff', 'Calling down with second pair', 'The snap call that caught a bluff'],
+  cooler: ['Kings against aces before the flop', 'Set over set', 'Ace-king against queens for the chip lead', 'Flush over flush on the river', 'Full house against quads'],
   badbeat: ['One-outer on the river', 'Runner-runner flush', 'Quads beat on the turn', 'Two-outer for a double-up', 'Set under set, then the case card'],
-  herofold: ['Laying down a full house', 'Kings folded to a five-bet', 'The disciplined river fold', 'Queens away after a four-bet'],
+  bigpot: ['The biggest pot of the day', 'Three streets of value with the nut straight', 'Overpair meets the nut flush draw', 'The pot that decided the chip lead', 'River overbet with the nuts', 'Four-way all-in before the flop'],
+  winning: ['The bracelet-winning hand', 'Heads-up for the bracelet', 'The final all-in', 'Champion on the river'],
 };
 
 /** Typical pot size by stage — early days play small blinds, final tables play deep in the millions. */
 const STAGE_POT: Record<string, number> = { 'Day 1A': 220_000, 'Day 1B': 220_000, 'Day 2': 1_600_000, 'Day 3': 6_500_000 };
 const FT_POT: Record<string, number> = { 'lv-main': 60_000_000, 'lv-hr': 16_000_000, 'lv-mm': 30_000_000, 'lv-plo': 14_000_000, 'lv-ladies': 3_200_000, 'lv-tc': 4_500_000 };
-const TYPE_POT: Record<HandType, number> = { bigpot: 1.9, allin: 1.4, badbeat: 1.2, bluff: 0.8, herofold: 0.7 };
+const TYPE_POT: Record<HandType, number> = { bigpot: 1.9, cooler: 1.6, winning: 1.5, badbeat: 1.2, herocall: 0.9, bluff: 0.8 };
 /** Who can appear in a hand: the actual final-table field where we have it, otherwise anyone. */
 const FIELD: Record<string, string[]> = {
   'lv-main-finaltable': ['p04', 'p07', 'p19', 'p01', 'p12', 'p15', 'p08'],
@@ -415,19 +416,26 @@ const HAND_PLACES: [string, DayLabel][] = [
   ['lv-ladies', 'Final Table'],
   ['lv-tc', 'Final Table'],
 ];
+// Winning moments only come from final tables that have finished (the live ones have no champion yet).
+const WIN_PLACES: [string, DayLabel][] = [
+  ['lv-mm', 'Final Table'],
+  ['lv-plo', 'Final Table'],
+  ['lv-ladies', 'Final Table'],
+  ['lv-tc', 'Final Table'],
+];
 
-const types: HandType[] = ['allin', 'bigpot', 'bluff', 'badbeat', 'herofold'];
-const counts: Record<HandType, number> = { allin: 8, bigpot: 7, bluff: 6, badbeat: 5, herofold: 4 };
+const types: HandType[] = ['bluff', 'herocall', 'cooler', 'badbeat', 'bigpot', 'winning'];
+const counts: Record<HandType, number> = { bluff: 6, herocall: 4, cooler: 5, badbeat: 5, bigpot: 6, winning: 4 };
 // Round-robin across types so the grid shows a mix.
 const seq: HandType[] = [];
 const left = { ...counts };
 while (seq.length < 30) for (const t of types) if (left[t]-- > 0) seq.push(t);
-const nth: Record<HandType, number> = { allin: 0, bigpot: 0, bluff: 0, badbeat: 0, herofold: 0 };
+const nth: Record<HandType, number> = { bluff: 0, herocall: 0, cooler: 0, badbeat: 0, bigpot: 0, winning: 0 };
 
 const playerById = (id: string) => players.find((p) => p.id === id)!;
 
 export const hands: Hand[] = seq.map((type, i) => {
-  const [eventId, label] = HAND_PLACES[i % HAND_PLACES.length];
+  const [eventId, label] = type === 'winning' ? WIN_PLACES[nth.winning % WIN_PLACES.length] : HAND_PLACES[i % HAND_PLACES.length];
   const d = dayOf(eventId, label);
   const field = FIELD[d.id] ?? players.map((p) => p.id);
   const a = playerById(field[(i * 3) % field.length]);
@@ -446,10 +454,10 @@ export const hands: Hand[] = seq.map((type, i) => {
     pot,
     t: Math.round(((i * 0.137) % 0.9 + 0.05) * d.durationMin * 60),
     result:
-      type === 'herofold'
-        ? `${a.name} lays it down — ${b.name} shows the stronger hand`
-        : type === 'allin'
-          ? `${winner.name} wins the all-in`
+      type === 'winning'
+        ? `${winner.name} wins the bracelet`
+        : type === 'herocall'
+          ? `${a.name} calls — ${b.name} was bluffing`
           : type === 'bluff'
             ? `${winner.name} takes it down`
             : `${winner.name} wins the pot`,
@@ -499,7 +507,7 @@ export const classicEvents: TourEvent[] = archive.map((c, i) => {
     days: [{ id: dayId, label: 'Final Table', start: iso(-24 * 365 * (2026 - c.year) - 24 * 30), durationMin: Math.round(c.durationSec / 60), status: 'vod', tables: feeds(dayId, 2, undefined, true), access: c.access }],
   };
 });
-const CLASSIC_TYPES: HandType[] = ['bigpot', 'bluff', 'herofold', 'badbeat', 'allin', 'allin'];
+const CLASSIC_TYPES: HandType[] = ['bigpot', 'bluff', 'herocall', 'badbeat', 'cooler', 'winning'];
 export const classicHands: Hand[] = classicEvents.flatMap((e, ci) => {
   const d = e.days[0];
   const others = players.map((p) => p.id).filter((id) => id !== e.winnerId);
@@ -519,7 +527,7 @@ export const classicHands: Hand[] = classicEvents.flatMap((e, ci) => {
       playerIds: [a, b],
       pot,
       t: Math.round(((k + 0.6) / (CLASSIC_TYPES.length + 0.2)) * d.durationMin * 60),
-      result: last ? `${playerById(winner).name} wins the bracelet` : type === 'herofold' ? `${playerById(a).name} lays it down — ${playerById(b).name} shows the stronger hand` : `${playerById(winner).name} wins the pot`,
+      result: last ? `${playerById(winner).name} wins the bracelet` : type === 'herocall' ? `${playerById(a).name} calls — ${playerById(b).name} was bluffing` : `${playerById(winner).name} wins the pot`,
       winnerId: winner,
       views: 40_000 + ((ci * 31 + k) * 7919) % 300_000,
       durationSec: 90 + ((ci + k) * 53) % 200,

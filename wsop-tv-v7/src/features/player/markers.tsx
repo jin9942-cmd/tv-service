@@ -3,11 +3,12 @@ import type { HandType } from '../../data/types';
 import { cx } from '../../components/ui';
 
 export const HAND_META: Record<HandType, { label: string; short: string; tone: string; ring: string }> = {
-  allin: { label: 'All-in', short: 'A', tone: 'bg-gold text-ink', ring: 'ring-gold' },
-  bigpot: { label: 'Big Pot', short: 'P', tone: 'bg-text text-ink', ring: 'ring-text' },
   bluff: { label: 'Bluff', short: 'B', tone: 'bg-surface-3 text-gold-strong border border-gold', ring: 'ring-gold' },
+  herocall: { label: 'Hero Call', short: 'H', tone: 'bg-surface-3 text-muted border border-line-strong', ring: 'ring-muted' },
+  cooler: { label: 'Cooler', short: 'C', tone: 'bg-surface-3 text-text border border-line-strong', ring: 'ring-text' },
   badbeat: { label: 'Bad Beat', short: '!', tone: 'bg-surface-3 text-text border border-text', ring: 'ring-text' },
-  herofold: { label: 'Hero Fold', short: 'F', tone: 'bg-surface-3 text-muted border border-line-strong', ring: 'ring-muted' },
+  bigpot: { label: 'Big Pot', short: 'P', tone: 'bg-text text-ink', ring: 'ring-text' },
+  winning: { label: 'Winning Moment', short: 'W', tone: 'bg-gold text-ink', ring: 'ring-gold' },
 };
 
 /** Marker glyph: shape differs per type (circle / square / diamond). */

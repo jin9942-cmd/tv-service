@@ -355,11 +355,12 @@ export function TagPage() {
 
 const HAND_FILTERS = [
   ['all', 'All'],
-  ['all-in', 'All-in'],
-  ['big-pot', 'Big pot'],
-  ['bluff', 'Bluff'],
-  ['bad-beat', 'Bad beat'],
-  ['hero-fold', 'Hero fold'],
+  ['bluff', 'Bluffs'],
+  ['hero-call', 'Hero calls'],
+  ['cooler', 'Coolers'],
+  ['bad-beat', 'Bad beats'],
+  ['big-pot', 'Big pots'],
+  ['winning-moment', 'Winning moments'],
 ] as const;
 
 const chip = (on: boolean) => cx('h-9 shrink-0 rounded-full border px-4 text-sm font-semibold', on ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text');
@@ -638,7 +639,7 @@ const withTag = (slug: string) => highlightClips.filter((v) => v.tags.some((t) =
 export const COLLECTIONS: { id: string; title: string; blurb: string; videos: () => Video[] }[] = [
   { id: 'final-tables', title: 'Greatest final tables', blurb: 'Classic and recent final tables, start to finish.', videos: editorsFinalTables },
   { id: 'legendary-bluffs', title: 'Legendary bluffs', blurb: 'Big lies, bigger pots.', videos: () => withTag('bluff') },
-  { id: 'all-in', title: 'All-in, everything on the line', blurb: 'Tournament lives decided on one card.', videos: () => withTag('all-in') },
+  { id: 'coolers', title: 'Coolers, nowhere to hide', blurb: 'Big hands running into bigger ones.', videos: () => withTag('cooler') },
   { id: 'bad-beats', title: 'Bad beats & comebacks', blurb: 'The hands nobody saw coming.', videos: () => withTag('bad-beat') },
 ];
 

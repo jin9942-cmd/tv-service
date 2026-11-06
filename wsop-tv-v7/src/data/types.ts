@@ -6,7 +6,7 @@ export type StreamStatus = 'live' | 'delayed' | 'vod' | 'upcoming' | 'late' | 'i
 /** Who can play a piece of content: anyone, any signed-in GGPASS account, or subscribers only. */
 export type Access = 'free' | 'signin' | 'subscriber';
 export type DayLabel = 'Day 1A' | 'Day 1B' | 'Day 2' | 'Day 3' | 'Final Table';
-export type HandType = 'allin' | 'bigpot' | 'bluff' | 'badbeat' | 'herofold';
+export type HandType = 'bluff' | 'herocall' | 'cooler' | 'badbeat' | 'bigpot' | 'winning';
 
 export interface Player {
   id: string;

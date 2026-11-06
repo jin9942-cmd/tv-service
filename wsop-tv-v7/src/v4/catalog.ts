@@ -73,11 +73,12 @@ const GAME_TAG: Record<TourEvent['game'], Tag> = {
   'Mixed Games': { slug: 'mixed-games', label: 'Mixed Games' },
 };
 const HAND_TAG: Record<Hand['type'], Tag> = {
-  allin: { slug: 'all-in', label: 'All-in' },
+  cooler: { slug: 'cooler', label: 'Cooler' },
+  herocall: { slug: 'hero-call', label: 'Hero call' },
+  winning: { slug: 'winning-moment', label: 'Winning moment' },
   bigpot: { slug: 'big-pot', label: 'Big pot' },
   bluff: { slug: 'bluff', label: 'Bluff' },
   badbeat: { slug: 'bad-beat', label: 'Bad beat' },
-  herofold: { slug: 'hero-fold', label: 'Hero fold' },
 };
 const eventTag = (e: TourEvent): Tag => ({ slug: `event-${e.id}`, label: e.seriesId === 'classics' ? e.name : short(e) });
 const stageTag = (d: Day): Tag => ({ slug: d.label === 'Final Table' ? 'final-table' : 'tournament-days', label: d.label === 'Final Table' ? 'Final Table' : 'Tournament days' });

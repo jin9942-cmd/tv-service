@@ -14,7 +14,7 @@ import { BraceletIcon, Button, FilterChip, Icon, Page, SectionHeader, Spoiler, c
 import { HAND_META, HandGlyph } from '../features/player/markers';
 import { NotFound } from './NotFound';
 
-const TYPES: HandType[] = ['allin', 'bigpot', 'bluff', 'badbeat', 'herofold'];
+const TYPES: HandType[] = ['bluff', 'herocall', 'cooler', 'badbeat', 'bigpot', 'winning'];
 
 // ---- Highlights -----------------------------------------------------------------------------------
 
