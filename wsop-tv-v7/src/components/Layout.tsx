@@ -6,6 +6,7 @@ import { WSOP_LOGO } from '../lib/brand';
 import { LoginModal } from '../features/auth/LoginModal';
 import { DemoControls } from '../features/demo/DemoControls';
 import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
+import NAS from 'virtual:nas-media';
 
 
 // v7: Home, Schedule, Videos (highlights and replays) and WSOP+ (the membership page, under this menu); Search and My on
@@ -263,7 +264,7 @@ function Footer() {
         </div>
       </div>
       <p className="border-t border-line px-gutter py-4 text-center text-xs text-subtle">
-        WSOP TV · Interactive demo · All players, events and results are fictional · Footage: World Poker Tour (CC BY 3.0), BrewCrewCountry93 (CC BY-SA 4.0) via Wikimedia Commons
+        WSOP TV · Interactive demo · Player names, results and figures are fictional · Footage: {NAS ? NAS.credit : 'World Poker Tour (CC BY 3.0), BrewCrewCountry93 (CC BY-SA 4.0) via Wikimedia Commons'}
       </p>
     </footer>
   );

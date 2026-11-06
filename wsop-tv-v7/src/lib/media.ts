@@ -42,8 +42,8 @@ const CC: Record<'ft' | 'mtl' | 'int' | 'deal', Footage> = {
 };
 
 /**
- * On the local dev server with the WSOP archive cut (vite.config.ts), every footage slot plays a WSOP 2025 clip and
- * its stills come from the archive; in builds NAS is null and the Creative Commons footage above stays.
+ * With the WSOP archive cut (vite.config.ts, src/data/nas-manifest.json), every footage slot plays a WSOP 2025 clip and
+ * its stills come from the archive; without the manifest NAS is null and the Creative Commons footage above stays.
  * 'hl' feeds hand clips and Shorts (Paradise final-table highlights); in builds it is the final-table footage.
  */
 const nasFootage = (id: string, url: string, frames: string[]): Footage => ({

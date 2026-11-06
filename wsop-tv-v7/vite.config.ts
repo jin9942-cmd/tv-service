@@ -6,12 +6,14 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 
 /**
- * Local preview with WSOP archive footage (dev server only).
- * Clips and stills cut from the internal NAS live outside the repo, in "Claude outputs/nas-media" (never committed).
- * `npm run dev` exposes their manifest as `virtual:nas-media`; every build (Vercel, GitHub Pages) gets `null`,
- * so published sites keep the Creative Commons media and never reference the archive.
+ * WSOP archive footage (clips and stills cut from the 2025 WSOP broadcasts).
+ * The files live once in the deployed root, wsop-tv/public/nas (served at /nas/ on Vercel; vercel.json lets /nas/
+ * through). src/data/nas-manifest.json lists them by path; `virtual:nas-media` turns those paths into URLs:
+ * the dev server reads them straight from that folder, builds point at /nas/.
  */
-const NAS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../Claude outputs/nas-media')
+const ROOT = path.dirname(fileURLToPath(import.meta.url))
+const NAS_DIR = path.resolve(ROOT, '../wsop-tv/public/nas')
+const MANIFEST = path.resolve(ROOT, 'src/data/nas-manifest.json')
 function nasMedia(): Plugin {
   let serve = false
   const ID = '\0virtual:nas-media'
@@ -25,9 +27,11 @@ function nasMedia(): Plugin {
     },
     load(id) {
       if (id !== ID) return
-      const file = path.join(NAS_DIR, 'manifest.json')
-      if (!serve || !fs.existsSync(file)) return 'export default null'
-      return `export default ${fs.readFileSync(file, 'utf8')}`
+      if (!fs.existsSync(MANIFEST)) return 'export default null'
+      const prefix = serve ? '/@fs/' + NAS_DIR.replace(/\\/g, '/') + '/' : '/nas/'
+      const url = (v: unknown): unknown =>
+        typeof v === 'string' ? (/^(video|stills)\//.test(v) ? prefix + v : v) : Array.isArray(v) ? v.map(url) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, url(x)])) : v
+      return `export default ${JSON.stringify(url(JSON.parse(fs.readFileSync(MANIFEST, 'utf8'))))}`
     },
   }
 }

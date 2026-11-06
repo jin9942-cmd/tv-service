@@ -4,7 +4,7 @@ import NAS from 'virtual:nas-media';
 export const WSOP_LOGO = `${import.meta.env.BASE_URL}wsop-logo.webp`;
 
 /** Home banner photos (public/hero, public/promo): the final table, and Daniel Negreanu at the table. */
-// Local dev with the WSOP archive cut (vite.config.ts): banners and cards use archive stills instead.
+// With the WSOP archive cut (vite.config.ts): banners and cards use archive stills instead.
 export const HERO_IMAGES = NAS ? NAS.hero : {
   table: `${import.meta.env.BASE_URL}hero/negreanu-table.webp`,
   portrait: `${import.meta.env.BASE_URL}hero/negreanu-portrait.png`,

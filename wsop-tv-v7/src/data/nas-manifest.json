@@ -1,0 +1,87 @@
+{
+  "credit": "World Series of Poker archive (2025)",
+  "video": {
+    "ft": "video/ft.mp4",
+    "hall": "video/hall.mp4",
+    "int": "video/int.mp4",
+    "deal": "video/deal.mp4",
+    "hl": "video/hl.mp4"
+  },
+  "stills": {
+    "broadcast": [
+      "stills/vegas-ft-05.jpg",
+      "stills/vegas-ft-01.jpg",
+      "stills/vegas-ft-04.jpg",
+      "stills/vegas-ft-06.jpg",
+      "stills/vegas-ft-08.jpg",
+      "stills/vegas-ft-11.jpg",
+      "stills/vegas-ft-12.jpg",
+      "stills/vegas-ft-13.jpg",
+      "stills/vegas-hr-01.jpg",
+      "stills/vegas-hr-02.jpg",
+      "stills/vegas-hr-03.jpg",
+      "stills/vegas-hr-04.jpg",
+      "stills/vegas-hr-05.jpg",
+      "stills/vegas-hr-06.jpg",
+      "stills/wsope-ft-01.jpg",
+      "stills/wsope-ft-02.jpg",
+      "stills/wsope-ft-04.jpg",
+      "stills/wsope-ft-06.jpg",
+      "stills/wsope-ft-07.jpg",
+      "stills/wsope-ft-08.jpg",
+      "stills/cyprus-fd-03.jpg",
+      "stills/cyprus-fd-05.jpg",
+      "stills/cyprus-fd-06.jpg",
+      "stills/vegas-d5-01.jpg",
+      "stills/vegas-d5-02.jpg",
+      "stills/vegas-d5-06.jpg",
+      "stills/vegas-d5-07.jpg",
+      "stills/vegas-d5-08.jpg"
+    ],
+    "hands": [
+      "stills/paradise-hl-01.jpg",
+      "stills/paradise-hl-02.jpg",
+      "stills/paradise-hl-03.jpg",
+      "stills/paradise-hl-04.jpg",
+      "stills/paradise-hl-05.jpg",
+      "stills/paradise-hl-06.jpg",
+      "stills/paradise-hl-07.jpg",
+      "stills/paradise-hl-08.jpg",
+      "stills/paradise-hl-09.jpg",
+      "stills/paradise-hl-10.jpg",
+      "stills/paradise-hl-11.jpg",
+      "stills/paradise-hl-12.jpg",
+      "stills/paradise-d4-01.jpg",
+      "stills/paradise-d4-02.jpg",
+      "stills/paradise-d4-03.jpg",
+      "stills/paradise-d4-04.jpg",
+      "stills/paradise-d4-06.jpg"
+    ],
+    "people": [
+      "stills/vegas-ft-10.jpg",
+      "stills/vegas-shr-03.jpg",
+      "stills/vegas-shr-04.jpg",
+      "stills/vegas-shr-06.jpg",
+      "stills/vegas-shr-07.jpg",
+      "stills/vegas-shr-01.jpg",
+      "stills/vegas-d5-03.jpg",
+      "stills/vegas-d5-05.jpg"
+    ],
+    "venue": [
+      "stills/vegas-d1-01.jpg",
+      "stills/vegas-d1-03.jpg",
+      "stills/vegas-d1-04.jpg",
+      "stills/vegas-d1-05.jpg",
+      "stills/vegas-d1-06.jpg",
+      "stills/vegas-d5-04.jpg",
+      "stills/cyprus-fd-01.jpg",
+      "stills/cyprus-fd-02.jpg",
+      "stills/cyprus-fd-04.jpg"
+    ]
+  },
+  "hero": {
+    "finalTable": "stills/vegas-ft-05.jpg",
+    "table": "stills/vegas-ft-13.jpg",
+    "portrait": "stills/vegas-shr-04.jpg"
+  }
+}

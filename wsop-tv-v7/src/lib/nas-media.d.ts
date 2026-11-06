@@ -1,4 +1,4 @@
-/** Dev-only WSOP archive media (see vite.config.ts); `null` in every build. */
+/** WSOP archive media (see vite.config.ts); `null` when src/data/nas-manifest.json is missing. */
 declare module 'virtual:nas-media' {
   const NAS: {
     credit: string;
