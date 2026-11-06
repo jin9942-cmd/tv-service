@@ -141,7 +141,7 @@ function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; l
   const { state } = useApp();
   const [panel, setPanel] = useState(false);
   const next = relatedTo(v, 10);
-  // Picking from Up next: VOD keeps playing full screen; a live broadcast opens its live player.
+  // Picking from Suggested: VOD keeps playing full screen; a live broadcast opens its live player.
   const pick = (x: Video) => {
     setPanel(false);
     nav(isLive(x, state.streamMode) || x.kind === 'channel' ? `/watch/${x.id}` : `/watch/${x.id}?play=1`, { replace: true });
@@ -155,10 +155,10 @@ function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; l
       <div className="w-full" style={{ maxWidth: 'calc(100vh * 16 / 9)' }}>
         <Player v={v} live={live} liveEdge={liveEdge} upNext={next.length ? { open: panel, toggle: () => setPanel((p) => !p) } : undefined} />
       </div>
-      {/* Up next: suggested videos in a side panel over the player. */}
+      {/* Suggested: videos in a side panel over the player. */}
       {panel && (
-        <aside aria-label="Up next" className="absolute top-0 right-0 bottom-16 z-10 flex w-[min(24rem,90vw)] flex-col rounded-bl-panel bg-black/90 pt-6 backdrop-blur">
-          <h2 className="px-5 text-lg font-bold">Up next</h2>
+        <aside aria-label="Suggested" className="absolute top-0 right-0 bottom-16 z-10 flex w-[min(24rem,90vw)] flex-col rounded-bl-panel bg-black/90 pt-6 backdrop-blur">
+          <h2 className="px-5 text-lg font-bold">Suggested</h2>
           <ul className="mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-6">
             {next.map((x) => (
               <li key={x.id}>
