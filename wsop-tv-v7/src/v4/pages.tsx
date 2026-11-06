@@ -148,7 +148,7 @@ function FullPlayer({ v }: { v: Video }) {
         <Icon name="close" size={20} />
       </button>
       {next.length > 0 && (
-        <button onClick={() => setPanel((p) => !p)} aria-expanded={panel} aria-label="Up next: suggested videos" title="Up next" className={cx(round, 'absolute top-4 right-4 z-20 w-auto gap-2 px-4 text-sm font-semibold', panel && 'bg-white text-black hover:bg-white')}>
+        <button onClick={() => setPanel((p) => !p)} aria-expanded={panel} aria-label="Up next: suggested videos" title="Up next" className={cx('absolute top-4 right-4 z-20 flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold ring-1', panel ? 'bg-white text-black ring-white' : 'bg-black/60 text-white ring-white/30 hover:bg-black/80')}>
           <Icon name="layers" size={18} /> Up next
         </button>
       )}
