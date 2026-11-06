@@ -1,3 +1,5 @@
+// The demo clock goes first: every data module reads it when it loads.
+import './lib/clock';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/index.css';

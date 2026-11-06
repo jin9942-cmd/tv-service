@@ -24,7 +24,7 @@ export function Archive() {
         </div>
       </section>
       <section>
-        <SectionHeader title="2026 Summer Championship replays" />
+        <SectionHeader title="2026 World Series of Poker replays" />
         <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 [&>*]:w-auto">
           {visible.map(({ e, d }) => (
             <BroadcastCard key={d.id} event={e} day={d} />

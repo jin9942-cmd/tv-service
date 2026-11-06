@@ -1064,17 +1064,15 @@ type ScheduleItem = { e: TourEvent; d: Day };
 type SeriesStop = { id: string; name: string; venue: string; city: string; tz?: string; start: string; end: string; art: Art };
 
 const DAY_MS = 86_400_000;
-const at = (days: number) => new Date(Date.now() + days * DAY_MS).toISOString();
-/** The year's series: the two with broadcasts in the demo, plus last spring's and next winter's. */
+/** The season's WSOP series (2025 Paradise, 2026 WSOP Europe, 2026 Las Vegas, 2026 Super Circuit Canada), from the data. */
 const SEASON: SeriesStop[] = [
   // The demo series' dates cover all of their broadcasts.
   ...series.map((s) => {
     const starts = events.filter((e) => e.seriesId === s.id).flatMap((e) => e.days.map((d) => d.start));
     const first = [s.start, ...starts].sort()[0];
     const last = [s.end, ...starts].sort().pop()!;
-    return { ...s, start: first, end: last, art: s.id === 'lv26' ? TABLE_ART[0] : s.id === 'sp26' ? VENUE_ART[3] : VENUE_ART[2] };
+    return { ...s, start: first, end: last, art: s.id === 'lv26' ? TABLE_ART[0] : s.id === 'pa25' ? VENUE_ART[3] : s.id === 'eu26' ? VENUE_ART[2] : VENUE_ART[0] };
   }),
-  { id: 'wi27', name: '2027 Winter Festival', venue: 'Boardwalk Hall', city: 'Atlantic City, NJ', start: at(110), end: at(131), art: VENUE_ART[0] },
 ];
 
 const seriesState = (s: SeriesStop, now: number) => (Date.parse(s.start) <= now && now <= Date.parse(s.end) ? 'live' : Date.parse(s.start) > now ? 'upcoming' : 'past');
@@ -1144,7 +1142,7 @@ function SeriesFold({ s, open, onToggle, now }: { s: SeriesStop; open: boolean; 
           </span>
           <span className={cx('mt-1 block font-bold', 'text-lg sm:text-xl', st === 'past' && !open && 'text-text/80')}>{s.name}</span>
           <span className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted sm:text-sm">
-            <span className="tnum">{shortDate(s.start, state.tz)} – {shortDate(s.end, state.tz)}</span>
+            <span className="tnum">{shortDate(s.start, s.tz ?? state.tz)} – {shortDate(s.end, s.tz ?? state.tz)}</span>
             <span className="hidden sm:inline">{s.venue} · {s.city}</span>
           </span>
         </span>
@@ -1272,7 +1270,7 @@ function BroadcastRow({ e, d, st, venueTz }: ScheduleItem & { st: Day['status'];
           </Link>
         </span>
       </td>
-      <td className="px-4 py-3 tnum">{e.buyIn ? money(e.buyIn) : 'Invitational'}</td>
+      <td className="px-4 py-3 tnum">{e.buyIn ? money(e.buyIn) : 'TBA'}</td>
       <td className="px-4 py-3">{e.game}</td>
       <td className="px-4 py-3 text-right">
         {live ? (

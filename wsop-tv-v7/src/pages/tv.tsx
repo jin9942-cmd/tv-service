@@ -87,7 +87,7 @@ function PromoBanner() {
     {
       img: HERO_IMAGES.finalTable,
       pos: '50% 60%',
-      kicker: '2026 Summer Championship',
+      kicker: '2026 World Series of Poker',
       title: `Main Event ${day.label}`,
       facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
       line: 'Live from Las Vegas',
