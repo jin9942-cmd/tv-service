@@ -147,17 +147,12 @@ function FullPlayer({ v }: { v: Video }) {
       <button onClick={close} aria-label="Close player" title="Close" className={cx(round, 'absolute top-4 left-4 z-10')}>
         <Icon name="close" size={20} />
       </button>
-      {next.length > 0 && (
-        <button onClick={() => setPanel((p) => !p)} aria-expanded={panel} aria-label="Up next: suggested videos" title="Up next" className={cx('absolute top-4 right-4 z-20 flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold ring-1', panel ? 'bg-white text-black ring-white' : 'bg-black/60 text-white ring-white/30 hover:bg-black/80')}>
-          <Icon name="layers" size={18} /> Up next
-        </button>
-      )}
       <div className="w-full" style={{ maxWidth: 'calc(100vh * 16 / 9)' }}>
-        <Player v={v} live={false} />
+        <Player v={v} live={false} upNext={next.length ? { open: panel, toggle: () => setPanel((p) => !p) } : undefined} />
       </div>
       {/* Up next: suggested videos in a side panel over the player. */}
       {panel && (
-        <aside aria-label="Up next" className="absolute inset-y-0 right-0 z-10 flex w-[min(24rem,90vw)] flex-col bg-black/90 pt-20 backdrop-blur">
+        <aside aria-label="Up next" className="absolute top-0 right-0 bottom-16 z-10 flex w-[min(24rem,90vw)] flex-col rounded-bl-panel bg-black/90 pt-6 backdrop-blur">
           <h2 className="px-5 text-lg font-bold">Up next</h2>
           <ul className="mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-6">
             {next.map((x) => (

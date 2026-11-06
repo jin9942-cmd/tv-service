@@ -15,7 +15,7 @@ const QUALITY_OPTIONS = ['Auto', '1080p', '720p', '480p'];
 const SPEED_OPTIONS = [0.5, 1, 1.5, 2];
 const speedLabel = (x: number) => (x === 1 ? 'Normal' : `${x}×`);
 
-export function Player({ v, live, liveEdge, mini = false }: { v: Video; live: boolean; /** Seconds into the broadcast at the live edge. */ liveEdge?: () => number; mini?: boolean }) {
+export function Player({ v, live, liveEdge, mini = false, upNext }: { v: Video; live: boolean; /** Seconds into the broadcast at the live edge. */ liveEdge?: () => number; mini?: boolean; /** Full-screen playback: the Up next button in the control bar. */ upNext?: { open: boolean; toggle: () => void } }) {
   const { state, set } = useApp();
   const box = useRef<HTMLDivElement>(null);
   const vid = useRef<HTMLVideoElement>(null);
@@ -184,7 +184,12 @@ export function Player({ v, live, liveEdge, mini = false }: { v: Video; live: bo
           {!mini && (
             <>
               {rate !== 1 && <span className="ml-auto text-xs font-semibold text-white/85 tnum">{rate}×</span>}
-              <button className={cx(btn, rate === 1 && 'ml-auto', menu && 'bg-white/15')} onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-label={live ? 'Settings: quality' : 'Settings: speed and quality'} title="Settings">
+              {upNext && (
+                <button className={cx(btn, rate === 1 && 'ml-auto', upNext.open && 'bg-white/15')} onClick={upNext.toggle} aria-expanded={upNext.open} aria-label="Up next: suggested videos" title="Up next">
+                  <Icon name="layers" size={20} />
+                </button>
+              )}
+              <button className={cx(btn, rate === 1 && !upNext && 'ml-auto', menu && 'bg-white/15')} onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-label={live ? 'Settings: quality' : 'Settings: speed and quality'} title="Settings">
                 <Icon name="gear" size={20} />
               </button>
               <button className={btn} onClick={full} aria-label="Full screen">
