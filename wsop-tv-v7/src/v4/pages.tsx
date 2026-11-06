@@ -62,7 +62,7 @@ function TitleView({ v }: { v: Video }) {
   const resume = state.progress[v.id];
   const ref = v.dayId ? dayById(v.dayId) : undefined;
   const play = () => {
-    document.documentElement.requestFullscreen?.().catch(() => {});
+    enterFullScreen();
     nav(`/watch/${v.id}?play=1`);
   };
   const facts = [ref && fmtDate(ref.day.start, state.tz), duration(v.durationSec), ref?.event.game, ref?.event.buyIn ? `Buy-in ${money(ref.event.buyIn)}` : undefined].filter(Boolean);
@@ -104,7 +104,7 @@ function TitleView({ v }: { v: Video }) {
           <div className={cx(rowGrid, 'mt-4')}>
             <BadgeScope videos={suggested}>
             {suggested.map((x) => (
-              <VideoCard key={x.id} v={x} />
+              <VideoCard key={x.id} v={x} {...playsFull(x, state.streamMode)} />
             ))}
             </BadgeScope>
           </div>
@@ -113,6 +113,13 @@ function TitleView({ v }: { v: Video }) {
     </>
   );
 }
+
+/** Enter full screen (must run inside the click). */
+const enterFullScreen = () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+};
+/** Card props that play a video full screen straight away (VOD); live and 24/7 open their player as usual. */
+const playsFull = (x: Video, mode: Day['status']) => (isLive(x, mode) || x.kind === 'channel' ? {} : { href: `/watch/${x.id}?play=1`, onOpen: enterFullScreen });
 
 /** VOD playback after Play: the player fills the screen; closing it (or leaving full screen) goes back to the pre-play page. */
 function FullPlayer({ v }: { v: Video }) {
@@ -126,14 +133,50 @@ function FullPlayer({ v }: { v: Video }) {
     return () => document.removeEventListener('fullscreenchange', on);
   }, [nav, v.id]);
   const close = () => (document.fullscreenElement ? document.exitFullscreen().catch(() => nav(`/watch/${v.id}`, { replace: true })) : nav(`/watch/${v.id}`, { replace: true }));
+  const { state } = useApp();
+  const [panel, setPanel] = useState(false);
+  const next = relatedTo(v, 10);
+  // Picking from Up next: VOD keeps playing full screen; a live broadcast opens its live player.
+  const pick = (x: Video) => {
+    setPanel(false);
+    nav(isLive(x, state.streamMode) || x.kind === 'channel' ? `/watch/${x.id}` : `/watch/${x.id}?play=1`, { replace: true });
+  };
+  const round = 'grid size-10 place-items-center rounded-full bg-black/60 text-white ring-1 ring-white/30 hover:bg-black/80';
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black">
-      <button onClick={close} aria-label="Close player" title="Close" className="absolute top-4 left-4 z-10 grid size-10 place-items-center rounded-full bg-black/60 text-white ring-1 ring-white/30 hover:bg-black/80">
+      <button onClick={close} aria-label="Close player" title="Close" className={cx(round, 'absolute top-4 left-4 z-10')}>
         <Icon name="close" size={20} />
       </button>
+      {next.length > 0 && (
+        <button onClick={() => setPanel((p) => !p)} aria-expanded={panel} aria-label="Up next: suggested videos" title="Up next" className={cx(round, 'absolute top-4 right-4 z-20 w-auto gap-2 px-4 text-sm font-semibold', panel && 'bg-white text-black hover:bg-white')}>
+          <Icon name="layers" size={18} /> Up next
+        </button>
+      )}
       <div className="w-full" style={{ maxWidth: 'calc(100vh * 16 / 9)' }}>
         <Player v={v} live={false} />
       </div>
+      {/* Up next: suggested videos in a side panel over the player. */}
+      {panel && (
+        <aside aria-label="Up next" className="absolute inset-y-0 right-0 z-10 flex w-[min(24rem,90vw)] flex-col bg-black/90 pt-20 backdrop-blur">
+          <h2 className="px-5 text-lg font-bold">Up next</h2>
+          <ul className="mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-6">
+            {next.map((x) => (
+              <li key={x.id}>
+                <button onClick={() => pick(x)} className="group flex w-full gap-3 rounded-card p-2 text-left hover:bg-white/10">
+                  <span className="relative aspect-video w-36 shrink-0 overflow-hidden rounded-card bg-surface-2">
+                    <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" className="absolute inset-0 size-full object-cover" />
+                    {isLive(x, state.streamMode) ? <LiveTag className="absolute top-1.5 left-1.5" /> : <span className="absolute right-1.5 bottom-1.5 rounded-[4px] bg-black/80 px-1 text-[10px] font-semibold text-white tnum">{duration(x.durationSec)}</span>}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
+                    <span className="mt-0.5 block truncate text-xs text-white/60">{x.subtitle}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )}
     </div>
   );
 }

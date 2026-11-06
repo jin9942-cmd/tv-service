@@ -76,7 +76,7 @@ export type CardSize = 'lg' | 'md' | 'sm';
  * The video card. Over the picture: the badge (Live / New / Recently added), the runtime, and on hover a short muted
  * preview with two controls only, Play and Add to My List.
  */
-export function VideoCard({ v, progress, onRemove, className, reason, size = 'md' }: { v: Video; progress?: number; /** Continue Watching: show a remove (×) button. */ onRemove?: () => void; className?: string; /** Why it's here, under the title (e.g. "Because you follow …"). */ reason?: string; size?: CardSize }) {
+export function VideoCard({ v, progress, onRemove, className, reason, size = 'md', href, onOpen }: { v: Video; progress?: number; /** Continue Watching: show a remove (×) button. */ onRemove?: () => void; className?: string; /** Why it's here, under the title (e.g. "Because you follow …"). */ reason?: string; size?: CardSize; /** Where the card goes (default: the video's page). */ href?: string; /** Runs on click before the link opens (e.g. enter full screen). */ onOpen?: () => void }) {
   const { state } = useApp();
   const list = useMyList();
   const own = badgeFor(v, state.streamMode);
@@ -98,10 +98,11 @@ export function VideoCard({ v, progress, onRemove, className, reason, size = 'md
     setPreview(false);
   };
   const round = 'grid size-9 place-items-center rounded-full shadow-lg transition-transform hover:scale-105';
+  const to = href ?? `/watch/${v.id}`;
   return (
     <div className={cx('group relative min-w-0', className)} onMouseEnter={enter} onMouseLeave={leave}>
       <div className="relative aspect-video overflow-hidden rounded-card bg-surface-2">
-        <Link to={`/watch/${v.id}`} className="absolute inset-0 block" aria-label={`Watch ${v.title}`}>
+        <Link to={to} onClick={onOpen} className="absolute inset-0 block" aria-label={`Watch ${v.title}`}>
           <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
           {preview && v.media && <video src={`${v.media.url}#t=${v.media.start}`} muted autoPlay playsInline loop className="absolute inset-0 size-full object-cover" aria-hidden />}
         </Link>
@@ -120,7 +121,7 @@ export function VideoCard({ v, progress, onRemove, className, reason, size = 'md
         )}
         {/* Hover controls: Play and Add to My List only. */}
         <div className="absolute bottom-2 left-2 z-10 flex gap-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
-          <Link to={`/watch/${v.id}`} aria-label={`Play ${v.title}`} title="Play" className={cx(round, 'bg-white text-black')}>
+          <Link to={to} onClick={onOpen} aria-label={`Play ${v.title}`} title="Play" className={cx(round, 'bg-white text-black')}>
             <Icon name="play" size={16} />
           </Link>
           {v.kind !== 'channel' && (
@@ -135,7 +136,7 @@ export function VideoCard({ v, progress, onRemove, className, reason, size = 'md
           </span>
         )}
       </div>
-      <Link to={`/watch/${v.id}`} className="mt-2 block min-w-0">
+      <Link to={to} onClick={onOpen} className="mt-2 block min-w-0">
         <span className={cx('line-clamp-2 leading-snug font-semibold group-hover:text-gold-strong', size === 'lg' ? 'text-base' : size === 'sm' ? 'text-sm' : 'text-[15px]')}>{v.title}</span>
         <span className="mt-0.5 block truncate text-xs text-muted">{v.subtitle}</span>
         {reason && <span className="mt-1 block truncate text-xs font-semibold text-gold-strong">{reason}</span>}
