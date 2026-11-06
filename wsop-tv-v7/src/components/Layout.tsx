@@ -4,7 +4,6 @@ import { useApp } from '../state/app';
 import { Button, Icon, cx } from './ui';
 import { WSOP_LOGO } from '../lib/brand';
 import { LoginModal } from '../features/auth/LoginModal';
-import { DemoControls } from '../features/demo/DemoControls';
 import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
 import NAS from 'virtual:nas-media';
 
@@ -158,7 +157,6 @@ export function Layout() {
       </nav>
 
       {login && <LoginModal />}
-      <DemoControls />
 
       <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4 md:bottom-6" role="status" aria-live="polite">
         {toasts.map((t) => (
