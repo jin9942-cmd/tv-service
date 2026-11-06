@@ -6,6 +6,7 @@ import { WSOP_LOGO } from '../lib/brand';
 import { LoginModal } from '../features/auth/LoginModal';
 import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
 import NAS from 'virtual:nas-media';
+import { isLive, videoById } from '../v4/catalog';
 
 
 // v7: Home, Schedule, Videos (highlights and replays) and WSOP+ (the membership page, under this menu); Search and My on
@@ -35,6 +36,19 @@ export function Layout() {
   // The header menu: every item (hamburger), or only the My items (My on the mobile tab bar).
   const [menu, setMenu] = useState<false | 'all' | 'my'>(false);
   const loc = useLocation();
+  // Live broadcasts play full screen: a click on any link to one enters full screen (allowed only inside the click).
+  const modeRef = useRef(state.streamMode);
+  modeRef.current = state.streamMode;
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest?.('a[href]');
+      const id = a?.getAttribute('href')?.match(/#\/watch\/([^?#]+)/)?.[1];
+      const v = id ? videoById(id) : undefined;
+      if (v && v.kind !== 'channel' && isLive(v, modeRef.current) && !document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, []);
   useEffect(() => {
     setMenu(false);
     window.scrollTo({ top: 0 });

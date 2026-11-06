@@ -49,6 +49,8 @@ export function WatchPage() {
     const ref = v.dayId ? dayById(v.dayId) : undefined;
     return ref ? Math.max(120, Math.min(v.durationSec, (Date.now() - Date.parse(ref.day.start)) / 1000)) : v.durationSec;
   };
+  // A live broadcast plays full screen straight away (24/7 channels keep the watch page).
+  if (live && v.kind !== 'channel') return <FullPlayer key={v.id} v={v} live liveEdge={liveEdge} />;
   return <WatchView key={`${v.id}:${program?.id ?? ''}`} v={v} live={live} liveEdge={live ? liveEdge : undefined} channelId={channelId} now={now} />;
 }
 
@@ -122,17 +124,20 @@ const enterFullScreen = () => {
 const playsFull = (x: Video, mode: Day['status']) => (isLive(x, mode) || x.kind === 'channel' ? {} : { href: `/watch/${x.id}?play=1`, onOpen: enterFullScreen });
 
 /** VOD playback after Play: the player fills the screen; closing it (or leaving full screen) goes back to the pre-play page. */
-function FullPlayer({ v }: { v: Video }) {
+function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; liveEdge?: () => number }) {
   const nav = useNavigate();
+  // Leaving: VOD goes back to its pre-play page; live goes back to where you came from.
+  const leave = () => (live ? (window.history.length > 1 ? nav(-1) : nav('/')) : nav(`/watch/${v.id}`, { replace: true }));
+  const leaveRef = useRef(leave);
+  leaveRef.current = leave;
   useEffect(() => {
-    const leave = () => nav(`/watch/${v.id}`, { replace: true });
     const on = () => {
-      if (!document.fullscreenElement) leave();
+      if (!document.fullscreenElement) leaveRef.current();
     };
     document.addEventListener('fullscreenchange', on);
     return () => document.removeEventListener('fullscreenchange', on);
-  }, [nav, v.id]);
-  const close = () => (document.fullscreenElement ? document.exitFullscreen().catch(() => nav(`/watch/${v.id}`, { replace: true })) : nav(`/watch/${v.id}`, { replace: true }));
+  }, []);
+  const close = () => (document.fullscreenElement ? document.exitFullscreen().catch(leave) : leave());
   const { state } = useApp();
   const [panel, setPanel] = useState(false);
   const next = relatedTo(v, 10);
@@ -148,7 +153,7 @@ function FullPlayer({ v }: { v: Video }) {
         <Icon name="close" size={20} />
       </button>
       <div className="w-full" style={{ maxWidth: 'calc(100vh * 16 / 9)' }}>
-        <Player v={v} live={false} upNext={next.length ? { open: panel, toggle: () => setPanel((p) => !p) } : undefined} />
+        <Player v={v} live={live} liveEdge={liveEdge} upNext={next.length ? { open: panel, toggle: () => setPanel((p) => !p) } : undefined} />
       </div>
       {/* Up next: suggested videos in a side panel over the player. */}
       {panel && (
