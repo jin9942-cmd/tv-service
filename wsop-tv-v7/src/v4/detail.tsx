@@ -1,12 +1,13 @@
 // v4 — the shared video card and row, the tag list and the "About" facts.
-import { type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Icon, LiveTag, cx } from '../components/ui';
 import { duration } from '../lib/format';
 import { artStyle } from '../lib/brand';
 import type { ListKind } from '../state/app';
-import { isLive, type Video } from './catalog';
+import { badgeFor, type Badge, type Video } from './catalog';
+import { useMyList } from '../features/library/listActions';
 
 /** My List kind for a video (broadcasts and classics are saved as broadcast days, clips as hands). */
 export const listKind = (v: Video): ListKind => (v.kind === 'clip' ? 'hand' : 'day');
@@ -46,41 +47,81 @@ export function About({ v }: { v: Video }) {
 /**
  * The one card used everywhere: thumbnail (only LIVE on it) and title → play.
  */
-export function VideoCard({ v, progress, onRemove, className, reason }: { v: Video; progress?: number; /** Continue Watching: show a remove (×) button. */ onRemove?: () => void; className?: string; /** Why it's here, under the title (e.g. "Because you follow …"). */ reason?: string }) {
-  const { state } = useApp();
-  const live = isLive(v, state.streamMode);
+/** A thumbnail badge, drawn by the UI over the picture: Live, New or Recently added. */
+export function CardBadge({ b, className }: { b: Badge; className?: string }) {
+  if (b === 'Live') return <LiveTag className={className} />;
   return (
-    <div className={cx('group relative min-w-0', className)}>
-      {onRemove && (
-        <button
-          onClick={onRemove}
-          aria-label={`Remove ${v.title} from Continue Watching`}
-          title="Remove from Continue Watching"
-          className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-black focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
-        >
-          <Icon name="close" size={16} />
-        </button>
-      )}
-      <Link to={`/watch/${v.id}`} className="block" aria-label={`Watch ${v.title}`}>
-        <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+    <span className={cx('label rounded-[4px] px-1.5 py-0.5 text-[10px]', b === 'New' ? 'bg-gold text-white' : 'bg-white/90 text-black', className)}>
+      {b === 'New' ? 'New' : 'Recently added'}
+    </span>
+  );
+}
+
+/** Card sizes by content type: lg = replays (3 a row), md = the standard card (4), sm = highlights (5). */
+export type CardSize = 'lg' | 'md' | 'sm';
+
+/**
+ * The video card. Over the picture: the badge (Live / New / Recently added), the runtime, and on hover a short muted
+ * preview with two controls only, Play and Add to My List.
+ */
+export function VideoCard({ v, progress, onRemove, className, reason, size = 'md' }: { v: Video; progress?: number; /** Continue Watching: show a remove (×) button. */ onRemove?: () => void; className?: string; /** Why it's here, under the title (e.g. "Because you follow …"). */ reason?: string; size?: CardSize }) {
+  const { state } = useApp();
+  const list = useMyList();
+  const badge = badgeFor(v, state.streamMode);
+  const live = badge === 'Live';
+  const kind = listKind(v);
+  const saved = list.has(kind, v.id);
+  // Preview: after a short hover (mouse only), the clip plays muted inside the thumbnail.
+  const [preview, setPreview] = useState(false);
+  const timer = useRef(0);
+  const enter = () => {
+    if (!window.matchMedia('(hover: hover)').matches) return;
+    timer.current = window.setTimeout(() => setPreview(true), 700);
+  };
+  const leave = () => {
+    window.clearTimeout(timer.current);
+    setPreview(false);
+  };
+  const round = 'grid size-9 place-items-center rounded-full shadow-lg transition-transform hover:scale-105';
+  return (
+    <div className={cx('group relative min-w-0', className)} onMouseEnter={enter} onMouseLeave={leave}>
+      <div className="relative aspect-video overflow-hidden rounded-card bg-surface-2">
+        <Link to={`/watch/${v.id}`} className="absolute inset-0 block" aria-label={`Watch ${v.title}`}>
           <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-          {live && <LiveTag className="absolute top-2 left-2" />}
-          {/* Runtime on the artwork (not for live or 24/7 channels, which have no fixed length). */}
-          {!live && v.kind !== 'channel' && <span className="absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>}
-          <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100" aria-hidden>
-            <span className="flex size-12 items-center justify-center rounded-full bg-black/60 text-white">
-              <Icon name="play" size={22} />
-            </span>
-          </span>
-          {progress !== undefined && (
-            <span className="absolute inset-x-0 bottom-0 h-1 bg-white/15">
-              <i className="block h-full bg-gold" style={{ width: `${Math.min(100, Math.round(progress * 100))}%` }} />
-            </span>
+          {preview && v.media && <video src={`${v.media.url}#t=${v.media.start}`} muted autoPlay playsInline loop className="absolute inset-0 size-full object-cover" aria-hidden />}
+        </Link>
+        {badge && <CardBadge b={badge} className="pointer-events-none absolute top-2 left-2" />}
+        {/* Runtime on the artwork (not for live or 24/7 channels, which have no fixed length). */}
+        {!live && v.kind !== 'channel' && <span className="pointer-events-none absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>}
+        {onRemove && (
+          <button
+            onClick={onRemove}
+            aria-label={`Remove ${v.title} from Continue Watching`}
+            title="Remove from Continue Watching"
+            className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-black focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+          >
+            <Icon name="close" size={16} />
+          </button>
+        )}
+        {/* Hover controls: Play and Add to My List only. */}
+        <div className="absolute bottom-2 left-2 z-10 flex gap-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
+          <Link to={`/watch/${v.id}`} aria-label={`Play ${v.title}`} title="Play" className={cx(round, 'bg-white text-black')}>
+            <Icon name="play" size={16} />
+          </Link>
+          {v.kind !== 'channel' && (
+            <button onClick={() => list.toggle(kind, v.id)} aria-pressed={saved} aria-label={saved ? 'Remove from My List' : 'Add to My List'} title={saved ? 'In My List' : 'Add to My List'} className={cx(round, 'border border-white/70 bg-black/60 text-white')}>
+              <Icon name={saved ? 'check' : 'plus'} size={16} />
+            </button>
           )}
-        </span>
-      </Link>
+        </div>
+        {progress !== undefined && (
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-white/15">
+            <i className="block h-full bg-gold" style={{ width: `${Math.min(100, Math.round(progress * 100))}%` }} />
+          </span>
+        )}
+      </div>
       <Link to={`/watch/${v.id}`} className="mt-2 block min-w-0">
-        <span className="line-clamp-2 text-[15px] leading-snug font-semibold group-hover:text-gold-strong">{v.title}</span>
+        <span className={cx('line-clamp-2 leading-snug font-semibold group-hover:text-gold-strong', size === 'lg' ? 'text-base' : size === 'sm' ? 'text-sm' : 'text-[15px]')}>{v.title}</span>
         <span className="mt-0.5 block truncate text-xs text-muted">{v.subtitle}</span>
         {reason && <span className="mt-1 block truncate text-xs font-semibold text-gold-strong">{reason}</span>}
       </Link>
@@ -89,18 +130,25 @@ export function VideoCard({ v, progress, onRemove, className, reason }: { v: Vid
 }
 
 export const rowGrid = 'grid grid-cols-1 gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-4';
+/** Grid and count per card size. */
+export const SIZE_GRID: Record<CardSize, { grid: string; count: number }> = {
+  lg: { grid: 'grid grid-cols-1 gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3', count: 3 },
+  md: { grid: rowGrid, count: 4 },
+  sm: { grid: 'grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5', count: 5 },
+};
 
-export function VideoRow({ title, videos, action, progressOf, onRemove }: { title: string; videos: Video[]; action?: ReactNode; progressOf?: (v: Video) => number | undefined; onRemove?: (v: Video) => void }) {
+export function VideoRow({ title, videos, action, progressOf, onRemove, size = 'md' }: { title: string; videos: Video[]; action?: ReactNode; progressOf?: (v: Video) => number | undefined; onRemove?: (v: Video) => void; size?: CardSize }) {
   if (!videos.length) return null;
+  const g = SIZE_GRID[size];
   return (
     <section aria-label={title}>
       <div className="mb-3 flex items-end justify-between gap-3">
         <h2 className="text-xl sm:text-2xl">{title}</h2>
         {action}
       </div>
-      <div className={rowGrid}>
-        {videos.slice(0, 4).map((v) => (
-          <VideoCard key={v.id} v={v} progress={progressOf?.(v)} onRemove={onRemove && (() => onRemove(v))} />
+      <div className={g.grid}>
+        {videos.slice(0, g.count).map((v) => (
+          <VideoCard key={v.id} v={v} size={size} progress={progressOf?.(v)} onRemove={onRemove && (() => onRemove(v))} />
         ))}
       </div>
     </section>

@@ -15,7 +15,7 @@ import NAS from 'virtual:nas-media';
 export const NAV = [
   { to: '/', label: 'Home', icon: 'star', end: true },
   { to: '/schedule', label: 'Schedule', icon: 'calendar' },
-  { to: '/videos', label: 'Videos', icon: 'grid4' },
+  { to: '/videos', label: 'Browse', icon: 'grid4' },
   { to: '/wsop-plus', label: 'WSOP+', icon: 'star' },
 ] as const;
 

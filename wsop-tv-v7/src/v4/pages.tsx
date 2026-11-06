@@ -1,7 +1,7 @@
 // v4 — the common watch page, Live, Videos (Highlights / Replays), the schedule, tag pages and the Home season strip
 // (all built from the catalog and the one card).
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
@@ -12,7 +12,7 @@ import { isBroadcasting } from '../lib/broadcast';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
-import { About, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
+import { About, SIZE_GRID, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
@@ -38,6 +38,9 @@ export function WatchPage() {
     return ref && ref.day.status === 'upcoming' ? <UpcomingView e={ref.event} d={ref.day} /> : <NotFound />;
   }
   const live = isLive(v, state.streamMode);
+  // VOD: a pre-play page first; its Play opens the player full screen (?play=1). Live and 24/7 play right away.
+  const vod = !live && v.kind !== 'channel';
+  if (vod) return params.get('play') === '1' ? <FullPlayer key={v.id} v={v} /> : <TitleView key={v.id} v={v} />;
   const channelId = v.kind === 'channel' ? id.slice(3) : undefined;
   const program = channelId ? programAt(channelId, now) : undefined;
   // Live edge in seconds: a channel counts from the start of what's on; a live broadcast from the day's start.
@@ -47,6 +50,90 @@ export function WatchPage() {
     return ref ? Math.max(120, Math.min(v.durationSec, (Date.now() - Date.parse(ref.day.start)) / 1000)) : v.durationSec;
   };
   return <WatchView key={`${v.id}:${program?.id ?? ''}`} v={v} live={live} liveEdge={live ? liveEdge : undefined} channelId={channelId} now={now} />;
+}
+
+/**
+ * VOD pre-play page: the picture with the title, what it is (series, aired, length, game), the description, Play and
+ * My List; then suggested videos. Nothing else (no tabs). Play goes full screen.
+ */
+function TitleView({ v }: { v: Video }) {
+  const nav = useNavigate();
+  const { state } = useApp();
+  const resume = state.progress[v.id];
+  const ref = v.dayId ? dayById(v.dayId) : undefined;
+  const play = () => {
+    document.documentElement.requestFullscreen?.().catch(() => {});
+    nav(`/watch/${v.id}?play=1`);
+  };
+  const facts = [ref && fmtDate(ref.day.start, state.tz), duration(v.durationSec), ref?.event.game, ref?.event.buyIn ? `Buy-in ${money(ref.event.buyIn)}` : undefined].filter(Boolean);
+  const suggested = relatedTo(v, 8);
+  return (
+    <>
+      <div className="relative overflow-hidden bg-black">
+        <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" className="absolute inset-0 size-full object-cover opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-black/10" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" aria-hidden />
+        <Page className="relative flex min-h-[min(32rem,70vw)] flex-col justify-end py-8 sm:py-12">
+          <button onClick={() => (window.history.length > 1 ? nav(-1) : nav('/'))} aria-label="Back" title="Back" className="mb-auto grid size-10 place-items-center rounded-full bg-white/90 text-black hover:bg-white">
+            <Icon name="chevron" size={20} className="rotate-180" />
+          </button>
+          <div className="mt-10 max-w-2xl">
+            <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">{v.subtitle}</p>
+            <h1 className="mt-2 font-sans text-3xl leading-tight font-bold normal-case sm:text-5xl">{v.title}</h1>
+            <p className="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-sm text-white/80 tnum">
+              {facts.map((x, i) => (
+                <span key={i} className="inline-flex items-center gap-2">
+                  {i > 0 && <span className="text-white/40">·</span>}
+                  {x}
+                </span>
+              ))}
+            </p>
+            {v.description && <p className="mt-3 line-clamp-3 max-w-xl text-[15px] leading-relaxed text-white/85">{v.description}</p>}
+            <div className="mt-6 flex items-center gap-3">
+              <button onClick={play} className="inline-flex h-12 min-w-40 items-center justify-center gap-2 rounded-full bg-white px-7 text-base font-bold text-black hover:bg-white/85">
+                <Icon name="play" size={18} /> {resume ? 'Resume' : 'Play'}
+              </button>
+              <MyListButton kind={listKind(v)} id={v.id} size="lg" className="rounded-full" />
+            </div>
+          </div>
+        </Page>
+      </div>
+      {suggested.length > 0 && (
+        <Page className="py-8">
+          <h2 className="text-xl sm:text-2xl">Suggested</h2>
+          <div className={cx(rowGrid, 'mt-4')}>
+            {suggested.map((x) => (
+              <VideoCard key={x.id} v={x} />
+            ))}
+          </div>
+        </Page>
+      )}
+    </>
+  );
+}
+
+/** VOD playback after Play: the player fills the screen; closing it (or leaving full screen) goes back to the pre-play page. */
+function FullPlayer({ v }: { v: Video }) {
+  const nav = useNavigate();
+  useEffect(() => {
+    const leave = () => nav(`/watch/${v.id}`, { replace: true });
+    const on = () => {
+      if (!document.fullscreenElement) leave();
+    };
+    document.addEventListener('fullscreenchange', on);
+    return () => document.removeEventListener('fullscreenchange', on);
+  }, [nav, v.id]);
+  const close = () => (document.fullscreenElement ? document.exitFullscreen().catch(() => nav(`/watch/${v.id}`, { replace: true })) : nav(`/watch/${v.id}`, { replace: true }));
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black">
+      <button onClick={close} aria-label="Close player" title="Close" className="absolute top-4 left-4 z-10 grid size-10 place-items-center rounded-full bg-black/60 text-white ring-1 ring-white/30 hover:bg-black/80">
+        <Icon name="close" size={20} />
+      </button>
+      <div className="w-full" style={{ maxWidth: 'calc(100vh * 16 / 9)' }}>
+        <Player v={v} live={false} />
+      </div>
+    </div>
+  );
 }
 
 /** A broadcast day's picture: its own video, else the event's, else a venue photo. */
@@ -374,7 +461,7 @@ export function VideosPage({ tab }: { tab: 'highlights' | 'replays' | 'shorts' }
   ] as const;
   return (
     <Page className="max-w-[96rem]">
-      <h1 className="text-title">Videos</h1>
+      <h1 className="text-title">Browse</h1>
       <nav className="mt-4 flex gap-6 border-b border-line" aria-label="Videos">
         {tabs.map(([to, label, k]) => (
           <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-[3px] pb-2.5 text-[15px] font-semibold', tab === k ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text')}>
@@ -485,73 +572,24 @@ export function HomeRows() {
   const myRow = take(mine, 4);
   const picks = take(editorsFinalTables(), 3);
   const recs = take(recommended, 4);
-  const latest = take([...replays].reverse(), 4);
+  const latest = take([...replays].reverse(), 3);
   // Hand clips split between the two hand rows (alternate clips), so Highlights and Shorts never show the same hand.
   const highlightPool = highlightClips.filter((v, i) => i % 2 === 0 && !shown.has(v.id));
   const shorts = take(highlightClips.filter((_, i) => i % 2 === 1), 10);
   const pick = photoPicker(shown);
   return (
     <>
-      <ComingUpRow />
+      {/* Recommended for you takes the place of Coming up (the schedule has the next broadcasts). */}
+      <VideoRow title="Recommended for you" videos={recs} />
       <ContinueRow items={continuing} onRemove={removeContinue} />
       <MyListRow videos={myRow} />
       <EditorsPick picks={picks} />
-      <VideoRow title="Recommended for you" videos={recs} />
-      <VideoRow title="Latest replays" videos={latest} action={more('/videos/replays')} />
+      {/* Card size by content type: Replays large (3), Collections wide tiles (2), Highlights compact (5). */}
+      <VideoRow title="Latest replays" videos={latest} action={more('/videos/replays')} size="lg" />
+      <CollectionsRow />
       <HighlightsRow pool={highlightPool} skip={shown} />
       <ShortsRow videos={shorts} pick={pick} />
     </>
-  );
-}
-
-/** Coming up: the next live broadcasts — date and time on the picture, a countdown and Remind me; each opens its countdown. */
-function ComingUpRow() {
-  const now = useTick(30_000);
-  const next = events
-    .flatMap((e) => e.days.filter((d) => d.status === 'upcoming').map((d) => ({ e, d })))
-    .sort((a, b) => a.d.start.localeCompare(b.d.start))
-    .slice(0, 4);
-  if (!next.length) return null;
-  // Broadcasts not aired yet have no picture of their own: each card gets a different photo of play.
-  const pick = photoPicker(new Set());
-  return (
-    <Section title="Coming up" action={more('/schedule', 'Full schedule')}>
-      <div className={rowGrid}>
-        {next.map((x) => (
-          <ComingUpCard key={x.d.id} {...x} now={now} pic={pick()} />
-        ))}
-      </div>
-    </Section>
-  );
-}
-
-function ComingUpCard({ e, d, now, pic }: ScheduleItem & { now: number; pic: Pic }) {
-  const { state } = useApp();
-  const title = titleOf({ e, d });
-  const [on, toggle] = useReminder(`day:${d.id}`, title);
-  const mins = Math.max(0, Math.round((Date.parse(d.start) - now) / 60_000));
-  const days = Math.round(mins / 1440);
-  const inText = mins >= 1440 ? `in ${days} day${days === 1 ? '' : 's'}` : mins >= 60 ? `in ${Math.floor(mins / 60)}h ${mins % 60}m` : `in ${mins} min`;
-  return (
-    <div className="group min-w-0">
-      <Link to={`/watch/${d.id}`} className="relative block aspect-video overflow-hidden rounded-card bg-surface-2" aria-label={`${title}, ${inText}`}>
-        <img src={pic.thumb} style={artStyle({ pos: pic.thumbPos, fit: pic.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover opacity-45 transition-transform duration-200 group-hover:scale-[1.03]" />
-        <span className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="text-[11px] font-bold tracking-wider text-gold-strong uppercase">{fmtDate(d.start, state.tz)}</span>
-          <span className="mt-0.5 text-2xl font-black tnum">{fmtTime(d.start, state.tz)}</span>
-          <span className="mt-0.5 text-xs text-white/75 tnum">{inText}</span>
-        </span>
-      </Link>
-      <div className="mt-2 flex items-start justify-between gap-2">
-        <Link to={`/watch/${d.id}`} className="min-w-0">
-          <span className="block truncate text-[15px] font-semibold group-hover:text-gold-strong">{title}</span>
-          <span className="mt-0.5 block truncate text-xs text-muted">{seriesById(e.seriesId).name}</span>
-        </Link>
-        <button onClick={toggle} aria-pressed={on} aria-label={on ? `Reminder set for ${title}` : `Remind me about ${title}`} title={on ? 'Reminder set' : 'Remind me'} className={cx('flex size-9 shrink-0 items-center justify-center rounded-full border', on ? 'border-gold bg-gold-dim text-gold-strong' : 'border-line-strong text-muted hover:text-text')}>
-          <Icon name={on ? 'check' : 'bell'} size={16} />
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -674,13 +712,36 @@ function photoPicker(skip: Set<string>) {
 function HighlightsRow({ pool, skip }: { pool: Video[]; skip: Set<string> }) {
   // Photos instead of the look-alike broadcast stills, so the same face doesn't fill the row.
   const pick = photoPicker(skip);
-  const list = pool.slice(0, 4).map((v) => ({ ...v, ...pick(v) }));
+  const list = pool.slice(0, SIZE_GRID.sm.count).map((v) => ({ ...v, ...pick(v) }));
   if (!list.length) return null;
   return (
     <Section title="Highlights" action={more('/videos', 'All highlights')}>
-      <div className={rowGrid}>
+      <div className={SIZE_GRID.sm.grid}>
         {list.map((v) => (
-          <VideoCard key={v.id} v={v} />
+          <VideoCard key={v.id} v={v} size="sm" />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** Collections on Home: wide tiles, two a row (cover, title, note, how many videos); each opens its page. */
+function CollectionsRow() {
+  const list = COLLECTIONS.slice(1).map((c) => ({ c, vs: c.videos() })).filter((x) => x.vs.length);
+  if (!list.length) return null;
+  return (
+    <Section title="Collections">
+      <div className="grid gap-5 sm:grid-cols-2">
+        {list.slice(0, 2).map(({ c, vs }) => (
+          <Link key={c.id} to={`/collections/${c.id}`} className="group relative block aspect-[21/9] overflow-hidden rounded-card bg-surface-2">
+            <img src={vs[0].thumb} style={artStyle({ pos: vs[0].thumbPos, fit: vs[0].thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+            <span className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" aria-hidden />
+            <span className="absolute inset-y-0 left-0 flex max-w-[70%] flex-col justify-end p-5">
+              <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">Collection · {vs.length} videos</span>
+              <span className="mt-1 text-xl leading-tight font-bold sm:text-2xl">{c.title}</span>
+              <span className="mt-1 text-sm text-white/80">{c.blurb}</span>
+            </span>
+          </Link>
         ))}
       </div>
     </Section>
@@ -1169,6 +1230,9 @@ function SeriesFold({ s, open, onToggle, now }: { s: SeriesStop; open: boolean; 
 function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
   const { state } = useApp();
   const st = seriesState(s, now);
+  // Recommended from this series: its latest replays, then its key hands (four in all).
+  const ofSeries = catalog.filter((v) => v.eventId && eventById(v.eventId)?.seriesId === s.id && !isLive(v, state.streamMode));
+  const seriesVideos = [...ofSeries.filter((v) => v.kind === 'broadcast').reverse().slice(0, 2), ...ofSeries.filter((v) => v.kind === 'clip').slice(0, 2)];
   const [showEarlier, setShowEarlier] = useState(false);
   const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
   const all = events
@@ -1200,7 +1264,7 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
   if (!all.length)
     return (
       <p className="rounded-panel border border-line bg-surface-2 p-5 text-sm text-muted">
-        {st === 'past' ? 'Replays of this series are in Videos.' : 'The broadcast schedule is announced closer to the series.'}
+        {st === 'past' ? 'Replays of this series are in Browse.' : 'The broadcast schedule is announced closer to the series.'}
       </p>
     );
   return (
@@ -1209,11 +1273,11 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
         <p className="text-sm text-muted">
           {st === 'past' ? 'Every broadcast is on demand. ' : ''}Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with local time in {s.city.split(',')[0]}.
         </p>
-        {/* A series that is over: its replays as event cards in Videos. */}
+        {/* A series that is over: its replays as event cards in Browse. */}
         {st === 'past' && (
           <Link to={`/videos/replays?series=${s.id}`}>
             <Button size="sm" variant="primary" tabIndex={-1}>
-              <Icon name="play" size={14} /> All replays in Videos
+              <Icon name="play" size={14} /> All replays in Browse
             </Button>
           </Link>
         )}
@@ -1238,6 +1302,22 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
             {showEarlier && table(earlier)}
           </div>
         ))}
+      {/* The series' videos: newest replays and key hands, with what they are and how long they run. */}
+      {seriesVideos.length > 0 && (
+        <div className="mt-6">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <h3 className="text-base font-bold">Videos from this series</h3>
+            <Link to={`/videos/replays?series=${s.id}`} className="text-sm font-semibold text-muted hover:text-text">
+              All replays →
+            </Link>
+          </div>
+          <div className={rowGrid}>
+            {seriesVideos.map((v) => (
+              <VideoCard key={v.id} v={v} />
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1284,10 +1364,10 @@ function BroadcastRow({ e, d, st, venueTz }: ScheduleItem & { st: Day['status'];
             <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
           </Button>
         ) : (
-          // On demand: a Watch button (grey, so Watch live stays the one red button in the table).
+          // On demand: Watch on WSOP TV (grey, so Watch live stays the one red button in the table).
           <Link to={`/watch/${d.id}`}>
-            <Button size="sm" variant="secondary" tabIndex={-1}>
-              <Icon name="play" size={14} /> Watch
+            <Button size="sm" variant="secondary" tabIndex={-1} className="whitespace-nowrap">
+              <Icon name="play" size={14} /> Watch on WSOP TV
             </Button>
           </Link>
         )}

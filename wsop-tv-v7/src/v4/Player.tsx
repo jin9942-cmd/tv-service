@@ -139,11 +139,13 @@ export function Player({ v, live, liveEdge, mini = false }: { v: Video; live: bo
           </button>
           {!mini && (
             <>
-              <button className={btn} onClick={() => skip(-10)} aria-label="Back 10 seconds" title="Back 10 s">
-                <Icon name="back10" size={20} />
+              <button className="flex h-9 items-center gap-1 rounded-full px-2 text-white hover:bg-white/15" onClick={() => skip(-10)} aria-label="Back 10 seconds" title="Back 10 s">
+                <Icon name="back10" size={18} />
+                <span className="text-[13px] font-bold tnum">−10</span>
               </button>
-              <button className={btn} onClick={() => skip(10)} aria-label="Forward 10 seconds" title="Forward 10 s" disabled={atLive}>
-                <Icon name="fwd10" size={20} className={atLive ? 'opacity-40' : undefined} />
+              <button className={cx('flex h-9 items-center gap-1 rounded-full px-2 text-white hover:bg-white/15', atLive && 'opacity-40')} onClick={() => skip(10)} aria-label="Forward 10 seconds" title="Forward 10 s" disabled={atLive}>
+                <span className="text-[13px] font-bold tnum">+10</span>
+                <Icon name="fwd10" size={18} />
               </button>
             </>
           )}

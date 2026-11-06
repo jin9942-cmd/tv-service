@@ -6,7 +6,7 @@ import { channelById, channels, programAt, programsFor, reminderKey, type Linear
 import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
 import { HERO_DAY_ID, dayById, hands } from '../data/mock';
 import { isOnAir } from '../lib/broadcast';
-import { thumbFor } from '../lib/media';
+import { FOOTAGE, thumbFor } from '../lib/media';
 import { HERO_IMAGES } from '../lib/brand';
 import { money } from '../lib/format';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
@@ -87,10 +87,11 @@ function PromoBanner() {
     {
       img: HERO_IMAGES.finalTable,
       pos: '50% 60%',
-      kicker: '2026 World Series of Poker',
+      kicker: '2026 · World Series of Poker · Las Vegas',
       title: `Main Event ${day.label}`,
       facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
-      line: 'Live from Las Vegas',
+      line: 'On air now from Horseshoe / Paris Las Vegas',
+      preview: true,
       actions: (
         <Link to={`/watch/${HERO_DAY_ID}`}>
           <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
@@ -102,8 +103,9 @@ function PromoBanner() {
     {
       img: HERO_IMAGES.portrait,
       pos: '50% 20%',
-      kicker: 'WSOP Archive',
+      kicker: 'WSOP Archive · 1973 – 2025',
       title: 'Every final table, on demand',
+      preview: false,
       facts: ['Classics', 'Full broadcasts', 'Key hands'],
       line: 'Every final table from 2019 to 2025, with every key hand',
       actions: (
@@ -126,15 +128,20 @@ function PromoBanner() {
       <div className="md:absolute md:inset-0 md:mx-auto md:max-w-content md:px-8">
         <div className="hero-photo relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-8 md:aspect-auto md:w-[64%]">
           <img key={sl.img} src={sl.img} alt="" className="size-full object-cover" style={{ objectPosition: sl.pos }} />
+          {/* Live slide: a muted preview of the broadcast plays over the photo. */}
+          {sl.preview && <video key="hero-preview" src={`${FOOTAGE.ft.url}#t=200`} poster={sl.img} muted autoPlay loop playsInline aria-hidden className="absolute inset-0 size-full object-cover" />}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:hidden" aria-hidden />
         </div>
       </div>
       <Page className="relative flex flex-col justify-end pt-2 pb-14 md:min-h-[min(34rem,46vw)] md:pt-12 md:pb-16">
         {/* Every block has a fixed height, so the title and the buttons stay put when the slide changes. */}
         <div className="max-w-xl" aria-live="polite">
-          {/* LIVE sits right on top of the title, whether it takes one line or two (fixed box height, so nothing moves). */}
+          {/* Above the headline: LIVE, then the year, series and venue (fixed box height, so nothing moves). */}
           <div className="flex h-[6.65rem] flex-col justify-end sm:h-[8.7rem]">
-            {slide === 0 && live && <LiveTag className="mb-2 self-start px-2 py-1 text-xs" />}
+            <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wide text-text/90 uppercase sm:text-[13px]">
+              {slide === 0 && live && <LiveTag className="px-2 py-1 text-xs" />}
+              {sl.kicker}
+            </p>
             <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
           </div>
           <p className="mt-3 flex min-h-[2.75rem] flex-wrap content-start items-center gap-x-2 gap-y-1 text-sm font-medium text-text/85 lg:min-h-[1.25rem]">

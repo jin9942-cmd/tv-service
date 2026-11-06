@@ -214,6 +214,22 @@ export function isLive(v: Video, streamMode: StreamStatus): boolean {
 const airedAt = (x: Video) => (x.dayId ? Date.parse(dayById(x.dayId)?.day.start ?? '') || 0 : 0);
 
 /**
+ * Dynamic badge drawn on a thumbnail by the UI (never baked into the image): Live while on air, New for the first
+ * 3 days after a broadcast or clip airs, Recently Added up to 14 days. Classics and 24/7 channels get none.
+ */
+export type Badge = 'Live' | 'New' | 'Recently Added';
+const DAY_MS = 86_400_000;
+export function badgeFor(v: Video, streamMode: StreamStatus, now = Date.now()): Badge | null {
+  if (v.kind === 'channel') return null;
+  if (isLive(v, streamMode)) return 'Live';
+  if (v.kind === 'classic') return null;
+  const t = airedAt(v);
+  if (!t || t > now) return null;
+  const age = now - t;
+  return age < 3 * DAY_MS ? 'New' : age < 14 * DAY_MS ? 'Recently Added' : null;
+}
+
+/**
  * Related videos (at most `n`, 10 by default): the same event first, newest first (a broadcast before its clips); then the videos sharing the most
  * tags. Never the video itself or the broadcast a clip comes from.
  */
