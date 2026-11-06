@@ -12,7 +12,7 @@ import { isBroadcasting } from '../lib/broadcast';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
-import { About, SIZE_GRID, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
+import { About, BadgeScope, SIZE_GRID, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
@@ -102,9 +102,11 @@ function TitleView({ v }: { v: Video }) {
         <Page className="py-8">
           <h2 className="text-xl sm:text-2xl">Suggested</h2>
           <div className={cx(rowGrid, 'mt-4')}>
+            <BadgeScope videos={suggested}>
             {suggested.map((x) => (
               <VideoCard key={x.id} v={x} />
             ))}
+            </BadgeScope>
           </div>
         </Page>
       )}
@@ -430,9 +432,11 @@ export function TagPage() {
         {videos.length} video{videos.length === 1 ? '' : 's'}
       </p>
       <div className={cx(rowGrid, 'mt-6')}>
+        <BadgeScope videos={videos}>
         {videos.map((v) => (
           <VideoCard key={v.id} v={v} />
         ))}
+        </BadgeScope>
       </div>
     </Page>
   );
@@ -489,9 +493,11 @@ function HighlightsTab() {
         ))}
       </div>
       <div className={cx(rowGrid, 'mt-6')}>
+        <BadgeScope videos={list}>
         {list.map((v) => (
           <VideoCard key={v.id} v={v} />
         ))}
+        </BadgeScope>
       </div>
     </>
   );
@@ -524,7 +530,7 @@ function ReplaysTab() {
         ))}
       </div>
       <div className={cx(rowGrid, 'mt-6')}>
-        {sid === 'classics' ? classics.map((v) => <VideoCard key={v.id} v={v} />) : eventsOf(sid ?? '').map((e) => <EventCard key={e.id} e={e} />)}
+        {sid === 'classics' ? <BadgeScope videos={classics}>{classics.map((v) => <VideoCard key={v.id} v={v} />)}</BadgeScope> : eventsOf(sid ?? '').map((e) => <EventCard key={e.id} e={e} />)}
       </div>
     </>
   );
@@ -657,9 +663,11 @@ function EditorsPick({ picks }: { picks: Video[] }) {
           </p>
         </div>
         <div className="grid gap-5 sm:grid-cols-3">
+          <BadgeScope videos={picks}>
           {picks.map((v) => (
             <VideoCard key={v.id} v={v} />
           ))}
+          </BadgeScope>
         </div>
       </div>
     </Section>
@@ -717,9 +725,11 @@ function HighlightsRow({ pool, skip }: { pool: Video[]; skip: Set<string> }) {
   return (
     <Section title="Highlights" action={more('/videos', 'All highlights')}>
       <div className={SIZE_GRID.sm.grid}>
+        <BadgeScope videos={list}>
         {list.map((v) => (
           <VideoCard key={v.id} v={v} size="sm" />
         ))}
+        </BadgeScope>
       </div>
     </Section>
   );
@@ -764,9 +774,11 @@ export function CollectionPage() {
         {c.blurb} · {vs.length} videos
       </p>
       <div className={cx(rowGrid, 'mt-6')}>
+        <BadgeScope videos={vs}>
         {vs.map((v) => (
           <VideoCard key={v.id} v={v} />
         ))}
+        </BadgeScope>
       </div>
     </Page>
   );
@@ -935,9 +947,11 @@ export function MyListPage() {
         </button>
       ) : list.length ? (
         <div className={cx(rowGrid, 'mt-6')}>
+          <BadgeScope videos={list}>
           {list.map((v) => (
             <VideoCard key={v.id} v={v} />
           ))}
+          </BadgeScope>
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted">Nothing saved yet. Use My List on any video to keep it here.</p>
@@ -1307,9 +1321,11 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
             </Link>
           </div>
           <div className={rowGrid}>
+            <BadgeScope videos={seriesVideos}>
             {seriesVideos.map((v) => (
               <VideoCard key={v.id} v={v} />
             ))}
+            </BadgeScope>
           </div>
         </div>
       )}
@@ -1398,9 +1414,11 @@ export function EventPage() {
       <section aria-label="Broadcasts">
         <h2 className="mb-3 text-xl sm:text-2xl">Broadcasts</h2>
         <div className={rowGrid}>
+          <BadgeScope videos={list}>
           {list.map((v) => (
             <VideoCard key={v.id} v={v} progress={state.progress[v.id] ? state.progress[v.id] / v.durationSec : undefined} />
           ))}
+          </BadgeScope>
           {ahead.map((d) => (
             <UpcomingCard key={d.id} e={e} d={d} />
           ))}

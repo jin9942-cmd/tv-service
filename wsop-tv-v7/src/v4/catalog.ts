@@ -214,19 +214,37 @@ export function isLive(v: Video, streamMode: StreamStatus): boolean {
 const airedAt = (x: Video) => (x.dayId ? Date.parse(dayById(x.dayId)?.day.start ?? '') || 0 : 0);
 
 /**
- * Dynamic badge drawn on a thumbnail by the UI (never baked into the image): Live while on air, New for the first
- * 3 days after a broadcast or clip airs, Recently Added up to 14 days. Classics and 24/7 channels get none.
+ * Dynamic badge drawn on a thumbnail by the UI (never baked into the image). Each means one thing:
+ * - Live: on air now.
+ * - New: a new broadcast of the series that is running, aired in the last 3 days (its replays and hands).
+ * - Recently Added: older content just added to the library (WSOP Classics, past series), in the last 14 days.
+ * 24/7 channels get none.
  */
 export type Badge = 'Live' | 'New' | 'Recently Added';
 const DAY_MS = 86_400_000;
+/** Library additions (demo data): days ago each was added. */
+const ADDED_DAYS_AGO: Record<string, number> = {
+  'classic-a5-finaltable': 2,
+  'sp-main-finaltable': 4,
+  'classic-a3-finaltable': 6,
+  'eu-main-finaltable': 9,
+  'classic-a6-finaltable': 12,
+};
+const runningSeriesId = (now: number) => {
+  const ref = HERO_DAY ? dayById(HERO_DAY) : undefined;
+  const sid = ref?.event.seriesId;
+  return sid && Date.parse(ref!.day.start) <= now ? sid : undefined;
+};
 export function badgeFor(v: Video, streamMode: StreamStatus, now = Date.now()): Badge | null {
   if (v.kind === 'channel') return null;
   if (isLive(v, streamMode)) return 'Live';
+  const added = ADDED_DAYS_AGO[v.id];
+  if (added !== undefined) return added < 14 ? 'Recently Added' : null;
   if (v.kind === 'classic') return null;
+  const ref = v.dayId ? dayById(v.dayId) : undefined;
   const t = airedAt(v);
-  if (!t || t > now) return null;
-  const age = now - t;
-  return age < 3 * DAY_MS ? 'New' : age < 14 * DAY_MS ? 'Recently Added' : null;
+  if (!ref || !t || t > now || ref.event.seriesId !== runningSeriesId(now)) return null;
+  return now - t < 3 * DAY_MS ? 'New' : null;
 }
 
 /**

@@ -1,5 +1,5 @@
 // v4 — the shared video card and row, the tag list and the "About" facts.
-import { useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Icon, LiveTag, cx } from '../components/ui';
@@ -47,14 +47,26 @@ export function About({ v }: { v: Video }) {
 /**
  * The one card used everywhere: thumbnail (only LIVE on it) and title → play.
  */
-/** A thumbnail badge, drawn by the UI over the picture: Live, New or Recently added. */
+/** A thumbnail badge, drawn by the UI over the picture: Live (red), New (white) or Recently added (dark, outlined). */
 export function CardBadge({ b, className }: { b: Badge; className?: string }) {
   if (b === 'Live') return <LiveTag className={className} />;
   return (
-    <span className={cx('label rounded-[4px] px-1.5 py-0.5 text-[10px]', b === 'New' ? 'bg-gold text-white' : 'bg-white/90 text-black', className)}>
+    <span className={cx('label rounded-[4px] px-1.5 py-0.5 text-[10px]', b === 'New' ? 'bg-white text-black' : 'bg-black/75 text-white ring-1 ring-white/50', className)}>
       {b === 'New' ? 'New' : 'Recently added'}
     </span>
   );
+}
+
+/** The one "newness" badge a row may show (New or Recently Added); undefined outside a row. */
+const RowBadge = createContext<Badge | null | undefined>(undefined);
+/**
+ * A row (or grid) of cards shows one kind of newness badge only, never New and Recently added side by side:
+ * the first of the two that its videos carry. Live always shows.
+ */
+export function BadgeScope({ videos, children }: { videos: Video[]; children: ReactNode }) {
+  const { state } = useApp();
+  const first = videos.map((v) => badgeFor(v, state.streamMode)).find((b) => b === 'New' || b === 'Recently Added') ?? null;
+  return <RowBadge.Provider value={first}>{children}</RowBadge.Provider>;
 }
 
 /** Card sizes by content type: lg = replays (3 a row), md = the standard card (4), sm = highlights (5). */
@@ -67,8 +79,11 @@ export type CardSize = 'lg' | 'md' | 'sm';
 export function VideoCard({ v, progress, onRemove, className, reason, size = 'md' }: { v: Video; progress?: number; /** Continue Watching: show a remove (×) button. */ onRemove?: () => void; className?: string; /** Why it's here, under the title (e.g. "Because you follow …"). */ reason?: string; size?: CardSize }) {
   const { state } = useApp();
   const list = useMyList();
-  const badge = badgeFor(v, state.streamMode);
-  const live = badge === 'Live';
+  const own = badgeFor(v, state.streamMode);
+  const rowBadge = useContext(RowBadge);
+  // Inside a row, only that row's newness badge shows (Live always does).
+  const badge = own === 'Live' || rowBadge === undefined || own === rowBadge ? own : null;
+  const live = own === 'Live';
   const kind = listKind(v);
   const saved = list.has(kind, v.id);
   // Preview: after a short hover (mouse only), the clip plays muted inside the thumbnail.
@@ -146,11 +161,13 @@ export function VideoRow({ title, videos, action, progressOf, onRemove, size = '
         <h2 className="text-xl sm:text-2xl">{title}</h2>
         {action}
       </div>
-      <div className={g.grid}>
-        {videos.slice(0, g.count).map((v) => (
-          <VideoCard key={v.id} v={v} size={size} progress={progressOf?.(v)} onRemove={onRemove && (() => onRemove(v))} />
-        ))}
-      </div>
+      <BadgeScope videos={videos.slice(0, g.count)}>
+        <div className={g.grid}>
+          {videos.slice(0, g.count).map((v) => (
+            <VideoCard key={v.id} v={v} size={size} progress={progressOf?.(v)} onRemove={onRemove && (() => onRemove(v))} />
+          ))}
+        </div>
+      </BadgeScope>
     </section>
   );
 }
