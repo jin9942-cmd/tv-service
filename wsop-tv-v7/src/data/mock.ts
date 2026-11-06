@@ -313,39 +313,6 @@ export const events: TourEvent[] = [
       day('lv-hr', 'Final Table', -0.75, 420, 'live', 2),
     ],
   },
-  // Still to come in Las Vegas: the last finals on the closing day (Jul 15).
-  {
-    id: 'lv-horse',
-    game: 'Mixed Games', startingStack: 300000,
-    seriesId: 'lv26',
-    number: 97,
-    name: "$25,000 High Roller H.O.R.S.E.",
-    buyIn: 25000,
-    entrants: 0,
-    prizePool: 0,
-    firstPrize: 0,
-    level: 0,
-    remaining: 0,
-    days: [
-      day('lv-horse', 'Final Table', 22, 480, 'upcoming'),
-    ],
-  },
-  {
-    id: 'lv-8h',
-    game: 'No-Limit Hold’em', startingStack: 100000,
-    seriesId: 'lv26',
-    number: 99,
-    name: "$5,000 8-Handed",
-    buyIn: 5000,
-    entrants: 0,
-    prizePool: 0,
-    firstPrize: 0,
-    level: 0,
-    remaining: 0,
-    days: [
-      day('lv-8h', 'Final Table', 23, 480, 'upcoming'),
-    ],
-  },
   // 2026 WSOP Super Circuit Canada (Playground Poker Club, Aug 24 – Sep 9, 2026): next on the calendar.
   {
     id: 'ca-main',

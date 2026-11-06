@@ -1233,14 +1233,27 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
   // Recommended from this series: its latest replays, then its key hands (four in all).
   const ofSeries = catalog.filter((v) => v.eventId && eventById(v.eventId)?.seriesId === s.id && !isLive(v, state.streamMode));
   const seriesVideos = [...ofSeries.filter((v) => v.kind === 'broadcast').reverse().slice(0, 2), ...ofSeries.filter((v) => v.kind === 'clip').slice(0, 2)];
-  const [showEarlier, setShowEarlier] = useState(false);
   const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
   const all = events
     .filter((e) => e.seriesId === s.id)
     .flatMap((e) => e.days.map((d) => ({ e, d })))
     .sort((a, b) => a.d.start.localeCompare(b.d.start));
-  const ahead = all.filter((x) => status(x.d) !== 'vod');
-  const earlier = all.filter((x) => status(x.d) === 'vod').reverse();
+  // At most 10 rows: a series with more broadcast days lists one row per event (live day, else final table, else last day).
+  const MAX_ROWS = 10;
+  const rows =
+    all.length <= MAX_ROWS
+      ? all
+      : events
+          .filter((e) => e.seriesId === s.id)
+          .map((e) => {
+            const d = e.days.find((x) => isBroadcasting(status(x))) ?? e.days.find((x) => x.label === 'Final Table') ?? e.days[e.days.length - 1];
+            return { e, d };
+          })
+          .sort((a, b) => a.d.start.localeCompare(b.d.start))
+          .slice(-MAX_ROWS);
+  // Live and upcoming first (soonest first), then what has aired (newest first); every row shown, nothing folded.
+  const ahead = rows.filter((x) => status(x.d) !== 'vod');
+  const earlier = rows.filter((x) => status(x.d) === 'vod').reverse();
   const table = (rows: ScheduleItem[]) => (
     <div className="mt-3 overflow-x-auto rounded-panel border border-line">
       <table className="w-full min-w-[44rem] text-left text-sm">
@@ -1282,26 +1295,8 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
           </Link>
         )}
       </div>
-      {ahead.length > 0 && table(ahead)}
-      {earlier.length > 0 &&
-        (ahead.length === 0 ? (
-          // A series that is over reads as its schedule: first day to last.
-          table([...earlier].reverse())
-        ) : (
-          <div className="mt-4">
-            <button
-              onClick={() => setShowEarlier((o) => !o)}
-              aria-expanded={showEarlier}
-              className="flex w-full items-center justify-between rounded-card border border-line bg-surface-2 px-4 py-3 text-left text-sm font-semibold hover:bg-surface-3"
-            >
-              <span>
-                Earlier broadcasts <span className="font-normal text-muted">({earlier.length}) · replays</span>
-              </span>
-              <Icon name="chevron" size={18} className={cx('transition-transform', showEarlier ? '-rotate-90' : 'rotate-90')} />
-            </button>
-            {showEarlier && table(earlier)}
-          </div>
-        ))}
+      {/* One table: a series that is over reads first day to last; a running one puts live and upcoming on top. */}
+      {rows.length > 0 && table(ahead.length === 0 ? [...earlier].reverse() : [...ahead, ...earlier])}
       {/* The series' videos: newest replays and key hands, with what they are and how long they run. */}
       {seriesVideos.length > 0 && (
         <div className="mt-6">
