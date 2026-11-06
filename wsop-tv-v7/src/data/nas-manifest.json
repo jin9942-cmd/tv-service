@@ -2,10 +2,10 @@
   "credit": "World Series of Poker archive (2025)",
   "video": {
     "ft": "video/ft.mp4",
-    "hall": "video/hall.mp4",
-    "int": "video/int.mp4",
-    "deal": "video/deal.mp4",
-    "hl": "video/hl.mp4"
+    "hall": "video/ft.mp4",
+    "int": "video/ft.mp4",
+    "deal": "video/ft.mp4",
+    "hl": "video/ft.mp4"
   },
   "stills": {
     "broadcast": [
