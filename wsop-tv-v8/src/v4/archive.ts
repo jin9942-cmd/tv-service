@@ -52,8 +52,17 @@ export const seriesTitle = (year: number, s: ArchiveSeries) => `${year} WSOP ${s
 
 // Pictures: archive stills, picked steadily from the id so the same event always shows the same one.
 const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
-const POOL = NAS ? [...NAS.stills.broadcast, ...NAS.stills.hands] : [];
-export const archiveArt = (id: string) => (POOL.length ? POOL[hash(id) % POOL.length] : thumbFor(`arc:${id}`));
+// Each series shows stills of its own look (a Las Vegas event never shows a Super Circuit or Paradise frame).
+const ALL_STILLS = NAS ? [...new Set([...NAS.stills.broadcast, ...NAS.stills.hands, ...NAS.stills.venue])] : [];
+const SKIP = /vegas-(d1-02|d5-03|ft-0[379]|ft-10|shr-0[25])\.jpg$/; // dark, people-only or break frames
+const PREFIX: Record<SeriesKey, string> = { lv: 'vegas-', eu: 'wsope-', pa: 'paradise-', apac: 'paradise-', circuit: 'cyprus-' };
+const poolOf = (key: SeriesKey) => ALL_STILLS.filter((p) => p.includes(`/${PREFIX[key]}`) && !SKIP.test(p));
+/** A still for an event of a series, picked steadily from its id. */
+export const seriesArt = (key: SeriesKey, id: string) => {
+  const pool = poolOf(key);
+  return pool.length ? pool[hash(id) % pool.length] : thumbFor(`arc:${id}`);
+};
+export const archiveArt = (id: string) => seriesArt(INDEX.get(id)?.series.key ?? 'lv', id);
 
 /** One broadcast day (or highlight) of an archive event, as a video. */
 function makeVideo(ref: ArchiveRef, n: number | `h${number}`): Video | undefined {

@@ -7,14 +7,14 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../state/app';
-import { Avatar, BraceletCount, CountryCode, FilterChip, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
+import { Avatar, BraceletCount, Button, CountryCode, FilterChip, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
 import { HERO_DAY_ID, events, players, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
 import { catalog, isLive, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
-import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesTitle, type ArchiveEvent } from './archive';
+import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, type ArchiveEvent, type SeriesKey } from './archive';
 
 const CURRENT_YEAR = 2026;
 
@@ -133,12 +133,15 @@ export function YearPage() {
   const [game, setGame] = useState<GameF>('all');
   const [buy, setBuy] = useState<BuyF>('all');
   const [kind, setKind] = useState<(typeof KINDS)[number]>('All');
+  const {
+    state: { streamMode },
+  } = useApp();
   const isCurrent = y === CURRENT_YEAR;
   const arch = ARCHIVE.find((x) => x.year === y);
   if (!isCurrent && !arch) return <Navigate to="/videos" replace />;
 
   // One shape for both: the live year (mock data) and archive years.
-  type Card = { id: string; to: string; art: string; name: string; number: number | null; buyIn: number; buyLabel: string; game: string; kind: string; days: number; live?: boolean };
+  type Card = { id: string; to: string; art: string; name: string; number: number | null; buyIn: number; buyLabel: string; game: string; kind: string; days: number; live?: boolean; video?: string };
   const seriesList: { key: string; name: string; cards: Card[] }[] = isCurrent
     ? currentYear().map((s) => ({
         key: s.key,
@@ -148,7 +151,9 @@ export function YearPage() {
           return {
             id: e.id,
             to: `/events/${e.id}`,
-            art: v?.thumb ?? VENUE_ART[0].src,
+            // Stills of the series' own look (the live Main Event keeps its broadcast picture).
+            art: e.days.some((d) => d.id === HERO_DAY_ID) ? (v?.thumb ?? VENUE_ART[0].src) : seriesArt(s.key as SeriesKey, e.id),
+            video: catalog.find((x) => x.eventId === e.id && isLive(x, streamMode))?.id,
             name: e.name.replace(' World Championship', ''),
             number: e.number,
             buyIn: e.buyIn,
@@ -163,7 +168,11 @@ export function YearPage() {
     : arch!.series.map((s) => ({
         key: s.key,
         name: s.name,
-        cards: s.events.map((e: ArchiveEvent) => ({ id: e.id, to: `/videos/event/${e.id}`, art: archiveArt(e.id), name: e.name, number: e.number, buyIn: e.currency === '$' ? e.buyIn : Math.round(e.buyIn * 1.1), buyLabel: fmtBuyIn(e), game: e.game, kind: e.kind, days: e.days.length })),
+        cards: s.events.map((e: ArchiveEvent) => {
+          const ref = archiveEvent(e.id)!;
+          const all = broadcastsOf(ref);
+          return { id: e.id, to: `/videos/event/${e.id}`, art: archiveArt(e.id), name: e.name, number: e.number, buyIn: e.currency === '$' ? e.buyIn : Math.round(e.buyIn * 1.1), buyLabel: fmtBuyIn(e), game: e.game, kind: e.kind, days: e.days.length, video: all[all.length - 1]?.id };
+        }),
       }));
   const sKey = seriesList.find((s) => s.key === params.get('series'))?.key ?? seriesList[0]?.key;
   const current = seriesList.find((s) => s.key === sKey);
@@ -194,21 +203,39 @@ export function YearPage() {
       {/* Main Event: the featured card with its champion. */}
       {main && (
         <section aria-label="Main Event" className="mt-6">
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-end">
-            <EventTile wide to={main.to} art={main.art} title={main.name} number={main.number} meta={[main.buyLabel, main.game].filter(Boolean).join(' · ')} live={main.live} />
-            <div className="rounded-panel border border-line bg-surface p-5">
-              <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">{current!.name} · Main Event</p>
+          {/* One card: the picture and, beside it, what the Main Event is and how to watch it. */}
+          <div className="grid overflow-hidden rounded-panel border border-line bg-surface lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+            <Link to={main.video && main.live ? `/watch/${main.video}` : main.to} className="group relative block aspect-video overflow-hidden bg-surface-2 lg:aspect-auto lg:min-h-80">
+              <img src={main.art} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+              {main.live && <LiveTag className="absolute top-3 left-3" />}
+            </Link>
+            <div className="flex flex-col justify-center p-6 lg:p-8">
+              <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">
+                {current!.name} · Main Event{main.number != null && ` · Event #${main.number}`}
+              </p>
+              <h2 className="mt-2 text-2xl sm:text-3xl">{main.name}</h2>
+              <p className="mt-1 text-sm text-muted">{[main.buyLabel, main.game, daysNote(main.days)].filter(Boolean).join(' · ')}</p>
               {arch?.champion && sKey === 'lv' ? (
-                <p className="mt-2 text-xl font-bold">
-                  Champion · {arch.champion.name} <CountryCode cc={arch.champion.cc} />
+                <p className="mt-4 text-[15px]">
+                  Champion · <span className="font-semibold">{arch.champion.name}</span> <CountryCode cc={arch.champion.cc} />
                 </p>
               ) : (
-                <p className="mt-2 text-xl font-bold">{main.live ? 'Final table on air now' : main.name}</p>
+                main.live && <p className="mt-4 text-[15px] font-semibold">The final table is on air now</p>
               )}
-              <p className="mt-1 text-sm text-muted">{daysNote(main.days)}</p>
-              <Link to={main.to} className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-strong hover:underline">
-                Open the event <Icon name="chevron" size={14} />
-              </Link>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {main.video && (
+                  <Link to={main.live ? `/watch/${main.video}` : `/watch/${main.video}?play=1`} onClick={main.live ? undefined : enterFullScreen}>
+                    <Button variant="primary" tabIndex={-1}>
+                      <Icon name="play" size={16} /> {main.live ? 'Watch live' : 'Watch the final table'}
+                    </Button>
+                  </Link>
+                )}
+                <Link to={main.to}>
+                  <Button variant="outline" tabIndex={-1}>
+                    Open the event
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </section>
