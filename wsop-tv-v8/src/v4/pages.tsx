@@ -17,7 +17,7 @@ import { Player } from './Player';
 import { BrowseTabs, PlayersTab, YearsRow, YearsTab } from './browse';
 import { PARADISE_2024_DAYS, bestOf2003, paradiseHands } from './library';
 import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
-import { byTag, catalog, channelVideo, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
+import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -649,50 +649,6 @@ const editorsFinalTables = () => {
   for (const x of [...finals].sort((a, b) => b.views - a.views)) if (!picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos)) picked.push(x);
   return picked;
 };
-
-/**
- * Moments That Made the WSOP (editor's pick): the editor's note with three final tables, then the hand collections
- * (bluffs, coolers, bad beats) as wide tiles. Replaces The best final tables and Collections.
- */
-function MomentsSection({ picks }: { picks: Video[] }) {
-  if (!picks.length) return null;
-  const total = picks.reduce((n, v) => n + v.durationSec, 0);
-  const collections = COLLECTIONS.slice(1).map((c) => ({ c, vs: c.videos() })).filter((x) => x.vs.length);
-  return (
-    <Section title="Moments That Made the WSOP" label="Editor’s pick" action={more('/collections/final-tables', 'All final tables')}>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
-        <div className="flex flex-col justify-between gap-3 rounded-card border border-line bg-surface p-4">
-          <p className="text-[15px] leading-relaxed text-text/85">
-            <span className="mb-1.5 block text-[11px] font-bold tracking-wide text-gold-strong uppercase">From the editor</span>
-            The hands and final tables that made the WSOP, picked by the editor: where bracelets were won, and the moments people still talk about.
-          </p>
-          <p className="text-sm text-muted tnum">
-            {picks.length} final tables · {duration(total)} in all
-          </p>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-3">
-          <BadgeScope videos={picks}>
-          {picks.map((v) => (
-            <VideoCard key={v.id} v={v} />
-          ))}
-          </BadgeScope>
-        </div>
-      </div>
-      <div className="mt-5 grid gap-5 sm:grid-cols-3">
-        {collections.map(({ c, vs }) => (
-          <Link key={c.id} to={`/collections/${c.id}`} className="group relative block aspect-[16/9] overflow-hidden rounded-card bg-surface-2">
-            <img src={vs[0].thumb} style={artStyle({ pos: vs[0].thumbPos, fit: vs[0].thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-            <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" aria-hidden />
-            <span className="absolute inset-x-0 bottom-0 p-4">
-              <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">Collection · {vs.length} hands</span>
-              <span className="mt-1 block text-lg leading-tight font-bold">{c.title}</span>
-            </span>
-          </Link>
-        ))}
-      </div>
-    </Section>
-  );
-}
 
 /**
  * Hands from the 2024 WSOP Paradise Super Main Event: the archive's hand clips, a day at a time, each titled with the
