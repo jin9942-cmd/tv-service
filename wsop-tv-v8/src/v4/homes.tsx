@@ -7,20 +7,15 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, CountryCode, Icon, LiveTag, Page, cx } from '../components/ui';
-import { ARCHIVE, CLASSIC_RANGE, archiveArt, archiveEvent, broadcastsOf, type ArchiveYear } from './archive';
+import { ARCHIVE, CLASSIC_RANGE, archiveArt, archiveEvent, type ArchiveYear } from './archive';
 import { videoById, type Video } from './catalog';
 import { VideoCard, VideoRow } from './detail';
-import { bestOf2003 } from './library';
+import { COLLECTIONS, collectionById } from './collections';
 import { PersonalRows } from './pages';
-import { CASTS, LIVE, NEXT, SERIES, SERIES_DAYS, castClip, castStill, castVideoId, fmtDay, seriesDay, type Cast } from './series2025';
+import { CASTS, LIVE, NEXT, SERIES, castClip, castStill, castVideoId, fmtDay, seriesDay, type Cast } from './series2025';
 
 const enterFullScreen = () => {
   document.documentElement.requestFullscreen?.().catch(() => {});
-};
-/** The day of an event that was televised last (its final table): the one to open. */
-const lastDay = (id: string) => {
-  const ref = archiveEvent(id);
-  return ref ? broadcastsOf(ref).at(-1) : undefined;
 };
 const defined = <T,>(x: T | undefined): x is T => !!x;
 const asset = (p: string) => `${import.meta.env.BASE_URL}${p}`;
@@ -69,17 +64,6 @@ const REPLAY_SLIDE: Slide = {
   to: `/watch/${castVideoId(lastReplay)}?play=1`,
   full: true,
   cta: 'Watch the final table',
-};
-const MONEYMAKER_SLIDE: Slide = {
-  img: asset('s25/best03-ft-hero.jpg'),
-  pos: '50% 40%',
-  kicker: '2003 · WSOP Main Event',
-  title: 'Moneymaker’s final table',
-  facts: ['Best of 2003 WSOP', 'Final table', '51 min'],
-  line: 'Chris Moneymaker won the 2003 Main Event',
-  to: '/watch/lib.best03-ft?play=1',
-  full: true,
-  cta: 'Watch',
 };
 const CLASSICS_SLIDE: Slide = {
   img: archiveArt('1988-lv-main'),
@@ -188,33 +172,6 @@ function DraftBar() {
 
 // ---- A · Series hub ---------------------------------------------------------------------------------
 
-/** The series bar: where we are in the series, and its televised events on one line (as F1 TV's round bar). */
-function SeriesBar() {
-  const today = seriesDay(SERIES.today);
-  const pos = (iso: string) => `${((seriesDay(iso) - 1) / (SERIES_DAYS - 1)) * 100}%`;
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <p className="text-sm">
-          <span className="font-bold">{SERIES.name}</span> <span className="text-muted">· {SERIES.place}</span>
-        </p>
-        <p className="text-sm text-muted tnum">
-          {fmtDay(SERIES.start)} – {fmtDay(SERIES.end)} · <span className="font-semibold text-text">Day {today} of {SERIES_DAYS}</span> · {SERIES.events} bracelet events
-        </p>
-      </div>
-      <div className="relative h-8" aria-hidden>
-        <span className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-line" />
-        <span className="absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-gold" style={{ width: pos(SERIES.today) }} />
-        {CASTS.map((c) => (
-          <span key={c.id} className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ left: pos(c.date) }} title={`#${c.number} · ${fmtDay(c.date)}`}>
-            <span className={cx('block rounded-full', c.state === 'live' ? 'size-3.5 bg-live ring-4 ring-live/25' : c.state === 'replay' ? 'size-2.5 bg-gold' : 'size-2.5 border-2 border-line-strong bg-bg')} />
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function CastCard({ c }: { c: Cast }) {
   const still = castStill(c);
   const to = c.state === 'upcoming' ? `/videos/event/${c.id}` : c.state === 'live' ? `/watch/${castVideoId(c)}?play=1` : `/watch/${castVideoId(c)}?play=1`;
@@ -256,15 +213,40 @@ function CastCard({ c }: { c: Cast }) {
 
 /** The same event in earlier years (as F1 TV's "From the archive" for the current circuit). */
 function SameEventBefore() {
-  const ids = ['2024-lv-55', '2023-lv-40', '2022-lv-50', '2021-lv-82'];
-  const vs = ids.map(lastDay).filter(defined);
+  const vs = (collectionById('super-high-roller')?.videos() ?? []).filter((v) => !v.id.includes('2025-'));
   return (
-    <Section title="From the archive: the $250,000 Super High Roller" note="The final tables of this event in earlier years" action={more('/videos', 'Browse years')}>
+    <Section title="From the archive: the $250,000 Super High Roller" note="The last televised day of this event, each earlier year in the archive" action={more('/videos', 'Browse years')}>
       <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
         {vs.map((v) => (
           <VideoCard key={v.id} v={v} href={`/watch/${v.id}?play=1`} onOpen={enterFullScreen} />
         ))}
       </div>
+    </Section>
+  );
+}
+
+/** Collections: the named sets the archive holds (src/v4/collections.ts), as wide tiles. */
+function Collections() {
+  const tiles = COLLECTIONS.map((c) => ({ c, vs: c.videos(), ys: c.years() })).filter((x) => x.vs.length);
+  return (
+    <Section title="Collections" note="Sets the archive holds: a recurring event across the years, or a program series">
+      <ul className="hscroll gap-4 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2rem)/3)] lg:[&>*]:w-[calc((100%-3rem)/4)]">
+        {tiles.map(({ c, vs, ys }) => (
+          <li key={c.id} className="min-w-0">
+            <Link to={`/collections/${c.id}`} className="group relative block aspect-[16/10] overflow-hidden rounded-card bg-surface-2">
+              <img src={vs[0].thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+              <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" aria-hidden />
+              <span className="absolute inset-x-0 bottom-0 p-4 text-white">
+                <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">
+                  Collection · {vs.length} {c.id === 'best-of-2003' ? 'programs' : 'years'}
+                </span>
+                <span className="mt-1 block text-lg leading-tight font-bold">{c.title}</span>
+                <span className="mt-0.5 block text-xs text-white/75 tnum">{ys.length > 1 ? `${Math.min(...ys)} – ${Math.max(...ys)}` : ys[0]}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </Section>
   );
 }
@@ -307,17 +289,20 @@ export function HomeA() {
       <DraftBar />
       <FeaturedHero slides={[LIVE_SLIDE, REPLAY_SLIDE]} />
       <Page className="space-y-12 py-8">
-        <SeriesBar />
-        <Section title="On WSOP TV this series" note="The televised events of the 2025 WSOP, in order" action={more('/schedule', 'Schedule')}>
-          <div className="grid grid-cols-2 gap-x-5 gap-y-7 lg:grid-cols-4">
-            {CASTS.map((c) => (
-              <CastCard key={c.id} c={c} />
-            ))}
-          </div>
+        <Section title="2025 WSOP on WSOP TV" note="On air now and the final tables so far, newest first" action={more('/schedule', 'Schedule')}>
+          <ul className="hscroll gap-5 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
+            {CASTS.filter((c) => c.state !== 'upcoming')
+              .reverse()
+              .map((c) => (
+                <li key={c.id} className="min-w-0">
+                  <CastCard c={c} />
+                </li>
+              ))}
+          </ul>
         </Section>
         <SameEventBefore />
+        <Collections />
         <ArchiveDecades />
-        <VideoRow title="Best of 2003 WSOP" videos={bestOf2003()} />
         <PersonalRows />
       </Page>
     </>
@@ -391,7 +376,6 @@ export function HomeB() {
   const replays = CASTS.filter((c) => c.state === 'replay')
     .map((c) => videoById(castVideoId(c)))
     .filter(defined);
-  const toc = ['2023-lv-4', '2022-lv-89', '2005-lv-tournament-of-champions', '2004-lv-tournament-of-champions'].map(lastDay).filter(defined);
   const mainNote = (y: ArchiveYear) => {
     const ref = archiveEvent(`${y.year}-lv-main`);
     return ref ? `Main Event · ${ref.event.days.length} broadcast${ref.event.days.length === 1 ? '' : 's'}` : `${y.series.reduce((n, x) => n + x.events.length, 0)} events (no Main Event broadcast)`;
@@ -399,7 +383,7 @@ export function HomeB() {
   return (
     <>
       <DraftBar />
-      <FeaturedHero slides={[LIVE_SLIDE, MONEYMAKER_SLIDE, CLASSICS_SLIDE]} />
+      <FeaturedHero slides={[LIVE_SLIDE, REPLAY_SLIDE, CLASSICS_SLIDE]} />
       <Page className="space-y-12 py-8">
         <Section title="The Main Event, 2003 – 2025" note="Every Main Event in the archive, newest first" action={more('/videos', 'All years')}>
           <YearTiles years={modern} label={mainNote} />
@@ -408,8 +392,7 @@ export function HomeB() {
         <Section title={`WSOP Classics, ${CLASSIC_RANGE}`} note="The Main Event from Binion’s Horseshoe, as it was broadcast">
           <YearTiles years={classics} label={() => 'Main Event broadcast'} />
         </Section>
-        <VideoRow title="Best of 2003 WSOP" videos={bestOf2003()} />
-        <VideoRow title="Tournament of Champions" videos={toc} />
+        <Collections />
         <AroundTheWorld />
         <PersonalRows />
       </Page>

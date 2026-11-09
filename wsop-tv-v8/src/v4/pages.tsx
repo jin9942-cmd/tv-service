@@ -15,6 +15,7 @@ import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
 import { BrowseTabs, PlayersTab, YearsTab } from './browse';
+import { collectionById } from './collections';
 import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, videoById, type Video } from './catalog';
 
@@ -636,38 +637,16 @@ function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; 
   );
 }
 
-/** Editor's pick: one theme — the best final tables — with the editor's note beside three of them. */
-const editorsFinalTables = () => {
-  const finals = catalog.filter((v) => (v.kind === 'classic' || (v.kind === 'broadcast' && v.status === 'vod')) && v.title.includes('Final Table'));
-  const picked: Video[] = [];
-  // Different pictures side by side.
-  for (const x of [...finals].sort((a, b) => b.views - a.views)) if (!picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos)) picked.push(x);
-  return picked;
-};
-
 /** My List: the standard card, four across (same size as the rows around it). */
 function MyListRow({ videos }: { videos: Video[] }) {
   return <VideoRow title="My List" videos={videos} action={more('/my-list', 'See all')} />;
 }
 
-// ---- curated collections ----------------------------------------------------------------------------
-
-const withTag = (slug: string) => highlightClips.filter((v) => v.tags.some((t) => t.slug === slug));
-export const COLLECTIONS: { id: string; title: string; blurb: string; videos: () => Video[] }[] = [
-  { id: 'final-tables', title: 'Greatest final tables', blurb: 'Classic and recent final tables, start to finish.', videos: editorsFinalTables },
-  { id: 'legendary-bluffs', title: 'Legendary bluffs', blurb: 'Big lies, bigger pots.', videos: () => withTag('bluff') },
-  { id: 'coolers', title: 'Coolers, nowhere to hide', blurb: 'Big hands running into bigger ones.', videos: () => withTag('cooler') },
-  { id: 'bad-beats', title: 'Bad beats & comebacks', blurb: 'The hands nobody saw coming.', videos: () => withTag('bad-beat') },
-];
-
-
-/** Curated collections (from the archive): four tiles, each opening its own page. */
-
-
+// ---- collections (src/v4/collections.ts) ----------------------------------------------------------
 
 export function CollectionPage() {
   const { id = '' } = useParams();
-  const c = COLLECTIONS.find((x) => x.id === id);
+  const c = collectionById(id);
   if (!c) return <NotFound />;
   const vs = c.videos();
   return (
