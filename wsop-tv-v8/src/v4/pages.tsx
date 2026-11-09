@@ -14,7 +14,8 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseTabs, LegendsRow, PlayersTab, YearsRow, YearsTab } from './browse';
+import { BrowseTabs, PlayersTab, YearsRow, YearsTab } from './browse';
+import { PARADISE_2024_DAYS, bestOf2003, paradiseHands } from './library';
 import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
@@ -588,16 +589,13 @@ export function HomeRows() {
     return out;
   };
   const myRow = take(mine, 4);
-  const picks = take(editorsFinalTables(), 3);
-  const recs = take(recommended, 4);
   return (
     <>
-      {/* The WSOP first: its years, its champions, its legends and its great moments. */}
+      {/* From the archive's video list only: the years, the Best of 2003 WSOP programs, the 2024 Paradise hands. */}
       <YearsRow />
-      <LegendsRow />
-      <MomentsSection picks={picks} />
+      <VideoRow title="Best of 2003 WSOP" videos={bestOf2003()} />
+      <ParadiseHandsRow />
       {/* The personal rows below. */}
-      <VideoRow title="Recommended for you" videos={recs} />
       <ContinueRow items={continuing} onRemove={removeContinue} />
       <MyListRow videos={myRow} />
     </>
@@ -692,6 +690,34 @@ function MomentsSection({ picks }: { picks: Video[] }) {
           </Link>
         ))}
       </div>
+    </Section>
+  );
+}
+
+/**
+ * Hands from the 2024 WSOP Paradise Super Main Event: the archive's hand clips, a day at a time, each titled with the
+ * players and cards its file names.
+ */
+function ParadiseHandsRow() {
+  const [day, setDay] = useState(PARADISE_2024_DAYS[PARADISE_2024_DAYS.length - 1]);
+  const all = paradiseHands();
+  const vs = paradiseHands(day);
+  return (
+    <Section title="Hands · 2024 WSOP Paradise Super Main Event" action={<span className="text-sm text-muted tnum">{all.length} hands</span>}>
+      <div className="hscroll mb-4 gap-2" role="tablist" aria-label="Day">
+        {PARADISE_2024_DAYS.map((d) => (
+          <button key={d} role="tab" aria-selected={day === d} onClick={() => setDay(d)} className={cx('h-9 shrink-0 rounded-full border px-3.5 text-sm font-semibold', day === d ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text')}>
+            {d} <span className="font-normal opacity-70 tnum">{all.filter((v) => v.about.some(([k, x]) => k === 'Day' && x === d)).length}</span>
+          </button>
+        ))}
+      </div>
+      <ul className="hscroll gap-5 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
+        {vs.map((v) => (
+          <li key={v.id} className="min-w-0">
+            <VideoCard v={v} />
+          </li>
+        ))}
+      </ul>
     </Section>
   );
 }
