@@ -1,10 +1,10 @@
 // v8 — two Home drafts for review, both built only from the NAS archive and the 2025 record.
-//  A · Series hub (F1 TV on a race weekend): the series bar, the live table, the series' televised events, the same
+//  A · Series hub (F1 TV on a race weekend): the hero (live, the latest final table), the series bar, the series' televised events, the same
 //      event in past years, then the archive.
-//  B · WSOP history (WatchWPT / UFC Fight Pass): live as a thin band, then the Main Event year by year, the Classics
+//  B · WSOP history (WatchWPT / UFC Fight Pass): the hero (live, Moneymaker 2003, the Classics), then the Main Event year by year, the Classics
 //      and the named collections the archive holds.
 // Both stand on Jun 17, 2025 (the 2025 series rebuilt from its broadcasts) and end with Continue watching and My List.
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, CountryCode, Icon, LiveTag, Page, cx } from '../components/ui';
 import { ARCHIVE, CLASSIC_RANGE, archiveArt, archiveEvent, broadcastsOf, type ArchiveYear } from './archive';
@@ -23,6 +23,125 @@ const lastDay = (id: string) => {
   return ref ? broadcastsOf(ref).at(-1) : undefined;
 };
 const defined = <T,>(x: T | undefined): x is T => !!x;
+const asset = (p: string) => `${import.meta.env.BASE_URL}${p}`;
+
+// ---- Hero (the approved v4 hero: big one-line title, the facts line, one promo line, one wide button, dots) ----
+
+interface Slide {
+  img: string;
+  pos?: string;
+  /** A muted preview of the broadcast over the photo. */
+  video?: string;
+  live?: boolean;
+  kicker: string;
+  title: string;
+  facts: ReactNode[];
+  line: string;
+  to: string;
+  full?: boolean;
+  cta: string;
+}
+const LIVE_SLIDE: Slide = {
+  img: asset('s25/e46-hero.jpg'),
+  video: castClip(LIVE),
+  live: true,
+  kicker: '2025 · World Series of Poker · Las Vegas',
+  title: '$250K Super High Roller',
+  facts: [`Event #${LIVE.number}`, LIVE.what, `${LIVE.entries} entries`],
+  line: `On air now · Day ${seriesDay(SERIES.today)} of the 2025 WSOP · Next: #${NEXT.number} Millionaire Maker, ${fmtDay(NEXT.date)}`,
+  to: `/watch/${castVideoId(LIVE)}?play=1`,
+  full: true,
+  cta: 'Watch live',
+};
+const lastReplay = CASTS.filter((c) => c.state === 'replay').at(-1)!;
+const REPLAY_SLIDE: Slide = {
+  img: asset('s25/e38-hero.jpg'),
+  kicker: `2025 · Event #${lastReplay.number} · ${fmtDay(lastReplay.date)}`,
+  title: '$100K High Roller',
+  facts: [
+    lastReplay.what,
+    `${lastReplay.entries} entries`,
+    <>
+      Won by {lastReplay.winner!.name} <CountryCode cc={lastReplay.winner!.cc} />
+    </>,
+  ],
+  line: `The final table, start to finish · First prize ${lastReplay.winner!.prize}`,
+  to: `/watch/${castVideoId(lastReplay)}?play=1`,
+  full: true,
+  cta: 'Watch the final table',
+};
+const MONEYMAKER_SLIDE: Slide = {
+  img: asset('s25/best03-ft-hero.jpg'),
+  pos: '50% 40%',
+  kicker: '2003 · WSOP Main Event',
+  title: 'Moneymaker’s final table',
+  facts: ['Best of 2003 WSOP', 'Final table', '51 min'],
+  line: 'Chris Moneymaker won the 2003 Main Event',
+  to: '/watch/lib.best03-ft?play=1',
+  full: true,
+  cta: 'Watch',
+};
+const CLASSICS_SLIDE: Slide = {
+  img: archiveArt('1988-lv-main'),
+  kicker: `WSOP Classics · ${CLASSIC_RANGE}`,
+  title: 'The Binion’s Horseshoe years',
+  facts: [`${ARCHIVE.filter((y) => y.classic).length} Main Events`, 'As they were broadcast'],
+  line: 'The Main Event in downtown Las Vegas, before the poker boom',
+  to: '/videos',
+  cta: 'Browse the Classics',
+};
+
+function FeaturedHero({ slides }: { slides: Slide[] }) {
+  const [i, setI] = useState(0);
+  const sl = slides[i];
+  return (
+    <div className="relative overflow-clip bg-black" aria-roledescription="carousel" aria-label="Featured">
+      <img key={'bg-' + sl.img} src={sl.img} alt="" aria-hidden className="absolute inset-0 hidden size-full scale-110 object-cover opacity-50 blur-3xl md:block" />
+      <div className="absolute inset-0 hidden bg-black/50 md:block" aria-hidden />
+      <div className="md:absolute md:inset-0 md:mx-auto md:max-w-content md:px-8">
+        <div className="hero-photo relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-8 md:aspect-auto md:w-[64%]">
+          <img key={sl.img} src={sl.img} alt="" className="size-full object-cover" style={{ objectPosition: sl.pos ?? '50% 50%' }} />
+          {sl.video && <video key={sl.video} src={sl.video} poster={sl.img} muted autoPlay loop playsInline aria-hidden className="absolute inset-0 size-full object-cover" />}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:hidden" aria-hidden />
+        </div>
+      </div>
+      <Page className="relative flex flex-col justify-end pt-2 pb-14 md:min-h-[min(34rem,46vw)] md:pt-12 md:pb-16">
+        <div className="max-w-xl" aria-live="polite">
+          <div className="flex h-[6.65rem] flex-col justify-end sm:h-[8.7rem]">
+            <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wide text-text/90 uppercase sm:text-[13px]">
+              {sl.live && <LiveTag className="px-2 py-1 text-xs" />}
+              {sl.kicker}
+            </p>
+            <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
+          </div>
+          <p className="mt-3 flex min-h-[2.75rem] flex-wrap content-start items-center gap-x-2 gap-y-1 text-sm font-medium text-text/85 lg:min-h-[1.25rem]">
+            {sl.facts.map((x, k) => (
+              <span key={k} className="inline-flex items-center gap-2">
+                {k > 0 && <span className="text-subtle">·</span>}
+                {x}
+              </span>
+            ))}
+          </p>
+          <p className="mt-3 line-clamp-2 h-[2.8rem] text-[15px] leading-[1.4rem] text-text/75 sm:line-clamp-1 sm:h-[1.4rem]">{sl.line}</p>
+          <div className="mt-6 flex gap-2">
+            <Link to={sl.to} onClick={sl.full ? enterFullScreen : undefined}>
+              <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
+                <Icon name="play" size={18} /> {sl.cta}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Page>
+      <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2 md:bottom-6">
+        {slides.map((x, k) => (
+          <button key={k} onClick={() => setI(k)} aria-label={`Slide ${k + 1}: ${x.title}`} aria-current={k === i} className="group flex h-6 items-center">
+            <span className={cx('block h-1 rounded-full transition-all duration-200', k === i ? 'w-8 bg-gold' : 'w-5 bg-white/30 group-hover:bg-white/60')} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function Section({ title, note, action, children }: { title: string; note?: string; action?: ReactNode; children: ReactNode }) {
   return (
@@ -91,44 +210,6 @@ function SeriesBar() {
             <span className={cx('block rounded-full', c.state === 'live' ? 'size-3.5 bg-live ring-4 ring-live/25' : c.state === 'replay' ? 'size-2.5 bg-gold' : 'size-2.5 border-2 border-line-strong bg-bg')} />
           </span>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function LiveHero() {
-  const clip = castClip(LIVE);
-  return (
-    <div className="grid overflow-hidden rounded-panel border border-line bg-surface lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-      <Link to={`/watch/${castVideoId(LIVE)}?play=1`} onClick={enterFullScreen} className="relative block aspect-video bg-black" aria-label={`Watch Event #${LIVE.number} live`}>
-        {clip && <video src={clip} poster={castStill(LIVE)} autoPlay muted loop playsInline className="absolute inset-0 size-full object-cover" />}
-        <LiveTag className="absolute top-3 left-3" />
-      </Link>
-      <div className="flex flex-col justify-center gap-2 p-6 lg:p-8">
-        <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">
-          On air now · {fmtDay(LIVE.date)}
-        </p>
-        <h1 className="text-2xl leading-tight font-bold sm:text-3xl">
-          Event #{LIVE.number} · {LIVE.name}
-        </h1>
-        <p className="text-sm text-muted tnum">
-          {LIVE.what} · {LIVE.entries} entries
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link to={`/watch/${castVideoId(LIVE)}?play=1`} onClick={enterFullScreen}>
-            <Button variant="primary" tabIndex={-1}>
-              <Icon name="play" size={16} /> Watch live
-            </Button>
-          </Link>
-          <Link to={`/videos/event/${LIVE.id}`}>
-            <Button variant="outline" tabIndex={-1}>
-              Event page
-            </Button>
-          </Link>
-        </div>
-        <p className="mt-3 text-sm text-muted">
-          Next on WSOP TV: #{NEXT.number} {NEXT.name}, {NEXT.what.toLowerCase()} · {fmtDay(NEXT.date)}
-        </p>
       </div>
     </div>
   );
@@ -224,11 +305,9 @@ export function HomeA() {
   return (
     <>
       <DraftBar />
+      <FeaturedHero slides={[LIVE_SLIDE, REPLAY_SLIDE]} />
       <Page className="space-y-12 py-8">
-        <div className="space-y-5">
-          <SeriesBar />
-          <LiveHero />
-        </div>
+        <SeriesBar />
         <Section title="On WSOP TV this series" note="The televised events of the 2025 WSOP, in order" action={more('/schedule', 'Schedule')}>
           <div className="grid grid-cols-2 gap-x-5 gap-y-7 lg:grid-cols-4">
             {CASTS.map((c) => (
@@ -246,28 +325,6 @@ export function HomeA() {
 }
 
 // ---- B · WSOP history ---------------------------------------------------------------------------------
-
-/** Live as one thin band: what's on now and what's next. */
-function LiveBand() {
-  return (
-    <div className="border-b border-line">
-      <Page className="flex flex-wrap items-center gap-x-6 gap-y-2 py-3">
-        <LiveTag />
-        <p className="min-w-0 flex-1 text-sm">
-          <span className="font-semibold">Event #{LIVE.number} · {LIVE.name}</span> <span className="text-muted">· {LIVE.what} · 2025 WSOP, day {seriesDay(SERIES.today)}</span>
-        </p>
-        <p className="hidden text-sm text-muted md:block">
-          Next: #{NEXT.number} {NEXT.name} · {fmtDay(NEXT.date)}
-        </p>
-        <Link to={`/watch/${castVideoId(LIVE)}?play=1`} onClick={enterFullScreen}>
-          <Button variant="primary" tabIndex={-1}>
-            <Icon name="play" size={16} /> Watch live
-          </Button>
-        </Link>
-      </Page>
-    </div>
-  );
-}
 
 /** One tile per year: the Main Event as the archive holds it. */
 function YearTiles({ years, label }: { years: ArchiveYear[]; label: (y: ArchiveYear) => string }) {
@@ -342,7 +399,7 @@ export function HomeB() {
   return (
     <>
       <DraftBar />
-      <LiveBand />
+      <FeaturedHero slides={[LIVE_SLIDE, MONEYMAKER_SLIDE, CLASSICS_SLIDE]} />
       <Page className="space-y-12 py-8">
         <Section title="The Main Event, 2003 – 2025" note="Every Main Event in the archive, newest first" action={more('/videos', 'All years')}>
           <YearTiles years={modern} label={mainNote} />
