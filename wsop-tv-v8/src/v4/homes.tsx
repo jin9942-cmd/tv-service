@@ -8,7 +8,6 @@ import { useState, type ReactNode } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Button, CountryCode, Icon, LiveTag, Page, cx } from '../components/ui';
 import { ARCHIVE, CLASSIC_RANGE, archiveArt, archiveEvent, type ArchiveYear } from './archive';
-import { videoById } from './catalog';
 import { VideoCard } from './detail';
 import { COLLECTIONS, finalOf } from './collections';
 import { PersonalRows } from './pages';
@@ -179,7 +178,8 @@ const more = (to: string, label: string) => (
   </Link>
 );
 
-function ModeSwitch() {
+/** The state switch (on air / between broadcasts / off-season): kept for later, not shown for now. */
+export function ModeSwitch() {
   const { pathname } = useLocation();
   const mode = useMode();
   const opt = (m: Mode, label: string) => (
@@ -211,16 +211,16 @@ function DraftBar() {
       <Page className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-2.5">
         <div className="flex items-center gap-1" role="navigation" aria-label="Home drafts">
           <span className="mr-2 text-xs font-bold tracking-wide text-gold-strong uppercase">Home draft</span>
-          {tab(`/${search}`, !b, 'A · Series hub')}
-          {tab(`/home-b${search}`, b, 'B · WSOP history')}
+          {tab(`/${search}`, !b, 'A · Featured')}
+          {tab(`/home-b${search}`, b, 'B · Channel')}
         </div>
-        <ModeSwitch />
+        <p className="text-xs text-muted">Same rows in both; the hero and the Main Event row differ.</p>
       </Page>
     </div>
   );
 }
 
-// ---- A · Series hub ---------------------------------------------------------------------------------
+// ---- Shared rows and A · Featured ---------------------------------------------------------------------------------
 
 function CastCard({ c }: { c: Cast }) {
   return (
@@ -252,7 +252,7 @@ function MainEventBefore() {
     .map(finalOf)
     .filter(defined);
   return (
-    <Section title="From the archive: the Main Event" note="The last televised day of the Main Event, year by year" action={more('/videos', 'View More')}>
+    <Section title="The Main Event, year by year" note="The last televised day of each Main Event in the archive" action={more('/videos', 'View More')}>
       <ul className="hscroll gap-5 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
         {vs.map((v) => (
           <li key={v.id} className="min-w-0">
@@ -290,65 +290,44 @@ function Collections() {
   );
 }
 
-const DECADES = [
-  { label: '2020s', match: (y: ArchiveYear) => y.year >= 2020 },
-  { label: '2010s', match: (y: ArchiveYear) => y.year >= 2010 && y.year < 2020 },
-  { label: '2000s', match: (y: ArchiveYear) => y.year >= 2003 && y.year < 2010 },
-  { label: 'Classics', match: (y: ArchiveYear) => !!y.classic },
-];
-function ArchiveDecades() {
+/** The rows both drafts share, in order: the latest season, the Main Event (as each draft shows it), collections, the
+ *  Classics, tournaments, then Continue watching and My List. */
+function SharedRows({ mode, mainEvent }: { mode: Mode; mainEvent: ReactNode }) {
+  const classics = ARCHIVE.filter((y) => y.classic);
   return (
-    <Section title="The WSOP archive" note="Every year in the archive, by decade">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {DECADES.map((d) => {
-          const ys = ARCHIVE.filter(d.match);
-          const newest = ys[0];
-          const art = newest ? archiveArt(`${newest.year}-lv-main`) : '';
-          return (
-            <Link key={d.label} to="/videos" className="group relative block aspect-[16/10] overflow-hidden rounded-card bg-surface-2">
-              {art && <img src={art} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />}
-              <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" aria-hidden />
-              <span className="absolute inset-x-0 bottom-0 p-4 text-white">
-                <span className="block font-display text-3xl leading-none">{d.label}</span>
-                <span className="mt-1 block text-xs text-white/80 tnum">
-                  {ys.length ? `${ys.at(-1)!.year} – ${ys[0].year}` : ''} · {ys.length} years in the archive
-                </span>
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </Section>
+    <Page className="space-y-12 py-8">
+      <Section title={mode === 'off' ? '2025 WSOP: the final tables' : 'This series: the final tables so far'} note={mode === 'off' ? 'The latest season, newest first' : 'Example on the 2025 series, newest first'} action={more('/videos/year/2025', 'View More')}>
+        <ul className="hscroll gap-5 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
+          {playedBy(mode).map((c) => (
+            <li key={c.id} className="min-w-0">
+              <CastCard c={c} />
+            </li>
+          ))}
+        </ul>
+      </Section>
+      {mainEvent}
+      <Collections />
+      <Section title={`WSOP Classics: the Binion’s Horseshoe years, ${CLASSIC_RANGE}`} note="The Main Event in downtown Las Vegas, before the poker boom">
+        <YearTiles years={classics} label={() => 'Main Event broadcast'} />
+      </Section>
+      <Tournaments />
+      <PersonalRows />
+    </Page>
   );
 }
 
 export function HomeA() {
   const mode = useMode();
-  const played = playedBy(mode);
   return (
     <>
       <DraftBar />
       <FeaturedHero key={mode} slides={heroFor(mode)} />
-      <Page className="space-y-12 py-8">
-        <Section title={mode === 'off' ? '2025 WSOP: the final tables' : 'This series: the final tables so far'} note={mode === 'off' ? 'The latest season, newest first' : 'Example on the 2025 series, newest first'} action={more('/videos/year/2025', 'View More')}>
-          <ul className="hscroll gap-5 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
-            {played.map((c) => (
-              <li key={c.id} className="min-w-0">
-                <CastCard c={c} />
-              </li>
-            ))}
-          </ul>
-        </Section>
-        <MainEventBefore />
-        <Collections />
-        <ArchiveDecades />
-        <PersonalRows />
-      </Page>
+      <SharedRows mode={mode} mainEvent={<MainEventBefore />} />
     </>
   );
 }
 
-// ---- B · WSOP history ---------------------------------------------------------------------------------
+// ---- B · Channel ---------------------------------------------------------------------------------
 
 /** One tile per year: the Main Event as the archive holds it. */
 function YearTiles({ years, label }: { years: ArchiveYear[]; label: (y: ArchiveYear) => string }) {
@@ -476,11 +455,7 @@ function Tournaments() {
 
 export function HomeB() {
   const mode = useMode();
-  const modern = ARCHIVE.filter((y) => !y.classic && y.year <= 2025);
-  const classics = ARCHIVE.filter((y) => y.classic);
-  const replays = playedBy(mode)
-    .map((c) => videoById(castVideoId(c)))
-    .filter(defined);
+  const modern = ARCHIVE.filter((y) => !y.classic && y.year < 2025);
   const mainNote = (y: ArchiveYear) => {
     const ref = archiveEvent(`${y.year}-lv-main`);
     return ref ? `Main Event · ${ref.event.days.length} broadcast${ref.event.days.length === 1 ? '' : 's'}` : `${y.series.reduce((n, x) => n + x.events.length, 0)} events (no Main Event broadcast)`;
@@ -489,26 +464,14 @@ export function HomeB() {
     <>
       <DraftBar />
       <ChannelPlayer mode={mode} />
-      <Page className="space-y-12 py-8">
-        <Section title={mode === 'off' ? '2025 WSOP: the final tables' : 'This series: the final tables so far'} note={mode === 'off' ? 'The latest season, newest first' : 'Example on the 2025 series, newest first'} action={more('/videos/year/2025', 'View More')}>
-          <ul className="hscroll gap-5 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
-            {replays.map((v) => (
-              <li key={v.id} className="min-w-0">
-                <VideoCard v={v} href={`/watch/${v.id}?play=1`} onOpen={enterFullScreen} />
-              </li>
-            ))}
-          </ul>
-        </Section>
-        <Section title="WSOP Main Event: every year since 2003" note="The Main Event as it was broadcast, year by year" action={more('/videos', 'View More')}>
-          <YearTiles years={modern} label={mainNote} />
-        </Section>
-        <Section title={`WSOP Classics: the Binion’s Horseshoe years, ${CLASSIC_RANGE}`} note="The Main Event in downtown Las Vegas, before the poker boom">
-          <YearTiles years={classics} label={() => 'Main Event broadcast'} />
-        </Section>
-        <Collections />
-        <Tournaments />
-        <PersonalRows />
-      </Page>
+      <SharedRows
+        mode={mode}
+        mainEvent={
+          <Section title="The Main Event, year by year" note="Every Main Event in the archive since 2003" action={more('/videos', 'View More')}>
+            <YearTiles years={modern} label={mainNote} />
+          </Section>
+        }
+      />
     </>
   );
 }
