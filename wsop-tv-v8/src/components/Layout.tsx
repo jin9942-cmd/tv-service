@@ -19,17 +19,6 @@ export const NAV = [
   { to: '/wsop-plus', label: 'WSOP+', icon: 'star' },
 ] as const;
 
-/** WSOP.com's menu (wsop.com, 2026-11-09), with WSOP TV as one of its sections. */
-const SITE_NAV: { label: string; href?: string }[] = [
-  { label: 'News', href: 'https://www.wsop.com/news/' },
-  { label: 'Tournaments', href: 'https://www.wsop.com/schedule/' },
-  { label: 'Players', href: 'https://www.wsop.com/players/' },
-  { label: 'WSOP TV' },
-  { label: 'Play Online', href: 'https://www.wsop.com/' },
-  { label: 'Hall of Fame', href: 'https://www.wsop.com/hall-of-fame/' },
-  { label: 'WSOP+', href: 'https://www.wsop.com/' },
-];
-
 /** Videos stays selected on its tabs and on an event's page, which Replays links to. */
 const navOn = (to: string, isActive: boolean, path: string) => isActive || (to === '/videos' && (path.startsWith('/videos') || path.startsWith('/events/')));
 
@@ -113,22 +102,9 @@ export function Layout() {
       <header className="sticky top-0 z-40 border-b border-line bg-black">
         <div className="mx-auto flex h-header max-w-content items-center gap-4 px-gutter sm:px-6 lg:px-8">
           <NavLink to="/" aria-label="WSOP TV home" className="shrink-0">
-            <img src={WSOP_LOGO} alt="WSOP" width={216} height={80} className="h-8 w-auto sm:h-9" />
+            <Wordmark />
           </NavLink>
-          <nav aria-label="WSOP.com" className="ml-4 hidden flex-1 items-center gap-1 lg:flex">
-            {SITE_NAV.map((n) =>
-              n.href ? (
-                <a key={n.label} href={n.href} target="_blank" rel="noreferrer" className="rounded-chip px-3 py-1.5 text-[15px] font-medium whitespace-nowrap text-text/70 transition-colors duration-150 hover:text-text">
-                  {n.label}
-                </a>
-              ) : (
-                <NavLink key={n.label} to="/" className="rounded-chip px-3 py-1.5 text-[15px] font-bold whitespace-nowrap text-text">
-                  <span className="relative after:absolute after:-bottom-[21px] after:left-0 after:h-[3px] after:w-full after:bg-gold">{n.label}</span>
-                </NavLink>
-              ),
-            )}
-          </nav>
-          <span className="hidden" aria-hidden>
+          <nav aria-label="Main" className="ml-4 hidden flex-1 items-center gap-1 lg:flex">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
@@ -141,7 +117,7 @@ export function Layout() {
                 )}
               </NavLink>
             ))}
-          </span>
+          </nav>
           <div className="ml-auto flex items-center gap-2">
             <NavLink to="/search" aria-label="Search" title="Search" className={({ isActive }) => cx('rounded-chip p-2 transition-colors duration-150', isActive ? 'text-gold' : 'text-muted hover:text-text')}>
               <Icon name="search" />
@@ -158,23 +134,6 @@ export function Layout() {
             </button>
           </div>
         </div>
-        <nav aria-label="WSOP TV" className="hidden border-t border-line bg-surface lg:block">
-          <div className="mx-auto flex h-11 max-w-content items-center gap-1 px-gutter sm:px-6 lg:px-8">
-            <span className="mr-3 text-sm font-black tracking-tight">
-              WSOP <span className="text-gold">TV</span>
-            </span>
-            {NAV.filter((n) => n.to !== '/wsop-plus').map((n) => (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                end={'end' in n}
-                className={({ isActive }) => cx('rounded-chip px-3 py-1 text-sm font-semibold whitespace-nowrap', navOn(n.to, isActive, loc.pathname) ? 'bg-surface-3 text-text' : 'text-muted hover:text-text')}
-              >
-                {n.label}
-              </NavLink>
-            ))}
-          </div>
-        </nav>
         {menu && (
           <nav aria-label={menu === 'my' ? 'My' : 'Main (menu)'} className="border-t border-line bg-surface lg:hidden">
             <ul className="mx-auto grid max-w-content grid-cols-2 gap-1 px-gutter py-3 sm:grid-cols-4 sm:px-6">
