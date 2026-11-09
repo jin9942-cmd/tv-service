@@ -79,6 +79,8 @@ export const S25: Record<string, { key: string; day: number }> = {
   '2025-lv-19': { key: 'e19', day: 0 },
   '2025-lv-38': { key: 'e38', day: 1 },
   '2025-lv-46': { key: 'e46', day: 1 },
+  '2025-lv-66': { key: 'e66', day: 2 },
+  '2025-lv-main': { key: 'eme', day: 12 },
 };
 export const s25Still = (key: string) => `${import.meta.env.BASE_URL}s25/${key}.jpg`;
 export const s25Clip = (key: string) => `${import.meta.env.BASE_URL}s25/${key}.mp4`;

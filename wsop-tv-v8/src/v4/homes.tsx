@@ -1,24 +1,23 @@
-// v8 — two Home drafts for review, both built only from the NAS archive and the 2025 record.
-//  A · Series hub (F1 TV on a race weekend): the hero (live, the latest final table), the series bar, the series' televised events, the same
-//      event in past years, then the archive.
-//  B · WSOP history (WatchWPT): the channel player and its guide on top, then programme-level rows: the Main Event year by year, the Classics
-//      and the named collections the archive holds.
-// Both stand on Jun 17, 2025 (the 2025 series rebuilt from its broadcasts) and end with Continue watching and My List.
+// v8 — two Home drafts for review, built only from the NAS archive, the 2025 record and WSOP.com's own menu.
+//  A · Series hub (F1 TV): the hero (the latest season's final tables, the Classics), the 2025 final tables, the Main
+//      Event in earlier years, collections, the archive by decade.
+//  B · WSOP history (after WatchWPT, in WSOP's own terms): the WSOP TV channel player and its guide, then rows at the
+//      level of a programme: the 2025 final tables, the Main Event year by year, the Classics, collections, tournaments.
+// No live state: today the 2025 series is the latest season and plays as replays; live starts with the 2027 series.
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Button, CountryCode, Icon, LiveTag, Page, cx } from '../components/ui';
+import { Button, CountryCode, Icon, Page, cx } from '../components/ui';
 import { ARCHIVE, CLASSIC_RANGE, archiveArt, archiveEvent, type ArchiveYear } from './archive';
 import { videoById } from './catalog';
 import { VideoCard } from './detail';
-import { COLLECTIONS, collectionById } from './collections';
+import { COLLECTIONS, finalOf } from './collections';
 import { PersonalRows } from './pages';
-import { CASTS, LIVE, NEXT, SERIES, castClip, castStill, castVideoId, fmtDay, seriesDay, type Cast } from './series2025';
+import { CASTS, castClip, castHero, castStill, castVideoId, fmtDay, type Cast } from './series2025';
 
 const enterFullScreen = () => {
   document.documentElement.requestFullscreen?.().catch(() => {});
 };
 const defined = <T,>(x: T | undefined): x is T => !!x;
-const asset = (p: string) => `${import.meta.env.BASE_URL}${p}`;
 
 // ---- Hero (the approved v4 hero: big one-line title, the facts line, one promo line, one wide button, dots) ----
 
@@ -27,7 +26,6 @@ interface Slide {
   pos?: string;
   /** A muted preview of the broadcast over the photo. */
   video?: string;
-  live?: boolean;
   kicker: string;
   title: string;
   facts: ReactNode[];
@@ -36,35 +34,25 @@ interface Slide {
   full?: boolean;
   cta: string;
 }
-const LIVE_SLIDE: Slide = {
-  img: asset('s25/e46-hero.jpg'),
-  video: castClip(LIVE),
-  live: true,
-  kicker: '2025 · World Series of Poker · Las Vegas',
-  title: '$250K Super High Roller',
-  facts: [`Event #${LIVE.number}`, LIVE.what, `${LIVE.entries} entries`],
-  line: `On air now · Day ${seriesDay(SERIES.today)} of the 2025 WSOP · Next: #${NEXT.number} Millionaire Maker, ${fmtDay(NEXT.date)}`,
-  to: `/watch/${castVideoId(LIVE)}?play=1`,
-  full: true,
-  cta: 'Watch live',
-};
-const lastReplay = CASTS.filter((c) => c.state === 'replay').at(-1)!;
-const REPLAY_SLIDE: Slide = {
-  img: asset('s25/e38-hero.jpg'),
-  kicker: `2025 · Event #${lastReplay.number} · ${fmtDay(lastReplay.date)}`,
-  title: '$100K High Roller',
+const castSlide = (c: Cast, video = false): Slide => ({
+  img: castHero(c)!,
+  video: video ? castClip(c) : undefined,
+  kicker: `2025 · World Series of Poker · Event #${c.number}`,
+  title: c.short,
   facts: [
-    lastReplay.what,
-    `${lastReplay.entries} entries`,
+    `${c.what} · ${fmtDay(c.date)}`,
+    `${c.entries.toLocaleString('en-US')} entries`,
     <>
-      Won by {lastReplay.winner!.name} <CountryCode cc={lastReplay.winner!.cc} />
+      Won by {c.winner.name} <CountryCode cc={c.winner.cc} />
     </>,
   ],
-  line: `The final table, start to finish · First prize ${lastReplay.winner!.prize}`,
-  to: `/watch/${castVideoId(lastReplay)}?play=1`,
+  line: `The final table, start to finish · First prize ${c.winner.prize}`,
+  to: `/watch/${castVideoId(c)}?play=1`,
   full: true,
   cta: 'Watch the final table',
-};
+});
+const MAIN = CASTS[0];
+const SHR = CASTS.find((c) => c.number === 46)!;
 const CLASSICS_SLIDE: Slide = {
   img: archiveArt('1988-lv-main'),
   kicker: `WSOP Classics · ${CLASSIC_RANGE}`,
@@ -93,7 +81,6 @@ function FeaturedHero({ slides }: { slides: Slide[] }) {
         <div className="max-w-xl" aria-live="polite">
           <div className="flex h-[6.65rem] flex-col justify-end sm:h-[8.7rem]">
             <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wide text-text/90 uppercase sm:text-[13px]">
-              {sl.live && <LiveTag className="px-2 py-1 text-xs" />}
               {sl.kicker}
             </p>
             <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
@@ -164,7 +151,7 @@ function DraftBar() {
           {tab('/', !b, 'A · Series hub')}
           {tab('/home-b', b, 'B · WSOP history')}
         </div>
-        <p className="text-xs text-muted">Demo day: Jun 17, 2025. The 2025 WSOP rebuilt from its own broadcasts; results from the 2025 record.</p>
+        <p className="text-xs text-muted">The 2025 WSOP is the latest season: its final tables play as replays, with results from the 2025 record. Live starts with the 2027 series.</p>
       </Page>
     </div>
   );
@@ -173,54 +160,43 @@ function DraftBar() {
 // ---- A · Series hub ---------------------------------------------------------------------------------
 
 function CastCard({ c }: { c: Cast }) {
-  const still = castStill(c);
-  const to = c.state === 'upcoming' ? `/videos/event/${c.id}` : c.state === 'live' ? `/watch/${castVideoId(c)}?play=1` : `/watch/${castVideoId(c)}?play=1`;
   return (
-    <Link to={to} onClick={c.state === 'upcoming' ? undefined : enterFullScreen} className="group flex min-w-0 flex-col gap-2">
+    <Link to={`/watch/${castVideoId(c)}?play=1`} onClick={enterFullScreen} className="group flex min-w-0 flex-col gap-2">
       <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-        {still ? (
-          <img src={still} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-        ) : (
-          <span className="absolute inset-0 flex items-end p-3">
-            <span className="font-display text-4xl leading-none text-muted tnum">#{c.number}</span>
-          </span>
-        )}
-        <span className="absolute top-2 left-2">
-          {c.state === 'live' ? (
-            <LiveTag />
-          ) : (
-            <span className={cx('rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide uppercase', c.state === 'replay' ? 'bg-black/75 text-white' : 'bg-surface text-muted')}>{c.state === 'replay' ? 'Replay' : 'Upcoming'}</span>
-          )}
-        </span>
+        <img src={castStill(c)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
       </span>
       <span className="min-w-0">
         <span className="block text-xs text-muted tnum">
-          {fmtDay(c.date)}
-          {c.dateTo && ` – ${fmtDay(c.dateTo)}`} · {c.what}
+          {fmtDay(c.date)} · {c.what}
         </span>
         <span className="block truncate font-semibold group-hover:text-gold-strong">
           #{c.number} · {c.name}
         </span>
-        {c.winner && (
-          <span className="block truncate text-xs text-muted">
-            Won by <span className="text-text">{c.winner.name}</span> <CountryCode cc={c.winner.cc} /> · {c.winner.prize}
-          </span>
-        )}
+        <span className="block truncate text-xs text-muted">
+          Won by <span className="text-text">{c.winner.name}</span> <CountryCode cc={c.winner.cc} /> · {c.winner.prize}
+        </span>
       </span>
     </Link>
   );
 }
 
-/** The same event in earlier years (as F1 TV's "From the archive" for the current circuit). */
-function SameEventBefore() {
-  const vs = (collectionById('super-high-roller')?.videos() ?? []).filter((v) => !v.id.includes('2025-'));
+/** The Main Event in earlier years: its last televised day each year the archive has it (as F1 TV's "From the archive"). */
+function MainEventBefore() {
+  const vs = ARCHIVE.filter((y) => !y.classic && y.year < 2025)
+    .map((y) => archiveEvent(`${y.year}-lv-main`))
+    .filter(defined)
+    .slice(0, 8)
+    .map(finalOf)
+    .filter(defined);
   return (
-    <Section title="From the archive: the $250,000 Super High Roller" note="The last televised day of this event, each earlier year in the archive" action={more('/videos', 'Browse years')}>
-      <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+    <Section title="From the archive: the Main Event" note="The last televised day of the Main Event, year by year" action={more('/videos', 'View More')}>
+      <ul className="hscroll gap-5 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
         {vs.map((v) => (
-          <VideoCard key={v.id} v={v} href={`/watch/${v.id}?play=1`} onOpen={enterFullScreen} />
+          <li key={v.id} className="min-w-0">
+            <VideoCard v={v} href={`/watch/${v.id}?play=1`} onOpen={enterFullScreen} />
+          </li>
         ))}
-      </div>
+      </ul>
     </Section>
   );
 }
@@ -287,20 +263,18 @@ export function HomeA() {
   return (
     <>
       <DraftBar />
-      <FeaturedHero slides={[LIVE_SLIDE, REPLAY_SLIDE, CLASSICS_SLIDE]} />
+      <FeaturedHero slides={[castSlide(MAIN, true), castSlide(SHR), CLASSICS_SLIDE]} />
       <Page className="space-y-12 py-8">
-        <Section title="2025 WSOP on WSOP TV" note="On air now and the final tables so far, newest first" action={more('/schedule', 'Schedule')}>
+        <Section title="2025 WSOP: the final tables" note="The latest season, newest first" action={more('/videos/year/2025', 'View More')}>
           <ul className="hscroll gap-5 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
-            {CASTS.filter((c) => c.state !== 'upcoming')
-              .reverse()
-              .map((c) => (
-                <li key={c.id} className="min-w-0">
-                  <CastCard c={c} />
-                </li>
-              ))}
+            {CASTS.map((c) => (
+              <li key={c.id} className="min-w-0">
+                <CastCard c={c} />
+              </li>
+            ))}
           </ul>
         </Section>
-        <SameEventBefore />
+        <MainEventBefore />
         <Collections />
         <ArchiveDecades />
         <PersonalRows />
@@ -335,30 +309,21 @@ function YearTiles({ years, label }: { years: ArchiveYear[]; label: (y: ArchiveY
   );
 }
 
-/** WatchWPT's top: the channel playing in the page, and its guide under it (now, then what follows). */
+/** The WSOP TV channel in the page (after WatchWPT's top): what it is playing, and its guide under it. */
 function ChannelPlayer() {
-  const clip = castClip(LIVE);
-  const guide = [
-    { when: 'Now · Live', title: `#${LIVE.number} ${LIVE.name}`, sub: LIVE.what, img: castStill(LIVE), to: `/watch/${castVideoId(LIVE)}?play=1` },
-    ...CASTS.filter((c) => c.state === 'replay')
-      .reverse()
-      .slice(0, 3)
-      .map((c, k) => ({ when: k === 0 ? 'Next · Replay' : 'Later · Replay', title: `#${c.number} ${c.name}`, sub: `${c.what} · ${fmtDay(c.date)}`, img: castStill(c), to: `/watch/${castVideoId(c)}?play=1` })),
-  ];
+  const now = MAIN;
+  const clip = castClip(now);
+  const guide = CASTS.slice(0, 4).map((c, k) => ({ when: k === 0 ? 'Now' : k === 1 ? 'Next' : 'Later', c }));
   return (
     <div className="bg-black">
       <Page className="py-6">
-        <Link to={`/watch/${castVideoId(LIVE)}?play=1`} onClick={enterFullScreen} className="group relative mx-auto block aspect-video max-h-[68vh] w-full overflow-hidden rounded-panel bg-black" aria-label={`Watch Event #${LIVE.number} live`}>
-          {clip && <video src={clip} poster={castStill(LIVE)} autoPlay muted loop playsInline className="absolute inset-0 size-full object-cover" />}
+        <Link to={`/watch/${castVideoId(now)}?play=1`} onClick={enterFullScreen} className="group relative mx-auto block aspect-video max-h-[68vh] w-full overflow-hidden rounded-panel bg-black" aria-label={`Watch the ${now.short} final table`}>
+          {clip && <video src={clip} poster={castStill(now)} autoPlay muted loop playsInline className="absolute inset-0 size-full object-cover" />}
           <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-5 pt-16 sm:p-7 sm:pt-24">
-            <span className="flex items-center gap-2 text-xs font-bold tracking-wide text-white/90 uppercase">
-              <LiveTag /> WSOP TV · 2025 WSOP, day {seriesDay(SERIES.today)}
-            </span>
-            <span className="mt-2 block text-2xl leading-tight font-bold text-white sm:text-4xl">
-              Event #{LIVE.number} · {LIVE.name}
-            </span>
+            <span className="text-xs font-bold tracking-wide text-gold-strong uppercase">WSOP TV channel · 2025 WSOP · Event #{now.number}</span>
+            <span className="mt-2 block text-2xl leading-tight font-bold text-white sm:text-4xl">{now.short} · Final table</span>
             <span className="mt-1 block text-sm text-white/80">
-              {LIVE.what} · {LIVE.entries} entries
+              {fmtDay(now.date)} · {now.entries.toLocaleString('en-US')} entries · Won by {now.winner.name}
             </span>
           </span>
           <span className="absolute top-1/2 left-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100">
@@ -366,16 +331,16 @@ function ChannelPlayer() {
           </span>
         </Link>
         <div className="mt-4">
-          <p className="mb-2 text-sm font-bold">WSOP TV channel</p>
+          <p className="mb-2 text-sm font-bold">On the WSOP TV channel</p>
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {guide.map((g) => (
-              <li key={g.title} className="min-w-0">
-                <Link to={g.to} onClick={enterFullScreen} className={cx('group flex items-center gap-3 rounded-card border p-2 hover:border-line-strong', g.when.startsWith('Now') ? 'border-gold bg-gold-dim' : 'border-line bg-surface')}>
-                  {g.img && <img src={g.img} alt="" loading="lazy" className="aspect-video w-24 shrink-0 rounded object-cover" />}
+            {guide.map(({ when, c }) => (
+              <li key={c.id} className="min-w-0">
+                <Link to={`/watch/${castVideoId(c)}?play=1`} onClick={enterFullScreen} className={cx('group flex items-center gap-3 rounded-card border p-2 hover:border-line-strong', when === 'Now' ? 'border-gold bg-gold-dim' : 'border-line bg-surface')}>
+                  <img src={castStill(c)} alt="" loading="lazy" className="aspect-video w-24 shrink-0 rounded object-cover" />
                   <span className="min-w-0">
-                    <span className={cx('block text-[11px] font-bold tracking-wide uppercase', g.when.startsWith('Now') ? 'text-live' : 'text-muted')}>{g.when}</span>
-                    <span className="block truncate text-sm font-semibold group-hover:text-gold-strong">{g.title}</span>
-                    <span className="block truncate text-xs text-muted">{g.sub}</span>
+                    <span className={cx('block text-[11px] font-bold tracking-wide uppercase', when === 'Now' ? 'text-gold-strong' : 'text-muted')}>{when}</span>
+                    <span className="block truncate text-sm font-semibold group-hover:text-gold-strong">#{c.number} {c.short}</span>
+                    <span className="block truncate text-xs text-muted">{c.what} · {fmtDay(c.date)}</span>
                   </span>
                 </Link>
               </li>
@@ -387,12 +352,26 @@ function ChannelPlayer() {
   );
 }
 
-/** A series outside Las Vegas: one tile per year it is in the archive (as WatchWPT's season tiles), newest first. */
-function SeriesYears({ k, title, note }: { k: string; title: string; note: string }) {
-  const ys = ARCHIVE.filter((y) => y.series.some((x) => x.key === k));
-  if (!ys.length) return null;
+/** WSOP.com's tournaments, as WSOP TV holds them: tabs by series (as wsop.com's schedule filters), a tile per year. */
+const TOUR_TABS = [
+  { k: 'lv', label: 'WSOP Las Vegas' },
+  { k: 'eu', label: 'WSOP Europe' },
+  { k: 'pa', label: 'WSOP Paradise' },
+  { k: 'circuit', label: 'Circuit and Super Circuit' },
+  { k: 'apac', label: 'WSOP Asia-Pacific' },
+] as const;
+function Tournaments() {
+  const [k, setK] = useState<(typeof TOUR_TABS)[number]['k']>('lv');
+  const ys = ARCHIVE.filter((y) => !y.classic && y.series.some((x) => x.key === k));
   return (
-    <Section title={title} note={note}>
+    <Section title="Tournaments on WSOP TV" note="Every series in the archive, a year at a time" action={more('/videos', 'View More')}>
+      <div className="hscroll mb-4 gap-2" role="tablist" aria-label="Series">
+        {TOUR_TABS.map((t) => (
+          <button key={t.k} role="tab" aria-selected={k === t.k} onClick={() => setK(t.k)} className={cx('h-9 shrink-0 rounded-full border px-4 text-sm font-semibold uppercase', k === t.k ? 'border-gold bg-gold text-ink' : 'border-line-strong text-muted hover:text-text')}>
+            {t.label}
+          </button>
+        ))}
+      </div>
       <ul className="hscroll gap-4 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3rem)/4)] lg:[&>*]:w-[calc((100%-5rem)/6)]">
         {ys.map((y) => {
           const ser = y.series.find((x) => x.key === k)!;
@@ -420,10 +399,7 @@ function SeriesYears({ k, title, note }: { k: string; title: string; note: strin
 export function HomeB() {
   const modern = ARCHIVE.filter((y) => !y.classic && y.year <= 2025);
   const classics = ARCHIVE.filter((y) => y.classic);
-  const replays = CASTS.filter((c) => c.state === 'replay')
-    .reverse()
-    .map((c) => videoById(castVideoId(c)))
-    .filter(defined);
+  const replays = CASTS.map((c) => videoById(castVideoId(c))).filter(defined);
   const mainNote = (y: ArchiveYear) => {
     const ref = archiveEvent(`${y.year}-lv-main`);
     return ref ? `Main Event · ${ref.event.days.length} broadcast${ref.event.days.length === 1 ? '' : 's'}` : `${y.series.reduce((n, x) => n + x.events.length, 0)} events (no Main Event broadcast)`;
@@ -433,7 +409,7 @@ export function HomeB() {
       <DraftBar />
       <ChannelPlayer />
       <Page className="space-y-12 py-8">
-        <Section title="2025 WSOP: the final tables so far" note="This year’s televised final tables, newest first" action={more('/videos/year/2025', '2025')}>
+        <Section title="2025 WSOP: the final tables" note="The latest season, newest first" action={more('/videos/year/2025', 'View More')}>
           <ul className="hscroll gap-5 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
             {replays.map((v) => (
               <li key={v.id} className="min-w-0">
@@ -442,17 +418,14 @@ export function HomeB() {
             ))}
           </ul>
         </Section>
-        <Section title="WSOP Main Event: every year since 2003" note="The Main Event as it was broadcast, year by year" action={more('/videos', 'All years')}>
+        <Section title="WSOP Main Event: every year since 2003" note="The Main Event as it was broadcast, year by year" action={more('/videos', 'View More')}>
           <YearTiles years={modern} label={mainNote} />
         </Section>
         <Section title={`WSOP Classics: the Binion’s Horseshoe years, ${CLASSIC_RANGE}`} note="The Main Event in downtown Las Vegas, before the poker boom">
           <YearTiles years={classics} label={() => 'Main Event broadcast'} />
         </Section>
         <Collections />
-        <SeriesYears k="eu" title="WSOP Europe" note="Every WSOP Europe year in the archive" />
-        <SeriesYears k="pa" title="WSOP Paradise" note="The Super Main Event in the Bahamas" />
-        <SeriesYears k="circuit" title="WSOP Circuit" note="Circuit and Super Circuit stops in the archive" />
-        <SeriesYears k="apac" title="WSOP Asia-Pacific" note="WSOP Asia-Pacific in the archive" />
+        <Tournaments />
         <PersonalRows />
       </Page>
     </>
