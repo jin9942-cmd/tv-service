@@ -16,7 +16,7 @@ import { Button, Icon, LiveTag, Page, SectionHeader, cx } from '../components/ui
 import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
-import { HomeRows, TodayCards } from '../v4/pages';
+import { HomeA, HomeB } from '../v4/homes';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
 const isBreak = (p: Program) => BREAK_TITLES.includes(p.title);
@@ -24,23 +24,9 @@ const showPoster = (s: Show) => thumbFor(`show:${s.id}`, s.art);
 
 // ---- Home -------------------------------------------------------------------------------------------
 
-export function TvHome() {
-  const now = useTick(15_000);
-  return (
-    <>
-      {/* v7 Home: the banner, the 24/7 channels, then the rows (Coming up, Continue watching … Shorts). */}
-      <section className="border-b border-line" aria-label="Featured">
-        <PromoBanner />
-        <Page className="pt-6 pb-6">
-          <h2 className="mb-3 text-xl sm:text-2xl">24/7 On-Demand</h2>
-          <TodayCards now={now} />
-        </Page>
-      </section>
-      <Page className="space-y-12 py-10">
-        <HomeRows />
-      </Page>
-    </>
-  );
+/** Home: the two drafts for review (A at /, B at /home-b), each ending with Continue watching and My List. */
+export function TvHome({ draft = 'a' }: { draft?: 'a' | 'b' }) {
+  return draft === 'a' ? <HomeA /> : <HomeB />;
 }
 
 
@@ -78,7 +64,8 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
  * the actions beside them. It promotes fixed picks (this year's Main Event, the archive) and is independent of the
  * channel cards below.
  */
-function PromoBanner() {
+/** The former Home banner (kept for reference; the drafts replace it). */
+export function PromoBanner() {
   const { state } = useApp();
   const [slide, setSlide] = useState(0);
   const { event, day } = dayById(HERO_DAY_ID)!;

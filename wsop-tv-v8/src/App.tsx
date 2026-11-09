@@ -28,6 +28,7 @@ export default function App() {
           <Route path="/wsop-plus/join" element={<WsopPlusJoin />} />
           <Route element={<Layout />}>
             <Route index element={<TvHome />} />
+            <Route path="home-b" element={<TvHome draft="b" />} />
             <Route path="live" element={<LivePage />} />
             <Route path="live/channels" element={<ChannelRedirect />} />
             <Route path="live/channels/:channelId" element={<ChannelRedirect />} />

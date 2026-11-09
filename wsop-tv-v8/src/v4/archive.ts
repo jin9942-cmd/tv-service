@@ -69,8 +69,24 @@ const classicArt = (year: number, id: string) => {
   const pool = NAS?.classic?.stills.filter((p) => p.includes(`classic-${year}-`)) ?? [];
   return pool.length ? pool[hash(id) % pool.length] : undefined;
 };
+/**
+ * 2025 Las Vegas broadcasts with their own footage: a 60 s cut and a still from the event's broadcast file on the NAS
+ * (public/s25). `day` is the broadcast day the cut comes from.
+ */
+export const S25: Record<string, { key: string; day: number }> = {
+  '2025-lv-3': { key: 'e3', day: 0 },
+  '2025-lv-7': { key: 'e7', day: 1 },
+  '2025-lv-19': { key: 'e19', day: 0 },
+  '2025-lv-38': { key: 'e38', day: 1 },
+  '2025-lv-46': { key: 'e46', day: 1 },
+};
+export const s25Still = (key: string) => `${import.meta.env.BASE_URL}s25/${key}.jpg`;
+export const s25Clip = (key: string) => `${import.meta.env.BASE_URL}s25/${key}.mp4`;
+const eventIdOf = (id: string) => id.replace(/^arc\./, '').replace(/\.h?\d+$/, '');
 export const archiveArt = (id: string) => {
-  const ref = INDEX.get(id) ?? INDEX.get(id.replace(/^arc\./, '').replace(/\.h?\d+$/, ''));
+  const own = S25[eventIdOf(id)] ?? S25[id];
+  if (own) return s25Still(own.key);
+  const ref = INDEX.get(id) ?? INDEX.get(eventIdOf(id));
   return (ref?.year.classic && classicArt(ref.year.year, id)) || seriesArt(ref?.series.key ?? 'lv', id);
 };
 const CLASSIC_CLIP = NAS?.classic?.video;
@@ -100,7 +116,7 @@ function makeVideo(ref: ArchiveRef, n: number | `h${number}`): Video | undefined
     description: clip ? `A highlight from the ${year.year} ${event.name}.` : `${day!.label} of the ${year.year} WSOP ${series.name} ${event.name}.`,
     thumb: archiveArt(id),
     thumbPos: '50% 50%',
-    media: year.classic && CLASSIC_CLIP ? { url: CLASSIC_CLIP, start: 0 } : { url: FOOTAGE.ft.url, start: 40 + (hash(id) % 360) },
+    media: S25[event.id] ? { url: s25Clip(S25[event.id].key), start: 0 } : year.classic && CLASSIC_CLIP ? { url: CLASSIC_CLIP, start: 0 } : { url: FOOTAGE.ft.url, start: 40 + (hash(id) % 360) },
     durationSec: clip ? 120 + (hash(id) % 240) : day!.minutes * 60,
     eventId: `arc:${event.id}`,
     status: 'vod',
