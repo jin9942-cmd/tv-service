@@ -483,7 +483,7 @@ export const hands: Hand[] = seq.map((type, i) => {
 // ---- archive classics (6) ---------------------------------------------------------------------
 
 export const archive: ArchiveItem[] = [
-  { id: 'a1', title: 'Main Event Final Table', year: 2019, subtitle: 'The longest heads-up in championship history', durationSec: 9 * 3600 + 1200, winnerId: 'p19', hue: 215, access: 'signin' },
+  { id: 'a1', title: 'Main Event Final Table', year: 2019, subtitle: '2025 World Series of Poker', durationSec: 9 * 3600 + 1200, winnerId: 'p19', hue: 215, access: 'signin' },
   { id: 'a2', title: "Players' Championship", year: 2021, subtitle: 'Eight disciplines, one champion', durationSec: 7 * 3600, winnerId: 'p07', hue: 0, access: 'subscriber' },
   { id: 'a3', title: 'High Roller Final Table', year: 2022, subtitle: 'A record field for the summer high roller', durationSec: 6 * 3600 + 900, winnerId: 'p14', hue: 230, access: 'subscriber' },
   { id: 'a4', title: 'Main Event Day 7', year: 2023, subtitle: 'From 35 players to the final nine', durationSec: 10 * 3600, winnerId: 'p17', hue: 260, access: 'subscriber' },

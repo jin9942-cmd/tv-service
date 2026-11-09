@@ -153,8 +153,7 @@ export function Layout() {
         <Outlet />
       </main>
 
-      {/* Shorts fill the screen below the menu: no footer under them, so the page itself never scrolls. */}
-      {loc.pathname !== '/videos/shorts' && <Footer />}
+      <Footer />
 
       {/* Mobile bottom navigation */}
       <nav aria-label="Main (mobile)" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-bg/95 backdrop-blur md:hidden">

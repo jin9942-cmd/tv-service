@@ -5,7 +5,7 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-r
 import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
-import { HERO_DAY_ID, dayById, eventById, events, series, seriesById } from '../data/mock';
+import { HERO_DAY_ID, classicEvents, dayById, eventById, events, isClassicEvent, players, series, seriesById } from '../data/mock';
 import type { Day, TourEvent } from '../data/types';
 import { VENUE_TZ, fmtDate, fmtTime, tzAbbr } from '../lib/time';
 import { isBroadcasting } from '../lib/broadcast';
@@ -500,11 +500,10 @@ const HAND_FILTERS = [
 const chip = (on: boolean) => cx('h-9 shrink-0 rounded-full border px-4 text-sm font-semibold', on ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text');
 
 /** Videos: the Highlights tab (hand clips) and the Replays tab (series → event → broadcast). */
-export function VideosPage({ tab }: { tab: 'highlights' | 'replays' | 'shorts' }) {
+export function VideosPage({ tab }: { tab: 'highlights' | 'replays' }) {
   const tabs = [
     ['/videos', 'Highlights', 'highlights'],
     ['/videos/replays', 'Replays', 'replays'],
-    ['/videos/shorts', 'Shorts', 'shorts'],
   ] as const;
   return (
     <Page className="max-w-[96rem]">
@@ -516,7 +515,7 @@ export function VideosPage({ tab }: { tab: 'highlights' | 'replays' | 'shorts' }
           </Link>
         ))}
       </nav>
-      {tab === 'highlights' ? <HighlightsTab /> : tab === 'replays' ? <ReplaysTab /> : <ShortsFeed />}
+      {tab === 'highlights' ? <HighlightsTab /> : <ReplaysTab />}
     </Page>
   );
 }
@@ -584,8 +583,8 @@ export { catalog };
 // ---- Home rows ---------------------------------------------------------------------------------------
 
 /**
- * v7 Home rows: Coming up (right after the 24/7 channels: now, then next), Continue watching, My List, Editor's pick (best final tables), Recommended for you, Latest replays,
- * Highlights (automatic, by hand type) and Shorts. No video appears in two rows.
+ * v7 Home rows: Recommended for you, Continue watching, My List, Editor's pick (best final tables), From the archive
+ * (past videos by year or by player), Collections and Highlights (automatic, by hand type). No Shorts, no Latest replays.
  */
 export function HomeRows() {
   const { state, set, toast, signedIn } = useApp();
@@ -621,11 +620,7 @@ export function HomeRows() {
   const myRow = take(mine, 4);
   const picks = take(editorsFinalTables(), 3);
   const recs = take(recommended, 4);
-  const latest = take([...replays].reverse(), 3);
-  // Hand clips split between the two hand rows (alternate clips), so Highlights and Shorts never show the same hand.
-  const highlightPool = highlightClips.filter((v, i) => i % 2 === 0 && !shown.has(v.id));
-  const shorts = take(highlightClips.filter((_, i) => i % 2 === 1), 10);
-  const pick = photoPicker(shown);
+  const highlightPool = highlightClips.filter((v) => !shown.has(v.id));
   return (
     <>
       {/* Recommended for you takes the place of Coming up (the schedule has the next broadcasts). */}
@@ -633,11 +628,9 @@ export function HomeRows() {
       <ContinueRow items={continuing} onRemove={removeContinue} />
       <MyListRow videos={myRow} />
       <EditorsPick picks={picks} />
-      {/* Card size by content type: Replays large (3), Collections wide tiles (2), Highlights compact (5). */}
-      <VideoRow title="Latest replays" videos={latest} action={more('/videos/replays')} size="lg" />
+      <FromTheArchive />
       <CollectionsRow />
       <HighlightsRow pool={highlightPool} skip={shown} />
-      <ShortsRow videos={shorts} pick={pick} />
     </>
   );
 }
@@ -712,6 +705,68 @@ function EditorsPick({ picks }: { picks: Video[] }) {
           ))}
           </BadgeScope>
         </div>
+      </div>
+    </Section>
+  );
+}
+
+/**
+ * Past videos for the archive row: every broadcast of the events from before the current series (the classics, and the
+ * series that came before it), the final day first, with its year and, where it has one, its champion.
+ */
+type ArchiveEntry = { v: Video; year: number; player?: string };
+const archiveEntries = (): ArchiveEntry[] => {
+  const current = seriesById(dayById(HERO_DAY_ID)!.event.seriesId);
+  return [...classicEvents, ...events.filter((e) => seriesById(e.seriesId).start < current.start)]
+    .flatMap((e) => {
+      const year = Number((isClassicEvent(e) ? e.name : seriesById(e.seriesId).name).slice(0, 4));
+      const player = players.find((p) => p.id === e.winnerId)?.name;
+      return e.days
+        .filter((x) => x.status === 'vod')
+        .reverse()
+        .flatMap((d) => {
+          const v = videoById(d.id);
+          return v ? [{ v, year, player }] : [];
+        });
+    })
+    .sort((a, b) => b.year - a.year);
+};
+
+/** From the archive (editorial): past videos gathered by tournament year or by player; pick a year or a player. */
+function FromTheArchive() {
+  const entries = archiveEntries();
+  const [by, setBy] = useState<'year' | 'player'>('year');
+  const [k, setK] = useState('');
+  const all = by === 'year' ? entries : entries.filter((x) => x.player);
+  const keyOf = (x: ArchiveEntry) => (by === 'year' ? String(x.year) : (x.player ?? ''));
+  const count = (key: string) => all.filter((x) => keyOf(x) === key).length;
+  const keys = [...new Set(all.map(keyOf))];
+  if (by === 'player') keys.sort((a, b) => count(b) - count(a) || a.localeCompare(b));
+  const key = keys.includes(k) ? k : keys[0];
+  const list = all.filter((x) => keyOf(x) === key).slice(0, 4);
+  if (!all.length) return null;
+  return (
+    <Section title="From the archive" label="Editor’s pick" action={more('/videos/replays?series=classics', 'View More')}>
+      <div className="mb-4 flex gap-6 border-b border-line" role="tablist" aria-label="Archive by">
+        {(['year', 'player'] as const).map((b) => (
+          <button key={b} role="tab" aria-selected={by === b} onClick={() => (setBy(b), setK(''))} className={cx('-mb-px border-b-[3px] pb-2 text-[15px] font-semibold', by === b ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text')}>
+            {b === 'year' ? 'By year' : 'By player'}
+          </button>
+        ))}
+      </div>
+      <div className="mb-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" aria-label={by === 'year' ? 'Years' : 'Players'}>
+        {keys.map((x) => (
+          <button key={x} aria-pressed={key === x} onClick={() => setK(x)} className={chip(key === x)}>
+            {x}
+          </button>
+        ))}
+      </div>
+      <div className={rowGrid}>
+        <BadgeScope videos={list.map((x) => x.v)}>
+          {list.map((x) => (
+            <VideoCard key={x.v.id} v={x.v} />
+          ))}
+        </BadgeScope>
       </div>
     </Section>
   );
@@ -827,122 +882,6 @@ export function CollectionPage() {
   );
 }
 
-// ---- Shorts -------------------------------------------------------------------------------------------
-
-/** Shorts on Home: tall cards in one sideways line; each opens the vertical Shorts feed at that clip. */
-function ShortsRow({ videos, pick }: { videos: Video[]; pick: (own?: Pic) => Pic }) {
-  if (!videos.length) return null;
-  const pics = videos.map((v) => pick(v));
-  return (
-    <Section title="Shorts" action={more('/videos/shorts', 'Watch Shorts')}>
-      <ul className="hscroll gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-2.25rem)/4)] lg:[&>*]:w-[calc((100%-4.5rem)/7)]">
-        {videos.map((v, i) => (
-          <li key={v.id} className="min-w-0">
-            <Link to={`/videos/shorts?start=${v.id}`} className="group relative block aspect-[9/16] overflow-hidden rounded-card bg-surface-2">
-              <img src={pics[i].thumb} style={{ objectPosition: pics[i].thumbPos }} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-              <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" aria-hidden />
-              <span className="absolute inset-x-0 bottom-0 p-2.5">
-                <span className="line-clamp-3 text-[13px] leading-snug font-bold">{v.title}</span>
-                <span className="mt-1 block text-[11px] text-white/70 tnum">{duration(v.durationSec)}</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </Section>
-  );
-}
-
-/** Old /shorts links (with ?start=) land on the Shorts tab of Videos. */
-export function ShortsRedirect() {
-  const [params] = useSearchParams();
-  return <Navigate to={`/videos/shorts${params.toString() ? `?${params}` : ''}`} replace />;
-}
-
-/**
- * The Shorts tab of Videos, YouTube Shorts style: one tall vertical clip at a time in the middle, the title and its
- * buttons at the bottom left (over the clip on phones), up / down arrows on the right. No likes, comments or sharing.
- * Scroll, swipe, the arrows or the ↑ ↓ keys move to the next clip; it starts at ?start=.
- */
-function ShortsFeed() {
-  const [params] = useSearchParams();
-  const start = params.get('start');
-  const list = start ? [...highlightClips.filter((v) => v.id === start), ...highlightClips.filter((v) => v.id !== start)] : highlightClips;
-  const box = useRef<HTMLDivElement>(null);
-  const [at, setAt] = useState(0);
-  // The clips take exactly the room left on screen (nothing scrolls but the clips themselves).
-  const [height, setHeight] = useState<number>();
-  useEffect(() => {
-    const fit = () => {
-      const el = box.current;
-      if (!el) return;
-      const top = el.getBoundingClientRect().top + window.scrollY;
-      const below = document.documentElement.scrollHeight - (top + el.offsetHeight);
-      setHeight(Math.max(320, window.innerHeight - top - below));
-    };
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, []);
-  const go = (dir: 1 | -1) => box.current?.scrollBy({ top: dir * box.current.clientHeight, behavior: 'smooth' });
-  useEffect(() => {
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') (e.preventDefault(), go(1));
-      if (e.key === 'ArrowUp') (e.preventDefault(), go(-1));
-    };
-    window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
-  }, []);
-  const onScroll = () => {
-    const el = box.current;
-    if (el) setAt(Math.round(el.scrollTop / el.clientHeight));
-  };
-  const info = (v: Video) => (
-    <div>
-      <p className="flex items-center gap-2 text-sm font-semibold">
-        <span className="grid size-9 place-items-center rounded-full border border-line bg-black">
-          <img src={`${import.meta.env.BASE_URL}wsop-logo.webp`} alt="" className="w-7" />
-        </span>
-        WSOP TV
-      </p>
-      <h2 className="mt-3 font-sans text-base leading-snug font-bold normal-case md:text-lg">{v.title}</h2>
-      <p className="mt-1 text-sm text-muted">
-        {v.subtitle} · {duration(v.durationSec)}
-      </p>
-    </div>
-  );
-  const arrow = (dir: 1 | -1) => (
-    <button
-      onClick={() => go(dir)}
-      disabled={dir === -1 ? at === 0 : at >= list.length - 1}
-      aria-label={dir === -1 ? 'Previous short' : 'Next short'}
-      className="grid size-12 place-items-center rounded-full bg-surface-3 hover:bg-line-strong disabled:opacity-30"
-    >
-      <Icon name="chevron" size={22} className={dir === -1 ? '-rotate-90' : 'rotate-90'} />
-    </button>
-  );
-  return (
-    <div className="relative mt-6">
-      <div ref={box} onScroll={onScroll} style={{ height }} className="h-[calc(100dvh-13rem)] snap-y snap-mandatory overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Shorts">
-        {list.map((v) => (
-          <article key={v.id} className="flex h-full snap-start flex-col pb-2 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-end md:gap-8">
-            <div className="hidden max-w-sm pb-2 md:block">{info(v)}</div>
-            {/* The clip alone: no title or buttons over it. */}
-            <div className="relative mx-auto aspect-[9/16] min-h-0 max-w-full flex-1 overflow-hidden rounded-panel bg-black md:h-full md:flex-none">
-              <video className="absolute inset-0 size-full object-cover" src={`${v.media.url}#t=${v.media.start}`} poster={v.thumb} muted loop playsInline autoPlay preload="none" />
-            </div>
-            <div className="pt-3 md:hidden">{info(v)}</div>
-            <div className="hidden md:block" />
-          </article>
-        ))}
-      </div>
-      <div className="absolute top-1/2 right-0 hidden -translate-y-1/2 flex-col gap-3 md:flex">
-        {arrow(-1)}
-        {arrow(1)}
-      </div>
-    </div>
-  );
-}
 
 const more = (to: string, label = 'More') => (
   <Link to={to} className="text-sm font-semibold whitespace-nowrap text-muted hover:text-text">

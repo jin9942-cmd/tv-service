@@ -1,7 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
-import { ChannelRedirect, CollectionPage, EventPage, LivePage, MyListPage, SchedulePage, ShortsRedirect, TagPage, VideosPage, WatchPage } from './v4/pages';
+import { ChannelRedirect, CollectionPage, EventPage, LivePage, MyListPage, SchedulePage, TagPage, VideosPage, WatchPage } from './v4/pages';
 import { TvHome, TvHowToWatch, TvShowDetail, TvShows } from './pages/tv';
 import { TvClassic } from './pages/poker';
 import { SeriesList } from './pages/Series';
@@ -41,8 +41,9 @@ export default function App() {
             <Route path="videos" element={<VideosPage tab="highlights" />} />
             <Route path="videos/replays" element={<VideosPage tab="replays" />} />
             <Route path="collections/:id" element={<CollectionPage />} />
-            <Route path="videos/shorts" element={<VideosPage tab="shorts" />} />
-            <Route path="shorts" element={<ShortsRedirect />} />
+            {/* Shorts are gone: old links land on Browse. */}
+            <Route path="videos/shorts" element={<Navigate to="/videos" replace />} />
+            <Route path="shorts" element={<Navigate to="/videos" replace />} />
             <Route path="shows" element={<TvShows />} />
             <Route path="shows/:showId" element={<TvShowDetail />} />
             <Route path="video" element={<Hands />} />
