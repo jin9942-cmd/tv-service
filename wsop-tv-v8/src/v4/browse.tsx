@@ -121,24 +121,12 @@ function currentYear() {
 }
 
 type GameF = 'all' | string;
-type BuyF = 'all' | 'lt1k' | '1k' | '10k' | '25k';
-const BUY: [BuyF, string, (n: number) => boolean][] = [
-  ['all', 'All buy-ins', () => true],
-  ['lt1k', 'Under $1K', (n) => n > 0 && n < 1000],
-  ['1k', '$1K – $9K', (n) => n >= 1000 && n < 10000],
-  ['10k', '$10K – $24K', (n) => n >= 10000 && n < 25000],
-  ['25k', '$25K and up', (n) => n >= 25000],
-];
-const KINDS = ['All', 'High Roller', 'Championship', 'Special', 'Open'] as const;
-
 /** A year: series tabs (Las Vegas · Europe · Paradise · Circuit), its Main Event, then the bracelet events with filters. */
 export function YearPage() {
   const { year = '' } = useParams();
   const [params, setParams] = useSearchParams();
   const y = Number(year);
   const [game, setGame] = useState<GameF>('all');
-  const [buy, setBuy] = useState<BuyF>('all');
-  const [kind, setKind] = useState<(typeof KINDS)[number]>('All');
   const {
     state: { streamMode },
   } = useApp();
@@ -186,7 +174,7 @@ export function YearPage() {
   const rest = (current?.cards ?? []).filter((c) => c !== main);
   const games = [...new Set(rest.map((c) => c.game))];
   rest.sort((a, b) => Number(!!b.live) - Number(!!a.live));
-  const shown = rest.filter((c) => (game === 'all' || c.game === game) && BUY.find((b) => b[0] === buy)![2](c.buyIn) && (kind === 'All' || c.kind === kind));
+  const shown = rest.filter((c) => (game === 'all' || c.game === game));
   return (
     <Page className="max-w-[96rem]">
       {back('/videos', 'Years')}
@@ -202,7 +190,7 @@ export function YearPage() {
       {/* Series tabs */}
       <div hidden={seriesList.length < 2} className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Series">
         {seriesList.map((s) => (
-          <FilterChip key={s.key} on={s.key === sKey} onClick={() => (setParams({ series: s.key }, { replace: true }), setGame('all'), setBuy('all'), setKind('All'))}>
+          <FilterChip key={s.key} on={s.key === sKey} onClick={() => (setParams({ series: s.key }, { replace: true }), setGame('all'))}>
             {s.name}
           </FilterChip>
         ))}
@@ -249,11 +237,11 @@ export function YearPage() {
         </section>
       )}
 
-      {/* Bracelet events with filters: game, buy-in, kind of event. */}
+      {/* Bracelet events, with one filter: the game (part of every event name, so it holds for the whole archive). */}
       {rest.length > 0 && (
         <section aria-label="Bracelet events" className="mt-10">
           <h2 className="text-xl sm:text-2xl">Bracelet events</h2>
-          <div className="mt-3 flex flex-col gap-2">
+          <div hidden={games.length < 2} className="mt-3">
             <div className="flex flex-wrap gap-2" aria-label="Game">
               <FilterChip on={game === 'all'} onClick={() => setGame('all')}>
                 All games
@@ -261,20 +249,6 @@ export function YearPage() {
               {games.map((g) => (
                 <FilterChip key={g} on={game === g} onClick={() => setGame(g)}>
                   {g}
-                </FilterChip>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2" aria-label="Buy-in">
-              {BUY.map(([k, label]) => (
-                <FilterChip key={k} on={buy === k} onClick={() => setBuy(k)}>
-                  {label}
-                </FilterChip>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2" aria-label="Type of event">
-              {KINDS.map((k) => (
-                <FilterChip key={k} on={kind === k} onClick={() => setKind(k)}>
-                  {k === 'All' ? 'All events' : k}
                 </FilterChip>
               ))}
             </div>
