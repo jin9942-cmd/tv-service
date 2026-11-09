@@ -14,7 +14,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseTabs, ChampionsRow, LegendsRow, PlayersTab, YearsRow, YearsTab } from './browse';
+import { BrowseTabs, LegendsRow, PlayersTab, YearsRow, YearsTab } from './browse';
 import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
@@ -127,8 +127,8 @@ const playsFull = (x: Video, mode: Day['status']) => (isLive(x, mode) || x.kind 
 /** VOD playback after Play: the player fills the screen; closing it (or leaving full screen) goes back to the pre-play page. */
 function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; liveEdge?: () => number }) {
   const nav = useNavigate();
-  // Leaving: VOD goes back to its pre-play page; live goes back to where you came from.
-  const leave = () => (live ? (window.history.length > 1 ? nav(-1) : nav('/')) : nav(`/watch/${v.id}`, { replace: true }));
+  // Leaving goes back to where playback started (Home for Continue watching, the pre-play page after its Play).
+  const leave = () => (window.history.length > 1 ? nav(-1) : live ? nav('/') : nav(`/watch/${v.id}`, { replace: true }));
   const leaveRef = useRef(leave);
   leaveRef.current = leave;
   useEffect(() => {
@@ -594,7 +594,6 @@ export function HomeRows() {
     <>
       {/* The WSOP first: its years, its champions, its legends and its great moments. */}
       <YearsRow />
-      <ChampionsRow />
       <LegendsRow />
       <MomentsSection picks={picks} />
       {/* The personal rows below. */}
@@ -616,7 +615,7 @@ function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; 
           const pct = Math.min(100, Math.round((sec / v.durationSec) * 100));
           return (
             <li key={v.id} className="group relative min-w-0">
-              <Link to={`/watch/${v.id}`} className="block" aria-label={`Resume ${v.title}`}>
+              <Link to={`/watch/${v.id}?play=1`} onClick={enterFullScreen} className="block" aria-label={`Resume ${v.title}`}>
                 <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
                   <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
                   <span className="absolute inset-x-0 bottom-0 h-1.5 bg-white/20">

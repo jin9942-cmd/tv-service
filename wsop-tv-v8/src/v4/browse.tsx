@@ -703,60 +703,89 @@ const moreLink = (to: string, label: string) => (
   </Link>
 );
 
-/** WSOP by Year: a tile a year (this year first), each with its Main Event champion; opens that year in Browse. */
+/**
+ * WSOP by Year (with the Main Event champions): a bar of years, then the chosen year's card — its champion, its
+ * Main Event final table (plays full screen) and the way into the year in Browse. Replaces the two rows that each
+ * showed the years with their champions.
+ */
 export function YearsRow() {
   const { state } = useApp();
-  const liveNow = catalog.some((v) => v.eventId && isLive(v, state.streamMode));
+  const [year, setYear] = useState(CURRENT_YEAR);
+  const liveVideo = catalog.find((v) => v.eventId === 'lv-main' && isLive(v, state.streamMode));
+  const modern = ARCHIVE.filter((y) => !y.classic);
+  const classics = ARCHIVE.filter((y) => y.classic);
+  const arch = ARCHIVE.find((y) => y.year === year);
+  const ref = arch ? archiveEvent(`${year}-lv-main`) : undefined;
+  const fi = ref ? ref.event.days.findIndex((d) => /final/i.test(d.label)) : -1;
+  const di = ref ? (fi >= 0 ? fi : ref.event.days.length - 1) : -1;
+  const ftVideo = ref ? `arc.${ref.event.id}.${di}` : liveVideo?.id;
+  const isNow = year === CURRENT_YEAR;
+  const art = ref ? archiveArt(ref.event.id) : TABLE_ART[0].src;
+  const events = arch ? arch.series.reduce((n, s) => n + s.events.length, 0) : 0;
+  const yearChip = (y: number, live?: boolean) => (
+    <button
+      key={y}
+      role="tab"
+      aria-selected={year === y}
+      onClick={() => setYear(y)}
+      className={cx('flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold tnum', year === y ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text')}
+    >
+      {live && <span className="size-1.5 rounded-full bg-live" aria-hidden />}
+      {y}
+    </button>
+  );
   return (
     <HomeSection title="WSOP by Year" action={moreLink('/videos', 'All years')}>
-      <ul className="hscroll gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-2.25rem)/4)] lg:[&>*]:w-[calc((100%-4.5rem)/7)]">
-        <li>
-          <YearTile to={`/videos/year/${CURRENT_YEAR}`} year={CURRENT_YEAR} art={TABLE_ART[0].src} line={liveNow ? 'Final table on air' : 'This year'} live={liveNow} />
-        </li>
-        {ARCHIVE.map((y) => {
-          const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
-          return (
-            <li key={y.year}>
-              <YearTile to={`/videos/year/${y.year}`} year={y.year} art={archiveArt(main?.id ?? String(y.year))} line={y.champion ? y.champion.name : ''} />
-            </li>
-          );
-        })}
-      </ul>
-    </HomeSection>
-  );
-}
-
-/** Main Event Champions: each year's champion with that year's final table, the full broadcast. */
-export function ChampionsRow() {
-  const list = ARCHIVE.filter((y) => y.champion)
-    .map((y) => {
-      const ref = archiveEvent(`${y.year}-lv-main`);
-      if (!ref) return undefined;
-      const fi = ref.event.days.findIndex((d) => /final/i.test(d.label));
-      const i = fi >= 0 ? fi : ref.event.days.length - 1;
-      return { y, ref, label: ref.event.days[i].label, video: `arc.${ref.event.id}.${i}` };
-    })
-    .filter((x): x is NonNullable<typeof x> => !!x);
-  return (
-    <HomeSection title="Main Event Champions" action={moreLink('/videos/events/main-event', 'Every Main Event')}>
-      <ul className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-2rem)/3)] lg:[&>*]:w-[calc((100%-4rem)/5)]">
-        {list.map(({ y, ref, label, video }) => (
-          <li key={y.year}>
-            <Link to={`/watch/${video}`} className="group block">
-              <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-                <img src={archiveArt(ref.event.id)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-                <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" aria-hidden />
-                <span className="absolute bottom-2 left-2 font-display text-2xl leading-none tnum">{y.year}</span>
-                <span className="absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">{/final/i.test(label) ? 'Final table' : label} · full</span>
-              </span>
-              <span className="mt-2 block font-semibold group-hover:text-gold-strong">
-                {y.champion!.name} <CountryCode cc={y.champion!.cc} />
-              </span>
-              <span className="block text-xs text-muted">{y.year} Main Event champion</span>
+      {/* The years: this year (live) first, then the archive, then the Classics. */}
+      <div className="hscroll items-center gap-2 pb-1" role="tablist" aria-label="Year">
+        {yearChip(CURRENT_YEAR, !!liveVideo)}
+        {modern.map((y) => yearChip(y.year))}
+        <span className="mx-1 shrink-0 text-[11px] font-bold tracking-wide text-gold-strong uppercase">Classics</span>
+        {classics.map((y) => yearChip(y.year))}
+      </div>
+      {/* The chosen year. */}
+      <div className="mt-4 grid overflow-hidden rounded-panel border border-line bg-surface lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <Link to={ftVideo ? `/watch/${ftVideo}${isNow ? '' : '?play=1'}` : `/videos/year/${year}`} onClick={isNow ? undefined : enterFullScreen} className="group relative block aspect-video overflow-hidden bg-surface-2 lg:aspect-auto lg:min-h-72">
+          <img key={art} src={art} alt="" style={isNow ? artStyle(TABLE_ART[0]) : undefined} className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+          <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden />
+          {isNow && liveVideo && <LiveTag className="absolute top-3 left-3" />}
+          <span className="absolute bottom-3 left-4 font-display text-5xl leading-none tnum">{year}</span>
+        </Link>
+        <div className="flex flex-col justify-center p-6 lg:p-8">
+          <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">
+            {year} · WSOP Main Event{arch?.classic && ' · Classics'}
+          </p>
+          {isNow ? (
+            <>
+              <h3 className="mt-2 text-2xl font-bold sm:text-3xl">{liveVideo ? 'Final table on air now' : 'This year’s World Series'}</h3>
+              <p className="mt-1 text-sm text-muted">The champion is decided tonight</p>
+            </>
+          ) : (
+            <>
+              <h3 className="mt-2 text-2xl font-bold sm:text-3xl">
+                {arch?.champion?.name} {arch?.champion && <CountryCode cc={arch.champion.cc} />}
+              </h3>
+              <p className="mt-1 text-sm text-muted">
+                Main Event champion · {arch?.series.length} series · {events} event{events === 1 ? '' : 's'} in the archive
+              </p>
+            </>
+          )}
+          <div className="mt-6 flex flex-wrap gap-3">
+            {ftVideo && (
+              <Link to={`/watch/${ftVideo}${isNow ? '' : '?play=1'}`} onClick={isNow ? undefined : enterFullScreen}>
+                <Button variant="primary" tabIndex={-1}>
+                  <Icon name="play" size={16} /> {isNow ? 'Watch live' : arch?.classic ? 'Watch the broadcast' : 'Watch the final table'}
+                </Button>
+              </Link>
+            )}
+            <Link to={`/videos/year/${year}`}>
+              <Button variant="outline" tabIndex={-1}>
+                Explore {year}
+              </Button>
             </Link>
-          </li>
-        ))}
-      </ul>
+          </div>
+        </div>
+      </div>
     </HomeSection>
   );
 }

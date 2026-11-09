@@ -1,5 +1,5 @@
 // v4 — the one player for everything (broadcasts, classics, hand clips, live events and 24/7 channels).
-// Plain OTT controls: play/pause, 10 s back/forward, seek bar, sound, settings (playback speed on demand, quality),
+// Plain OTT controls: play/pause, 5 s back/forward, seek bar, sound, settings (playback speed on demand, quality),
 // full screen; live adds a 4-hour DVR and a LIVE button. English commentary only, so no subtitles or audio tracks.
 // `mini` renders the docked mini player's compact controls.
 import { useEffect, useRef, useState } from 'react';
@@ -80,8 +80,8 @@ export function Player({ v, live, liveEdge, mini = false, upNext }: { v: Video; 
   const full = () => (document.fullscreenElement ? document.exitFullscreen() : box.current?.requestFullscreen?.())?.catch?.(() => {});
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === ' ' || e.key === 'k') (e.preventDefault(), setPlaying((p) => !p));
-    if (e.key === 'ArrowLeft') (e.preventDefault(), skip(-10));
-    if (e.key === 'ArrowRight') (e.preventDefault(), skip(10));
+    if (e.key === 'ArrowLeft') (e.preventDefault(), skip(-5));
+    if (e.key === 'ArrowRight') (e.preventDefault(), skip(5));
     if (e.key === 'm') setMuted((m) => !m);
   };
 
@@ -139,12 +139,12 @@ export function Player({ v, live, liveEdge, mini = false, upNext }: { v: Video; 
           </button>
           {!mini && (
             <>
-              <button className="flex h-9 items-center gap-1 rounded-full px-2 text-white hover:bg-white/15" onClick={() => skip(-10)} aria-label="Back 10 seconds" title="Back 10 s">
+              <button className="flex h-9 items-center gap-1 rounded-full px-2 text-white hover:bg-white/15" onClick={() => skip(-5)} aria-label="Back 5 seconds" title="Back 5 s">
                 <Icon name="back10" size={18} />
-                <span className="text-[13px] font-bold tnum">−10</span>
+                <span className="text-[13px] font-bold tnum">−5</span>
               </button>
-              <button className={cx('flex h-9 items-center gap-1 rounded-full px-2 text-white hover:bg-white/15', atLive && 'opacity-40')} onClick={() => skip(10)} aria-label="Forward 10 seconds" title="Forward 10 s" disabled={atLive}>
-                <span className="text-[13px] font-bold tnum">+10</span>
+              <button className={cx('flex h-9 items-center gap-1 rounded-full px-2 text-white hover:bg-white/15', atLive && 'opacity-40')} onClick={() => skip(5)} aria-label="Forward 5 seconds" title="Forward 5 s" disabled={atLive}>
+                <span className="text-[13px] font-bold tnum">+5</span>
                 <Icon name="fwd10" size={18} />
               </button>
             </>
