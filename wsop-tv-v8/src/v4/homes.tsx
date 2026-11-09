@@ -5,8 +5,8 @@
 //      level of a programme: the 2025 final tables, the Main Event year by year, the Classics, collections, tournaments.
 // No live state: today the 2025 series is the latest season and plays as replays; live starts with the 2027 series.
 import { useState, type ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button, CountryCode, Icon, Page, cx } from '../components/ui';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Button, CountryCode, Icon, LiveTag, Page, cx } from '../components/ui';
 import { ARCHIVE, CLASSIC_RANGE, archiveArt, archiveEvent, type ArchiveYear } from './archive';
 import { videoById } from './catalog';
 import { VideoCard } from './detail';
@@ -26,6 +26,9 @@ interface Slide {
   pos?: string;
   /** A muted preview of the broadcast over the photo. */
   video?: string;
+  live?: boolean;
+  /** Marked as an example (2025 footage standing in for the 2027 series). */
+  example?: boolean;
   kicker: string;
   title: string;
   facts: ReactNode[];
@@ -53,6 +56,46 @@ const castSlide = (c: Cast, video = false): Slide => ({
 });
 const MAIN = CASTS[0];
 const SHR = CASTS.find((c) => c.number === 46)!;
+const PPC = CASTS.find((c) => c.number === 66)!;
+
+/**
+ * The Home's three states. Off-season is today (the 2025 series is the latest season). On air and between broadcasts
+ * are examples on a day of the 2025 series: Jun 17 (#46 final table on air) and Jun 18 (next: #66, Jun 28).
+ */
+export type Mode = 'live' | 'between' | 'off';
+const MODE_DAY: Record<Mode, string> = { live: '2025-06-17', between: '2025-06-18', off: '2025-12-31' };
+function useMode(): Mode {
+  const [p] = useSearchParams();
+  const m = p.get('mode');
+  return m === 'live' || m === 'between' ? m : 'off';
+}
+/** The 2025 final tables before the mode's day (all of them off-season), newest first. */
+const playedBy = (mode: Mode) => CASTS.filter((c) => c.date < MODE_DAY[mode]);
+const LIVE_EXAMPLE: Slide = {
+  img: castHero(SHR)!,
+  video: castClip(SHR),
+  live: true,
+  example: true,
+  kicker: `World Series of Poker · Las Vegas · Event #${SHR.number}`,
+  title: SHR.short,
+  facts: [SHR.what, `${SHR.entries} entries`, 'On air now'],
+  line: 'Example of the live screen, with the 2025 broadcast · Next: #66 Poker Players Championship',
+  to: `/watch/${castVideoId(SHR)}?play=1`,
+  full: true,
+  cta: 'Watch live',
+};
+const NEXT_EXAMPLE: Slide = {
+  img: castHero(PPC)!,
+  example: true,
+  kicker: `Next on WSOP TV · ${fmtDay(PPC.date)}`,
+  title: PPC.short,
+  facts: [`Event #${PPC.number}`, PPC.what, 'Live on WSOP TV'],
+  line: 'Nothing on air right now: the next broadcast, then the latest final table',
+  to: '/schedule',
+  cta: 'Remind me',
+};
+const heroFor = (mode: Mode): Slide[] =>
+  mode === 'live' ? [LIVE_EXAMPLE, castSlide(playedBy('live')[0]), CLASSICS_SLIDE] : mode === 'between' ? [NEXT_EXAMPLE, castSlide(SHR, true), CLASSICS_SLIDE] : [castSlide(MAIN, true), castSlide(SHR), CLASSICS_SLIDE];
 const CLASSICS_SLIDE: Slide = {
   img: archiveArt('1988-lv-main'),
   kicker: `WSOP Classics · ${CLASSIC_RANGE}`,
@@ -81,6 +124,8 @@ function FeaturedHero({ slides }: { slides: Slide[] }) {
         <div className="max-w-xl" aria-live="polite">
           <div className="flex h-[6.65rem] flex-col justify-end sm:h-[8.7rem]">
             <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wide text-text/90 uppercase sm:text-[13px]">
+              {sl.live && <LiveTag className="px-2 py-1 text-xs" />}
+              {sl.example && <span className="rounded bg-white/15 px-1.5 py-0.5 text-[11px] text-white/90">Example</span>}
               {sl.kicker}
             </p>
             <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>
@@ -134,9 +179,27 @@ const more = (to: string, label: string) => (
   </Link>
 );
 
+function ModeSwitch() {
+  const { pathname } = useLocation();
+  const mode = useMode();
+  const opt = (m: Mode, label: string) => (
+    <Link key={m} to={{ pathname, search: m === 'off' ? '' : `?mode=${m}` }} aria-current={mode === m ? 'true' : undefined} className={cx('rounded-full px-3 py-1 text-xs font-semibold', mode === m ? 'bg-gold text-ink' : 'text-muted hover:text-text')}>
+      {label}
+    </Link>
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-1" role="navigation" aria-label="Home state">
+      <span className="mr-1 text-xs font-bold tracking-wide text-gold-strong uppercase">State</span>
+      {opt('live', 'On air (example)')}
+      {opt('between', 'Between broadcasts (example)')}
+      {opt('off', 'Off-season (today)')}
+    </div>
+  );
+}
+
 /** For the review: which draft this is, and what the demo stands on. */
 function DraftBar() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const b = pathname === '/home-b';
   const tab = (to: string, on: boolean, label: string) => (
     <Link to={to} aria-current={on ? 'page' : undefined} className={cx('rounded-full px-3 py-1 text-sm font-semibold', on ? 'bg-text text-bg' : 'text-muted hover:text-text')}>
@@ -148,10 +211,10 @@ function DraftBar() {
       <Page className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-2.5">
         <div className="flex items-center gap-1" role="navigation" aria-label="Home drafts">
           <span className="mr-2 text-xs font-bold tracking-wide text-gold-strong uppercase">Home draft</span>
-          {tab('/', !b, 'A · Series hub')}
-          {tab('/home-b', b, 'B · WSOP history')}
+          {tab(`/${search}`, !b, 'A · Series hub')}
+          {tab(`/home-b${search}`, b, 'B · WSOP history')}
         </div>
-        <p className="text-xs text-muted">The 2025 WSOP is the latest season: its final tables play as replays, with results from the 2025 record. Live starts with the 2027 series.</p>
+        <ModeSwitch />
       </Page>
     </div>
   );
@@ -260,14 +323,16 @@ function ArchiveDecades() {
 }
 
 export function HomeA() {
+  const mode = useMode();
+  const played = playedBy(mode);
   return (
     <>
       <DraftBar />
-      <FeaturedHero slides={[castSlide(MAIN, true), castSlide(SHR), CLASSICS_SLIDE]} />
+      <FeaturedHero key={mode} slides={heroFor(mode)} />
       <Page className="space-y-12 py-8">
-        <Section title="2025 WSOP: the final tables" note="The latest season, newest first" action={more('/videos/year/2025', 'View More')}>
+        <Section title={mode === 'off' ? '2025 WSOP: the final tables' : 'This series: the final tables so far'} note={mode === 'off' ? 'The latest season, newest first' : 'Example on the 2025 series, newest first'} action={more('/videos/year/2025', 'View More')}>
           <ul className="hscroll gap-5 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
-            {CASTS.map((c) => (
+            {played.map((c) => (
               <li key={c.id} className="min-w-0">
                 <CastCard c={c} />
               </li>
@@ -310,20 +375,30 @@ function YearTiles({ years, label }: { years: ArchiveYear[]; label: (y: ArchiveY
 }
 
 /** The WSOP TV channel in the page (after WatchWPT's top): what it is playing, and its guide under it. */
-function ChannelPlayer() {
-  const now = MAIN;
+function ChannelPlayer({ mode }: { mode: Mode }) {
+  const live = mode === 'live';
+  // On air: the live table. Between broadcasts: the latest final table, with the next broadcast named. Off-season: the
+  // latest season's Main Event final table.
+  const now = mode === 'off' ? MAIN : SHR;
   const clip = castClip(now);
-  const guide = CASTS.slice(0, 4).map((c, k) => ({ when: k === 0 ? 'Now' : k === 1 ? 'Next' : 'Later', c }));
+  const rest = playedBy(mode).filter((c) => c.id !== now.id);
+  const guide = [{ when: live ? 'Now · Live' : 'Now', c: now }, ...rest.slice(0, 3).map((c, k) => ({ when: k === 0 ? 'Next' : 'Later', c }))];
   return (
     <div className="bg-black">
       <Page className="py-6">
         <Link to={`/watch/${castVideoId(now)}?play=1`} onClick={enterFullScreen} className="group relative mx-auto block aspect-video max-h-[68vh] w-full overflow-hidden rounded-panel bg-black" aria-label={`Watch the ${now.short} final table`}>
           {clip && <video src={clip} poster={castStill(now)} autoPlay muted loop playsInline className="absolute inset-0 size-full object-cover" />}
           <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-5 pt-16 sm:p-7 sm:pt-24">
-            <span className="text-xs font-bold tracking-wide text-gold-strong uppercase">WSOP TV channel · 2025 WSOP · Event #{now.number}</span>
-            <span className="mt-2 block text-2xl leading-tight font-bold text-white sm:text-4xl">{now.short} · Final table</span>
+            <span className="flex flex-wrap items-center gap-2 text-xs font-bold tracking-wide text-gold-strong uppercase">
+              {live && <LiveTag />}
+              {mode !== 'off' && <span className="rounded bg-white/15 px-1.5 py-0.5 text-[11px] text-white/90">Example</span>}
+              WSOP TV channel · Event #{now.number}
+            </span>
+            <span className="mt-2 block text-2xl leading-tight font-bold text-white sm:text-4xl">
+              {now.short} · Final table{live ? '' : ' · Replay'}
+            </span>
             <span className="mt-1 block text-sm text-white/80">
-              {fmtDay(now.date)} · {now.entries.toLocaleString('en-US')} entries · Won by {now.winner.name}
+              {live ? `On air now · ${now.entries} entries` : `${fmtDay(now.date)} · ${now.entries.toLocaleString('en-US')} entries · Won by ${now.winner.name}`}
             </span>
           </span>
           <span className="absolute top-1/2 left-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100">
@@ -331,14 +406,17 @@ function ChannelPlayer() {
           </span>
         </Link>
         <div className="mt-4">
-          <p className="mb-2 text-sm font-bold">On the WSOP TV channel</p>
+          <p className="mb-2 text-sm font-bold">
+            On the WSOP TV channel
+            {mode === 'between' && <span className="ml-2 font-normal text-muted">Next live: #{PPC.number} {PPC.short}, {PPC.what.toLowerCase()} · {fmtDay(PPC.date)}</span>}
+          </p>
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {guide.map(({ when, c }) => (
               <li key={c.id} className="min-w-0">
-                <Link to={`/watch/${castVideoId(c)}?play=1`} onClick={enterFullScreen} className={cx('group flex items-center gap-3 rounded-card border p-2 hover:border-line-strong', when === 'Now' ? 'border-gold bg-gold-dim' : 'border-line bg-surface')}>
+                <Link to={`/watch/${castVideoId(c)}?play=1`} onClick={enterFullScreen} className={cx('group flex items-center gap-3 rounded-card border p-2 hover:border-line-strong', when.startsWith('Now') ? 'border-gold bg-gold-dim' : 'border-line bg-surface')}>
                   <img src={castStill(c)} alt="" loading="lazy" className="aspect-video w-24 shrink-0 rounded object-cover" />
                   <span className="min-w-0">
-                    <span className={cx('block text-[11px] font-bold tracking-wide uppercase', when === 'Now' ? 'text-gold-strong' : 'text-muted')}>{when}</span>
+                    <span className={cx('block text-[11px] font-bold tracking-wide uppercase', when === 'Now · Live' ? 'text-live' : when === 'Now' ? 'text-gold-strong' : 'text-muted')}>{when}</span>
                     <span className="block truncate text-sm font-semibold group-hover:text-gold-strong">#{c.number} {c.short}</span>
                     <span className="block truncate text-xs text-muted">{c.what} · {fmtDay(c.date)}</span>
                   </span>
@@ -397,9 +475,12 @@ function Tournaments() {
 }
 
 export function HomeB() {
+  const mode = useMode();
   const modern = ARCHIVE.filter((y) => !y.classic && y.year <= 2025);
   const classics = ARCHIVE.filter((y) => y.classic);
-  const replays = CASTS.map((c) => videoById(castVideoId(c))).filter(defined);
+  const replays = playedBy(mode)
+    .map((c) => videoById(castVideoId(c)))
+    .filter(defined);
   const mainNote = (y: ArchiveYear) => {
     const ref = archiveEvent(`${y.year}-lv-main`);
     return ref ? `Main Event · ${ref.event.days.length} broadcast${ref.event.days.length === 1 ? '' : 's'}` : `${y.series.reduce((n, x) => n + x.events.length, 0)} events (no Main Event broadcast)`;
@@ -407,9 +488,9 @@ export function HomeB() {
   return (
     <>
       <DraftBar />
-      <ChannelPlayer />
+      <ChannelPlayer mode={mode} />
       <Page className="space-y-12 py-8">
-        <Section title="2025 WSOP: the final tables" note="The latest season, newest first" action={more('/videos/year/2025', 'View More')}>
+        <Section title={mode === 'off' ? '2025 WSOP: the final tables' : 'This series: the final tables so far'} note={mode === 'off' ? 'The latest season, newest first' : 'Example on the 2025 series, newest first'} action={more('/videos/year/2025', 'View More')}>
           <ul className="hscroll gap-5 [&>*]:w-[72%] sm:[&>*]:w-[calc((100%-2.5rem)/3)] lg:[&>*]:w-[calc((100%-3.75rem)/4)]">
             {replays.map((v) => (
               <li key={v.id} className="min-w-0">
