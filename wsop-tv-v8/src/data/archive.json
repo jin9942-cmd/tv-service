@@ -1,0 +1,6195 @@
+[
+ {
+  "year": 2025,
+  "champion": {
+   "name": "Michael Mizrachi",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2025-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Day 1A",
+        "minutes": 256
+       },
+       {
+        "label": "Day 1C",
+        "minutes": 148
+       },
+       {
+        "label": "Day 1D",
+        "minutes": 154
+       },
+       {
+        "label": "Day 2A",
+        "minutes": 133
+       },
+       {
+        "label": "Day 2D",
+        "minutes": 185
+       },
+       {
+        "label": "Day 3",
+        "minutes": 235
+       },
+       {
+        "label": "Day 4",
+        "minutes": 133
+       },
+       {
+        "label": "Day 5",
+        "minutes": 124
+       },
+       {
+        "label": "Day 6",
+        "minutes": 134
+       },
+       {
+        "label": "Day 7",
+        "minutes": 130
+       },
+       {
+        "label": "Day 8",
+        "minutes": 126
+       },
+       {
+        "label": "Final Table",
+        "minutes": 168
+       },
+       {
+        "label": "Final Table Day 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-1",
+      "number": 1,
+      "name": "$1K Mystery Millions",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 42
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-3",
+      "number": 3,
+      "name": "$5K No-Limit Hold'em",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 73
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-7",
+      "number": 7,
+      "name": "$25K Heads-Up Championship",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Four",
+        "minutes": 143
+       },
+       {
+        "label": "Final",
+        "minutes": 159
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-9",
+      "number": 9,
+      "name": "$10K Omaha Hi-Lo Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Omaha Hi-Lo",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 182
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-13",
+      "number": 13,
+      "name": "$1.5K No-Limit Hold'em 6-Max",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 146
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-14",
+      "number": 14,
+      "name": "$25K No-Limit Hold'em / Pot-Limit Omaha High Roller",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 46
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-19",
+      "number": 19,
+      "name": "$500 COLOSSUS",
+      "buyIn": 500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 174
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-20",
+      "number": 20,
+      "name": "$1.5K No-Limit Hold'em Shootout",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 54
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-22",
+      "number": 22,
+      "name": "$25K No-Limit Hold'em 6-Handed High Roller",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 49
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-26",
+      "number": 26,
+      "name": "$25K No-Limit Hold'em High Roller",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Day 2",
+        "minutes": 66
+       },
+       {
+        "label": "Final Table",
+        "minutes": 90
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-30",
+      "number": 30,
+      "name": "$10K No-Limit 2-7 Single Draw Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Draw",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 96
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-32",
+      "number": 32,
+      "name": "$50K No-Limit Hold'em High Roller",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 55
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-37",
+      "number": 37,
+      "name": "$1.5K MONSTER STACK",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 57
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-38",
+      "number": 38,
+      "name": "$100K No-Limit Hold'em High Roller",
+      "buyIn": 100000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Day 2",
+        "minutes": 117
+       },
+       {
+        "label": "Final Table",
+        "minutes": 166
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-41",
+      "number": 41,
+      "name": "$10K Limit Hold'em Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 134
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-46",
+      "number": 46,
+      "name": "$250K Super High Roller",
+      "buyIn": 250000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Day 2",
+        "minutes": 139
+       },
+       {
+        "label": "Final Table",
+        "minutes": 85
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-48",
+      "number": 48,
+      "name": "$1K Seniors Championship",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 148
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-51",
+      "number": 51,
+      "name": "$25K Pot-Limit Omaha High Roller",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Day 3",
+        "minutes": 169
+       },
+       {
+        "label": "Final Table",
+        "minutes": 112
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-53",
+      "number": 53,
+      "name": "$1.5K MILLIONAIRE MAKER",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 113
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-57",
+      "number": 57,
+      "name": "$50K Pot-Limit Omaha High Roller",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 114
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-59",
+      "number": 59,
+      "name": "$1K Battle of the Ages",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Day 2",
+        "minutes": 110
+       },
+       {
+        "label": "Final Table",
+        "minutes": 71
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-66",
+      "number": 66,
+      "name": "$50K Poker Players Championship",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Day 3",
+        "minutes": 113
+       },
+       {
+        "label": "Day 4",
+        "minutes": 89
+       },
+       {
+        "label": "Final Table",
+        "minutes": 118
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-67",
+      "number": 67,
+      "name": "$300 Gladiators of Poker",
+      "buyIn": 300,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 39
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-70",
+      "number": 70,
+      "name": "$1K Ladies Championship",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 122
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-74",
+      "number": 74,
+      "name": "$10K Pot-Limit Omaha Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 91
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-lv-76",
+      "number": 76,
+      "name": "$2.5K Big Bet Mix",
+      "buyIn": 2500,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "eu",
+    "name": "Europe",
+    "events": [
+     {
+      "id": "2025-eu-main",
+      "number": 14,
+      "name": "WSOPE Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Day 1A",
+        "minutes": 126
+       },
+       {
+        "label": "Day 1B",
+        "minutes": 113
+       },
+       {
+        "label": "Day 2",
+        "minutes": 168
+       },
+       {
+        "label": "Day 3",
+        "minutes": 164
+       },
+       {
+        "label": "Day 4",
+        "minutes": 139
+       },
+       {
+        "label": "Final Table",
+        "minutes": 99
+       },
+       {
+        "label": "Final Day",
+        "minutes": 111
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-eu-2",
+      "number": 2,
+      "name": "NLH King's Million",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Day",
+        "minutes": 122
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-eu-4",
+      "number": 4,
+      "name": "NLH 2K Monsterstack",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Day",
+        "minutes": 150
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-eu-6",
+      "number": 6,
+      "name": "€2K Pot Limit Omaha",
+      "buyIn": 2000,
+      "currency": "€",
+      "game": "Pot-Limit Omaha",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Day",
+        "minutes": 74
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-eu-7",
+      "number": 7,
+      "name": "NLH Colossus",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Day",
+        "minutes": 68
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2025-eu-13",
+      "number": 13,
+      "name": "NLH GGMillion€",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Day",
+        "minutes": 74
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "pa",
+    "name": "Paradise",
+    "events": [
+     {
+      "id": "2025-pa-main",
+      "number": null,
+      "name": "Super Main Event",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 195
+       },
+       {
+        "label": "Day 1C",
+        "minutes": 660
+       },
+       {
+        "label": "Day 1D",
+        "minutes": 660
+       },
+       {
+        "label": "Day 2B",
+        "minutes": 660
+       },
+       {
+        "label": "Day 3",
+        "minutes": 660
+       },
+       {
+        "label": "Day 4",
+        "minutes": 660
+       }
+      ],
+      "highlights": 6
+     }
+    ]
+   },
+   {
+    "key": "circuit",
+    "name": "Circuit",
+    "events": [
+     {
+      "id": "2025-circuit-main",
+      "number": null,
+      "name": "Circuit Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Day 1A",
+        "minutes": 161
+       },
+       {
+        "label": "Day 1C",
+        "minutes": 151
+       },
+       {
+        "label": "Day 2",
+        "minutes": 205
+       },
+       {
+        "label": "Day 3",
+        "minutes": 156
+       },
+       {
+        "label": "Day 4",
+        "minutes": 136
+       },
+       {
+        "label": "Final Day",
+        "minutes": 126
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2024,
+  "champion": {
+   "name": "Jonathan Tamayo",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2024-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 30
+       },
+       {
+        "label": "Day 1A",
+        "minutes": 141
+       },
+       {
+        "label": "Day 1B",
+        "minutes": 141
+       },
+       {
+        "label": "Day 1C",
+        "minutes": 145
+       },
+       {
+        "label": "Day 1D",
+        "minutes": 147
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 30
+       },
+       {
+        "label": "Day 2A",
+        "minutes": 148
+       },
+       {
+        "label": "Day 2D",
+        "minutes": 118
+       },
+       {
+        "label": "Day 3",
+        "minutes": 149
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 30
+       },
+       {
+        "label": "Day 4",
+        "minutes": 192
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 30
+       },
+       {
+        "label": "Day 5",
+        "minutes": 150
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 30
+       },
+       {
+        "label": "Day 6",
+        "minutes": 145
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 30
+       },
+       {
+        "label": "Day 7",
+        "minutes": 147
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 30
+       },
+       {
+        "label": "Day 8",
+        "minutes": 82
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 182
+       },
+       {
+        "label": "Final Table Day 2",
+        "minutes": 93
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-1",
+      "number": 1,
+      "name": "$5K Champions Reunion",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 118
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-3",
+      "number": 3,
+      "name": "$500 WSOP Kickoff",
+      "buyIn": 500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-5",
+      "number": 5,
+      "name": "$1K Mystery Millions",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 58
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-6",
+      "number": 6,
+      "name": "$25K Heads-Up Championship",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 114
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-8",
+      "number": 8,
+      "name": "$5K Pot-Limit Omaha",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 43
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-10",
+      "number": 10,
+      "name": "$10K Omaha Hi-Lo Championship -",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Omaha Hi-Lo",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Day 3",
+        "minutes": 118
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-12",
+      "number": 12,
+      "name": "$1.5K No-Limit Hold'em 6-Handed",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 139
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-16",
+      "number": 16,
+      "name": "$5K No-Limit Hold'em",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Day 3",
+        "minutes": 158
+       },
+       {
+        "label": "Final Table",
+        "minutes": 139
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-20",
+      "number": 20,
+      "name": "$300 Gladiators of Poker",
+      "buyIn": 300,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 158
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-21",
+      "number": 21,
+      "name": "$25K No-Limit Hold'em High Roller 6-Handed",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 115
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-23",
+      "number": 23,
+      "name": "$1.5K No-Limit Hold'em Shootout",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 115
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-26",
+      "number": 26,
+      "name": "$25K No-Limit Hold'em High Roller",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Day 2",
+        "minutes": 140
+       },
+       {
+        "label": "Final Table",
+        "minutes": 113
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-28",
+      "number": 28,
+      "name": "$1.5K No-Limit Hold'em Freezeout",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 140
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-29",
+      "number": 29,
+      "name": "$10K Limit 2-7 Triple Draw Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Draw",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 96
+       },
+       {
+        "label": "Part 2",
+        "minutes": 144
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-31",
+      "number": 31,
+      "name": "$3K No-Limit Hold'em",
+      "buyIn": 3000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 86
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-34",
+      "number": 34,
+      "name": "$2.5K No-Limit Hold'em Freezeout",
+      "buyIn": 2500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 148
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-36",
+      "number": 36,
+      "name": "$800 No-Limit Hold'em Deepstack",
+      "buyIn": 800,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 148
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-38",
+      "number": 38,
+      "name": "$1.5K MONSTER STACK",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 83
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-39",
+      "number": 39,
+      "name": "$50K No-Limit Hold'em High Roller",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 108
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-41",
+      "number": 41,
+      "name": "$1.5K NLH - PLO Double Board Bomb Pot",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 108
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-42",
+      "number": 42,
+      "name": "$10K Stud Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Stud / Razz",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 156
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-43",
+      "number": 43,
+      "name": "$1.5K Mixed PLO8 - Omaha Hi-Lo - Big O",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 156
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-47",
+      "number": 47,
+      "name": "$100K No-Limit Hold'em High Roller",
+      "buyIn": 100000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Day 2",
+        "minutes": 47
+       },
+       {
+        "label": "Final Table",
+        "minutes": 91
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-49",
+      "number": 49,
+      "name": "$3K No-Limit Hold'em Freezeout",
+      "buyIn": 3000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 80
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-54",
+      "number": 54,
+      "name": "$1.5K MILLIONAIRE MAKER",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-55",
+      "number": 55,
+      "name": "$250K No-Limit Hold'em Super High Roller",
+      "buyIn": 250000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Day 2",
+        "minutes": 171
+       },
+       {
+        "label": "Day 3",
+        "minutes": 171
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-57",
+      "number": 57,
+      "name": "$10K Super Turbo Bounty Freezeout",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 176
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-58",
+      "number": 58,
+      "name": "$50K Poker Players Championship",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Day 2",
+        "minutes": 146
+       },
+       {
+        "label": "Day 3",
+        "minutes": 129
+       },
+       {
+        "label": "Day 4",
+        "minutes": 179
+       },
+       {
+        "label": "Final Table",
+        "minutes": 146
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-65",
+      "number": 65,
+      "name": "$5K Seniors High Roller",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 114
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-66",
+      "number": 66,
+      "name": "$10K Pot-Limit Omaha Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 135
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-71",
+      "number": 71,
+      "name": "$1K Ladies Championship",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Final Table",
+        "minutes": 99
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-72",
+      "number": 72,
+      "name": "$10K No-Limit 2-7 Single Draw Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Draw",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 32
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2024-lv-73",
+      "number": 73,
+      "name": "$25K Pot-Limit Omaha High Roller",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 43
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "eu",
+    "name": "Europe",
+    "events": [
+     {
+      "id": "2024-eu-main",
+      "number": null,
+      "name": "WSOPE Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Day 1",
+        "minutes": 87
+       },
+       {
+        "label": "Day 1B",
+        "minutes": 141
+       },
+       {
+        "label": "Day 2",
+        "minutes": 141
+       },
+       {
+        "label": "Day 3",
+        "minutes": 147
+       },
+       {
+        "label": "Day 4",
+        "minutes": 198
+       },
+       {
+        "label": "Day 5",
+        "minutes": 107
+       }
+      ],
+      "highlights": 23
+     }
+    ]
+   },
+   {
+    "key": "pa",
+    "name": "Paradise",
+    "events": [
+     {
+      "id": "2024-pa-main",
+      "number": null,
+      "name": "Super Main Event",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Day 1B",
+        "minutes": 660
+       },
+       {
+        "label": "Day 1C",
+        "minutes": 660
+       },
+       {
+        "label": "Day 1D",
+        "minutes": 660
+       },
+       {
+        "label": "Day 2",
+        "minutes": 155
+       },
+       {
+        "label": "Day 3",
+        "minutes": 660
+       },
+       {
+        "label": "Day 4",
+        "minutes": 660
+       },
+       {
+        "label": "Final Day",
+        "minutes": 660
+       }
+      ],
+      "highlights": 141
+     }
+    ]
+   },
+   {
+    "key": "circuit",
+    "name": "Circuit",
+    "events": [
+     {
+      "id": "2024-circuit-main",
+      "number": null,
+      "name": "Circuit Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 43
+       },
+       {
+        "label": "Day 1",
+        "minutes": 148
+       },
+       {
+        "label": "Day 1A",
+        "minutes": 133
+       },
+       {
+        "label": "Day 1B",
+        "minutes": 126
+       },
+       {
+        "label": "Day 1C",
+        "minutes": 135
+       },
+       {
+        "label": "Day 2",
+        "minutes": 160
+       },
+       {
+        "label": "Final Table",
+        "minutes": 67
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2023,
+  "champion": {
+   "name": "Daniel Weinman",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2023-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-2",
+      "number": 2,
+      "name": "$25K No-Limit Hold'em High Roller 6-Handed",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-4",
+      "number": 4,
+      "name": "Tournament of Champions",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-6",
+      "number": 6,
+      "name": "$5K No-Limit Hold'em - Pot-Limit Omaha",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-8",
+      "number": 8,
+      "name": "$25K Heads-Up Championship",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-12",
+      "number": 12,
+      "name": "$5K No-Limit Hold'em Freezeout",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-16",
+      "number": 16,
+      "name": "$25K No-Limit Hold'em High Roller",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-19",
+      "number": 19,
+      "name": "$2.5K No-Limit Hold'em Freezeout",
+      "buyIn": 2500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-23",
+      "number": 23,
+      "name": "$50K No-Limit Hold'em High Roller",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-35",
+      "number": 35,
+      "name": "$10K No-Limit Hold'em Secret Bounty",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-37",
+      "number": 37,
+      "name": "$2K No-Limit Hold'em",
+      "buyIn": 2000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-39",
+      "number": 39,
+      "name": "$1.5K Monster Stack",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-40",
+      "number": 40,
+      "name": "$250K No-Limit Hold'em Super High Roller",
+      "buyIn": 250000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-43",
+      "number": 43,
+      "name": "$50K Poker Players Championship",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-50",
+      "number": 50,
+      "name": "$10K Pot-Limit Omaha Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-54",
+      "number": 54,
+      "name": "$10K H.O.R.S.E. Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-57",
+      "number": 57,
+      "name": "$25K Pot-Limit Omaha High Roller",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-62",
+      "number": 62,
+      "name": "$1.5K Mixed No-Limit Hold'em - Pot-Limit Omaha",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2023-lv-65",
+      "number": 65,
+      "name": "$5K No-Limit Hold'em 6-Handed",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "pa",
+    "name": "Paradise",
+    "events": [
+     {
+      "id": "2023-pa-main",
+      "number": null,
+      "name": "Super Main Event",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 81
+       },
+       {
+        "label": "Day 1A",
+        "minutes": 125
+       },
+       {
+        "label": "Day 1B",
+        "minutes": 105
+       },
+       {
+        "label": "Day 1C",
+        "minutes": 170
+       },
+       {
+        "label": "Day 2",
+        "minutes": 89
+       },
+       {
+        "label": "Day 3",
+        "minutes": 171
+       },
+       {
+        "label": "Final Table",
+        "minutes": 64
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "circuit",
+    "name": "Circuit",
+    "events": [
+     {
+      "id": "2023-circuit-main",
+      "number": null,
+      "name": "Circuit Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Day 3",
+        "minutes": 660
+       },
+       {
+        "label": "Final Table",
+        "minutes": 660
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2022,
+  "champion": {
+   "name": "Espen Jorstad",
+   "cc": "NO"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2022-lv-2",
+      "number": 2,
+      "name": "$100K Bounty NLH",
+      "buyIn": 100000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 112
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-3",
+      "number": 3,
+      "name": "$2,500 Freezeout No-Limit Hold'em",
+      "buyIn": 2500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 335
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-6",
+      "number": 6,
+      "name": "$25,000 Heads Up No-Limit Hold'em Championship",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 351
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-8",
+      "number": 8,
+      "name": "$25,000 High Roller No-Limit Hold'em",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 315
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-12",
+      "number": 12,
+      "name": "$50,000 High Roller No-Limit Hold'em",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 270
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-15",
+      "number": 15,
+      "name": "$10,000 Omaha Hi-Lo 8 or Better Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Omaha Hi-Lo",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 299
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-19",
+      "number": 19,
+      "name": "$25,000 High Roller Pot-Limit Omaha",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 320
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-21",
+      "number": 21,
+      "name": "$1,500 Monster Stack No-Limit Hold'em",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 340
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-28",
+      "number": 28,
+      "name": "$50,000 High Roller Pot-Limit Omaha",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 332
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-34",
+      "number": 34,
+      "name": "$1,500 Freezeout No-Limit Hold'em",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 334
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-37",
+      "number": 37,
+      "name": "$1,500 Millionaire Maker No-Limit Hold'em",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 231
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-38",
+      "number": 38,
+      "name": "$10,000 No-Limit 2-7 Lowball Draw Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Draw",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 339
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-39",
+      "number": 39,
+      "name": "$3,000 Pot-Limit Omaha 6-Handed",
+      "buyIn": 3000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 331
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-42",
+      "number": 42,
+      "name": "$100,000 High Roller No-Limit Hold'em",
+      "buyIn": 100000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 234
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-44",
+      "number": 44,
+      "name": "$10,000 H.O.R.S.E. Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 332
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-50",
+      "number": 50,
+      "name": "$250,000 Super High Roller No-Limit Hold'em",
+      "buyIn": 250000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 336
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-51",
+      "number": 51,
+      "name": "$400 Colossus No-Limit Hold'em",
+      "buyIn": 400,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 339
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-55",
+      "number": 55,
+      "name": "$1,000 Tag Team No-Limit Hold'em",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 281
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-56",
+      "number": 56,
+      "name": "$50,000 Poker Players Championship",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 333
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-70",
+      "number": 70,
+      "name": "$10,000 No-Limit Hold'em Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Day 1D",
+        "minutes": 330
+       },
+       {
+        "label": "Day 2A",
+        "minutes": 334
+       },
+       {
+        "label": "Day 2D",
+        "minutes": 337
+       },
+       {
+        "label": "Day 3",
+        "minutes": 338
+       },
+       {
+        "label": "Day 4",
+        "minutes": 341
+       },
+       {
+        "label": "Day 5",
+        "minutes": 337
+       },
+       {
+        "label": "Day 6",
+        "minutes": 315
+       },
+       {
+        "label": "Day 7",
+        "minutes": 310
+       },
+       {
+        "label": "Final Table",
+        "minutes": 279
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2022-lv-89",
+      "number": 89,
+      "name": "WSOP Tournament of Champions",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 315
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2021,
+  "champion": {
+   "name": "Koray Aldemir",
+   "cc": "DE"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2021-lv-6",
+      "number": 6,
+      "name": "$25,000 High Roller No Limit Hold'em 8-Handed",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 338
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-8",
+      "number": 8,
+      "name": "$600 No Limit Hold'em Deepstack",
+      "buyIn": 600,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 127
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-9",
+      "number": 9,
+      "name": "$10,000 Omaha Hi-Lo 8 or Better Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Omaha Hi-Lo",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 340
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-11",
+      "number": 11,
+      "name": "$25,000 Heads Up No Limit Hold'em Championship",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 167
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-13",
+      "number": 13,
+      "name": "$3,000 Freezeout No Limit Hold'em",
+      "buyIn": 3000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 280
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-16",
+      "number": 16,
+      "name": "$10,000 Limit Hold'em Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 344
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-17",
+      "number": 17,
+      "name": "$1,500 Millionaire Maker No Limit Hold'em",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 280
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-19",
+      "number": 19,
+      "name": "$10,000 Seven Card Stud Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Stud / Razz",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 355
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-22",
+      "number": 22,
+      "name": "$10,000$1,000 Ladies No-Limit Hold'em Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 287
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-25",
+      "number": 25,
+      "name": "$5,000 No Limit Hold'em 6-Handed",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 335
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-29",
+      "number": 29,
+      "name": "$10,000 Short Deck No Limit Hold'em",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Short Deck",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 335
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-30",
+      "number": 30,
+      "name": "$1,500 Monster Stack No Limit Hold'em",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 279
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-32",
+      "number": 32,
+      "name": "$3,000 H.O.R.S.E.",
+      "buyIn": 3000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 338
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-38",
+      "number": 38,
+      "name": "$50,000 High Roller No Limit Hold'em 8-Handed",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 254
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-39",
+      "number": 39,
+      "name": "$1,500 Pot Limit Omaha 8-Handed",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "Omaha Hi-Lo",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 260
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-40",
+      "number": 40,
+      "name": "$10,000 H.O.R.S.E. Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 332
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-44",
+      "number": 44,
+      "name": "$3,000 Limit Hold'em 6-Handed",
+      "buyIn": 3000,
+      "currency": "$",
+      "game": "Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 323
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-45",
+      "number": 45,
+      "name": "$10,000 Pot Limit Omaha 8-Handed Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Omaha Hi-Lo",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 336
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-49",
+      "number": 49,
+      "name": "$10,000 No Limit 2-7 Lowball Draw Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Draw",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 329
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-53",
+      "number": 53,
+      "name": "$25,000 High Roller Pot Limit Omaha",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 335
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-60",
+      "number": 60,
+      "name": "$50,000 Poker Players Championship",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 352
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-67",
+      "number": 67,
+      "name": "$10,000 No Limit Hold'em Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Day 1",
+        "minutes": 344
+       },
+       {
+        "label": "Day 1A",
+        "minutes": 269
+       },
+       {
+        "label": "Day 1C",
+        "minutes": 326
+       },
+       {
+        "label": "Day 1D",
+        "minutes": 338
+       },
+       {
+        "label": "Day 2A",
+        "minutes": 343
+       },
+       {
+        "label": "Day 2C",
+        "minutes": 345
+       },
+       {
+        "label": "Day 3",
+        "minutes": 341
+       },
+       {
+        "label": "Day 4",
+        "minutes": 343
+       },
+       {
+        "label": "Day 5",
+        "minutes": 332
+       },
+       {
+        "label": "Day 6",
+        "minutes": 336
+       },
+       {
+        "label": "Day 7",
+        "minutes": 336
+       },
+       {
+        "label": "Final Table",
+        "minutes": 336
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-79",
+      "number": 79,
+      "name": "$1,979 Poker Hall of Fame Bounty No Limit Hold'em",
+      "buyIn": 1979,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 332
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-82",
+      "number": 82,
+      "name": "$250,000 Super High Roller No Limit Hold'em",
+      "buyIn": 250000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 319
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-84",
+      "number": 84,
+      "name": "$50,000 High Roller Pot Limit Omaha",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 341
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2021-lv-87",
+      "number": 87,
+      "name": "$100,000 High Roller No Limit Hold'em",
+      "buyIn": 100000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 240
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "eu",
+    "name": "Europe",
+    "events": [
+     {
+      "id": "2021-eu-main",
+      "number": null,
+      "name": "WSOPE Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 320
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2020,
+  "champion": {
+   "name": "Damian Salas",
+   "cc": "AR"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2020-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2019,
+  "champion": {
+   "name": "Hossein Ensan",
+   "cc": "DE"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2019-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-3",
+      "number": 3,
+      "name": "$500 BIG 50",
+      "buyIn": 500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-4",
+      "number": 4,
+      "name": "$1.5K Omaha Hi-Lo 8-or-Better",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "Omaha Hi-Lo",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-9",
+      "number": 9,
+      "name": "$600 No-Limit Hold'em Deepstack",
+      "buyIn": 600,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-18",
+      "number": 18,
+      "name": "$10K Omaha Hi-Lo 8-or-Better Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Omaha Hi-Lo",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-20",
+      "number": 20,
+      "name": "$1.5K Seven Card Stud",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "Stud / Razz",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-26",
+      "number": 26,
+      "name": "$2,620 No-Limit Hold'em Marathon",
+      "buyIn": 2620,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-27",
+      "number": 27,
+      "name": "$1.5K Seven Card Stud Hi-Lo 8-or-Better",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "Stud / Razz",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-32",
+      "number": 32,
+      "name": "$1K Seniors Championship",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-37",
+      "number": 37,
+      "name": "$800 No-Limit Hold'em Deepstack",
+      "buyIn": 800,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-41",
+      "number": 41,
+      "name": "$10K Seven Card Stud Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Stud / Razz",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-42",
+      "number": 42,
+      "name": "$600 Mixed NLH-PLO",
+      "buyIn": 600,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-44",
+      "number": 44,
+      "name": "$1.5K No-Limit Hold'em Bounty",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-45",
+      "number": 45,
+      "name": "$25K Pot-Limit Omaha High Roller",
+      "buyIn": 25000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-50",
+      "number": 50,
+      "name": "$1.5K Monster Stack",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-53",
+      "number": 53,
+      "name": "$800 No-Limit Hold'em Deepstack",
+      "buyIn": 800,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-61",
+      "number": 61,
+      "name": "$400 COLOSSUS",
+      "buyIn": 400,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-65",
+      "number": 65,
+      "name": "$10K Pot-Limit Omaha Hi-Lo 8-or-Better Championship",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "Omaha Hi-Lo",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-66",
+      "number": 66,
+      "name": "$1.5K Limit Hold'em",
+      "buyIn": 1500,
+      "currency": "$",
+      "game": "Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-69",
+      "number": 69,
+      "name": "$1K Mini Main Event",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-70",
+      "number": 70,
+      "name": "$5K No-Limit Hold'em 6-Handed",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-71",
+      "number": 71,
+      "name": "$500 SALUTE TO WARRIORS",
+      "buyIn": 500,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-77",
+      "number": 77,
+      "name": "$3K Limit Hold'em 6-Handed",
+      "buyIn": 3000,
+      "currency": "$",
+      "game": "Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-79",
+      "number": 79,
+      "name": "$3K No-Limit Hold'em",
+      "buyIn": 3000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-83",
+      "number": 83,
+      "name": "$100K No-Limit Hold'em High Roller",
+      "buyIn": 100000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2019-lv-90",
+      "number": 90,
+      "name": "$50K",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2018,
+  "champion": {
+   "name": "John Cynn",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2018-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2017,
+  "champion": {
+   "name": "Scott Blumstein",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2017-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2016,
+  "champion": {
+   "name": "Qui Nguyen",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2016-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 271
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 184
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 276
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 183
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 270
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 180
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 275
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 178
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 279
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 184
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 274
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 185
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 270
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 183
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 184
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 182
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "circuit",
+    "name": "Circuit",
+    "events": [
+     {
+      "id": "2016-circuit-main",
+      "number": null,
+      "name": "Circuit Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 182
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2015,
+  "champion": {
+   "name": "Joe McKeehen",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2015-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 293
+       },
+       {
+        "label": "Episode 1",
+        "minutes": 534
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 533
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 533
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 538
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 535
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 536
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 536
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 536
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 537
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 534
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 539
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 537
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 525
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2014,
+  "champion": {
+   "name": "Martin Jacobson",
+   "cc": "SE"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2014-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 41
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 184
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 182
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "apac",
+    "name": "Asia-Pacific",
+    "events": [
+     {
+      "id": "2014-apac-main",
+      "number": null,
+      "name": "APAC Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 51
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2013,
+  "champion": {
+   "name": "Ryan Riess",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2013-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 1",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 23",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 24",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 27",
+        "minutes": 308
+       },
+       {
+        "label": "Episode 28",
+        "minutes": 313
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "eu",
+    "name": "Europe",
+    "events": [
+     {
+      "id": "2013-eu-main",
+      "number": null,
+      "name": "WSOPE Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "apac",
+    "name": "Asia-Pacific",
+    "events": [
+     {
+      "id": "2013-apac-main",
+      "number": null,
+      "name": "APAC Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 51
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2012,
+  "champion": {
+   "name": "Greg Merson",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2012-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 125
+       },
+       {
+        "label": "Episode 1",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 23",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 24",
+        "minutes": 51
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "eu",
+    "name": "Europe",
+    "events": [
+     {
+      "id": "2012-eu-main",
+      "number": null,
+      "name": "WSOPE Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 31
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2011,
+  "champion": {
+   "name": "Pius Heinz",
+   "cc": "DE"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2011-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 1",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 50
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 23",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 24",
+        "minutes": 51
+       },
+       {
+        "label": "Episode 25",
+        "minutes": 175
+       },
+       {
+        "label": "Episode 26",
+        "minutes": 177
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "eu",
+    "name": "Europe",
+    "events": [
+     {
+      "id": "2011-eu-main",
+      "number": null,
+      "name": "WSOPE Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 31
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2010,
+  "champion": {
+   "name": "Jonathan Duhamel",
+   "cc": "CA"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2010-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 23",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 24",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 25",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 26",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 27",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 28",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 29",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 30",
+        "minutes": 660
+       },
+       {
+        "label": "Final Table",
+        "minutes": 660
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2010-lv-50k-players-champ-part-1",
+      "number": null,
+      "name": "$50K Players Champ Part 1",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Show 1",
+        "minutes": 660
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2010-lv-50k-players-champ-part-2",
+      "number": null,
+      "name": "$50K Players Champ Part 2",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Show 2",
+        "minutes": 660
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "eu",
+    "name": "Europe",
+    "events": [
+     {
+      "id": "2010-eu-main",
+      "number": null,
+      "name": "WSOPE Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2009,
+  "champion": {
+   "name": "Joe Cada",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2009-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 331
+       },
+       {
+        "label": "Episode 1",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 23",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 24",
+        "minutes": 660
+       },
+       {
+        "label": "Final Table",
+        "minutes": 660
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2009-lv-40k-no-limit-champ-mov",
+      "number": null,
+      "name": "$40K No Limit Champ.mov",
+      "buyIn": 40000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 660
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "eu",
+    "name": "Europe",
+    "events": [
+     {
+      "id": "2009-eu-main",
+      "number": null,
+      "name": "WSOPE Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 30
+       },
+       {
+        "label": "Part 1",
+        "minutes": 30
+       },
+       {
+        "label": "Part 2",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 30
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2008,
+  "champion": {
+   "name": "Peter Eastgate",
+   "cc": "DK"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2008-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 283
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 56
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 59
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 23",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 24",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 25",
+        "minutes": 56
+       },
+       {
+        "label": "Episode 26",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 27",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 28",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 29",
+        "minutes": 57
+       },
+       {
+        "label": "Episode 30",
+        "minutes": 58
+       },
+       {
+        "label": "Episode 31",
+        "minutes": 372
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   },
+   {
+    "key": "eu",
+    "name": "Europe",
+    "events": [
+     {
+      "id": "2008-eu-main",
+      "number": null,
+      "name": "WSOPE Main Event",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 30
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2007,
+  "champion": {
+   "name": "Jerry Yang",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2007-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 1",
+        "minutes": 514
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 511
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 516
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 516
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 520
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 520
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 517
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 513
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 516
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 518
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 513
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 515
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 515
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 516
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 514
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 515
+       },
+       {
+        "label": "Episode 23",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 24",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 25",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 26",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 27",
+        "minutes": 516
+       },
+       {
+        "label": "Episode 28",
+        "minutes": 516
+       },
+       {
+        "label": "Episode 29",
+        "minutes": 515
+       },
+       {
+        "label": "Episode 30",
+        "minutes": 514
+       },
+       {
+        "label": "Episode 31",
+        "minutes": 516
+       },
+       {
+        "label": "Episode 32",
+        "minutes": 517
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2006,
+  "champion": {
+   "name": "Jamie Gold",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2006-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Episode 2",
+        "minutes": 168
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 155
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 156
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 156
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 139
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 156
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 169
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 175
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 169
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 168
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 174
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 169
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 168
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 167
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 100
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 154
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 168
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 169
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 242
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 660
+       },
+       {
+        "label": "Episode 23",
+        "minutes": 168
+       },
+       {
+        "label": "Episode 24",
+        "minutes": 170
+       },
+       {
+        "label": "Episode 25",
+        "minutes": 169
+       },
+       {
+        "label": "Episode 26",
+        "minutes": 168
+       },
+       {
+        "label": "Episode 28",
+        "minutes": 168
+       },
+       {
+        "label": "Episode 30",
+        "minutes": 168
+       },
+       {
+        "label": "Episode 33",
+        "minutes": 169
+       },
+       {
+        "label": "Episode 34",
+        "minutes": 169
+       },
+       {
+        "label": "Final Table",
+        "minutes": 171
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2006-lv-50k-horse-pt1",
+      "number": null,
+      "name": "$50K Horse pt1",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 168
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2006-lv-50k-horse-pt2",
+      "number": null,
+      "name": "$50K Horse pt2",
+      "buyIn": 50000,
+      "currency": "$",
+      "game": "Mixed Games",
+      "kind": "High Roller",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 168
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2005,
+  "champion": {
+   "name": "Joe Hachem",
+   "cc": "AU"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2005-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 170
+       },
+       {
+        "label": "Episode 1",
+        "minutes": 314
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 379
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 331
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 380
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 309
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 354
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 253
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 274
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 310
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 317
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 380
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 324
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 381
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 336
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 274
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 316
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 238
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 360
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 235
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 380
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 268
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 275
+       },
+       {
+        "label": "Episode 23",
+        "minutes": 235
+       },
+       {
+        "label": "Episode 24",
+        "minutes": 235
+       },
+       {
+        "label": "Episode 25",
+        "minutes": 273
+       },
+       {
+        "label": "Episode 26",
+        "minutes": 277
+       },
+       {
+        "label": "Episode 27",
+        "minutes": 274
+       },
+       {
+        "label": "Episode 28",
+        "minutes": 213
+       },
+       {
+        "label": "Episode 29",
+        "minutes": 231
+       },
+       {
+        "label": "Episode 30",
+        "minutes": 239
+       },
+       {
+        "label": "Episode 31",
+        "minutes": 255
+       },
+       {
+        "label": "Episode 32",
+        "minutes": 244
+       },
+       {
+        "label": "Final Table",
+        "minutes": 171
+       }
+      ],
+      "highlights": 1
+     },
+     {
+      "id": "2005-lv-1k-no-limit-hold-em",
+      "number": null,
+      "name": "$1K No-Limit Hold’em",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 153
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2005-lv-2k-limit-hold-em",
+      "number": null,
+      "name": "$2K Limit Hold’em",
+      "buyIn": 2000,
+      "currency": "$",
+      "game": "Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 154
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2005-lv-2k-omaha",
+      "number": null,
+      "name": "$2K Omaha",
+      "buyIn": 2000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 170
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2005-lv-5k-limit-hold-em",
+      "number": null,
+      "name": "$5K Limit Hold’em",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 157
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2005-lv-5k-limit-omaha",
+      "number": null,
+      "name": "$5K limit Omaha",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 162
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2005-lv-5k-no-limit-hold-em",
+      "number": null,
+      "name": "$5K No-Limit Hold’em",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 164
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2005-lv-5k-seven-card-stud",
+      "number": null,
+      "name": "$5K Seven Card Stud",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "Stud / Razz",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 167
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2005-lv-tournament-of-champions",
+      "number": null,
+      "name": "Tournament of Champions",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 169
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2004,
+  "champion": {
+   "name": "Greg Raymer",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2004-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 147
+       },
+       {
+        "label": "Episode 1",
+        "minutes": 329
+       },
+       {
+        "label": "Episode 2",
+        "minutes": 307
+       },
+       {
+        "label": "Episode 3",
+        "minutes": 245
+       },
+       {
+        "label": "Episode 4",
+        "minutes": 381
+       },
+       {
+        "label": "Episode 5",
+        "minutes": 328
+       },
+       {
+        "label": "Episode 6",
+        "minutes": 382
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 321
+       },
+       {
+        "label": "Episode 8",
+        "minutes": 306
+       },
+       {
+        "label": "Episode 9",
+        "minutes": 349
+       },
+       {
+        "label": "Episode 10",
+        "minutes": 306
+       },
+       {
+        "label": "Episode 11",
+        "minutes": 316
+       },
+       {
+        "label": "Episode 12",
+        "minutes": 380
+       },
+       {
+        "label": "Episode 13",
+        "minutes": 231
+       },
+       {
+        "label": "Episode 14",
+        "minutes": 239
+       },
+       {
+        "label": "Episode 15",
+        "minutes": 241
+       },
+       {
+        "label": "Episode 16",
+        "minutes": 247
+       },
+       {
+        "label": "Episode 17",
+        "minutes": 245
+       },
+       {
+        "label": "Episode 18",
+        "minutes": 269
+       },
+       {
+        "label": "Episode 19",
+        "minutes": 274
+       },
+       {
+        "label": "Episode 20",
+        "minutes": 238
+       },
+       {
+        "label": "Episode 21",
+        "minutes": 277
+       },
+       {
+        "label": "Episode 22",
+        "minutes": 231
+       },
+       {
+        "label": "Final Table",
+        "minutes": 169
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-1k-ladies-no-limit-hold-em",
+      "number": null,
+      "name": "$1K Ladies No-Limit Hold’em",
+      "buyIn": 1000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Special",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 167
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-2k-no-limit-hold-em",
+      "number": null,
+      "name": "$2K No-Limit Hold’em",
+      "buyIn": 2000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 185
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-3k-limit",
+      "number": null,
+      "name": "$3K Limit",
+      "buyIn": 3000,
+      "currency": "$",
+      "game": "Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 170
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-3k-no-limit-hold-em",
+      "number": null,
+      "name": "$3K No-Limit Hold’em",
+      "buyIn": 3000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 157
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-5k-limit-hold-em",
+      "number": null,
+      "name": "$5K Limit Hold’em",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 169
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-5k-limit-omaha",
+      "number": null,
+      "name": "$5K Limit Omaha",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "Pot-Limit Omaha",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 170
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-5k-no-limit-hold-em",
+      "number": null,
+      "name": "$5K No-Limit Hold’em",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 169
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-5k-seven-card-stud",
+      "number": null,
+      "name": "$5K Seven Card Stud",
+      "buyIn": 5000,
+      "currency": "$",
+      "game": "Stud / Razz",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 159
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-razz",
+      "number": null,
+      "name": "Razz",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "Stud / Razz",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 141
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-seven-card-stud",
+      "number": null,
+      "name": "Seven Card Stud",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "Stud / Razz",
+      "kind": "Open",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 182
+       }
+      ],
+      "highlights": 0
+     },
+     {
+      "id": "2004-lv-tournament-of-champions",
+      "number": null,
+      "name": "Tournament of Champions",
+      "buyIn": 0,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Championship",
+      "days": [
+       {
+        "label": "Final Table",
+        "minutes": 162
+       }
+      ],
+      "highlights": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": 2003,
+  "champion": {
+   "name": "Chris Moneymaker",
+   "cc": "US"
+  },
+  "series": [
+   {
+    "key": "lv",
+    "name": "Las Vegas",
+    "events": [
+     {
+      "id": "2003-lv-main",
+      "number": null,
+      "name": "Main Event",
+      "buyIn": 10000,
+      "currency": "$",
+      "game": "No-Limit Hold’em",
+      "kind": "Main Event",
+      "days": [
+       {
+        "label": "Full broadcast",
+        "minutes": 373
+       },
+       {
+        "label": "Episode 7",
+        "minutes": 389
+       }
+      ],
+      "highlights": 9
+     }
+    ]
+   }
+  ]
+ }
+]

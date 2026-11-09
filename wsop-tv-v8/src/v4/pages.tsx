@@ -1,0 +1,1398 @@
+// v4 — the common watch page, Live, Videos (Highlights / Replays), the schedule, tag pages and the Home season strip
+// (all built from the catalog and the one card).
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useApp, useTick } from '../state/app';
+import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
+import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
+import { HERO_DAY_ID, dayById, eventById, events, series, seriesById } from '../data/mock';
+import type { Day, TourEvent } from '../data/types';
+import { VENUE_TZ, fmtDate, fmtTime, tzAbbr } from '../lib/time';
+import { isBroadcasting } from '../lib/broadcast';
+import { duration, money } from '../lib/format';
+import { MyListButton } from '../features/library/listActions';
+import { NotFound } from '../pages/NotFound';
+import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
+import { Player } from './Player';
+import { BrowseTabs, ChampionsRow, EventsTab, LegendsRow, PlayersTab, YearsRow, YearsTab } from './browse';
+import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
+import { byTag, catalog, channelVideo, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
+
+// ---- watch ------------------------------------------------------------------------------------------
+
+/** Old links: `/live/channels/:id` → the channel in the common player. */
+export function ChannelRedirect() {
+  const { channelId = '' } = useParams();
+  return <Navigate to={`/watch/ch-${channelById(channelId) ? channelId : channels[0].id}`} replace />;
+}
+
+export function WatchPage() {
+  const { dayId = '' } = useParams();
+  const [params] = useSearchParams();
+  // Hand cards from v3 pages link to their broadcast with ?clip= — the clip is the video.
+  const id = params.get('clip') ?? dayId;
+  const now = useTick(15_000);
+  const { state } = useApp();
+  const v = videoById(id, now);
+  if (!v) {
+    const ref = dayById(dayId);
+    return ref && ref.day.status === 'upcoming' ? <UpcomingView e={ref.event} d={ref.day} /> : <NotFound />;
+  }
+  const live = isLive(v, state.streamMode);
+  // VOD: a pre-play page first; its Play opens the player full screen (?play=1). Live and 24/7 play right away.
+  const vod = !live && v.kind !== 'channel';
+  if (vod) return params.get('play') === '1' ? <FullPlayer key={v.id} v={v} /> : <TitleView key={v.id} v={v} />;
+  const channelId = v.kind === 'channel' ? id.slice(3) : undefined;
+  const program = channelId ? programAt(channelId, now) : undefined;
+  // Live edge in seconds: a channel counts from the start of what's on; a live broadcast from the day's start.
+  const liveEdge = () => {
+    if (program) return Math.max(60, (Date.now() - program.start) / 1000);
+    const ref = v.dayId ? dayById(v.dayId) : undefined;
+    return ref ? Math.max(120, Math.min(v.durationSec, (Date.now() - Date.parse(ref.day.start)) / 1000)) : v.durationSec;
+  };
+  // A live broadcast plays full screen straight away (24/7 channels keep the watch page).
+  if (live && v.kind !== 'channel') return <FullPlayer key={v.id} v={v} live liveEdge={liveEdge} />;
+  return <WatchView key={`${v.id}:${program?.id ?? ''}`} v={v} live={live} liveEdge={live ? liveEdge : undefined} channelId={channelId} now={now} />;
+}
+
+/**
+ * VOD pre-play page: the picture with the title, what it is (series, aired, length, game), the description, Play and
+ * My List; then suggested videos. Nothing else (no tabs). Play goes full screen.
+ */
+function TitleView({ v }: { v: Video }) {
+  const nav = useNavigate();
+  const { state } = useApp();
+  const resume = state.progress[v.id];
+  const ref = v.dayId ? dayById(v.dayId) : undefined;
+  const play = () => {
+    enterFullScreen();
+    nav(`/watch/${v.id}?play=1`);
+  };
+  const facts = [ref && fmtDate(ref.day.start, state.tz), duration(v.durationSec), ref?.event.game, ref?.event.buyIn ? `Buy-in ${money(ref.event.buyIn)}` : undefined].filter(Boolean);
+  const suggested = relatedTo(v, 8);
+  return (
+    <>
+      <div className="relative overflow-hidden bg-black">
+        <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" className="absolute inset-0 size-full object-cover opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 to-black/10" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" aria-hidden />
+        <Page className="relative flex min-h-[min(32rem,70vw)] flex-col justify-end py-8 sm:py-12">
+          <button onClick={() => (window.history.length > 1 ? nav(-1) : nav('/'))} aria-label="Back" title="Back" className="mb-auto grid size-10 place-items-center rounded-full bg-white/90 text-black hover:bg-white">
+            <Icon name="chevron" size={20} className="rotate-180" />
+          </button>
+          <div className="mt-10 max-w-2xl">
+            <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">{v.subtitle}</p>
+            <h1 className="mt-2 font-sans text-3xl leading-tight font-bold normal-case sm:text-5xl">{v.title}</h1>
+            <p className="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-sm text-white/80 tnum">
+              {facts.map((x, i) => (
+                <span key={i} className="inline-flex items-center gap-2">
+                  {i > 0 && <span className="text-white/40">·</span>}
+                  {x}
+                </span>
+              ))}
+            </p>
+            {v.description && <p className="mt-3 line-clamp-3 max-w-xl text-[15px] leading-relaxed text-white/85">{v.description}</p>}
+            <div className="mt-6 flex items-center gap-3">
+              <button onClick={play} className="inline-flex h-12 min-w-40 items-center justify-center gap-2 rounded-full bg-white px-7 text-base font-bold text-black hover:bg-white/85">
+                <Icon name="play" size={18} /> {resume ? 'Resume' : 'Play'}
+              </button>
+              <MyListButton kind={listKind(v)} id={v.id} size="lg" className="rounded-full" />
+            </div>
+          </div>
+        </Page>
+      </div>
+      {suggested.length > 0 && (
+        <Page className="py-8">
+          <h2 className="text-xl sm:text-2xl">Suggested</h2>
+          <div className={cx(rowGrid, 'mt-4')}>
+            <BadgeScope videos={suggested}>
+            {suggested.map((x) => (
+              <VideoCard key={x.id} v={x} {...playsFull(x, state.streamMode)} />
+            ))}
+            </BadgeScope>
+          </div>
+        </Page>
+      )}
+    </>
+  );
+}
+
+/** Enter full screen (must run inside the click). */
+const enterFullScreen = () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+};
+/** Card props that play a video full screen straight away (VOD); live and 24/7 open their player as usual. */
+const playsFull = (x: Video, mode: Day['status']) => (isLive(x, mode) || x.kind === 'channel' ? {} : { href: `/watch/${x.id}?play=1`, onOpen: enterFullScreen });
+
+/** VOD playback after Play: the player fills the screen; closing it (or leaving full screen) goes back to the pre-play page. */
+function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; liveEdge?: () => number }) {
+  const nav = useNavigate();
+  // Leaving: VOD goes back to its pre-play page; live goes back to where you came from.
+  const leave = () => (live ? (window.history.length > 1 ? nav(-1) : nav('/')) : nav(`/watch/${v.id}`, { replace: true }));
+  const leaveRef = useRef(leave);
+  leaveRef.current = leave;
+  useEffect(() => {
+    const on = () => {
+      if (!document.fullscreenElement) leaveRef.current();
+    };
+    document.addEventListener('fullscreenchange', on);
+    return () => document.removeEventListener('fullscreenchange', on);
+  }, []);
+  const close = () => (document.fullscreenElement ? document.exitFullscreen().catch(leave) : leave());
+  const { state } = useApp();
+  const [panel, setPanel] = useState(false);
+  const next = relatedTo(v, 10);
+  // Picking from Suggested: VOD keeps playing full screen; a live broadcast opens its live player.
+  const pick = (x: Video) => {
+    setPanel(false);
+    nav(isLive(x, state.streamMode) || x.kind === 'channel' ? `/watch/${x.id}` : `/watch/${x.id}?play=1`, { replace: true });
+  };
+  const round = 'grid size-10 place-items-center rounded-full bg-black/60 text-white ring-1 ring-white/30 hover:bg-black/80';
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black">
+      <button onClick={close} aria-label="Close player" title="Close" className={cx(round, 'absolute top-4 left-4 z-10')}>
+        <Icon name="close" size={20} />
+      </button>
+      <div className="w-full" style={{ maxWidth: 'calc(100vh * 16 / 9)' }}>
+        <Player v={v} live={live} liveEdge={liveEdge} upNext={next.length ? { open: panel, toggle: () => setPanel((p) => !p) } : undefined} />
+      </div>
+      {/* Suggested: videos in a side panel over the player. */}
+      {panel && (
+        <aside aria-label="Suggested" className="absolute top-0 right-0 bottom-16 z-10 flex w-[min(24rem,90vw)] flex-col rounded-bl-panel bg-black/90 pt-6 backdrop-blur">
+          <h2 className="px-5 text-lg font-bold">Suggested</h2>
+          <ul className="mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-6">
+            {next.map((x) => (
+              <li key={x.id}>
+                <button onClick={() => pick(x)} className="group flex w-full gap-3 rounded-card p-2 text-left hover:bg-white/10">
+                  <span className="relative aspect-video w-36 shrink-0 overflow-hidden rounded-card bg-surface-2">
+                    <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" className="absolute inset-0 size-full object-cover" />
+                    {isLive(x, state.streamMode) ? <LiveTag className="absolute top-1.5 left-1.5" /> : <span className="absolute right-1.5 bottom-1.5 rounded-[4px] bg-black/80 px-1 text-[10px] font-semibold text-white tnum">{duration(x.durationSec)}</span>}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
+                    <span className="mt-0.5 block truncate text-xs text-white/60">{x.subtitle}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )}
+    </div>
+  );
+}
+
+/** A broadcast day's picture: its own video, else the event's, else a venue photo. */
+function dayArt(e: TourEvent, d: Day) {
+  const v = catalog.find((x) => x.dayId === d.id) ?? catalog.find((x) => x.eventId === e.id && x.kind === 'broadcast');
+  return v ? { src: v.thumb, pos: v.thumbPos, fit: v.thumbFit } : VENUE_ART[0];
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const untilParts = (at: string) => {
+  const ms = Math.max(0, Date.parse(at) - Date.now());
+  return { ms, d: Math.floor(ms / 86_400_000), h: Math.floor(ms / 3_600_000) % 24, m: Math.floor(ms / 60_000) % 60, s: Math.floor(ms / 1000) % 60 };
+};
+const broadcastTitle = (e: TourEvent, d: Day) => `${e.name.replace(' World Championship', '')} · ${d.label}`;
+
+/**
+ * An upcoming broadcast: the countdown sits where the player will be, with the start time (yours and Las Vegas) and
+ * Remind me; beside it, replays to watch while you wait.
+ */
+function UpcomingView({ e, d }: { e: TourEvent; d: Day }) {
+  const { state } = useApp();
+  useTick(1000);
+  const title = broadcastTitle(e, d);
+  const [on, toggle] = useReminder(`day:${d.id}`, title);
+  const t = untilParts(d.start);
+  const art = dayArt(e, d);
+  const wait = [...catalog.filter((v) => v.eventId === e.id && v.kind === 'broadcast'), ...replays.filter((v) => eventById(v.eventId!)?.seriesId === e.seriesId && v.eventId !== e.id)].slice(0, 6);
+  const units: [number, string][] = [
+    [t.d, 'Days'],
+    [t.h, 'Hours'],
+    [t.m, 'Min'],
+    [t.s, 'Sec'],
+  ];
+  return (
+    <Page className="max-w-[96rem] py-4 sm:py-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0">
+          <div className="relative aspect-video overflow-hidden rounded-panel bg-black">
+            <img src={art.src} style={artStyle(art)} alt="" className="absolute inset-0 size-full object-cover opacity-35 blur-[2px]" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/40 p-4 text-center sm:gap-5">
+              <p className="text-xs font-bold tracking-[0.2em] text-gold-strong uppercase sm:text-sm">{t.ms ? 'Live in' : 'Starting any moment'}</p>
+              {t.ms > 0 && (
+                <div className="flex gap-2 sm:gap-4" role="timer" aria-label={`Starts in ${t.d} days ${t.h} hours ${t.m} minutes`}>
+                  {units.map(([n, l]) => (
+                    <div key={l} className="w-14 sm:w-24">
+                      <div className="rounded-card border border-white/15 bg-black/60 py-2 text-2xl font-bold tnum sm:py-3 sm:text-5xl">{pad(n)}</div>
+                      <div className="mt-1 text-[10px] font-bold tracking-wider text-muted uppercase sm:text-xs">{l}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-sm text-muted tnum sm:text-base">
+                {fmtDate(d.start, state.tz)} · <b className="text-text">{fmtTime(d.start, state.tz)} {tzAbbr(state.tz, d.start)}</b> · {fmtTime(d.start, VENUE_TZ)} in Las Vegas
+              </p>
+              <Button variant={on ? 'secondary' : 'primary'} onClick={toggle} aria-pressed={on}>
+                <Icon name={on ? 'check' : 'bell'} size={16} /> {on ? 'Reminder set' : 'Remind me'}
+              </Button>
+            </div>
+          </div>
+          <div className="mt-4">
+            <h1 className="font-sans text-xl leading-snug font-bold normal-case sm:text-2xl">{title}</h1>
+            <p className="mt-1 text-sm text-muted">
+              {seriesById(e.seriesId).name} · {d.tables.length} table{d.tables.length === 1 ? '' : 's'} · about {Math.round(d.durationMin / 60)} hours
+            </p>
+            <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-text/85">
+              {d.label} of the {e.name.replace(' World Championship', '')}, live from the feature table. This page turns into the live player when the broadcast starts.
+            </p>
+          </div>
+        </div>
+        <aside>
+          <section aria-label="While you wait">
+            <h2 className="mb-3 font-sans text-base font-bold normal-case">While you wait</h2>
+            <ul className="space-y-3">
+              {wait.map((x) => (
+                <li key={x.id}>
+                  <Link to={`/watch/${x.id}`} className="group flex gap-3">
+                    <span className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2">
+                      <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+                      {isLive(x, state.streamMode) && <LiveTag className="absolute top-1.5 left-1.5" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
+                      <span className="mt-0.5 block truncate text-xs text-muted">{x.subtitle}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
+      </div>
+    </Page>
+  );
+}
+
+/** An upcoming broadcast on an event page: its picture dimmed, when it starts, and a link to its waiting screen. */
+function UpcomingCard({ e, d }: { e: TourEvent; d: Day }) {
+  const { state } = useApp();
+  const art = dayArt(e, d);
+  return (
+    <Link to={`/watch/${d.id}`} className="group block min-w-0">
+      <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+        <img src={art.src} style={artStyle(art)} alt="" loading="lazy" className="absolute inset-0 size-full object-cover opacity-40" />
+        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-center">
+          <span className="text-[11px] font-bold tracking-wider text-gold-strong uppercase">Coming up</span>
+          <span className="text-lg font-bold tnum">{fmtDate(d.start, state.tz)}</span>
+          <span className="text-sm text-muted tnum">{fmtTime(d.start, state.tz)}</span>
+        </span>
+      </span>
+      <span className="mt-2 block truncate text-[15px] font-semibold group-hover:text-gold-strong">{broadcastTitle(e, d)}</span>
+      <span className="mt-0.5 block truncate text-xs text-muted">{seriesById(e.seriesId).name}</span>
+    </Link>
+  );
+}
+
+function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: boolean; liveEdge?: () => number; channelId?: string; now: number }) {
+  const { state } = useApp();
+  // Mini player: scrolling the player out of view docks it bottom-right and it keeps playing.
+  const holder = useRef<HTMLDivElement>(null);
+  const [mini, setMini] = useState(false);
+  const [closed, setClosed] = useState(false);
+  useEffect(() => {
+    const el = holder.current;
+    if (!el) return;
+    const check = () => {
+      const r = el.getBoundingClientRect();
+      const off = r.top < 0 && r.bottom < r.height * 0.3;
+      setMini(off);
+      if (!off) setClosed(false);
+    };
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => (window.removeEventListener('scroll', check), window.removeEventListener('resize', check));
+  }, []);
+  const docked = mini && !closed;
+  const backToPlayer = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.setTimeout(() => window.scrollY > 40 && window.scrollTo(0, 0), 500);
+    setMini(false);
+  };
+  const related = relatedTo(v, 10);
+  return (
+    <Page className="max-w-[96rem] py-4 sm:py-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0">
+          {/* The holder keeps the player's space while it's docked, so the page doesn't jump. */}
+          <div ref={holder} className={cx('overflow-hidden rounded-panel', docked && 'aspect-video border border-dashed border-line')}>
+            <div
+              className={cx(docked && 'fixed right-3 bottom-20 z-[57] w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-panel bg-black shadow-2xl ring-1 ring-line-strong sm:w-[24rem] md:right-5 md:bottom-5')}
+              role={docked ? 'region' : undefined}
+              aria-label={docked ? 'Mini player' : undefined}
+            >
+              {docked && (
+                <div className="flex items-center gap-2 bg-surface px-3 py-1.5">
+                  <span className="min-w-0 flex-1 truncate text-xs font-semibold">{v.title}</span>
+                  <button onClick={backToPlayer} aria-label="Back to the full player" title="Back to the full player" className="rounded-chip p-1.5 text-muted hover:text-text">
+                    <Icon name="full" size={16} />
+                  </button>
+                  <button onClick={() => setClosed(true)} aria-label="Close mini player" title="Close" className="rounded-chip p-1.5 text-muted hover:text-text">
+                    <Icon name="close" size={16} />
+                  </button>
+                </div>
+              )}
+              <Player v={v} live={live} liveEdge={liveEdge} mini={docked} />
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="font-sans text-xl leading-snug font-bold normal-case sm:text-2xl">{v.title}</h1>
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+                {live && <LiveTag />}
+                <span>{v.subtitle}</span>
+                {!live && <span>· {duration(v.durationSec)}</span>}
+              </p>
+            </div>
+            {v.kind !== 'channel' && <MyListButton kind={listKind(v)} id={v.id} size="md" />}
+          </div>
+          <TagList v={v} className="mt-4" />
+          <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-text/85">{v.description}</p>
+          <div className="mt-6">
+            <About v={v} />
+          </div>
+        </div>
+
+        <aside className="space-y-6">
+          {channelId && <OnThisChannel channelId={channelId} now={now} />}
+          <section aria-label="Related videos">
+            <h2 className="mb-3 font-sans text-base font-bold normal-case">Related videos</h2>
+            <ul className="space-y-3">
+              {related.map((x) => (
+                <li key={x.id}>
+                  <Link to={`/watch/${x.id}`} className="group flex gap-3">
+                    <span className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2">
+                      <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+                      {isLive(x, state.streamMode) && <LiveTag className="absolute top-1.5 left-1.5" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
+                      <span className="mt-0.5 block truncate text-xs text-muted">{x.subtitle}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
+      </div>
+    </Page>
+  );
+}
+
+/** 24/7 channels: a clear Now playing block (with how far in it is), Up next, and what's on the other channels. */
+function OnThisChannel({ channelId, now }: { channelId: string; now: number }) {
+  const { state } = useApp();
+  const ch = channelById(channelId)!;
+  const p = programAt(ch.id, now);
+  const next = upNext(ch.id, now, 8)
+    .filter((x) => !['Coming Up', 'A continuación'].includes(x.title))
+    .slice(0, 3);
+  const label = 'text-[11px] font-bold tracking-wider text-subtle uppercase';
+  const left = p ? Math.max(1, Math.round((p.end - now) / 60_000)) : 0;
+  const done = p ? (now - p.start) / (p.end - p.start) : 0;
+  return (
+    <section aria-label="On this channel" className="overflow-hidden rounded-panel border border-line bg-surface">
+      <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+        <h2 className="font-sans text-lg font-bold normal-case">{ch.name}</h2>
+        <span className={label}>24/7 channel</span>
+      </div>
+      {p && (
+        <div className="border-b border-gold/40 bg-gold-dim px-4 py-4">
+          <p className="flex items-center gap-2">
+            <LiveTag />
+            <span className="text-xs font-bold tracking-wider text-gold-strong uppercase">Now playing</span>
+          </p>
+          <p className="mt-2 text-lg leading-snug font-bold">{p.title}</p>
+          <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/15">
+            <div className="h-full bg-gold" style={{ width: `${Math.min(100, done * 100)}%` }} />
+          </div>
+          <p className="mt-1.5 flex justify-between text-xs text-muted tnum">
+            <span>
+              {fmtTime(p.start, state.tz)} – {fmtTime(p.end, state.tz)}
+            </span>
+            <span>{left >= 60 ? `${Math.floor(left / 60)}h ${left % 60}m` : `${left} min`} left</span>
+          </p>
+        </div>
+      )}
+      <div className="px-4 py-4">
+        <p className={label}>Up next</p>
+        <ol className="mt-2 space-y-2.5">
+          {next.map((x) => (
+            <li key={x.id} className="flex gap-3 text-[15px]">
+              <span className="w-[4.5rem] shrink-0 font-semibold tnum">{fmtTime(x.start, state.tz)}</span>
+              <span className="min-w-0 truncate text-text/85">{x.title}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="border-t border-line px-4 py-4">
+        <p className={label}>Other channels</p>
+        <ul className="mt-2 space-y-1">
+          {channels
+            .filter((c) => c.id !== ch.id)
+            .map((c) => (
+              <li key={c.id}>
+                <Link to={`/watch/ch-${c.id}`} className="group -mx-2 flex items-center gap-3 rounded-chip px-2 py-2 hover:bg-surface-2">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold group-hover:text-gold-strong">{c.name}</span>
+                    <span className="block truncate text-xs text-muted">Now: {programAt(c.id, now)?.title ?? '—'}</span>
+                  </span>
+                  <Icon name="play" size={14} className="shrink-0 text-subtle group-hover:text-text" />
+                </Link>
+              </li>
+            ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+// ---- tag pages ---------------------------------------------------------------------------------------
+
+export function TagPage() {
+  const { slug = '' } = useParams();
+  if (slug === 'channels') return <Navigate to={`/watch/ch-${channels[0].id}`} replace />;
+  const { tag, videos } = byTag(slug);
+  if (!tag) return <NotFound />;
+  return (
+    <Page className="max-w-[96rem]">
+      <p className="text-sm text-muted">Tag</p>
+      <h1 className="mt-1 text-title">#{tag.label}</h1>
+      <p className="mt-1 text-sm text-muted">
+        {videos.length} video{videos.length === 1 ? '' : 's'}
+      </p>
+      <div className={cx(rowGrid, 'mt-6')}>
+        <BadgeScope videos={videos}>
+        {videos.map((v) => (
+          <VideoCard key={v.id} v={v} />
+        ))}
+        </BadgeScope>
+      </div>
+    </Page>
+  );
+}
+
+// ---- Videos ------------------------------------------------------------------------------------------
+
+const HAND_FILTERS = [
+  ['all', 'All'],
+  ['bluff', 'Bluffs'],
+  ['hero-call', 'Hero calls'],
+  ['cooler', 'Coolers'],
+  ['bad-beat', 'Bad beats'],
+  ['big-pot', 'Big pots'],
+  ['winning-moment', 'Winning moments'],
+] as const;
+
+const chip = (on: boolean) => cx('h-9 shrink-0 rounded-full border px-4 text-sm font-semibold', on ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text');
+
+/** Videos: the Highlights tab (hand clips) and the Replays tab (series → event → broadcast). */
+/** Browse (v8): Years · Players · Events. Highlights and Shorts keep their own pages (opened from Home). */
+export function VideosPage({ tab }: { tab: 'years' | 'players' | 'events' | 'highlights' | 'shorts' }) {
+  if (tab === 'highlights' || tab === 'shorts')
+    return (
+      <Page className="max-w-[96rem]">
+        <Link to="/videos" className="text-sm text-muted hover:text-text">
+          ← Browse
+        </Link>
+        <h1 className="mt-3 text-title">{tab === 'highlights' ? 'Highlights' : 'Shorts'}</h1>
+        {tab === 'highlights' ? <HighlightsTab /> : <ShortsFeed />}
+      </Page>
+    );
+  return (
+    <Page className="max-w-[96rem]">
+      <h1 className="text-title">Browse</h1>
+      <BrowseTabs tab={tab} />
+      {tab === 'years' ? <YearsTab /> : tab === 'players' ? <PlayersTab /> : <EventsTab />}
+    </Page>
+  );
+}
+
+/** Hand clips by views, filtered by hand type (All first). */
+function HighlightsTab() {
+  const [f, setF] = useState<string>('all');
+  const filters = HAND_FILTERS;
+  const list = f === 'all' ? highlightClips : highlightClips.filter((v) => v.tags.some((t) => t.slug === f));
+  return (
+    <>
+      <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Hand type">
+        {filters.map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={f === k} onClick={() => setF(k)} className={chip(f === k)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className={cx(rowGrid, 'mt-6')}>
+        <BadgeScope videos={list}>
+        {list.map((v) => (
+          <VideoCard key={v.id} v={v} />
+        ))}
+        </BadgeScope>
+      </div>
+    </>
+  );
+}
+
+
+export { catalog };
+
+// ---- Home rows ---------------------------------------------------------------------------------------
+
+/**
+ * v7 Home rows: Coming up (right after the 24/7 channels: now, then next), Continue watching, My List, Editor's pick (best final tables), Recommended for you, Latest replays,
+ * Highlights (automatic, by hand type) and Shorts. No video appears in two rows.
+ */
+export function HomeRows() {
+  const { state, set, toast, signedIn } = useApp();
+  // Remove one video from Continue Watching (with Undo).
+  const removeContinue = (v: Video) => {
+    const before = state.progress;
+    set((s) => {
+      const next = { ...s.progress };
+      delete next[v.id];
+      return { progress: next };
+    });
+    // Undo puts the list back exactly as it was, so the card returns to its place in the row.
+    toast('Removed from Continue Watching', { label: 'Undo', onClick: () => set({ progress: before }) });
+  };
+  const continuing = signedIn
+    ? Object.entries(state.progress)
+        .map(([id, sec]) => ({ v: videoById(id), sec }))
+        .filter((x): x is { v: Video; sec: number } => !!x.v && x.sec / x.v.durationSec < 0.95)
+    : [];
+  const mine = signedIn
+    ? [...state.myList]
+        .sort((a, b) => b.addedAt - a.addedAt)
+        .map((x) => videoById(x.kind === 'archive' ? `classic-${x.id}-finaltable` : x.kind === 'event' ? (catalog.find((v) => v.eventId === x.id && v.kind !== 'clip')?.id ?? '') : x.id))
+        .filter((v): v is Video => !!v)
+    : [];
+  // Each row skips what the rows above it already show.
+  const shown = new Set(continuing.map((x) => x.v.id));
+  const take = (list: Video[], n: number) => {
+    const out = list.filter((v) => !shown.has(v.id)).slice(0, n);
+    out.forEach((v) => shown.add(v.id));
+    return out;
+  };
+  const myRow = take(mine, 4);
+  const picks = take(editorsFinalTables(), 3);
+  const recs = take(recommended, 4);
+  return (
+    <>
+      {/* The WSOP first: its years, its champions, its legends and its great moments. */}
+      <YearsRow />
+      <ChampionsRow />
+      <LegendsRow />
+      <MomentsSection picks={picks} />
+      {/* The personal rows below. */}
+      <VideoRow title="Recommended for you" videos={recs} />
+      <ContinueRow items={continuing} onRemove={removeContinue} />
+      <MyListRow videos={myRow} />
+    </>
+  );
+}
+
+/** Continue watching: big pictures with a thick progress bar, the time left beside the title; one sideways line. */
+function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; onRemove: (v: Video) => void }) {
+  if (!items.length) return null;
+  return (
+    <Section title="Continue watching">
+      <ul className="hscroll gap-5 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1.25rem)/2)] lg:[&>*]:w-[calc((100%-2.5rem)/3)]">
+        {items.map(({ v, sec }) => {
+          const left = Math.max(60, v.durationSec - sec);
+          const pct = Math.min(100, Math.round((sec / v.durationSec) * 100));
+          return (
+            <li key={v.id} className="group relative min-w-0">
+              <Link to={`/watch/${v.id}`} className="block" aria-label={`Resume ${v.title}`}>
+                <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+                  <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+                  <span className="absolute inset-x-0 bottom-0 h-1.5 bg-white/20">
+                    <i className="block h-full bg-gold" style={{ width: `${pct}%` }} />
+                  </span>
+                </span>
+                <span className="mt-2 flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 truncate text-[15px] font-semibold group-hover:text-gold-strong">{v.title}</span>
+                  <span className="shrink-0 text-xs text-muted tnum">{left >= 3600 ? `${Math.floor(left / 3600)}h ${Math.round((left % 3600) / 60)}m left` : `${Math.round(left / 60)} min left`}</span>
+                </span>
+              </Link>
+              <button
+                onClick={() => onRemove(v)}
+                aria-label={`Remove ${v.title} from Continue Watching`}
+                title="Remove from Continue Watching"
+                className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+              >
+                <Icon name="close" size={16} />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  );
+}
+
+/** Editor's pick: one theme — the best final tables — with the editor's note beside three of them. */
+const editorsFinalTables = () => {
+  const finals = catalog.filter((v) => (v.kind === 'classic' || (v.kind === 'broadcast' && v.status === 'vod')) && v.title.includes('Final Table'));
+  const picked: Video[] = [];
+  // Different pictures side by side.
+  for (const x of [...finals].sort((a, b) => b.views - a.views)) if (!picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos)) picked.push(x);
+  return picked;
+};
+
+/**
+ * Moments That Made the WSOP (editor's pick): the editor's note with three final tables, then the hand collections
+ * (bluffs, coolers, bad beats) as wide tiles. Replaces The best final tables and Collections.
+ */
+function MomentsSection({ picks }: { picks: Video[] }) {
+  if (!picks.length) return null;
+  const total = picks.reduce((n, v) => n + v.durationSec, 0);
+  const collections = COLLECTIONS.slice(1).map((c) => ({ c, vs: c.videos() })).filter((x) => x.vs.length);
+  return (
+    <Section title="Moments That Made the WSOP" label="Editor’s pick" action={more('/collections/final-tables', 'All final tables')}>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
+        <div className="flex flex-col justify-between gap-3 rounded-card border border-line bg-surface p-4">
+          <p className="text-[15px] leading-relaxed text-text/85">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-wide text-gold-strong uppercase">From the editor</span>
+            The hands and final tables that made the WSOP, picked by the editor: where bracelets were won, and the moments people still talk about.
+          </p>
+          <p className="text-sm text-muted tnum">
+            {picks.length} final tables · {duration(total)} in all
+          </p>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-3">
+          <BadgeScope videos={picks}>
+          {picks.map((v) => (
+            <VideoCard key={v.id} v={v} />
+          ))}
+          </BadgeScope>
+        </div>
+      </div>
+      <div className="mt-5 grid gap-5 sm:grid-cols-3">
+        {collections.map(({ c, vs }) => (
+          <Link key={c.id} to={`/collections/${c.id}`} className="group relative block aspect-[16/9] overflow-hidden rounded-card bg-surface-2">
+            <img src={vs[0].thumb} style={artStyle({ pos: vs[0].thumbPos, fit: vs[0].thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+            <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" aria-hidden />
+            <span className="absolute inset-x-0 bottom-0 p-4">
+              <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">Collection · {vs.length} hands</span>
+              <span className="mt-1 block text-lg leading-tight font-bold">{c.title}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** My List: the standard card, four across (same size as the rows around it). */
+function MyListRow({ videos }: { videos: Video[] }) {
+  return <VideoRow title="My List" videos={videos} action={more('/my-list', 'See all')} />;
+}
+
+// ---- curated collections ----------------------------------------------------------------------------
+
+const withTag = (slug: string) => highlightClips.filter((v) => v.tags.some((t) => t.slug === slug));
+export const COLLECTIONS: { id: string; title: string; blurb: string; videos: () => Video[] }[] = [
+  { id: 'final-tables', title: 'Greatest final tables', blurb: 'Classic and recent final tables, start to finish.', videos: editorsFinalTables },
+  { id: 'legendary-bluffs', title: 'Legendary bluffs', blurb: 'Big lies, bigger pots.', videos: () => withTag('bluff') },
+  { id: 'coolers', title: 'Coolers, nowhere to hide', blurb: 'Big hands running into bigger ones.', videos: () => withTag('cooler') },
+  { id: 'bad-beats', title: 'Bad beats & comebacks', blurb: 'The hands nobody saw coming.', videos: () => withTag('bad-beat') },
+];
+
+
+/** Curated collections (from the archive): four tiles, each opening its own page. */
+
+
+
+export function CollectionPage() {
+  const { id = '' } = useParams();
+  const c = COLLECTIONS.find((x) => x.id === id);
+  if (!c) return <NotFound />;
+  const vs = c.videos();
+  return (
+    <Page className="max-w-[96rem]">
+      <Link to="/" className="text-sm text-muted hover:text-text">
+        ← Home
+      </Link>
+      <p className="mt-3 text-sm text-muted">Collection</p>
+      <h1 className="mt-1 text-title">{c.title}</h1>
+      <p className="mt-1 text-sm text-muted">
+        {c.blurb} · {vs.length} videos
+      </p>
+      <div className={cx(rowGrid, 'mt-6')}>
+        <BadgeScope videos={vs}>
+        {vs.map((v) => (
+          <VideoCard key={v.id} v={v} />
+        ))}
+        </BadgeScope>
+      </div>
+    </Page>
+  );
+}
+
+// ---- Shorts -------------------------------------------------------------------------------------------
+
+
+/** Old /shorts links (with ?start=) land on the Shorts tab of Videos. */
+export function ShortsRedirect() {
+  const [params] = useSearchParams();
+  return <Navigate to={`/videos/shorts${params.toString() ? `?${params}` : ''}`} replace />;
+}
+
+/**
+ * The Shorts tab of Videos, YouTube Shorts style: one tall vertical clip at a time in the middle, the title and its
+ * buttons at the bottom left (over the clip on phones), up / down arrows on the right. No likes, comments or sharing.
+ * Scroll, swipe, the arrows or the ↑ ↓ keys move to the next clip; it starts at ?start=.
+ */
+function ShortsFeed() {
+  const [params] = useSearchParams();
+  const start = params.get('start');
+  const list = start ? [...highlightClips.filter((v) => v.id === start), ...highlightClips.filter((v) => v.id !== start)] : highlightClips;
+  const box = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState(0);
+  // The clips take exactly the room left on screen (nothing scrolls but the clips themselves).
+  const [height, setHeight] = useState<number>();
+  useEffect(() => {
+    const fit = () => {
+      const el = box.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const below = document.documentElement.scrollHeight - (top + el.offsetHeight);
+      setHeight(Math.max(320, window.innerHeight - top - below));
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+  const go = (dir: 1 | -1) => box.current?.scrollBy({ top: dir * box.current.clientHeight, behavior: 'smooth' });
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') (e.preventDefault(), go(1));
+      if (e.key === 'ArrowUp') (e.preventDefault(), go(-1));
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, []);
+  const onScroll = () => {
+    const el = box.current;
+    if (el) setAt(Math.round(el.scrollTop / el.clientHeight));
+  };
+  const info = (v: Video) => (
+    <div>
+      <p className="flex items-center gap-2 text-sm font-semibold">
+        <span className="grid size-9 place-items-center rounded-full border border-line bg-black">
+          <img src={`${import.meta.env.BASE_URL}wsop-logo.webp`} alt="" className="w-7" />
+        </span>
+        WSOP TV
+      </p>
+      <h2 className="mt-3 font-sans text-base leading-snug font-bold normal-case md:text-lg">{v.title}</h2>
+      <p className="mt-1 text-sm text-muted">
+        {v.subtitle} · {duration(v.durationSec)}
+      </p>
+    </div>
+  );
+  const arrow = (dir: 1 | -1) => (
+    <button
+      onClick={() => go(dir)}
+      disabled={dir === -1 ? at === 0 : at >= list.length - 1}
+      aria-label={dir === -1 ? 'Previous short' : 'Next short'}
+      className="grid size-12 place-items-center rounded-full bg-surface-3 hover:bg-line-strong disabled:opacity-30"
+    >
+      <Icon name="chevron" size={22} className={dir === -1 ? '-rotate-90' : 'rotate-90'} />
+    </button>
+  );
+  return (
+    <div className="relative mt-6">
+      <div ref={box} onScroll={onScroll} style={{ height }} className="h-[calc(100dvh-13rem)] snap-y snap-mandatory overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Shorts">
+        {list.map((v) => (
+          <article key={v.id} className="flex h-full snap-start flex-col pb-2 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-end md:gap-8">
+            <div className="hidden max-w-sm pb-2 md:block">{info(v)}</div>
+            {/* The clip alone: no title or buttons over it. */}
+            <div className="relative mx-auto aspect-[9/16] min-h-0 max-w-full flex-1 overflow-hidden rounded-panel bg-black md:h-full md:flex-none">
+              <video className="absolute inset-0 size-full object-cover" src={`${v.media.url}#t=${v.media.start}`} poster={v.thumb} muted loop playsInline autoPlay preload="none" />
+            </div>
+            <div className="pt-3 md:hidden">{info(v)}</div>
+            <div className="hidden md:block" />
+          </article>
+        ))}
+      </div>
+      <div className="absolute top-1/2 right-0 hidden -translate-y-1/2 flex-col gap-3 md:flex">
+        {arrow(-1)}
+        {arrow(1)}
+      </div>
+    </div>
+  );
+}
+
+const more = (to: string, label = 'More') => (
+  <Link to={to} className="text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
+    {label} →
+  </Link>
+);
+
+/** A Home section: the title (editorial ones carry a gold label beside it, as Curated collections does) and a link. */
+function Section({ title, label, action, children }: { title: string; label?: string; action?: ReactNode; children: ReactNode }) {
+  return (
+    <section aria-label={title}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h2 className="text-xl sm:text-2xl">{title}</h2>
+          {label && <EditorialLabel>{label}</EditorialLabel>}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function EditorialLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-gold-strong uppercase">
+      <Icon name="star" size={12} /> {children}
+    </span>
+  );
+}
+
+/** My List page: everything saved, newest first, in the same cards. */
+export function MyListPage() {
+  const { state, signedIn, requireLogin } = useApp();
+  const list = [...state.myList]
+    .sort((a, b) => b.addedAt - a.addedAt)
+    .map((x) => videoById(x.kind === 'archive' ? `classic-${x.id}-finaltable` : x.kind === 'event' ? (catalog.find((v) => v.eventId === x.id && v.kind !== 'clip')?.id ?? '') : x.id))
+    .filter((v): v is Video => !!v);
+  return (
+    <Page className="max-w-[96rem]">
+      <h1 className="text-title">My List</h1>
+      {!signedIn ? (
+        <button onClick={() => requireLogin({ reason: 'Sign in to see My List.' })} className="mt-4 text-sm font-semibold text-gold-strong">
+          Sign in to see My List →
+        </button>
+      ) : list.length ? (
+        <div className={cx(rowGrid, 'mt-6')}>
+          <BadgeScope videos={list}>
+          {list.map((v) => (
+            <VideoCard key={v.id} v={v} />
+          ))}
+          </BadgeScope>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-muted">Nothing saved yet. Use My List on any video to keep it here.</p>
+      )}
+    </Page>
+  );
+}
+
+// ---- Live -------------------------------------------------------------------------------------------
+
+/** Seconds into the broadcast at the live edge: a channel counts from the start of what's on, an event from its day's start. */
+function liveEdgeFor(v: Video, at: number) {
+  if (v.kind === 'channel') {
+    const p = programAt(v.id.slice(3), at);
+    return () => Math.max(60, (Date.now() - (p?.start ?? Date.now())) / 1000);
+  }
+  const ref = v.dayId ? dayById(v.dayId) : undefined;
+  return () => (ref ? Math.max(120, Math.min(v.durationSec, (Date.now() - Date.parse(ref.day.start)) / 1000)) : v.durationSec);
+}
+
+/**
+ * Live: something is always playing. The player opens on the first live event (or a 24/7 channel when no event is
+ * live); the list beside it switches what's on screen without leaving the page.
+ */
+export function LivePage() {
+  const { state } = useApp();
+  const now = useTick(15_000);
+  const [params, setParams] = useSearchParams();
+  const events = catalog.filter((v) => isLive(v, state.streamMode));
+  const chans = channels.map((c) => channelVideo(c.id, now)).filter((v): v is Video => !!v);
+  const sources = [...events, ...chans];
+  const v = sources.find((x) => x.id === params.get('v')) ?? sources[0];
+  const program = v.kind === 'channel' ? programAt(v.id.slice(3), now) : undefined;
+  const pick = (id: string) => setParams({ v: id }, { replace: true });
+  const upcoming = programs
+    .filter((p) => p.start > now && p.start < now + 6 * 3_600_000 && !BREAKS.includes(p.title))
+    .sort((a, b) => a.start - b.start)
+    .slice(0, 6);
+  return (
+    <Page className="max-w-[96rem] py-4 sm:py-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0">
+          <div className="overflow-hidden rounded-panel">
+            <Player key={`${v.id}:${program?.id ?? ''}`} v={v} live liveEdge={liveEdgeFor(v, now)} />
+          </div>
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="font-sans text-xl leading-snug font-bold normal-case sm:text-2xl">{v.title}</h1>
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+                <LiveTag />
+                <span>{v.subtitle}</span>
+                {program && (
+                  <span className="tnum">
+                    · {fmtTime(program.start, state.tz)} – {fmtTime(program.end, state.tz)}
+                  </span>
+                )}
+              </p>
+            </div>
+            <Link to={`/watch/${v.id}`} className="text-sm font-semibold text-muted hover:text-text">
+              Details & related →
+            </Link>
+          </div>
+          <TagList v={v} className="mt-4" />
+        </div>
+
+        <aside className="space-y-6">
+          <section aria-label="Live now">
+            <h2 className="mb-3 font-sans text-base font-bold normal-case">Live now</h2>
+            {events.length > 0 && (
+              <>
+                <h3 className="mt-4 mb-2 text-xs font-semibold tracking-wide text-subtle uppercase first:mt-0">Events</h3>
+                <ul className="space-y-2">
+                  {events.map((x) => (
+                <SourceItem key={x.id} x={x} on={x.id === v.id} onPick={pick} />
+              ))}
+                </ul>
+              </>
+            )}
+            <h3 className="mt-4 mb-2 text-xs font-semibold tracking-wide text-subtle uppercase first:mt-0">24/7 Channels</h3>
+            <ul className="space-y-2">
+              {chans.map((x) => (
+                <SourceItem key={x.id} x={x} on={x.id === v.id} onPick={pick} />
+              ))}
+            </ul>
+          </section>
+          <section aria-label="Coming up">
+            <div className="mb-2 flex items-end justify-between">
+              <h2 className="font-sans text-base font-bold normal-case">Coming up</h2>
+              <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
+                Full schedule →
+              </Link>
+            </div>
+            <ol className="divide-y divide-line">
+              {upcoming.map((p) => (
+                <li key={p.id} className="flex gap-3 py-2 text-sm">
+                  <span className="w-16 shrink-0 text-muted tnum">{fmtTime(p.start, state.tz)}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate">{p.title}</span>
+                    <span className="block truncate text-xs text-subtle">{channelById(p.channelId)?.name}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </aside>
+      </div>
+    </Page>
+  );
+}
+
+/** One row of the Live list: thumbnail (play mark when it's on screen), title, where it's from. */
+function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: string) => void }) {
+  return (
+    <li>
+      <button onClick={() => onPick(x.id)} aria-current={on || undefined} className={cx('flex w-full gap-3 rounded-card p-2 text-left transition-colors duration-150', on ? 'bg-surface-3' : 'hover:bg-surface-2')}>
+        <span className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-chip bg-surface-2">
+          <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+          {on && (
+            <span className="absolute inset-0 flex items-center justify-center bg-black/45" aria-hidden>
+              <Icon name="play" size={18} />
+            </span>
+          )}
+        </span>
+        <span className="min-w-0">
+          <span className="line-clamp-2 text-sm leading-snug font-semibold">{x.title}</span>
+          <span className="mt-0.5 block truncate text-xs text-muted">{x.subtitle}</span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+// ---- Schedule ---------------------------------------------------------------------------------------
+
+const BREAKS = ['Coming Up', 'A continuación'];
+
+/** The series running now (none in the between-series preview). */
+
+/** A reminder toggle (sign-in required), kept in `state.reminders` under `key`. */
+function useReminder(key: string, what: string) {
+  const { state, set, toast, signedIn, requireLogin } = useApp();
+  const on = state.reminders.includes(key);
+  const toggle = () => {
+    if (!signedIn) return requireLogin({ reason: 'Sign in to get a reminder.' });
+    set((x) => ({ reminders: on ? x.reminders.filter((k) => k !== key) : [...x.reminders, key] }));
+    toast(on ? 'Reminder removed' : `We'll remind you before ${what} starts`);
+  };
+  return [on, toggle] as const;
+}
+
+const titleOf = (x: { e: TourEvent; d: Day }) => `${x.e.name.replace(' World Championship', '')} · ${x.d.label}`;
+
+// ---- Events -----------------------------------------------------------------------------------------
+
+const eventVideos = (id: string) => catalog.filter((v) => v.eventId === id && v.kind === 'broadcast');
+
+
+/**
+ * Schedule, as on wsop.com/schedule: the year's series (three or four big ones) as cards under month headings — tag,
+ * name, dates, venue; each opens its page with the broadcast schedule. Only a series that is live carries anything to
+ * press on the list: the LIVE badge, its live broadcasts and Watch live.
+ */
+type ScheduleItem = { e: TourEvent; d: Day };
+type SeriesStop = { id: string; name: string; venue: string; city: string; tz?: string; start: string; end: string; art: Art };
+
+const DAY_MS = 86_400_000;
+/** The season's WSOP series (2025 Paradise, 2026 WSOP Europe, 2026 Las Vegas, 2026 Super Circuit Canada), from the data. */
+const SEASON: SeriesStop[] = [
+  // The demo series' dates cover all of their broadcasts.
+  ...series.map((s) => {
+    const starts = events.filter((e) => e.seriesId === s.id).flatMap((e) => e.days.map((d) => d.start));
+    const first = [s.start, ...starts].sort()[0];
+    const last = [s.end, ...starts].sort().pop()!;
+    return { ...s, start: first, end: last, art: s.id === 'lv26' ? TABLE_ART[0] : s.id === 'pa25' ? VENUE_ART[3] : s.id === 'eu26' ? VENUE_ART[2] : VENUE_ART[0] };
+  }),
+];
+
+const seriesState = (s: SeriesStop, now: number) => (Date.parse(s.start) <= now && now <= Date.parse(s.end) ? 'live' : Date.parse(s.start) > now ? 'upcoming' : 'past');
+const shortDate = (iso: string, tz: string) => new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric', timeZone: tz }).format(new Date(iso));
+
+/**
+ * Schedule: the season's series in date order, each a fold (picture, state, name, dates, venue). The running series is
+ * open on arrival (else the next one); `/schedule/:seriesId` opens a given one. Open, a series shows its broadcasts
+ * still to come (live first), with the ones already shown folded under "Earlier broadcasts".
+ */
+export function SchedulePage() {
+  const { seriesId } = useParams();
+  const now = useTick(60_000);
+  const byStart = [...SEASON].sort((a, b) => a.start.localeCompare(b.start));
+  const first =
+    SEASON.find((x) => x.id === seriesId) ??
+    SEASON.find((x) => seriesState(x, now) === 'live') ??
+    byStart.find((x) => seriesState(x, now) === 'upcoming') ??
+    byStart[byStart.length - 1];
+  const [open, setOpen] = useState<Set<string>>(() => new Set([first.id]));
+  useEffect(() => setOpen((o) => (o.has(first.id) ? o : new Set([...o, first.id]))), [first.id]);
+  const toggle = (id: string) =>
+    setOpen((o) => {
+      const n = new Set(o);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  return (
+    <Page className="max-w-[72rem]">
+      <h1 className="text-2xl sm:text-3xl">Schedule</h1>
+      <p className="mt-1 text-sm text-muted">This season's series. Open one to see its broadcasts.</p>
+      <div className="mt-5 flex flex-col gap-3">
+        {byStart.map((x) => (
+          <SeriesFold key={x.id} s={x} open={open.has(x.id)} onToggle={() => toggle(x.id)} now={now} />
+        ))}
+      </div>
+    </Page>
+  );
+}
+
+/**
+ * One series as a fold: the bar (picture, state, name, dates, venue, and a Show / Hide button) is always on view;
+ * open, it holds the series' broadcast schedule. The running series opens by itself, the past and later ones stay folded.
+ */
+function SeriesFold({ s, open, onToggle, now }: { s: SeriesStop; open: boolean; onToggle: () => void; now: number }) {
+  const { state } = useApp();
+  const st = seriesState(s, now);
+  const left = Math.ceil((Date.parse(s.start) - now) / DAY_MS);
+  const total = Math.round((Date.parse(s.end) - Date.parse(s.start)) / DAY_MS) + 1;
+  const day = Math.min(total, Math.floor((now - Date.parse(s.start)) / DAY_MS) + 1);
+  const bodyId = `fold-${s.id}`;
+  return (
+    <section aria-label={s.name} className={cx('overflow-hidden rounded-panel border bg-surface', st === 'live' ? 'border-gold/70' : 'border-line')}>
+      <button onClick={onToggle} aria-expanded={open} aria-controls={bodyId} className="flex w-full items-center gap-4 p-3 text-left hover:bg-surface-2 sm:p-4">
+        <img src={s.art.src} style={artStyle(s.art)} alt="" className={cx('aspect-video shrink-0 rounded-card object-cover', 'w-24 sm:w-32', st === 'past' && 'opacity-70')} />
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            {st === 'live' ? (
+              <LiveTag />
+            ) : (
+              <span className="rounded-[4px] border border-line-strong px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-muted uppercase">{st === 'upcoming' ? 'Upcoming' : 'Past'}</span>
+            )}
+            <span className={cx('text-xs font-semibold tnum', st === 'live' ? 'text-live' : 'text-muted')}>
+              {st === 'live' ? `Day ${day} of ${total}` : st === 'upcoming' ? (left <= 1 ? 'Starts tomorrow' : `Starts in ${left} days`) : 'Replays'}
+            </span>
+          </span>
+          <span className={cx('mt-1 block font-bold', 'text-lg sm:text-xl', st === 'past' && !open && 'text-text/80')}>{s.name}</span>
+          <span className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted sm:text-sm">
+            <span className="tnum">{shortDate(s.start, s.tz ?? state.tz)} – {shortDate(s.end, s.tz ?? state.tz)}</span>
+            <span className="hidden sm:inline">{s.venue} · {s.city}</span>
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-text/85">
+          <span className="hidden sm:inline">{open ? 'Hide' : 'Schedule'}</span>
+          <span className="grid size-9 place-items-center rounded-full border border-line-strong">
+            <Icon name="chevron" size={18} className={cx('transition-transform', open ? '-rotate-90' : 'rotate-90')} />
+          </span>
+        </span>
+      </button>
+      {open && (
+        <div id={bodyId} className="border-t border-line px-3 pt-4 pb-5 sm:px-5">
+          <SeriesSchedule s={s} now={now} />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * A series' broadcasts: the ones still to come (live included) in date order, then the ones already shown, folded
+ * under "Earlier broadcasts (n)", newest first, each with its replay. A series that is over lists its replays only.
+ */
+function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
+  const { state } = useApp();
+  const st = seriesState(s, now);
+  // Recommended from this series: its latest replays, then its key hands (four in all).
+  const ofSeries = catalog.filter((v) => v.eventId && eventById(v.eventId)?.seriesId === s.id && !isLive(v, state.streamMode));
+  const seriesVideos = [...ofSeries.filter((v) => v.kind === 'broadcast').reverse().slice(0, 2), ...ofSeries.filter((v) => v.kind === 'clip').slice(0, 2)];
+  const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
+  const all = events
+    .filter((e) => e.seriesId === s.id)
+    .flatMap((e) => e.days.map((d) => ({ e, d })))
+    .sort((a, b) => a.d.start.localeCompare(b.d.start));
+  // At most 10 rows: a series with more broadcast days lists one row per event (live day, else final table, else last day).
+  const MAX_ROWS = 10;
+  const rows =
+    all.length <= MAX_ROWS
+      ? all
+      : events
+          .filter((e) => e.seriesId === s.id)
+          .map((e) => {
+            const d = e.days.find((x) => isBroadcasting(status(x))) ?? e.days.find((x) => x.label === 'Final Table') ?? e.days[e.days.length - 1];
+            return { e, d };
+          })
+          .sort((a, b) => a.d.start.localeCompare(b.d.start))
+          .slice(-MAX_ROWS);
+  // Live and upcoming first (soonest first), then what has aired (newest first); every row shown, nothing folded.
+  const ahead = rows.filter((x) => status(x.d) !== 'vod');
+  const earlier = rows.filter((x) => status(x.d) === 'vod').reverse();
+  const table = (rows: ScheduleItem[]) => (
+    <div className="mt-3 overflow-x-auto rounded-panel border border-line">
+      <table className="w-full min-w-[44rem] text-left text-sm">
+        <thead className="bg-surface-2 text-xs text-muted">
+          <tr>
+            <th className="px-4 py-3 font-semibold">Date</th>
+            <th className="px-4 py-3 font-semibold">Event</th>
+            <th className="px-4 py-3 font-semibold">Buy-in</th>
+            <th className="px-4 py-3 font-semibold">Game</th>
+            <th className="px-4 py-3" aria-label="Watch" />
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {rows.map(({ e, d }) => (
+            <BroadcastRow key={d.id} e={e} d={d} st={status(d)} venueTz={s.tz ?? VENUE_TZ} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+  if (!all.length)
+    return (
+      <p className="rounded-panel border border-line bg-surface-2 p-5 text-sm text-muted">
+        {st === 'past' ? 'Replays of this series are in Browse.' : 'The broadcast schedule is announced closer to the series.'}
+      </p>
+    );
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted">
+          {st === 'past' ? 'Every broadcast is on demand. ' : ''}Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with local time in {s.city.split(',')[0]}.
+        </p>
+        {/* A series that is over: its replays as event cards in Browse. */}
+        {st === 'past' && (
+          <Link to={`/videos/replays?series=${s.id}`}>
+            <Button size="sm" variant="primary" tabIndex={-1}>
+              <Icon name="play" size={14} /> All replays in Browse
+            </Button>
+          </Link>
+        )}
+      </div>
+      {/* One table: a series that is over reads first day to last; a running one puts live and upcoming on top. */}
+      {rows.length > 0 && table(ahead.length === 0 ? [...earlier].reverse() : [...ahead, ...earlier])}
+      {/* The series' videos: newest replays and key hands, with what they are and how long they run. */}
+      {seriesVideos.length > 0 && (
+        <div className="mt-6">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <h3 className="text-base font-bold">Videos from this series</h3>
+            <Link to={`/videos/replays?series=${s.id}`} className="text-sm font-semibold text-muted hover:text-text">
+              All replays →
+            </Link>
+          </div>
+          <div className={rowGrid}>
+            <BadgeScope videos={seriesVideos}>
+            {seriesVideos.map((v) => (
+              <VideoCard key={v.id} v={v} />
+            ))}
+            </BadgeScope>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** One broadcast in the table: date block (with the venue's local time), event and broadcast, buy-in, game, and what you can do. */
+function BroadcastRow({ e, d, st, venueTz }: ScheduleItem & { st: Day['status']; venueTz: string }) {
+  const { state } = useApp();
+  const title = titleOf({ e, d });
+  const [on, toggle] = useReminder(`day:${d.id}`, title);
+  const date = new Date(d.start);
+  const part = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', { ...o, timeZone: state.tz }).format(date);
+  const live = isBroadcasting(st);
+  return (
+    <tr className={cx(live ? 'bg-live/5' : 'bg-surface', st === 'vod' && 'text-text/80')}>
+      <td className="px-4 py-3">
+        <span className="flex w-24 flex-col items-center overflow-hidden rounded-card border border-line text-center leading-tight">
+          <span className="block w-full bg-surface-3 py-0.5 text-[11px] text-muted">{part({ month: 'short' })}</span>
+          <span className="block pt-1 text-lg font-black tnum">{part({ day: '2-digit' })}</span>
+          <span className="block text-[10px] font-bold text-muted uppercase">{part({ weekday: 'short' })}</span>
+          <span className="block pb-1 text-xs font-semibold tnum">{fmtTime(d.start, state.tz)}</span>
+          <span className="block w-full border-t border-line py-0.5 text-[10px] text-muted tnum">{fmtTime(d.start, venueTz)} local</span>
+        </span>
+      </td>
+      <td className="px-4 py-3">
+        <span className="block text-xs text-gold-strong">Event #{e.number}</span>
+        <span className="mt-0.5 flex flex-wrap items-center gap-2">
+          {live && <LiveTag />}
+          <Link to={`/watch/${d.id}`} className="text-[15px] font-bold hover:text-gold-strong">
+            {title}
+          </Link>
+        </span>
+      </td>
+      <td className="px-4 py-3 tnum">{e.buyIn ? money(e.buyIn) : 'TBA'}</td>
+      <td className="px-4 py-3">{e.game}</td>
+      <td className="px-4 py-3 text-right">
+        {live ? (
+          <Link to={`/watch/${d.id}`}>
+            <Button size="sm" variant="primary" tabIndex={-1}>
+              <Icon name="play" size={14} /> Watch live
+            </Button>
+          </Link>
+        ) : st === 'upcoming' ? (
+          <Button size="sm" variant={on ? 'secondary' : 'outline'} onClick={toggle} aria-pressed={on}>
+            <Icon name={on ? 'check' : 'bell'} size={14} /> {on ? 'Reminder set' : 'Remind me'}
+          </Button>
+        ) : (
+          // On demand: Watch on WSOP TV (grey, so Watch live stays the one red button in the table).
+          <Link to={`/watch/${d.id}`}>
+            <Button size="sm" variant="secondary" tabIndex={-1} className="whitespace-nowrap">
+              <Icon name="play" size={14} /> Watch on WSOP TV
+            </Button>
+          </Link>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+/** One event: its broadcasts in order and its key hands. */
+export function EventPage() {
+  const { eventId = '' } = useParams();
+  const { state } = useApp();
+  const e = eventById(eventId);
+  const list = e ? eventVideos(e.id) : [];
+  const ahead = e ? e.days.filter((d) => d.status === 'upcoming' && d.id !== HERO_DAY_ID) : [];
+  if (!e || !(list.length + ahead.length)) return <NotFound />;
+  const live = list.some((v) => isLive(v, state.streamMode));
+  const clips = highlightClips.filter((v) => v.eventId === e.id);
+  return (
+    <Page className="max-w-[96rem] space-y-10">
+      <div>
+        <Link to={`/videos/replays?series=${e.seriesId}`} className="text-sm text-muted hover:text-text">
+          ← Replays
+        </Link>
+        <h1 className="mt-2 text-title">{e.name.replace(' World Championship', '')}</h1>
+        <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+          {live && <LiveTag />}
+          <span>
+            {seriesById(e.seriesId).name} · {e.game} · Buy-in {e.buyIn ? money(e.buyIn) : 'Invitational'} · {e.entrants.toLocaleString('en-US')} entries · Prize pool {money(e.prizePool)}
+          </span>
+        </p>
+      </div>
+      <section aria-label="Broadcasts">
+        <h2 className="mb-3 text-xl sm:text-2xl">Broadcasts</h2>
+        <div className={rowGrid}>
+          <BadgeScope videos={list}>
+          {list.map((v) => (
+            <VideoCard key={v.id} v={v} progress={state.progress[v.id] ? state.progress[v.id] / v.durationSec : undefined} />
+          ))}
+          </BadgeScope>
+          {ahead.map((d) => (
+            <UpcomingCard key={d.id} e={e} d={d} />
+          ))}
+        </div>
+      </section>
+      <VideoRow title="Key hands" videos={clips} action={<Link to={`/tag/event-${e.id}`} className="text-sm font-semibold text-muted hover:text-text">All videos →</Link>} />
+    </Page>
+  );
+}
+
+// ---- 24/7 channel cards (Home) -------------------------------------------------------------------------
+
+/**
+ * One 24/7 channel: its picture, what's on, the channel (no end time) and Watch now. On the Channel guide the card
+ * selects the channel (`onSelect`); on Home the whole card opens it on Live.
+ */
+function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: number; selected?: boolean; onSelect?: () => void }) {
+  const p = programAt(c.id, now);
+  const a = CHANNEL_ART[c.id];
+  const hit = "block w-full min-w-0 text-left after:absolute after:inset-0 after:content-['']";
+  const text = (
+    <>
+      <span className="block truncate text-base font-bold" title={p?.title}>
+        {p?.title}
+      </span>
+      <span className="mt-0.5 block truncate text-sm text-muted tnum">
+        {c.name}
+      </span>
+    </>
+  );
+  return (
+    <div className={cx('relative flex min-w-0 items-center gap-3.5 rounded-panel border p-3 transition-colors duration-150', selected ? 'border-gold bg-gold-dim' : 'border-line-strong bg-surface hover:border-text/40')}>
+      <img src={a.src} style={artStyle(a)} alt="" className="size-16 shrink-0 rounded-card object-cover" />
+      <div className="min-w-0 flex-1">
+        {/* The whole card is the hit area; the Watch link sits above it. */}
+        {onSelect ? (
+          <button role="tab" aria-selected={selected} onClick={onSelect} className={hit}>
+            {text}
+          </button>
+        ) : (
+          <Link to={`/live?v=ch-${c.id}`} className={hit} aria-label={`${c.name}: ${p?.title ?? ''}`}>
+            {text}
+          </Link>
+        )}
+        <Link to={`/live?v=ch-${c.id}`} className="relative z-10 mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-strong hover:underline">
+          <Icon name="play" size={14} /> Watch now
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/** Home: the four 24/7 channels right under the banner. */
+export function TodayCards({ now }: { now: number }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="24/7 channels">
+      {channels.map((c) => (
+        <ChannelCard key={c.id} c={c} now={now} />
+      ))}
+    </div>
+  );
+}
