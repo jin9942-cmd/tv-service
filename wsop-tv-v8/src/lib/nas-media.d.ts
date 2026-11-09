@@ -5,6 +5,8 @@ declare module 'virtual:nas-media' {
     video: Record<'ft' | 'hall' | 'int' | 'deal' | 'hl', string>;
     stills: Record<'broadcast' | 'hands' | 'people' | 'venue', string[]>;
     hero: { table: string; portrait: string; finalTable: string };
+    /** WSOP Classics (1973–2002): a clip and stills (classic-<year>-a|b.jpg) from the NAS Classic folder. */
+    classic?: { video: string; stills: string[] };
   } | null;
   export default NAS;
 }

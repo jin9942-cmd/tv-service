@@ -72,21 +72,25 @@ const daysNote = (n: number) => `${n} broadcast${n === 1 ? '' : 's'}`;
 export function YearsTab() {
   const { state } = useApp();
   const liveNow = catalog.some((v) => v.eventId && isLive(v, state.streamMode));
+  const tile = (y: (typeof ARCHIVE)[number]) => {
+    const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
+    return <YearTile key={y.year} to={`/videos/year/${y.year}`} year={y.year} art={archiveArt(main?.id ?? String(y.year))} line={y.champion ? `Champion · ${y.champion.name}` : ''} />;
+  };
   return (
-    <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-      <YearTile to={`/videos/year/${CURRENT_YEAR}`} year={CURRENT_YEAR} art={TABLE_ART[0].src} line={liveNow ? 'Main Event final table on air' : 'This year'} live={liveNow} />
-      {ARCHIVE.map((y) => {
-        const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
-        return <YearTile key={y.year} to={`/videos/year/${y.year}`} year={y.year} art={archiveArt(main?.id ?? String(y.year))} line={y.champion ? `Champion · ${y.champion.name}` : ''} />;
-      })}
-      <div className="relative overflow-hidden rounded-card border border-dashed border-line-strong bg-surface p-4" aria-label={`WSOP Classics ${CLASSIC_RANGE}: available after rights clearance`}>
-        <p className="font-display text-2xl tnum">Classic</p>
-        <p className="mt-1 text-sm text-muted tnum">{CLASSIC_RANGE}</p>
-        <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-text/80">
-          <Icon name="lock" size={14} /> After rights clearance
-        </p>
+    <>
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <YearTile to={`/videos/year/${CURRENT_YEAR}`} year={CURRENT_YEAR} art={TABLE_ART[0].src} line={liveNow ? 'Main Event final table on air' : 'This year'} live={liveNow} />
+        {ARCHIVE.filter((y) => !y.classic).map(tile)}
       </div>
-    </div>
+      {/* WSOP Classics: the Main Event broadcasts from Binion's Horseshoe, 1973 – 2002. */}
+      <section aria-label="WSOP Classics" className="mt-10">
+        <h2 className="text-xl sm:text-2xl">WSOP Classics</h2>
+        <p className="mt-1 text-sm text-muted">
+          <span className="tnum">{CLASSIC_RANGE}</span> · The Main Event from Binion’s Horseshoe, as it was broadcast
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">{ARCHIVE.filter((y) => y.classic).map(tile)}</div>
+      </section>
+    </>
   );
 }
 function YearTile({ to, year, art, line, live }: { to: string; year: number; art: string; line: string; live?: boolean }) {
@@ -184,6 +188,7 @@ export function YearPage() {
     <Page className="max-w-[96rem]">
       {back('/videos', 'Years')}
       <h1 className="mt-3 text-title">{y} World Series of Poker</h1>
+      {arch?.classic && <p className="mt-1 text-xs font-bold tracking-wide text-gold-strong uppercase">WSOP Classics · Binion’s Horseshoe</p>}
       {arch?.champion && (
         <p className="mt-1 text-sm text-muted">
           Main Event champion · <span className="font-semibold text-text">{arch.champion.name}</span> <CountryCode cc={arch.champion.cc} />
@@ -192,7 +197,7 @@ export function YearPage() {
       {isCurrent && <p className="mt-1 text-sm text-muted">This year · live and on demand</p>}
 
       {/* Series tabs */}
-      <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Series">
+      <div hidden={seriesList.length < 2} className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Series">
         {seriesList.map((s) => (
           <FilterChip key={s.key} on={s.key === sKey} onClick={() => (setParams({ series: s.key }, { replace: true }), setGame('all'), setBuy('all'), setKind('All'))}>
             {s.name}
@@ -226,7 +231,7 @@ export function YearPage() {
                 {main.video && (
                   <Link to={main.live ? `/watch/${main.video}` : `/watch/${main.video}?play=1`} onClick={main.live ? undefined : enterFullScreen}>
                     <Button variant="primary" tabIndex={-1}>
-                      <Icon name="play" size={16} /> {main.live ? 'Watch live' : 'Watch the final table'}
+                      <Icon name="play" size={16} /> {main.live ? 'Watch live' : arch?.classic ? 'Watch the broadcast' : 'Watch the final table'}
                     </Button>
                   </Link>
                 )}

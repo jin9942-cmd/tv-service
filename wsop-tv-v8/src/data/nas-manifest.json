@@ -83,5 +83,43 @@
     "finalTable": "stills/vegas-ft-05.jpg",
     "table": "stills/vegas-ft-13.jpg",
     "portrait": "stills/vegas-shr-04.jpg"
+  },
+  "classic": {
+    "video": "video/classic.mp4",
+    "stills": [
+      "stills/classic-1973-a.jpg",
+      "stills/classic-1978-a.jpg",
+      "stills/classic-1979-a.jpg",
+      "stills/classic-1979-b.jpg",
+      "stills/classic-1981-a.jpg",
+      "stills/classic-1981-b.jpg",
+      "stills/classic-1983-a.jpg",
+      "stills/classic-1983-b.jpg",
+      "stills/classic-1987-a.jpg",
+      "stills/classic-1987-b.jpg",
+      "stills/classic-1988-a.jpg",
+      "stills/classic-1989-a.jpg",
+      "stills/classic-1990-a.jpg",
+      "stills/classic-1990-b.jpg",
+      "stills/classic-1991-a.jpg",
+      "stills/classic-1991-b.jpg",
+      "stills/classic-1992-a.jpg",
+      "stills/classic-1992-b.jpg",
+      "stills/classic-1993-a.jpg",
+      "stills/classic-1993-b.jpg",
+      "stills/classic-1994-a.jpg",
+      "stills/classic-1994-b.jpg",
+      "stills/classic-1995-a.jpg",
+      "stills/classic-1995-b.jpg",
+      "stills/classic-1997-a.jpg",
+      "stills/classic-1997-b.jpg",
+      "stills/classic-1998-a.jpg",
+      "stills/classic-1998-b.jpg",
+      "stills/classic-1999-b.jpg",
+      "stills/classic-2000-a.jpg",
+      "stills/classic-2000-b.jpg",
+      "stills/classic-2001-b.jpg",
+      "stills/classic-2002-a.jpg"
+    ]
   }
 }
