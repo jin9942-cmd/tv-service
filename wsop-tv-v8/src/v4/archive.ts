@@ -87,6 +87,11 @@ function makeVideo(ref: ArchiveRef, n: number | `h${number}`): Video | undefined
     { slug: `arc-series-${series.key}`, label: `WSOP ${series.name}` },
     { slug: `arc-event-${event.id}`, label: event.name },
   ];
+  // A highlight carries its hashtag (the kind of hand), as the hand clips of this year do.
+  if (clip) {
+    const [slug, label] = HASHTAGS[hash(id) % HASHTAGS.length];
+    tags.push({ slug, label });
+  }
   return {
     id,
     kind: clip ? 'clip' : 'classic',
@@ -123,6 +128,68 @@ export function archiveVideo(id: string): Video | undefined {
 export const broadcastsOf = (ref: ArchiveRef) => ref.event.days.map((_, i) => makeVideo(ref, i)!);
 /** Highlights of an event (the archive's highlight and hand-clip files). */
 export const highlightsOf = (ref: ArchiveRef) => Array.from({ length: ref.event.highlights }, (_, i) => makeVideo(ref, `h${i}`)!);
+
+/**
+ * Hashtags: the kind of hand (Michael's note: Browse is built on the year and the player; hashtags such as Bluff and
+ * Hero call come on top of those two). The same slugs as the hand clips' tags.
+ */
+export const HASHTAGS: [string, string][] = [
+  ['bluff', 'Bluff'],
+  ['hero-call', 'Hero call'],
+  ['cooler', 'Cooler'],
+  ['bad-beat', 'Bad beat'],
+  ['big-pot', 'Big pot'],
+  ['winning-moment', 'Winning moment'],
+];
+export const hashtagLabel = (slug: string) => HASHTAGS.find((h) => h[0] === slug)?.[1];
+/** Every archive highlight of a year (all its series). */
+export const archiveHands = (year?: number) =>
+  ARCHIVE.filter((y) => year == null || y.year === year).flatMap((y) => y.series.flatMap((s) => s.events.flatMap((e) => highlightsOf({ year: y, series: s, event: e }))));
+
+/**
+ * Bracelet legends: the all-time leaders in WSOP bracelets (WSOP.com, All-Time Bracelet Winners, 2026), with their
+ * Main Event titles. `archive` lists the broadcasts in this archive they are known to be in (champion years, and
+ * Erik Seidel as the 1988 runner-up); player-level tagging of the rest of the archive isn't done yet.
+ */
+export interface Legend {
+  id: string;
+  name: string;
+  country: string;
+  cc: string;
+  bracelets: number;
+  mainEvents: number[];
+  note: string;
+  archive: { eventId: string; role: string }[];
+  /** The same person in this year's player data (Daniel Negreanu). */
+  playerId?: string;
+  hue: number;
+}
+const L = (id: string, name: string, country: string, cc: string, bracelets: number, mainEvents: number[], note: string, extra: Partial<Legend> = {}): Legend => ({
+  id: `legend-${id}`,
+  name,
+  country,
+  cc,
+  bracelets,
+  mainEvents,
+  note,
+  archive: mainEvents.filter((y) => INDEX.has(`${y}-lv-main`)).map((y) => ({ eventId: `${y}-lv-main`, role: 'Main Event champion' })),
+  hue: hash(id) % 360,
+  ...extra,
+});
+export const LEGENDS: Legend[] = [
+  L('hellmuth', 'Phil Hellmuth', 'United States', 'US', 17, [1989], 'The most WSOP bracelets of all time'),
+  L('ivey', 'Phil Ivey', 'United States', 'US', 11, [], 'Second on the all-time bracelet list'),
+  L('seidel', 'Erik Seidel', 'United States', 'US', 10, [], 'Runner-up to Johnny Chan in the 1988 Main Event', { archive: [{ eventId: '1988-lv-main', role: 'Main Event runner-up' }] }),
+  L('brunson', 'Doyle Brunson', 'United States', 'US', 10, [1976, 1977], 'Back-to-back Main Event champion'),
+  L('chan', 'Johnny Chan', 'United States', 'US', 10, [1987, 1988], 'Back-to-back Main Event champion'),
+  L('mizrachi', 'Michael Mizrachi', 'United States', 'US', 9, [2025], 'Main Event champion 2025'),
+  L('deeb', 'Shaun Deeb', 'United States', 'US', 9, [], 'Nine bracelets'),
+  L('glaser', 'Benny Glaser', 'United Kingdom', 'GB', 9, [], 'Nine bracelets'),
+  L('moss', 'Johnny Moss', 'United States', 'US', 9, [1970, 1971, 1974], 'Three-time Main Event champion'),
+  L('negreanu', 'Daniel Negreanu', 'Canada', 'CA', 8, [], 'Eight bracelets', { playerId: 'p04' }),
+  L('schulman', 'Nick Schulman', 'United States', 'US', 8, [], 'Eight bracelets'),
+];
+export const legendById = (id: string) => LEGENDS.find((l) => l.id === id);
 
 /** Suggested for an archive video: the rest of its event, then the year's other events, then the next year's. */
 export function archiveRelated(v: Video, n = 10): Video[] {

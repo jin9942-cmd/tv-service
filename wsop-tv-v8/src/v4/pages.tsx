@@ -14,7 +14,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseTabs, ChampionsRow, EventsTab, LegendsRow, PlayersTab, YearsRow, YearsTab } from './browse';
+import { BrowseTabs, ChampionsRow, LegendsRow, PlayersTab, YearsRow, YearsTab } from './browse';
 import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
@@ -502,7 +502,7 @@ const chip = (on: boolean) => cx('h-9 shrink-0 rounded-full border px-4 text-sm 
 
 /** Videos: the Highlights tab (hand clips) and the Replays tab (series → event → broadcast). */
 /** Browse (v8): Years · Players · Events. Highlights and Shorts keep their own pages (opened from Home). */
-export function VideosPage({ tab }: { tab: 'years' | 'players' | 'events' | 'highlights' | 'shorts' }) {
+export function VideosPage({ tab }: { tab: 'years' | 'players' | 'highlights' | 'shorts' }) {
   if (tab === 'highlights' || tab === 'shorts')
     return (
       <Page className="max-w-[96rem]">
@@ -517,7 +517,7 @@ export function VideosPage({ tab }: { tab: 'years' | 'players' | 'events' | 'hig
     <Page className="max-w-[96rem]">
       <h1 className="text-title">Browse</h1>
       <BrowseTabs tab={tab} />
-      {tab === 'years' ? <YearsTab /> : tab === 'players' ? <PlayersTab /> : <EventsTab />}
+      {tab === 'years' ? <YearsTab /> : <PlayersTab />}
     </Page>
   );
 }

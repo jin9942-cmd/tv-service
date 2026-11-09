@@ -12,28 +12,124 @@ import { HERO_DAY_ID, events, players, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
-import { catalog, isLive, videoById, type Video } from './catalog';
+import { catalog, highlightClips, isLive, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
-import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, type ArchiveEvent, type SeriesKey } from './archive';
+import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, HASHTAGS, LEGENDS, archiveHands, hashtagLabel, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
 const CURRENT_YEAR = 2026;
 
 // ---- shared bits -------------------------------------------------------------------------------------
 
-export function BrowseTabs({ tab }: { tab: 'years' | 'players' | 'events' }) {
+/** Browse is built on two things, the year and the player; the hashtags (kinds of hand) come on top of both. */
+export function BrowseTabs({ tab }: { tab: 'years' | 'players' }) {
   const tabs = [
     ['/videos', 'Years', 'years'],
     ['/videos/players', 'Players', 'players'],
-    ['/videos/events', 'Events', 'events'],
   ] as const;
   return (
-    <nav className="mt-4 flex gap-6 border-b border-line" aria-label="Browse">
-      {tabs.map(([to, label, k]) => (
-        <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-[3px] pb-2.5 text-[15px] font-semibold', tab === k ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text')}>
-          {label}
+    <>
+      <nav className="mt-4 flex gap-6 border-b border-line" aria-label="Browse">
+        {tabs.map(([to, label, k]) => (
+          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-[3px] pb-2.5 text-[15px] font-semibold', tab === k ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text')}>
+            {label}
+          </Link>
+        ))}
+      </nav>
+      <HashtagLinks />
+    </>
+  );
+}
+
+/** The hashtags as links: each opens its hands across every year. */
+function HashtagLinks({ current }: { current?: string }) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-2" aria-label="Hashtags">
+      {HASHTAGS.map(([slug, label]) => (
+        <Link key={slug} to={`/videos/tag/${slug}`} aria-current={current === slug ? 'page' : undefined} className={cx('inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold', current === slug ? 'border-gold bg-gold/15 text-text' : 'border-line-strong text-muted hover:border-text/40 hover:text-text')}>
+          #{label}
         </Link>
       ))}
-    </nav>
+    </div>
+  );
+}
+
+/** Hashtag chips that filter a list in place (on a year or a player). */
+function HashtagFilter({ value, onChange, counts }: { value: string; onChange: (v: string) => void; counts: Record<string, number> }) {
+  return (
+    <div className="flex flex-wrap gap-2" aria-label="Hashtags">
+      <FilterChip on={value === 'all'} onClick={() => onChange('all')}>
+        All
+      </FilterChip>
+      {HASHTAGS.filter(([slug]) => counts[slug]).map(([slug, label]) => (
+        <FilterChip key={slug} on={value === slug} onClick={() => onChange(slug)}>
+          #{label}
+        </FilterChip>
+      ))}
+    </div>
+  );
+}
+const tagCounts = (vs: Video[]) => Object.fromEntries(HASHTAGS.map(([slug]) => [slug, vs.filter((v) => v.tags.some((t) => t.slug === slug)).length]));
+const withHashtag = (vs: Video[], tag: string) => (tag === 'all' ? vs : vs.filter((v) => v.tags.some((t) => t.slug === tag)));
+/** Hands of a year: this year's hand clips, or the archive's highlights of that year. */
+const handsOf = (year: number) => (year === CURRENT_YEAR ? highlightClips : archiveHands(year));
+
+/** A section of hands with the hashtag filter (a year's or a player's). */
+function HandsSection({ title, hands }: { title: string; hands: Video[] }) {
+  const [tag, setTag] = useState('all');
+  if (!hands.length) return null;
+  const list = withHashtag(hands, tag);
+  return (
+    <section aria-label={title} className="mt-10">
+      <h2 className="text-xl sm:text-2xl">{title}</h2>
+      <div className="mt-3">
+        <HashtagFilter value={tag} onChange={setTag} counts={tagCounts(hands)} />
+      </div>
+      <BadgeScope videos={list}>
+        <div className={cx(rowGrid, 'mt-5')}>
+          {list.slice(0, 12).map((v) => (
+            <VideoCard key={v.id} v={v} {...playsFull(v)} />
+          ))}
+        </div>
+      </BadgeScope>
+    </section>
+  );
+}
+
+/** A hashtag across the years: its hands, narrowed by year. */
+export function HashtagPage() {
+  const { tag = '' } = useParams();
+  const [year, setYear] = useState<number | 'all'>('all');
+  const label = hashtagLabel(tag);
+  const all = useMemo(() => withHashtag([...highlightClips, ...archiveHands()], tag), [tag]);
+  if (!label) return <Navigate to="/videos" replace />;
+  const years = [...new Set(all.map(yearOf))].sort((a, b) => b - a);
+  const list = year === 'all' ? all : all.filter((v) => yearOf(v) === year);
+  return (
+    <Page className="max-w-[96rem]">
+      {back('/videos', 'Browse')}
+      <h1 className="mt-3 text-title">#{label}</h1>
+      <p className="mt-1 text-sm text-muted tnum">
+        {all.length} hands · {years.length} years
+      </p>
+      <HashtagLinks current={tag} />
+      <div className="mt-4 flex flex-wrap gap-2" aria-label="Year">
+        <FilterChip on={year === 'all'} onClick={() => setYear('all')}>
+          All years
+        </FilterChip>
+        {years.map((y) => (
+          <FilterChip key={y} on={year === y} onClick={() => setYear(y)}>
+            {y}
+          </FilterChip>
+        ))}
+      </div>
+      <BadgeScope videos={list}>
+        <div className={cx(rowGrid, 'mt-5')}>
+          {list.slice(0, 40).map((v) => (
+            <VideoCard key={v.id} v={v} {...playsFull(v)} />
+          ))}
+        </div>
+      </BadgeScope>
+    </Page>
   );
 }
 
@@ -183,6 +279,7 @@ export function YearPage() {
   const main = current?.cards.find((c) => c.kind === 'Main Event');
   const rest = (current?.cards ?? []).filter((c) => c !== main);
   const games = [...new Set(rest.map((c) => c.game))];
+  rest.sort((a, b) => Number(!!b.live) - Number(!!a.live));
   const shown = rest.filter((c) => (game === 'all' || c.game === game) && BUY.find((b) => b[0] === buy)![2](c.buyIn) && (kind === 'All' || c.kind === kind));
   return (
     <Page className="max-w-[96rem]">
@@ -279,7 +376,7 @@ export function YearPage() {
           {shown.length ? (
             <div className={cx(rowGrid, 'mt-5')}>
               {shown.map((c) => (
-                <EventTile key={c.id} to={c.to} art={c.art} title={c.name} number={c.number} meta={[c.buyLabel, c.game].filter(Boolean).join(' · ')} note={c.days ? daysNote(c.days) : 'Coming up'} live={c.live} />
+                <EventTile key={c.id} to={c.to} art={c.art} title={c.name} number={c.number} meta={[c.buyLabel, c.game].filter(Boolean).join(' · ')} note={c.live ? 'Final table on air now' : c.days ? daysNote(c.days) : 'Coming up'} live={c.live} />
               ))}
             </div>
           ) : (
@@ -287,34 +384,34 @@ export function YearPage() {
           )}
         </section>
       )}
+
+      {/* The year's hands, by hashtag. */}
+      <HandsSection key={y} title={`Hands of ${y}`} hands={handsOf(y)} />
     </Page>
   );
 }
 
 // ---- Players ---------------------------------------------------------------------------------------
 
-type Sort = 'bracelets' | 'earnings' | 'name';
-/** Players: photo, name, bracelets; sorted by bracelets, earnings or name; search by name. */
+type Sort = 'bracelets' | 'name';
+/** Players: the bracelet legends (all-time leaders, WSOP records) and this year's players; sort and search. */
 export function PlayersTab() {
   const [sort, setSort] = useState<Sort>('bracelets');
   const [q, setQ] = useState('');
-  const list = useMemo(
-    () =>
-      players
-        .filter((p) => p.name.toLowerCase().includes(q.trim().toLowerCase()))
-        .sort((a, b) => (sort === 'name' ? a.name.localeCompare(b.name) : sort === 'earnings' ? b.earnings - a.earnings : b.bracelets - a.bracelets || b.earnings - a.earnings)),
-    [sort, q],
-  );
+  const match = (name: string) => name.toLowerCase().includes(q.trim().toLowerCase());
+  const order = <T extends { name: string; bracelets: number }>(a: T, b: T) => (sort === 'name' ? a.name.localeCompare(b.name) : b.bracelets - a.bracelets || a.name.localeCompare(b.name));
+  const legends = LEGENDS.filter((l) => match(l.name)).sort(order);
+  const legendIds = new Set(LEGENDS.map((l) => l.playerId).filter(Boolean));
+  const current = players.filter((p) => !legendIds.has(p.id) && match(p.name)).sort(order);
   return (
     <>
-      <div className="mt-5 flex flex-wrap items-center gap-3">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
         <Segmented
           label="Sort players"
           value={sort}
           onChange={setSort}
           options={[
             { value: 'bracelets', label: 'Bracelets' },
-            { value: 'earnings', label: 'Earnings' },
             { value: 'name', label: 'Name' },
           ]}
         />
@@ -323,23 +420,56 @@ export function PlayersTab() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search players" aria-label="Search players" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
         </label>
       </div>
-      <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {list.map((p) => (
-          <li key={p.id}>
-            <Link to={`/videos/players/${p.id}`} className="group flex flex-col items-center rounded-card border border-line bg-surface p-4 text-center hover:border-line-strong hover:bg-surface-2">
-              <Avatar name={p.name} hue={p.hue} size={72} photo={p.photo} />
-              <span className="mt-3 line-clamp-1 font-semibold group-hover:text-gold-strong">{p.name}</span>
-              <span className="mt-0.5 text-xs text-muted">{p.country}</span>
-              <span className="mt-2 flex items-center gap-2 text-xs">
-                <BraceletCount n={p.bracelets} size={14} />
-                <span className="text-muted tnum">{money(p.earnings)}</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-      {!list.length && <p className="mt-6 text-sm text-muted">No players match “{q}”.</p>}
+      {legends.length > 0 && (
+        <section aria-label="Bracelet legends" className="mt-8">
+          <h2 className="text-xl sm:text-2xl">Bracelet legends</h2>
+          <p className="mt-1 text-sm text-muted">The most WSOP bracelets of all time</p>
+          <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            {legends.map((l) => (
+              <li key={l.id}>
+                <LegendCard l={l} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {current.length > 0 && (
+        <section aria-label={`${CURRENT_YEAR} players`} className="mt-10">
+          <h2 className="text-xl sm:text-2xl">{CURRENT_YEAR} players</h2>
+          <p className="mt-1 text-sm text-muted">At the tables of this year’s series</p>
+          <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            {current.map((p) => (
+              <li key={p.id}>
+                <Link to={`/videos/players/${p.id}`} className="group flex h-full flex-col items-center rounded-card border border-line bg-surface p-4 text-center hover:border-line-strong hover:bg-surface-2">
+                  <Avatar name={p.name} hue={p.hue} size={64} photo={p.photo} />
+                  <span className="mt-3 line-clamp-2 text-sm font-semibold group-hover:text-gold-strong">{p.name}</span>
+                  <span className="mt-0.5 text-xs text-muted">{p.country}</span>
+                  <span className="mt-2 text-xs">
+                    <BraceletCount n={p.bracelets} size={14} />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {!legends.length && !current.length && <p className="mt-6 text-sm text-muted">No players match “{q}”.</p>}
     </>
+  );
+}
+
+/** A bracelet legend: initials, name, bracelets, Main Event titles. */
+function LegendCard({ l, compact }: { l: Legend; compact?: boolean }) {
+  const photo = l.playerId ? players.find((p) => p.id === l.playerId)?.photo : undefined;
+  return (
+    <Link to={`/videos/players/${l.playerId ?? l.id}`} className="group flex h-full flex-col items-center rounded-card border border-line bg-surface p-4 text-center hover:border-line-strong hover:bg-surface-2">
+      <Avatar name={l.name} hue={l.hue} size={compact ? 56 : 64} photo={photo} />
+      <span className="mt-3 line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{l.name}</span>
+      <span className="mt-1.5 text-sm">
+        <BraceletCount n={l.bracelets} size={14} />
+      </span>
+      <span className="mt-1 text-[11px] text-muted tnum">{l.mainEvents.length ? `Main Event ${l.mainEvents.join(', ')}` : l.country}</span>
+    </Link>
   );
 }
 
@@ -351,12 +481,15 @@ const yearOf = (v: Video) => {
 /** A player: profile, final tables by year, appearances (broadcasts and highlights) by year. */
 export function PlayerPage() {
   const { playerId = '' } = useParams();
+  const legend = legendById(playerId);
+  if (legend) return <LegendPage l={legend} />;
   const p = players.find((x) => x.id === playerId);
   if (!p) return <Navigate to="/videos/players" replace />;
   const finals = p.recent
     .map((r) => ({ r, e: events.find((e) => e.id === r.eventId) }))
     .filter((x): x is { r: (typeof p.recent)[number]; e: TourEvent } => !!x.e);
   const seen = catalog.filter((v) => v.tags.some((t) => t.slug === `player-${p.id}`));
+  const asLegend = LEGENDS.find((l) => l.playerId === p.id);
   const byYear = [...new Set(seen.map(yearOf))].sort((a, b) => b - a).map((y) => ({ y, vs: seen.filter((v) => yearOf(v) === y) }));
   return (
     <Page className="max-w-[96rem]">
@@ -375,15 +508,8 @@ export function PlayerPage() {
                 <BraceletCount n={p.bracelets} />
               </dd>
             </div>
-            <div className="flex gap-2">
-              <dt className="text-muted">Live earnings</dt>
-              <dd className="font-semibold tnum">{money(p.earnings)}</dd>
-            </div>
-            <div className="flex gap-2">
-              <dt className="text-muted">POY points</dt>
-              <dd className="font-semibold tnum">{p.poyPoints.toLocaleString('en-US')}</dd>
-            </div>
           </dl>
+          {asLegend && <p className="mt-2 text-xs font-bold tracking-wide text-gold-strong uppercase">Bracelet legend</p>}
         </div>
       </header>
 
@@ -410,6 +536,8 @@ export function PlayerPage() {
         )}
       </section>
 
+      <HandsSection key={p.id} title="Hands" hands={seen.filter((v) => v.kind === 'clip')} />
+
       <section aria-label="Appearances" className="mt-10">
         <h2 className="text-xl sm:text-2xl">Appearances</h2>
         {byYear.length ? (
@@ -427,6 +555,85 @@ export function PlayerPage() {
           ))
         ) : (
           <p className="mt-3 text-sm text-muted">No broadcasts or highlights with this player yet.</p>
+        )}
+      </section>
+    </Page>
+  );
+}
+
+/** A bracelet legend: bracelets and Main Event titles (WSOP records), and the broadcasts of this archive they are in. */
+function LegendPage({ l }: { l: Legend }) {
+  const inArchive = l.archive.map((a) => ({ a, ref: archiveEvent(a.eventId)! })).filter((x) => x.ref);
+  const videos = inArchive.flatMap(({ ref }) => broadcastsOf(ref));
+  return (
+    <Page className="max-w-[96rem]">
+      {back('/videos/players', 'Players')}
+      <header className="mt-4 flex flex-wrap items-center gap-5">
+        <Avatar name={l.name} hue={l.hue} size={96} ring />
+        <div>
+          <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">Bracelet legend</p>
+          <h1 className="mt-1 text-title">{l.name}</h1>
+          <p className="mt-1 text-sm text-muted">
+            {l.country} <CountryCode cc={l.cc} /> · {l.note}
+          </p>
+          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+            <div className="flex items-center gap-2">
+              <dt className="text-muted">Bracelets</dt>
+              <dd>
+                <BraceletCount n={l.bracelets} />
+              </dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="text-muted">Main Event titles</dt>
+              <dd className="font-semibold tnum">{l.mainEvents.length ? l.mainEvents.join(' · ') : '—'}</dd>
+            </div>
+          </dl>
+        </div>
+      </header>
+
+      {l.mainEvents.length > 0 && (
+        <section aria-label="Main Event titles" className="mt-10">
+          <h2 className="text-xl sm:text-2xl">Main Event titles</h2>
+          <ul className="mt-3 divide-y divide-line rounded-panel border border-line bg-surface">
+            {l.mainEvents.map((y) => {
+              const ref = archiveEvent(`${y}-lv-main`);
+              return (
+                <li key={y}>
+                  {ref ? (
+                    <Link to={`/videos/event/${ref.event.id}`} className="flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
+                      <span className="w-14 font-display text-2xl tnum">{y}</span>
+                      <span className="min-w-0 flex-1 truncate font-semibold">{y} WSOP Main Event · Champion</span>
+                      <span className="text-sm font-semibold text-gold-strong">Watch</span>
+                    </Link>
+                  ) : (
+                    <span className="flex items-center gap-4 px-4 py-3">
+                      <span className="w-14 font-display text-2xl text-muted tnum">{y}</span>
+                      <span className="min-w-0 flex-1 truncate font-semibold">{y} WSOP Main Event · Champion</span>
+                      <span className="text-sm text-muted">Not in the archive</span>
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      <section aria-label="In the archive" className="mt-10">
+        <h2 className="text-xl sm:text-2xl">In the archive</h2>
+        {videos.length ? (
+          <>
+            <p className="mt-1 text-sm text-muted">{inArchive.map(({ a, ref }) => `${ref.year.year} ${a.role}`).join(' · ')}</p>
+            <BadgeScope videos={videos}>
+              <div className={cx(rowGrid, 'mt-4')}>
+                {videos.map((v) => (
+                  <VideoCard key={v.id} v={v} {...playsFull(v)} />
+                ))}
+              </div>
+            </BadgeScope>
+          </>
+        ) : (
+          <p className="mt-3 rounded-panel border border-line bg-surface p-5 text-sm text-muted">Broadcasts with {l.name} appear here as the archive is tagged by player.</p>
         )}
       </section>
     </Page>
@@ -462,12 +669,12 @@ export function EventsTab() {
 export function EventChronicle() {
   const { slug = '' } = useParams();
   const r = RECURRING.find((x) => x.slug === slug);
-  if (!r) return <Navigate to="/videos/events" replace />;
+  if (!r) return <Navigate to="/videos" replace />;
   const years = chronicle(slug);
   const liveMain = slug === 'main-event' ? events.find((e) => e.id === 'lv-main') : undefined;
   return (
     <Page className="max-w-[96rem]">
-      {back('/videos/events', 'Events')}
+      {back('/videos', 'Browse')}
       <h1 className="mt-3 text-title">{r.name}</h1>
       <p className="mt-1 text-sm text-muted">{r.blurb}</p>
       <ol className="mt-6 divide-y divide-line rounded-panel border border-line bg-surface">
@@ -677,19 +884,12 @@ export function ChampionsRow() {
 
 /** Bracelet Legends: the players with the most bracelets; each opens the player page in Browse. */
 export function LegendsRow() {
-  const list = [...players].sort((a, b) => b.bracelets - a.bracelets || b.earnings - a.earnings).slice(0, 8);
   return (
     <HomeSection title="Bracelet Legends" action={moreLink('/videos/players', 'All players')}>
       <ul className="hscroll gap-3 [&>*]:w-[40%] sm:[&>*]:w-[calc((100%-2.25rem)/4)] lg:[&>*]:w-[calc((100%-5.25rem)/8)]">
-        {list.map((p) => (
-          <li key={p.id}>
-            <Link to={`/videos/players/${p.id}`} className="group flex flex-col items-center rounded-card border border-line bg-surface p-4 text-center hover:border-line-strong hover:bg-surface-2">
-              <Avatar name={p.name} hue={p.hue} size={64} photo={p.photo} />
-              <span className="mt-2 line-clamp-1 text-sm font-semibold group-hover:text-gold-strong">{p.name}</span>
-              <span className="mt-1">
-                <BraceletCount n={p.bracelets} size={14} />
-              </span>
-            </Link>
+        {LEGENDS.slice(0, 10).map((l) => (
+          <li key={l.id}>
+            <LegendCard l={l} compact />
           </li>
         ))}
       </ul>
