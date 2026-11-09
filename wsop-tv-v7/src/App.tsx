@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
+import { ArchiveEventPage, EventChronicle, PlayerPage, YearPage } from './v4/browse';
 import { ArchivePage, ChannelRedirect, CollectionPage, EventPage, LivePage, MyListPage, SchedulePage, TagPage, VideosPage, WatchPage } from './v4/pages';
 import { TvHome, TvHowToWatch, TvShowDetail, TvShows } from './pages/tv';
 import { TvClassic } from './pages/poker';
@@ -37,9 +38,17 @@ export default function App() {
             <Route path="schedule/:seriesId" element={<SchedulePage />} />
             <Route path="schedule/channels" element={<Navigate to="/schedule" replace />} />
             <Route path="tournaments" element={<Navigate to="/schedule" replace />} />
-            {/* Videos: Highlights and Replays (series → event → broadcast). */}
-            <Route path="videos" element={<VideosPage tab="highlights" />} />
-            <Route path="videos/replays" element={<VideosPage tab="replays" />} />
+            {/* Browse (as v8): Years, Players; Highlights on its own page; Replays now live under Years. */}
+            <Route path="videos" element={<VideosPage tab="years" />} />
+            <Route path="videos/players" element={<VideosPage tab="players" />} />
+            <Route path="videos/events" element={<Navigate to="/videos" replace />} />
+            <Route path="videos/tag/:tag" element={<Navigate to="/videos" replace />} />
+            <Route path="videos/highlights" element={<VideosPage tab="highlights" />} />
+            <Route path="videos/replays" element={<Navigate to="/videos" replace />} />
+            <Route path="videos/year/:year" element={<YearPage />} />
+            <Route path="videos/players/:playerId" element={<PlayerPage />} />
+            <Route path="videos/events/:slug" element={<EventChronicle />} />
+            <Route path="videos/event/:id" element={<ArchiveEventPage />} />
             <Route path="collections/:id" element={<CollectionPage />} />
             <Route path="archive/:key" element={<ArchivePage />} />
             {/* Shorts are gone: old links land on Browse. */}

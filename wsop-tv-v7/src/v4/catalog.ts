@@ -1,5 +1,6 @@
 // v4 — one catalog of everything playable (broadcast days, classics, hand clips, 24/7 channels). Cards, the detail
 // popup, the common player, related videos and tag pages all read from here, so every video looks and behaves the same.
+import { archiveRelated, archiveVideo } from './archive';
 import { archive, classicEvents, dayById, events, finalTableSeats, hands, playerById, seatsFor, seriesById } from '../data/mock';
 import { channelById, channels, programAt } from '../data/channels';
 import type { Day, Hand, TourEvent } from '../data/types';
@@ -200,6 +201,7 @@ export function channelVideo(channelId: string, at: number): Video | undefined {
 
 export function videoById(id: string, at = Date.now()): Video | undefined {
   if (id.startsWith('ch-')) return channelVideo(id.slice(3), at);
+  if (id.startsWith('arc.')) return archiveVideo(id);
   return catalog.find((v) => v.id === id);
 }
 
@@ -252,6 +254,7 @@ export function badgeFor(v: Video, streamMode: StreamStatus, now = Date.now()): 
  * tags. Never the video itself or the broadcast a clip comes from.
  */
 export function relatedTo(v: Video, n = 10): Video[] {
+  if (v.id.startsWith('arc.')) return archiveRelated(v, n);
   const self = (x: Video) => x.id === v.id || x.id === v.dayId;
   const same = v.eventId ? catalog.filter((x) => !self(x) && x.eventId === v.eventId).sort((a, b) => airedAt(b) - airedAt(a) || Number(a.kind === 'clip') - Number(b.kind === 'clip') || b.views - a.views) : [];
   const slugs = new Set(v.tags.map((t) => t.slug));

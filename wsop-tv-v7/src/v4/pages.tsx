@@ -14,8 +14,9 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, SIZE_GRID, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
+import { BrowseTabs, PlayersTab, YearsTab } from './browse';
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle, type Art } from '../lib/brand';
-import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
+import { byTag, catalog, channelVideo, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -499,23 +500,23 @@ const HAND_FILTERS = [
 
 const chip = (on: boolean) => cx('h-9 shrink-0 rounded-full border px-4 text-sm font-semibold', on ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text');
 
-/** Videos: the Highlights tab (hand clips) and the Replays tab (series → event → broadcast). */
-export function VideosPage({ tab }: { tab: 'highlights' | 'replays' }) {
-  const tabs = [
-    ['/videos', 'Highlights', 'highlights'],
-    ['/videos/replays', 'Replays', 'replays'],
-  ] as const;
+/** Browse (as v8): Years and Players; Highlights (hand clips) on a page of its own. */
+export function VideosPage({ tab }: { tab: 'years' | 'players' | 'highlights' }) {
+  if (tab === 'highlights')
+    return (
+      <Page className="max-w-[96rem]">
+        <Link to="/videos" className="text-sm text-muted hover:text-text">
+          ← Browse
+        </Link>
+        <h1 className="mt-3 text-title">Highlights</h1>
+        <HighlightsTab />
+      </Page>
+    );
   return (
     <Page className="max-w-[96rem]">
       <h1 className="text-title">Browse</h1>
-      <nav className="mt-4 flex gap-6 border-b border-line" aria-label="Videos">
-        {tabs.map(([to, label, k]) => (
-          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-[3px] pb-2.5 text-[15px] font-semibold', tab === k ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text')}>
-            {label}
-          </Link>
-        ))}
-      </nav>
-      {tab === 'highlights' ? <HighlightsTab /> : <ReplaysTab />}
+      <BrowseTabs tab={tab} />
+      {tab === 'years' ? <YearsTab /> : <PlayersTab />}
     </Page>
   );
 }
@@ -545,38 +546,6 @@ function HighlightsTab() {
   );
 }
 
-/** Events worth a card: ones with broadcasts, or (in the running series) with broadcasts still to come. */
-const eventsOf = (sid: string) => events.filter((e) => e.seriesId === sid && (eventVideos(e.id).length || e.days.some((d) => d.status === 'upcoming')));
-
-/** Series with broadcasts: the running one first, then the most recent. WSOP Classics comes last. */
-const replaySeries = () => {
-  const running = runningSeries(false);
-  return series
-    .filter((x) => events.some((e) => e.seriesId === x.id && eventVideos(e.id).length))
-    .sort((a, b) => (a.id === running?.id ? -1 : b.id === running?.id ? 1 : b.start.localeCompare(a.start)));
-};
-
-/** Replays: pick a series (kept in ?series=), then its events; WSOP Classics shows the classic broadcasts. */
-function ReplaysTab() {
-  const [params, setParams] = useSearchParams();
-  const list = replaySeries();
-  const sid = params.get('series') === 'classics' ? 'classics' : (list.find((x) => x.id === params.get('series')) ?? list[0])?.id;
-  const options: [string, string][] = [...list.map((x) => [x.id, x.name] as [string, string]), ['classics', 'WSOP Classics']];
-  return (
-    <>
-      <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Series">
-        {options.map(([k, label]) => (
-          <button key={k} role="tab" aria-selected={sid === k} onClick={() => setParams({ series: k })} className={chip(sid === k)}>
-            {label}
-          </button>
-        ))}
-      </div>
-      <div className={cx(rowGrid, 'mt-6')}>
-        {sid === 'classics' ? <BadgeScope videos={classics}>{classics.map((v) => <VideoCard key={v.id} v={v} />)}</BadgeScope> : eventsOf(sid ?? '').map((e) => <EventCard key={e.id} e={e} />)}
-      </div>
-    </>
-  );
-}
 
 export { catalog };
 
@@ -853,7 +822,7 @@ function HighlightsRow({ pool, skip }: { pool: Video[]; skip: Set<string> }) {
   const list = pool.slice(0, SIZE_GRID.sm.count).map((v) => ({ ...v, ...pick(v) }));
   if (!list.length) return null;
   return (
-    <Section title="Highlights" action={more('/videos', 'All highlights')}>
+    <Section title="Highlights" action={more('/videos/highlights', 'All highlights')}>
       <div className={SIZE_GRID.sm.grid}>
         <BadgeScope videos={list}>
         {list.map((v) => (
@@ -1103,7 +1072,7 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
 const BREAKS = ['Coming Up', 'A continuación'];
 
 /** The series running now (none in the between-series preview). */
-const runningSeries = (off: boolean) => (off ? undefined : series.find((s) => Date.parse(s.start) <= Date.now() && Date.now() <= Date.parse(s.end)));
+export const runningSeries = (off: boolean) => (off ? undefined : series.find((s) => Date.parse(s.start) <= Date.now() && Date.now() <= Date.parse(s.end)));
 
 /** A reminder toggle (sign-in required), kept in `state.reminders` under `key`. */
 function useReminder(key: string, what: string) {
@@ -1123,7 +1092,7 @@ const titleOf = (x: { e: TourEvent; d: Day }) => `${x.e.name.replace(' World Cha
 
 const eventVideos = (id: string) => catalog.filter((v) => v.eventId === id && v.kind === 'broadcast');
 
-function EventCard({ e }: { e: TourEvent }) {
+export function EventCard({ e }: { e: TourEvent }) {
   const { state } = useApp();
   const list = eventVideos(e.id);
   const cover = list.find((v) => v.title.endsWith('Final Table')) ?? list[list.length - 1];
