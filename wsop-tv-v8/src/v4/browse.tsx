@@ -10,7 +10,7 @@ import { useApp } from '../state/app';
 import { Avatar, BraceletCount, Button, CountryCode, FilterChip, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
 import { HERO_DAY_ID, events, players, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
-import { money } from '../lib/format';
+import { duration, money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
 import { catalog, isLive, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
@@ -51,24 +51,16 @@ const enterFullScreen = () => {
 };
 const playsFull = (v: Video) => ({ href: `/watch/${v.id}?play=1`, onOpen: enterFullScreen });
 
-/** An event card: picture, number and name, buy-in · game, how many days were broadcast. */
-function EventTile({ to, art, title, number, meta, note, live, wide }: { to: string; art: string; title: string; number?: number | null; meta: string; note?: ReactNode; live?: boolean; wide?: boolean }) {
-  return (
-    <Link to={to} className="group block min-w-0">
-      <span className={cx('relative block overflow-hidden rounded-card bg-surface-2', wide ? 'aspect-[21/9]' : 'aspect-video')}>
-        <img src={art} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-        {live && <LiveTag className="absolute top-2 left-2" />}
-      </span>
-      {number != null && <span className="mt-2 block text-xs text-gold-strong">Event #{number}</span>}
-      <span className={cx('block leading-snug font-semibold group-hover:text-gold-strong', number != null ? 'mt-0.5' : 'mt-2', wide ? 'text-lg' : 'text-[15px]')}>{title}</span>
-      <span className="mt-0.5 block truncate text-xs text-muted">{meta}</span>
-      {note && <span className="mt-1 block text-xs font-semibold text-text/85">{note}</span>}
-    </Link>
-  );
-}
 const daysNote = (n: number) => `${n} broadcast${n === 1 ? '' : 's'}`;
 
 // ---- Years -----------------------------------------------------------------------------------------
+
+/** What a year holds: its events and broadcasts (all series). */
+const yearSize = (y: (typeof ARCHIVE)[number]) => {
+  const evs = y.series.flatMap((s) => s.events);
+  const casts = evs.reduce((n, e) => n + e.days.length, 0);
+  return { events: evs.length, casts, line: `${evs.length} event${evs.length === 1 ? '' : 's'} · ${casts} broadcast${casts === 1 ? '' : 's'}` };
+};
 
 /** Years: one tile a year, newest first, with its Main Event champion; WSOP Classics once the rights are cleared. */
 export function YearsTab() {
@@ -76,7 +68,7 @@ export function YearsTab() {
   const liveNow = catalog.some((v) => v.eventId && isLive(v, state.streamMode));
   const tile = (y: (typeof ARCHIVE)[number]) => {
     const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
-    return <YearTile key={y.year} to={`/videos/year/${y.year}`} year={y.year} art={archiveArt(main?.id ?? String(y.year))} line={y.champion ? `Champion · ${y.champion.name}` : ''} />;
+    return <YearTile key={y.year} to={`/videos/year/${y.year}`} year={y.year} art={archiveArt(main?.id ?? String(y.year))} line={yearSize(y).line} />;
   };
   return (
     <>
@@ -171,6 +163,7 @@ export function YearPage() {
   const sKey = seriesList.find((s) => s.key === params.get('series'))?.key ?? seriesList[0]?.key;
   const current = seriesList.find((s) => s.key === sKey);
   const main = current?.cards.find((c) => c.kind === 'Main Event');
+  const mainRef = main && !isCurrent ? archiveEvent(main.id) : undefined;
   const rest = (current?.cards ?? []).filter((c) => c !== main);
   const games = [...new Set(rest.map((c) => c.game))];
   rest.sort((a, b) => Number(!!b.live) - Number(!!a.live));
@@ -180,11 +173,7 @@ export function YearPage() {
       {back('/videos', 'Years')}
       <h1 className="mt-3 text-title">{y} World Series of Poker</h1>
       {arch?.classic && <p className="mt-1 text-xs font-bold tracking-wide text-gold-strong uppercase">WSOP Classics · Binion’s Horseshoe</p>}
-      {arch?.champion && (
-        <p className="mt-1 text-sm text-muted">
-          Main Event champion · <span className="font-semibold text-text">{arch.champion.name}</span> <CountryCode cc={arch.champion.cc} />
-        </p>
-      )}
+      {arch && <p className="mt-1 text-sm text-muted tnum">{yearSize(arch).line}</p>}
       {isCurrent && <p className="mt-1 text-sm text-muted">This year · live and on demand</p>}
 
       {/* Series tabs */}
@@ -254,14 +243,45 @@ export function YearPage() {
             </div>
           </div>
           {shown.length ? (
-            <div className={cx(rowGrid, 'mt-5')}>
+            <ul className="mt-4 divide-y divide-line rounded-panel border border-line bg-surface">
               {shown.map((c) => (
-                <EventTile key={c.id} to={c.to} art={c.art} title={c.name} number={c.number} meta={[c.buyLabel, c.game].filter(Boolean).join(' · ')} note={c.live ? 'Final table on air now' : c.days ? daysNote(c.days) : 'Coming up'} live={c.live} />
+                <li key={c.id}>
+                  <Link to={c.to} className="group flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
+                    <span className="w-12 shrink-0 text-sm text-muted tnum">{c.number != null ? `#${c.number}` : ''}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        {c.live && <LiveTag />}
+                        <span className="truncate font-semibold group-hover:text-gold-strong">{c.name}</span>
+                      </span>
+                      <span className="block truncate text-xs text-muted">{[c.buyLabel, c.game].filter(Boolean).join(' · ')}</span>
+                    </span>
+                    <span className={cx('hidden shrink-0 text-sm sm:block', c.live ? 'font-semibold text-text' : 'text-muted')}>{c.live ? 'Final table on air now' : c.days ? daysNote(c.days) : 'Coming up'}</span>
+                    <Icon name="chevron" size={16} className="shrink-0 text-muted" />
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
             <p className="mt-5 rounded-panel border border-line bg-surface p-5 text-sm text-muted">No events match these filters.</p>
           )}
+        </section>
+      )}
+
+      {!rest.length && mainRef && (
+        <section aria-label="Main Event broadcasts" className="mt-10">
+          <h2 className="text-xl sm:text-2xl">Main Event broadcasts</h2>
+          <ol className="mt-4 divide-y divide-line rounded-panel border border-line bg-surface">
+            {broadcastsOf(mainRef).map((v, i) => (
+              <li key={v.id}>
+                <Link to={`/watch/${v.id}?play=1`} onClick={enterFullScreen} className="group flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
+                  <span className="w-8 shrink-0 text-sm text-muted tnum">{i + 1}</span>
+                  <span className="min-w-0 flex-1 truncate font-semibold group-hover:text-gold-strong">{mainRef.event.days[i].label}</span>
+                  <span className="shrink-0 text-sm text-muted tnum">{duration(v.durationSec)}</span>
+                  <Icon name="play" size={16} className="shrink-0 text-muted group-hover:text-text" />
+                </Link>
+              </li>
+            ))}
+          </ol>
         </section>
       )}
     </Page>
@@ -695,7 +715,6 @@ export function YearsRow() {
   const ftVideo = ref ? `arc.${ref.event.id}.${di}` : liveVideo?.id;
   const isNow = year === CURRENT_YEAR;
   const art = ref ? archiveArt(ref.event.id) : TABLE_ART[0].src;
-  const events = arch ? arch.series.reduce((n, s) => n + s.events.length, 0) : 0;
   const yearChip = (y: number, live?: boolean) => (
     <button
       key={y}
@@ -727,20 +746,18 @@ export function YearsRow() {
         </Link>
         <div className="flex flex-col justify-center p-6 lg:p-8">
           <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">
-            {year} · WSOP Main Event{arch?.classic && ' · Classics'}
+            {arch?.classic ? 'WSOP Classics · Binion’s Horseshoe' : isNow ? 'This year · live' : 'WSOP archive'}
           </p>
           {isNow ? (
             <>
               <h3 className="mt-2 text-2xl font-bold sm:text-3xl">{liveVideo ? 'Final table on air now' : 'This year’s World Series'}</h3>
-              <p className="mt-1 text-sm text-muted">The champion is decided tonight</p>
+              <p className="mt-1 text-sm text-muted">Main Event · Las Vegas</p>
             </>
           ) : (
             <>
-              <h3 className="mt-2 text-2xl font-bold sm:text-3xl">
-                {arch?.champion?.name} {arch?.champion && <CountryCode cc={arch.champion.cc} />}
-              </h3>
-              <p className="mt-1 text-sm text-muted">
-                Main Event champion · {arch?.series.length} series · {events} event{events === 1 ? '' : 's'} in the archive
+              <h3 className="mt-2 text-2xl font-bold sm:text-3xl">{year} World Series of Poker</h3>
+              <p className="mt-1 text-sm text-muted tnum">
+                {arch && [arch.series.map((x) => x.name).join(' · '), yearSize(arch).line].join(' — ')}
               </p>
             </>
           )}
