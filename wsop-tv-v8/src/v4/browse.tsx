@@ -92,7 +92,7 @@ export function YearsTab() {
 function YearTile({ to, year, art, line, live }: { to: string; year: number; art: string; line: string; live?: boolean }) {
   return (
     <Link to={to} className="group relative block aspect-[4/3] overflow-hidden rounded-card bg-surface-2">
-      <img src={art} alt="" loading="lazy" className="absolute inset-0 size-full object-cover opacity-70 transition-transform duration-200 group-hover:scale-[1.04]" />
+      <img src={art} alt="" className="absolute inset-0 size-full object-cover opacity-70 transition-transform duration-200 group-hover:scale-[1.04]" />
       <span className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" aria-hidden />
       {live && <LiveTag className="absolute top-2 left-2" />}
       <span className="absolute inset-x-0 bottom-0 p-3">
