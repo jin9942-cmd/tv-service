@@ -14,7 +14,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, SIZE_GRID, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
+import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, classics, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
 
 // ---- watch ------------------------------------------------------------------------------------------
@@ -583,8 +583,8 @@ export { catalog };
 // ---- Home rows ---------------------------------------------------------------------------------------
 
 /**
- * v7 Home rows: Recommended for you, Editor's pick (best final tables), From the archive (past videos by year or by
- * player), Collections, Highlights (automatic, by hand type), then Continue watching and My List at the bottom. No Shorts, no Latest replays.
+ * v7 Home rows: Recommended for you, Editor's pick (best final tables), the archive as tile rows (World Series of Poker by year,
+ * Champions), Collections, Highlights (automatic, by hand type), then Continue watching and My List at the bottom. No Shorts, no Latest replays.
  */
 export function HomeRows() {
   const { state, set, toast, signedIn } = useApp();
@@ -626,7 +626,8 @@ export function HomeRows() {
       {/* Recommended for you takes the place of Coming up (the schedule has the next broadcasts). */}
       <VideoRow title="Recommended for you" videos={recs} />
       <EditorsPick picks={picks} />
-      <FromTheArchive />
+      <ArchiveTiles title="World Series of Poker" by="year" />
+      <ArchiveTiles title="Champions" by="player" />
       <CollectionsRow />
       <HighlightsRow pool={highlightPool} skip={shown} />
       {/* Personal rows last. */}
@@ -715,61 +716,91 @@ function EditorsPick({ picks }: { picks: Video[] }) {
  * Past videos for the archive row: every broadcast of the events from before the current series (the classics, and the
  * series that came before it), the final day first, with its year and, where it has one, its champion.
  */
-type ArchiveEntry = { v: Video; year: number; player?: string };
+type ArchiveEntry = { v: Video; year: number; playerId?: string; player?: string };
 const archiveEntries = (): ArchiveEntry[] => {
   const current = seriesById(dayById(HERO_DAY_ID)!.event.seriesId);
   return [...classicEvents, ...events.filter((e) => seriesById(e.seriesId).start < current.start)]
     .flatMap((e) => {
       const year = Number((isClassicEvent(e) ? e.name : seriesById(e.seriesId).name).slice(0, 4));
-      const player = players.find((p) => p.id === e.winnerId)?.name;
+      const champ = players.find((p) => p.id === e.winnerId);
+      const playerId = champ?.id;
+      const player = champ?.name;
       return e.days
         .filter((x) => x.status === 'vod')
         .reverse()
         .flatMap((d) => {
           const v = videoById(d.id);
-          return v ? [{ v, year, player }] : [];
+          return v ? [{ v, year, playerId, player }] : [];
         });
     })
     .sort((a, b) => b.year - a.year);
 };
 
-/** From the archive (editorial): past videos gathered by tournament year or by player; pick a year or a player. */
-function FromTheArchive() {
-  const entries = archiveEntries();
-  const [by, setBy] = useState<'year' | 'player'>('year');
-  const [k, setK] = useState('');
-  const all = by === 'year' ? entries : entries.filter((x) => x.player);
-  const keyOf = (x: ArchiveEntry) => (by === 'year' ? String(x.year) : (x.player ?? ''));
-  const count = (key: string) => all.filter((x) => keyOf(x) === key).length;
-  const keys = [...new Set(all.map(keyOf))];
-  if (by === 'player') keys.sort((a, b) => count(b) - count(a) || a.localeCompare(b));
-  const key = keys.includes(k) ? k : keys[0];
-  const list = all.filter((x) => keyOf(x) === key).slice(0, 4);
-  if (!all.length) return null;
+/** The archive's groups: one per year (newest first) and one per champion (most videos first). */
+type ArchiveGroup = { key: string; label: string; entries: ArchiveEntry[] };
+function archiveGroups(by: 'year' | 'player'): ArchiveGroup[] {
+  const all = archiveEntries().filter((x) => by === 'year' || x.playerId);
+  const map = new Map<string, ArchiveGroup>();
+  for (const x of all) {
+    const key = by === 'year' ? `year-${x.year}` : `player-${x.playerId}`;
+    const g = map.get(key) ?? { key, label: by === 'year' ? String(x.year) : x.player!, entries: [] };
+    g.entries.push(x);
+    map.set(key, g);
+  }
+  const list = [...map.values()];
+  return by === 'year' ? list : list.sort((a, b) => b.entries.length - a.entries.length || a.label.localeCompare(b.label));
+}
+const archiveGroup = (key: string) => archiveGroups(key.startsWith('year-') ? 'year' : 'player').find((g) => g.key === key);
+
+/** A row of small tiles, as WPT lists its seasons: a picture with the WSOP mark and the year (or the champion) on it. */
+function ArchiveTiles({ title, by }: { title: string; by: 'year' | 'player' }) {
+  const groups = archiveGroups(by);
+  if (!groups.length) return null;
   return (
-    <Section title="From the archive" label="Editor’s pick" action={more('/videos/replays?series=classics', 'View More')}>
-      <div className="mb-4 flex gap-6 border-b border-line" role="tablist" aria-label="Archive by">
-        {(['year', 'player'] as const).map((b) => (
-          <button key={b} role="tab" aria-selected={by === b} onClick={() => (setBy(b), setK(''))} className={cx('-mb-px border-b-[3px] pb-2 text-[15px] font-semibold', by === b ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text')}>
-            {b === 'year' ? 'By year' : 'By player'}
-          </button>
-        ))}
-      </div>
-      <div className="mb-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" aria-label={by === 'year' ? 'Years' : 'Players'}>
-        {keys.map((x) => (
-          <button key={x} aria-pressed={key === x} onClick={() => setK(x)} className={chip(key === x)}>
-            {x}
-          </button>
-        ))}
-      </div>
-      <div className={rowGrid}>
-        <BadgeScope videos={list.map((x) => x.v)}>
-          {list.map((x) => (
-            <VideoCard key={x.v.id} v={x.v} />
+    <Section title={title}>
+      <ul className="hscroll gap-2.5 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*0.625rem)/4)] lg:[&>*]:w-[calc((100%-6*0.625rem)/7)]">
+        {groups.map((g) => {
+          const v = g.entries[0].v;
+          return (
+            <li key={g.key} className="min-w-0">
+              <Link to={`/archive/${g.key}`} className="group relative block aspect-video overflow-hidden rounded-card bg-surface-2" aria-label={`${g.label} · ${g.entries.length} videos`}>
+                <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+                <span className="absolute inset-0 bg-black/45 transition-colors group-hover:bg-black/30" aria-hidden />
+                <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-2 text-center">
+                  {by === 'year' && <img src={WSOP_LOGO} alt="" className="h-6 w-auto sm:h-7" />}
+                  <span className={cx('leading-tight font-bold text-white drop-shadow', by === 'year' ? 'text-lg sm:text-xl' : 'text-sm sm:text-base')}>{g.label}</span>
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  );
+}
+
+/** One year or one champion from the archive: every video in it. */
+export function ArchivePage() {
+  const { key = '' } = useParams();
+  const g = archiveGroup(key);
+  if (!g) return <NotFound />;
+  const vs = g.entries.map((x) => x.v);
+  return (
+    <Page className="max-w-[96rem]">
+      <Link to="/" className="text-sm text-muted hover:text-text">
+        ← Home
+      </Link>
+      <p className="mt-3 text-sm text-muted">{key.startsWith('year-') ? 'World Series of Poker' : 'Champion'}</p>
+      <h1 className="mt-1 text-title">{key.startsWith('year-') ? `${g.label} WSOP` : g.label}</h1>
+      <p className="mt-1 text-sm text-muted">{vs.length} video{vs.length === 1 ? '' : 's'}</p>
+      <div className={cx(rowGrid, 'mt-6')}>
+        <BadgeScope videos={vs}>
+          {vs.map((v) => (
+            <VideoCard key={v.id} v={v} />
           ))}
         </BadgeScope>
       </div>
-    </Section>
+    </Page>
   );
 }
 
