@@ -376,11 +376,6 @@ function LegendCard({ l, compact }: { l: Legend; compact?: boolean }) {
   );
 }
 
-const yearOf = (v: Video) => {
-  const m = v.subtitle.match(/\b(19|20)\d{2}\b/) ?? v.title.match(/\b(19|20)\d{2}\b/);
-  return m ? Number(m[0]) : CURRENT_YEAR;
-};
-
 /** A player: profile, final tables by year, appearances (broadcasts and highlights) by year. */
 export function PlayerPage() {
   const { playerId = '' } = useParams();
@@ -391,9 +386,11 @@ export function PlayerPage() {
   const finals = p.recent
     .map((r) => ({ r, e: events.find((e) => e.id === r.eventId) }))
     .filter((x): x is { r: (typeof p.recent)[number]; e: TourEvent } => !!x.e);
-  const seen = catalog.filter((v) => v.tags.some((t) => t.slug === `player-${p.id}`));
   const asLegend = LEGENDS.find((l) => l.playerId === p.id);
-  const byYear = [...new Set(seen.map(yearOf))].sort((a, b) => b - a).map((y) => ({ y, vs: seen.filter((v) => yearOf(v) === y) }));
+  const yearOfEvent = (e: TourEvent) => Number(seriesById(e.seriesId).name.match(/\d{4}/)?.[0] ?? CURRENT_YEAR);
+  const byYear = [...new Set(finals.map((x) => yearOfEvent(x.e)))]
+    .sort((a, b) => b - a)
+    .map((y) => ({ y, rows: finals.filter((x) => yearOfEvent(x.e) === y).sort((p1, p2) => p1.r.place - p2.r.place) }));
   return (
     <Page className="max-w-[96rem]">
       {back('/videos/players', 'Players')}
@@ -416,46 +413,32 @@ export function PlayerPage() {
         </div>
       </header>
 
-      <section aria-label="Final tables" className="mt-10">
-        <h2 className="text-xl sm:text-2xl">Final tables</h2>
-        {finals.length ? (
-          <ul className="mt-3 divide-y divide-line rounded-panel border border-line bg-surface">
-            {finals.map(({ r, e }) => (
-              <li key={r.eventId}>
-                <Link to={`/events/${e.id}`} className="flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
-                  <span className="w-12 font-display text-xl tnum">{seriesById(e.seriesId).name.match(/\d{4}/)?.[0] ?? CURRENT_YEAR}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">{e.name.replace(' World Championship', '')}</span>
-                    <span className="block truncate text-xs text-muted">{seriesById(e.seriesId).name}</span>
-                  </span>
-                  <span className="text-sm font-semibold tnum">{r.place === 1 ? 'Winner' : `#${r.place}`}</span>
-                  <span className="w-24 text-right text-sm text-muted tnum">{money(r.prize)}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-muted">No final tables on record yet.</p>
-        )}
-      </section>
-
-      <section aria-label="Appearances" className="mt-10">
-        <h2 className="text-xl sm:text-2xl">Appearances</h2>
+      {/* Results (WSOP records): a row per final table, by year; each opens the event and its broadcasts. */}
+      <section aria-label="Results" className="mt-10">
+        <h2 className="text-xl sm:text-2xl">Results</h2>
         {byYear.length ? (
-          byYear.map(({ y, vs }) => (
+          byYear.map(({ y, rows }) => (
             <div key={y} className="mt-5">
               <h3 className="font-display text-lg tnum">{y}</h3>
-              <BadgeScope videos={vs}>
-                <div className={cx(rowGrid, 'mt-3')}>
-                  {vs.slice(0, 8).map((v) => (
-                    <VideoCard key={v.id} v={v} />
-                  ))}
-                </div>
-              </BadgeScope>
+              <ul className="mt-2 divide-y divide-line rounded-panel border border-line bg-surface">
+                {rows.map(({ r, e }) => (
+                  <li key={r.eventId}>
+                    <Link to={`/events/${e.id}`} className="group flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold group-hover:text-gold-strong">{e.name.replace(' World Championship', '')}</span>
+                        <span className="block truncate text-xs text-muted">{seriesById(e.seriesId).name}</span>
+                      </span>
+                      <span className={cx('text-sm font-semibold', r.place === 1 && 'text-gold-strong')}>{r.place === 1 ? 'Winner' : `Final table · #${r.place}`}</span>
+                      <span className="hidden w-24 text-right text-sm text-muted tnum sm:block">{money(r.prize)}</span>
+                      <Icon name="chevron" size={16} className="text-muted" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           ))
         ) : (
-          <p className="mt-3 text-sm text-muted">No broadcasts or highlights with this player yet.</p>
+          <p className="mt-3 text-sm text-muted">No final tables on record yet.</p>
         )}
       </section>
     </Page>
@@ -464,8 +447,11 @@ export function PlayerPage() {
 
 /** A bracelet legend: bracelets and Main Event titles (WSOP records), and the broadcasts of this archive they are in. */
 function LegendPage({ l }: { l: Legend }) {
-  const inArchive = l.archive.map((a) => ({ a, ref: archiveEvent(a.eventId)! })).filter((x) => x.ref);
-  const videos = inArchive.flatMap(({ ref }) => broadcastsOf(ref));
+  // From the WSOP record: Main Event titles, and the other Main Event final tables noted (Seidel, 1988 runner-up).
+  const results = [
+    ...l.mainEvents.map((y) => ({ y, label: 'Winner', winner: true })),
+    ...l.archive.filter((a) => !/champion/i.test(a.role)).map((a) => ({ y: Number(a.eventId.slice(0, 4)), label: 'Final table · #2', winner: false })),
+  ].sort((x, z) => z.y - x.y);
   return (
     <Page className="max-w-[96rem]">
       {back('/videos/players', 'Players')}
@@ -492,49 +478,41 @@ function LegendPage({ l }: { l: Legend }) {
         </div>
       </header>
 
-      {l.mainEvents.length > 0 && (
-        <section aria-label="Main Event titles" className="mt-10">
-          <h2 className="text-xl sm:text-2xl">Main Event titles</h2>
+      <section aria-label="Results" className="mt-10">
+        <h2 className="text-xl sm:text-2xl">Results</h2>
+        {results.length ? (
           <ul className="mt-3 divide-y divide-line rounded-panel border border-line bg-surface">
-            {l.mainEvents.map((y) => {
+            {results.map(({ y, label, winner }) => {
               const ref = archiveEvent(`${y}-lv-main`);
+              const row = (
+                <>
+                  <span className={cx('w-14 font-display text-2xl tnum', !ref && 'text-muted')}>{y}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">Main Event</span>
+                    <span className="block truncate text-xs text-muted">{y} WSOP Las Vegas</span>
+                  </span>
+                  <span className={cx('text-sm font-semibold', winner && 'text-gold-strong')}>{label}</span>
+                </>
+              );
               return (
-                <li key={y}>
+                <li key={`${y}-${label}`}>
                   {ref ? (
                     <Link to={`/videos/event/${ref.event.id}`} className="flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
-                      <span className="w-14 font-display text-2xl tnum">{y}</span>
-                      <span className="min-w-0 flex-1 truncate font-semibold">{y} WSOP Main Event · Champion</span>
-                      <span className="text-sm font-semibold text-gold-strong">Watch</span>
+                      {row}
+                      <Icon name="chevron" size={16} className="text-muted" />
                     </Link>
                   ) : (
                     <span className="flex items-center gap-4 px-4 py-3">
-                      <span className="w-14 font-display text-2xl text-muted tnum">{y}</span>
-                      <span className="min-w-0 flex-1 truncate font-semibold">{y} WSOP Main Event · Champion</span>
-                      <span className="text-sm text-muted">Not in the archive</span>
+                      {row}
+                      <span className="w-4" aria-hidden />
                     </span>
                   )}
                 </li>
               );
             })}
           </ul>
-        </section>
-      )}
-
-      <section aria-label="In the archive" className="mt-10">
-        <h2 className="text-xl sm:text-2xl">In the archive</h2>
-        {videos.length ? (
-          <>
-            <p className="mt-1 text-sm text-muted">{inArchive.map(({ a, ref }) => `${ref.year.year} ${a.role}`).join(' · ')}</p>
-            <BadgeScope videos={videos}>
-              <div className={cx(rowGrid, 'mt-4')}>
-                {videos.map((v) => (
-                  <VideoCard key={v.id} v={v} {...playsFull(v)} />
-                ))}
-              </div>
-            </BadgeScope>
-          </>
         ) : (
-          <p className="mt-3 rounded-panel border border-line bg-surface p-5 text-sm text-muted">Broadcasts with {l.name} appear here as the archive is tagged by player.</p>
+          <p className="mt-3 text-sm text-muted">No Main Event final tables on record here yet.</p>
         )}
       </section>
     </Page>
