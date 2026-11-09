@@ -583,8 +583,8 @@ export { catalog };
 // ---- Home rows ---------------------------------------------------------------------------------------
 
 /**
- * v7 Home rows: Recommended for you, Continue watching, My List, Editor's pick (best final tables), From the archive
- * (past videos by year or by player), Collections and Highlights (automatic, by hand type). No Shorts, no Latest replays.
+ * v7 Home rows: Recommended for you, Editor's pick (best final tables), From the archive (past videos by year or by
+ * player), Collections, Highlights (automatic, by hand type), then Continue watching and My List at the bottom. No Shorts, no Latest replays.
  */
 export function HomeRows() {
   const { state, set, toast, signedIn } = useApp();
@@ -625,12 +625,13 @@ export function HomeRows() {
     <>
       {/* Recommended for you takes the place of Coming up (the schedule has the next broadcasts). */}
       <VideoRow title="Recommended for you" videos={recs} />
-      <ContinueRow items={continuing} onRemove={removeContinue} />
-      <MyListRow videos={myRow} />
       <EditorsPick picks={picks} />
       <FromTheArchive />
       <CollectionsRow />
       <HighlightsRow pool={highlightPool} skip={shown} />
+      {/* Personal rows last. */}
+      <ContinueRow items={continuing} onRemove={removeContinue} />
+      <MyListRow videos={myRow} />
     </>
   );
 }
