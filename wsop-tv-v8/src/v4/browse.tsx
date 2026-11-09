@@ -4,7 +4,7 @@
 //   Players: the player grid (sort, search) → a player page (profile, final tables by year, appearances by year).
 //   Events: the events that come back every year → a chronicle of each, year by year.
 //   The event page is where all three tabs land: its facts, the days that were broadcast, full broadcasts or highlights.
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Avatar, BraceletCount, Button, CountryCode, FilterChip, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
@@ -12,15 +12,15 @@ import { HERO_DAY_ID, events, players, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
-import { catalog, highlightClips, isLive, videoById, type Video } from './catalog';
+import { catalog, isLive, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
-import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, HASHTAGS, LEGENDS, archiveHands, hashtagLabel, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
+import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
 const CURRENT_YEAR = 2026;
 
 // ---- shared bits -------------------------------------------------------------------------------------
 
-/** Browse is built on two things, the year and the player; the hashtags (kinds of hand) come on top of both. */
+/** Browse is built on two things, the year and the player. (Hashtags are an advanced feature, left out for now.) */
 export function BrowseTabs({ tab }: { tab: 'years' | 'players' }) {
   const tabs = [
     ['/videos', 'Years', 'years'],
@@ -35,101 +35,7 @@ export function BrowseTabs({ tab }: { tab: 'years' | 'players' }) {
           </Link>
         ))}
       </nav>
-      <HashtagLinks />
     </>
-  );
-}
-
-/** The hashtags as links: each opens its hands across every year. */
-function HashtagLinks({ current }: { current?: string }) {
-  return (
-    <div className="mt-4 flex flex-wrap gap-2" aria-label="Hashtags">
-      {HASHTAGS.map(([slug, label]) => (
-        <Link key={slug} to={`/videos/tag/${slug}`} aria-current={current === slug ? 'page' : undefined} className={cx('inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold', current === slug ? 'border-gold bg-gold/15 text-text' : 'border-line-strong text-muted hover:border-text/40 hover:text-text')}>
-          #{label}
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-/** Hashtag chips that filter a list in place (on a year or a player). */
-function HashtagFilter({ value, onChange, counts }: { value: string; onChange: (v: string) => void; counts: Record<string, number> }) {
-  return (
-    <div className="flex flex-wrap gap-2" aria-label="Hashtags">
-      <FilterChip on={value === 'all'} onClick={() => onChange('all')}>
-        All
-      </FilterChip>
-      {HASHTAGS.filter(([slug]) => counts[slug]).map(([slug, label]) => (
-        <FilterChip key={slug} on={value === slug} onClick={() => onChange(slug)}>
-          #{label}
-        </FilterChip>
-      ))}
-    </div>
-  );
-}
-const tagCounts = (vs: Video[]) => Object.fromEntries(HASHTAGS.map(([slug]) => [slug, vs.filter((v) => v.tags.some((t) => t.slug === slug)).length]));
-const withHashtag = (vs: Video[], tag: string) => (tag === 'all' ? vs : vs.filter((v) => v.tags.some((t) => t.slug === tag)));
-/** Hands of a year: this year's hand clips, or the archive's highlights of that year. */
-const handsOf = (year: number) => (year === CURRENT_YEAR ? highlightClips : archiveHands(year));
-
-/** A section of hands with the hashtag filter (a year's or a player's). */
-function HandsSection({ title, hands }: { title: string; hands: Video[] }) {
-  const [tag, setTag] = useState('all');
-  if (!hands.length) return null;
-  const list = withHashtag(hands, tag);
-  return (
-    <section aria-label={title} className="mt-10">
-      <h2 className="text-xl sm:text-2xl">{title}</h2>
-      <div className="mt-3">
-        <HashtagFilter value={tag} onChange={setTag} counts={tagCounts(hands)} />
-      </div>
-      <BadgeScope videos={list}>
-        <div className={cx(rowGrid, 'mt-5')}>
-          {list.slice(0, 12).map((v) => (
-            <VideoCard key={v.id} v={v} {...playsFull(v)} />
-          ))}
-        </div>
-      </BadgeScope>
-    </section>
-  );
-}
-
-/** A hashtag across the years: its hands, narrowed by year. */
-export function HashtagPage() {
-  const { tag = '' } = useParams();
-  const [year, setYear] = useState<number | 'all'>('all');
-  const label = hashtagLabel(tag);
-  const all = useMemo(() => withHashtag([...highlightClips, ...archiveHands()], tag), [tag]);
-  if (!label) return <Navigate to="/videos" replace />;
-  const years = [...new Set(all.map(yearOf))].sort((a, b) => b - a);
-  const list = year === 'all' ? all : all.filter((v) => yearOf(v) === year);
-  return (
-    <Page className="max-w-[96rem]">
-      {back('/videos', 'Browse')}
-      <h1 className="mt-3 text-title">#{label}</h1>
-      <p className="mt-1 text-sm text-muted tnum">
-        {all.length} hands · {years.length} years
-      </p>
-      <HashtagLinks current={tag} />
-      <div className="mt-4 flex flex-wrap gap-2" aria-label="Year">
-        <FilterChip on={year === 'all'} onClick={() => setYear('all')}>
-          All years
-        </FilterChip>
-        {years.map((y) => (
-          <FilterChip key={y} on={year === y} onClick={() => setYear(y)}>
-            {y}
-          </FilterChip>
-        ))}
-      </div>
-      <BadgeScope videos={list}>
-        <div className={cx(rowGrid, 'mt-5')}>
-          {list.slice(0, 40).map((v) => (
-            <VideoCard key={v.id} v={v} {...playsFull(v)} />
-          ))}
-        </div>
-      </BadgeScope>
-    </Page>
   );
 }
 
@@ -384,9 +290,6 @@ export function YearPage() {
           )}
         </section>
       )}
-
-      {/* The year's hands, by hashtag. */}
-      <HandsSection key={y} title={`Hands of ${y}`} hands={handsOf(y)} />
     </Page>
   );
 }
@@ -535,8 +438,6 @@ export function PlayerPage() {
           <p className="mt-3 text-sm text-muted">No final tables on record yet.</p>
         )}
       </section>
-
-      <HandsSection key={p.id} title="Hands" hands={seen.filter((v) => v.kind === 'clip')} />
 
       <section aria-label="Appearances" className="mt-10">
         <h2 className="text-xl sm:text-2xl">Appearances</h2>
