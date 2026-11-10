@@ -624,7 +624,7 @@ function PlayerTile({ to, rank, name, cc, line, out, photo }: { to?: string; ran
 }
 
 /** A top-level page's title (Browse, Schedule): the same size and type on every page. */
-export const PAGE_TITLE = 'font-display text-4xl leading-none uppercase sm:text-5xl';
+export const PAGE_TITLE = 'text-2xl sm:text-3xl';
 
 const playerRowGrid = 'hscroll gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-3*0.75rem)/4)] lg:[&>*]:w-[calc((100%-8*0.75rem)/9)]';
 

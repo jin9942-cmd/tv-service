@@ -32,10 +32,10 @@ export function BrowseTabs({ tab }: { tab: 'years' | 'players' }) {
   ] as const;
   return (
     <>
-      {/* The sub-menu under the page title: a step smaller than the title, still easy to see (white + gold bar on, dimmed off). */}
-      <nav className="mt-5 flex gap-7 border-b border-line" aria-label="Browse">
+      {/* Browse's sub-menu, drawn as a menu: pill buttons under the title (the one you're on filled white). */}
+      <nav className="mt-4 flex gap-2" aria-label="Browse">
         {tabs.map(([to, label, k]) => (
-          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-[3px] pb-2.5 text-lg font-bold transition-colors sm:text-xl', tab === k ? 'border-gold text-text' : 'border-transparent text-white/45 hover:text-white/80')}>
+          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('inline-flex h-11 items-center rounded-full border px-6 text-base font-bold transition-colors', tab === k ? 'border-white bg-white text-black' : 'border-line-strong text-text/80 hover:border-white/60 hover:text-text')}>
             {label}
           </Link>
         ))}
@@ -128,6 +128,10 @@ export function YearsTab() {
     .flatMap((s) => s.events)
     .map(liveItem)
     .sort(newestFirst);
+  // The lead: the event on air (live first in the order), else the newest final table.
+  const lead = thisYear.find((x) => x.final);
+  const leadHref = lead?.final ? (lead.live ? `/watch/${lead.final.id}` : `/watch/${lead.final.id}?play=1`) : (lead?.to ?? '/videos');
+  const related = thisYear.filter((x) => x !== lead && x.final).map((x) => x.final!);
   const tile = (y: (typeof ARCHIVE)[number]) => {
     const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
     const ref = main ? archiveEvent(main.id) : undefined;
@@ -173,13 +177,50 @@ export function YearsTab() {
             The whole season →
           </Link>
         </div>
-        <Carousel className="gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]">
-          {thisYear.map((x) => (
-            <li key={x.id} className="min-w-0">
-              <EventTile x={x} />
-            </li>
-          ))}
-        </Carousel>
+        {/* One big picture: what's on now (or the latest final table) — two broadcasts at once is rare, so one leads. */}
+        {lead && (
+          <div className="grid overflow-hidden rounded-panel border border-line bg-surface lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+            <Link to={leadHref} onClick={lead.live ? undefined : enterFullScreen} className="group relative block aspect-video overflow-hidden bg-surface-2" aria-label={`Watch ${lead.name}`}>
+              {lead.final && <img src={lead.final.thumb} style={artStyle({ pos: lead.final.thumbPos, fit: lead.final.thumbFit })} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />}
+              {lead.live && <LiveTag className="absolute top-3 left-3" />}
+            </Link>
+            <div className="flex flex-col justify-center p-6 lg:p-8">
+              <p className="text-xs font-bold tracking-wide text-gold-strong uppercase tnum">
+                {lead.number != null ? `Event #${lead.number}` : 'Las Vegas'} · {lead.live ? 'Final table on air now' : 'Latest final table'}
+              </p>
+              <h3 className="mt-2 text-2xl leading-tight font-bold sm:text-3xl">{lead.name}</h3>
+              <p className="mt-1 text-sm text-muted">{[lead.buyLabel, lead.game].filter(Boolean).join(' · ')}</p>
+              {!lead.live && lead.winner && <p className="mt-3 text-[15px]">Winner · <span className="font-semibold">{lead.winner.name}</span></p>}
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link to={leadHref} onClick={lead.live ? undefined : enterFullScreen}>
+                  <Button variant="primary" tabIndex={-1}>
+                    <Icon name="play" size={16} /> {lead.live ? 'Watch live' : 'Watch the final table'}
+                  </Button>
+                </Link>
+                <Link to={lead.to}>
+                  <Button variant="outline" tabIndex={-1}>
+                    Open the event
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Under it, the season's other videos: each event's final table, newest first. */}
+        {related.length > 0 && (
+          <div className="mt-6">
+            <h3 className="mb-3 text-lg font-bold">More from the {CURRENT_YEAR} WSOP</h3>
+            <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+              <BadgeScope videos={related}>
+                {related.map((v) => (
+                  <li key={v.id} className="min-w-0">
+                    <VideoCard v={v} />
+                  </li>
+                ))}
+              </BadgeScope>
+            </Carousel>
+          </div>
+        )}
       </section>
 
       <section aria-label="Recent seasons" className="mt-10">
