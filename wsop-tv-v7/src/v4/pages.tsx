@@ -873,19 +873,21 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
   const pick = photoPicker(skip);
   return (
     <Section title="Collections">
-      <ul className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-2*1rem)/3)]">
+      {/* Tall poster covers (2:3), unlike the wide video rows around it: a collection reads as a set, not one video. */}
+      <ul className="hscroll gap-4 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*1rem)/3.5)] lg:[&>*]:w-[calc((100%-5*1rem)/6)]">
         {list.map(({ theme, videos }) => {
           const art = pick();
           return (
             <li key={theme.id} className="min-w-0">
-              <Link to={`/collections/${theme.id}`} className="group relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-                <img src={art.thumb} style={artStyle({ pos: art.thumbPos, fit: art.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-                <span className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10" aria-hidden />
+              <Link to={`/collections/${theme.id}`} className="group relative block aspect-[2/3] overflow-hidden rounded-card border border-line bg-surface-2 transition-colors hover:border-white/40">
+                <img src={art.thumb} style={artStyle({ pos: art.thumbPos, fit: art.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+                <span className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" aria-hidden />
+                <span className="absolute inset-x-0 top-0 h-1 bg-gold" aria-hidden />
                 <span className="absolute inset-x-0 bottom-0 flex flex-col p-4">
-                  <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase tnum">
+                  <span className="font-display text-xl leading-[1.05] uppercase xl:text-2xl">{theme.title}</span>
+                  <span className="mt-2 text-[11px] font-bold tracking-wide text-gold-strong uppercase tnum">
                     {videos.length} videos · {themeLength(videos)}
                   </span>
-                  <span className="mt-1 text-lg leading-tight font-bold sm:text-xl">{theme.title}</span>
                 </span>
               </Link>
             </li>
