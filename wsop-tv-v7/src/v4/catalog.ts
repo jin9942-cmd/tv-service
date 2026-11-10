@@ -106,6 +106,12 @@ function aboutDay(e: TourEvent, d: Day): [string, string][] {
   ];
 }
 
+const entries = (e: TourEvent) => `${e.entrants.toLocaleString('en-US')} entries`;
+/** $10,000,000 → $10M, $186,200 → $186K (short enough for a card line). */
+const shortMoney = (n: number) => '$' + (n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n));
+const dayLine = (e: TourEvent, d: Day) =>
+  d.label === 'Final Table' ? `${entries(e)} · ${shortMoney(e.firstPrize)} to the winner` : `${new Date(d.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: VENUE_TZ })} · ${entries(e)}`;
+
 function dayVideo(e: TourEvent, d: Day, i: number): Video {
   const classic = e.seriesId === 'classics';
   const a = classic ? archive.find((x) => `classic-${x.id}` === e.id) : undefined;
@@ -114,7 +120,8 @@ function dayVideo(e: TourEvent, d: Day, i: number): Video {
     id: d.id,
     kind: classic ? 'classic' : 'broadcast',
     title: classic ? e.name : `${short(e)} · ${d.label}`,
-    subtitle: classic ? (a?.subtitle ?? 'WSOP Classics') : seriesById(e.seriesId).name,
+    // The line under the title says why it's worth watching: a final table's field and first prize; another day's date and field.
+    subtitle: classic ? (a?.subtitle ?? 'WSOP Classics') : dayLine(e, d),
     description: classic
       ? `${a?.subtitle ?? ''}. The full final table from the ${e.name.slice(0, 4)} WSOP, edited for on-demand viewing.`
       : d.label === 'Final Table'

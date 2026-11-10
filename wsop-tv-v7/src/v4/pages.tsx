@@ -84,7 +84,7 @@ function TitleView({ v }: { v: Video }) {
             <Icon name="chevron" size={20} className="rotate-180" />
           </button>
           <div className="mt-10 max-w-2xl">
-            <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">{v.subtitle}</p>
+            <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">{v.tags.find((t) => t.slug.startsWith('series-'))?.label ?? v.subtitle}</p>
             <h1 className="mt-2 font-sans text-3xl leading-tight font-bold normal-case sm:text-5xl">{v.title}</h1>
             <p className="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-sm text-white/80 tnum">
               {facts.map((x, i) => (
@@ -512,7 +512,7 @@ export { catalog };
  * - in season (the series and two weeks after): the featured theme (this series' final tables), Main Event day by
  *   day, Hands of the Week;
  * - off-season: the week's featured theme, Hands of the Week, This Day in WSOP History;
- * then Editor's pick, Seasons, the Collections shelf, and Continue watching and My List at the bottom.
+ * then Seasons, the Collections shelf (six themes), and Continue watching and My List at the bottom.
  */
 export function HomeRows() {
   const { state, set, toast, signedIn } = useApp();
@@ -546,7 +546,6 @@ export function HomeRows() {
     return out;
   };
   const myRow = take(mine, 4);
-  const picks = take(editorsFinalTables(), 3);
   // The programming follows the calendar (see ./themes.ts). `?date=2026-11-10` shows Home as it reads on that day.
   const [params] = useSearchParams();
   const now = Date.parse(params.get('date') ?? '') || Date.now();
@@ -571,7 +570,6 @@ export function HomeRows() {
         </>
       )}
       <SeasonTiles />
-      <EditorsPick picks={picks} />
       <ThemeShelf skip={shown} now={now} placed={placed} />
       {/* Personal rows last. */}
       <ContinueRow items={continuing} onRemove={removeContinue} />
@@ -619,41 +617,6 @@ function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; 
   );
 }
 
-/** Editor's pick: one theme — the best final tables — with the editor's note beside three of them. */
-const editorsFinalTables = () => {
-  const finals = catalog.filter((v) => (v.kind === 'classic' || (v.kind === 'broadcast' && v.status === 'vod')) && v.title.includes('Final Table'));
-  const picked: Video[] = [];
-  // Different pictures side by side.
-  for (const x of [...finals].sort((a, b) => b.views - a.views)) if (!picked.some((p) => p.thumb === x.thumb && p.thumbPos === x.thumbPos)) picked.push(x);
-  return picked;
-};
-
-function EditorsPick({ picks }: { picks: Video[] }) {
-  if (!picks.length) return null;
-  const total = picks.reduce((n, v) => n + v.durationSec, 0);
-  return (
-    <Section title="The best final tables" action={more('/collections/final-tables', 'All final tables')}>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
-        <div className="flex flex-col justify-between gap-3 rounded-card border border-line bg-surface p-4">
-          <p className="text-[15px] leading-relaxed text-text/85">
-            <span className="mb-1.5 block text-[11px] font-bold tracking-wide text-gold-strong uppercase">From the editor</span>
-            Where bracelets are won: the final tables worth watching start to finish, from this series and the archive.
-          </p>
-          <p className="text-sm text-muted tnum">
-            {picks.length} final tables · {duration(total)} in all
-          </p>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-3">
-          <BadgeScope videos={picks}>
-          {picks.map((v) => (
-            <VideoCard key={v.id} v={v} />
-          ))}
-          </BadgeScope>
-        </div>
-      </div>
-    </Section>
-  );
-}
 
 /**
  * Past videos for the archive row: every broadcast of the events from before the current series (the classics, and the
@@ -751,7 +714,7 @@ function MyListRow({ videos }: { videos: Video[] }) {
 // ---- curated collections ----------------------------------------------------------------------------
 
 // The themes themselves (rules, rotation, pin) live in ./themes.ts.
-/** Editor's pick shows this theme already, so the featured spot and the shelf leave it out. */
+/** The all-time final tables theme: the featured theme already covers final tables, so it stays off Home. */
 const EDITORS_THEME = 'final-tables';
 /** How long a theme runs, in words: "46 hours", "59 min". */
 const themeLength = (vs: Video[]) => {
@@ -837,7 +800,8 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
  */
 function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; placed: string[] }) {
   const featured = featuredTheme(now, placed)?.theme.id;
-  const list = activeThemes(now).filter((x) => !placed.includes(x.theme.id) && x.theme.id !== featured);
+  // Six at most: a shelf, not the whole catalog (the rest still take turns as the featured theme).
+  const list = activeThemes(now).filter((x) => !placed.includes(x.theme.id) && x.theme.id !== featured).slice(0, 6);
   if (!list.length) return null;
   const pick = photoPicker(skip);
   return (

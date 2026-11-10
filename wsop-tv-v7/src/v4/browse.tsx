@@ -419,15 +419,13 @@ export function YearPage() {
 // ---- Players ---------------------------------------------------------------------------------------
 
 type Sort = 'bracelets' | 'name';
-/** Players: the bracelet legends (all-time leaders, WSOP records) and this year's players; sort and search. */
+/** Players: the bracelet legends (all-time leaders, WSOP records), real players only; sort. */
 export function PlayersTab() {
   const [sort, setSort] = useState<Sort>('bracelets');
   // No search on Browse for now: every player is listed.
   const match = (name: string) => !!name;
   const order = <T extends { name: string; bracelets: number }>(a: T, b: T) => (sort === 'name' ? a.name.localeCompare(b.name) : b.bracelets - a.bracelets || a.name.localeCompare(b.name));
   const legends = LEGENDS.filter((l) => match(l.name)).sort(order);
-  const legendIds = new Set(LEGENDS.map((l) => l.playerId).filter(Boolean));
-  const current = players.filter((p) => !legendIds.has(p.id) && match(p.name)).sort(order);
   return (
     <>
       <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -454,26 +452,7 @@ export function PlayersTab() {
           </ul>
         </section>
       )}
-      {current.length > 0 && (
-        <section aria-label={`${CURRENT_YEAR} players`} className="mt-10">
-          <h2 className="text-xl sm:text-2xl">{CURRENT_YEAR} players</h2>
-          <p className="mt-1 text-sm text-muted">At the tables of this year’s series</p>
-          <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {current.map((p) => (
-              <li key={p.id}>
-                <Link to={`/videos/players/${p.id}`} className="group flex h-full flex-col items-center rounded-card border border-line bg-surface p-4 text-center hover:border-line-strong hover:bg-surface-2">
-                  <Avatar name={p.name} hue={p.hue} size={64} photo={p.photo} />
-                  <span className="mt-3 line-clamp-2 text-sm font-semibold group-hover:text-gold-strong">{p.name}</span>
-                  <span className="mt-0.5 text-xs text-muted">{p.country}</span>
-                  <span className="mt-2 text-xs">
-                    <BraceletCount n={p.bracelets} size={14} />
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {/* Only real players here: the demo's own players are made up, so they are not listed. */}
     </>
   );
 }
