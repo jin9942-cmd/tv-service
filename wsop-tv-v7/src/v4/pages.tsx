@@ -574,8 +574,9 @@ export function HomeRows() {
       <EditorsPick picks={picks} />
       <ThemeShelf skip={shown} now={now} placed={placed} />
       {/* Personal rows last. */}
-      <ContinueRow items={continuing} onRemove={removeContinue} />
       <MyListRow videos={myRow} />
+      {/* Continue watching is the very last row. */}
+      <ContinueRow items={continuing} onRemove={removeContinue} />
     </>
   );
 }
