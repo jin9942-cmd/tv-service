@@ -1,7 +1,7 @@
 // The Poker Hall of Fame, as WSOP.com lists it (https://www.wsop.com/hall-of-fame/, read 2026-11-10): inductees by
 // year, newest first, with the country the page labels them with. The demo is set on Jul 15, 2025, so it lists the
 // classes up to 2024 (the 2025 and 2026 classes come after the demo moment or their announcement date isn't confirmed).
-// Photos are on WSOP.com too; they are not used until their use here is cleared.
+// Photos: each inductee's WSOP.com profile photo (cleared for this demo 2026-11-10), saved as public/hof/<slug>.jpg.
 import { LEGENDS } from './archive';
 
 export interface Inductee {
@@ -11,10 +11,20 @@ export interface Inductee {
   cc: string;
   /** Their page in Browse > Players, when they have one (a bracelet legend). */
   to?: string;
+  /** Their WSOP.com profile photo. */
+  photo: string;
 }
 
 const US = ['United States', 'US'] as const;
-const I = (year: number, name: string, [country, cc]: readonly [string, string] = US): Inductee => ({ year, name, country, cc });
+/** The photo's file name: the name without the nickname (Thomas Austin “Amarillo Slim” Preston → thomas-austin-preston). */
+const slug = (name: string) => name.replace(/ “[^”]+”/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+const I = (year: number, name: string, [country, cc]: readonly [string, string] = US): Inductee => ({
+  year,
+  name,
+  country,
+  cc,
+  photo: `${import.meta.env.BASE_URL}hof/${slug(name)}.jpg`,
+});
 
 const LIST: Inductee[] = [
   I(2024, 'Patrik Antonius', ['Finland', 'FI']),
@@ -81,6 +91,9 @@ const LIST: Inductee[] = [
   I(1979, 'Red Winn'),
   I(1979, 'Sid Wyman'),
 ];
+
+/** A Hall of Famer's WSOP.com photo by name (with or without the nickname), for the legends' cards and pages. */
+export const hofPhoto = (name: string) => LIST.find((x) => x.name === name || x.name.replace(/ “[^”]+”/, '') === name)?.photo;
 
 /** Every inductee, newest class first; a bracelet legend links to their page in Browse. */
 export const HALL_OF_FAME: Inductee[] = LIST.map((x) => {

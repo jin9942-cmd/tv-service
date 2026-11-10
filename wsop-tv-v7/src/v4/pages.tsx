@@ -586,8 +586,21 @@ export function HomeRows() {
 
 
 /** A player card: type only (no photos yet), the name large, a line of fact under it. */
-function PlayerTile({ to, rank, name, cc, line, out }: { to?: string; rank: string; name: string; cc: string; line: string; out?: boolean }) {
-  const body = (
+function PlayerTile({ to, rank, name, cc, line, out, photo }: { to?: string; rank: string; name: string; cc: string; line: string; out?: boolean; photo?: string }) {
+  // With a photo: the face fills the card, the name under it (the Hall of Fame row).
+  const body = photo ? (
+    <span className="block">
+      <span className="relative block aspect-square overflow-hidden rounded-card border border-line bg-surface-2 transition-colors group-hover:border-white/40">
+        <img src={photo} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+        <span className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/85 to-transparent px-2.5 pt-8 pb-2">
+          <span className="font-display text-xl leading-none tnum">{rank}</span>
+          <span className="text-[11px] font-semibold text-white/80">{cc}</span>
+        </span>
+      </span>
+      <span className="mt-2 line-clamp-2 block text-[15px] leading-snug font-bold group-hover:text-gold-strong">{name}</span>
+      <span className="mt-0.5 block truncate text-xs text-muted">{line}</span>
+    </span>
+  ) : (
     <span className={cx('flex h-full flex-col justify-between gap-5 rounded-card border border-line bg-surface p-4 transition-colors', to && 'group-hover:border-white/40 group-hover:bg-surface-2', out && 'opacity-60')}>
       <span className="flex items-start justify-between gap-2">
         <span className="font-display text-3xl leading-none tnum">{rank}</span>
@@ -618,7 +631,7 @@ function HallOfFameRow() {
       <ul className={playerRowGrid}>
         {list.map((x) => (
           <li key={x.name} className="min-w-0">
-            <PlayerTile to={x.to} rank={String(x.year)} name={x.name} cc={x.cc} line={x.country} />
+            <PlayerTile to={x.to} rank={String(x.year)} name={x.name} cc={x.cc} line={x.country} photo={x.photo} />
           </li>
         ))}
       </ul>

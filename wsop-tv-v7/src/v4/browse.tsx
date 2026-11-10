@@ -14,7 +14,7 @@ import { money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle } from '../lib/brand';
 import { catalog, highlightClips, isLive, stageOf, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
-import { HALL_OF_FAME } from './halloffame';
+import { HALL_OF_FAME, hofPhoto } from './halloffame';
 import { Carousel } from './carousel';
 import { DaySchedule, EventRows, EventTile, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, scheduleOrder, type EventItem } from './loop';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
@@ -539,7 +539,7 @@ export function PlayersTab() {
               {HALL_OF_FAME.filter((x) => Math.floor(x.year / 10) * 10 === d).map((x) => {
                 const body = (
                   <span className="flex h-full items-center gap-3.5 rounded-card border border-line bg-surface p-3.5 transition-colors group-hover:border-white/40">
-                    <Avatar name={x.name.replace(/ “[^”]+”/, '')} hue={[...x.name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)} size={48} ring />
+                    <Avatar name={x.name.replace(/ “[^”]+”/, '')} hue={[...x.name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)} size={56} photo={x.photo} ring />
                     <span className="min-w-0">
                       <span className="block text-base leading-snug font-bold group-hover:text-gold-strong">{x.name}</span>
                       <span className="mt-0.5 block text-xs text-muted tnum">
@@ -571,7 +571,7 @@ export function PlayersTab() {
 
 /** A bracelet legend: initials, name, bracelets, Main Event titles. */
 function LegendCard({ l, compact }: { l: Legend; compact?: boolean }) {
-  const photo = l.playerId ? players.find((p) => p.id === l.playerId)?.photo : undefined;
+  const photo = (l.playerId ? players.find((p) => p.id === l.playerId)?.photo : undefined) ?? hofPhoto(l.name);
   return (
     <Link to={`/videos/players/${l.playerId ?? l.id}`} className="group flex h-full flex-col items-center rounded-card border border-line bg-surface p-4 text-center hover:border-line-strong hover:bg-surface-2">
       <Avatar name={l.name} hue={l.hue} size={compact ? 56 : 64} photo={photo} />
@@ -700,7 +700,7 @@ function LegendPage({ l }: { l: Legend }) {
     <Page className="max-w-[96rem]">
       {back('/videos/players', 'Players')}
       <header className="mt-4 flex flex-wrap items-center gap-5">
-        <Avatar name={l.name} hue={l.hue} size={96} ring />
+        <Avatar name={l.name} hue={l.hue} size={96} photo={hofPhoto(l.name)} ring />
         <div>
           <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">Bracelet legend</p>
           <h1 className="mt-1 text-title">{l.name}</h1>
