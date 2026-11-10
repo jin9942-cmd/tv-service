@@ -256,8 +256,15 @@ function ResultsSwitch() {
   );
 }
 
+/** The review bar (draft A/B, on air / off air, results) is off: v8 keeps draft A in its default state. */
+const SHOW_DRAFT_BAR = false;
+
 /** For the review: which draft this is, and what the demo stands on. */
 function DraftBar() {
+  if (!SHOW_DRAFT_BAR) return null;
+  return <DraftBarInner />;
+}
+function DraftBarInner() {
   const { pathname, search } = useLocation();
   const b = pathname === '/home-b';
   const tab = (to: string, on: boolean, label: string) => (
