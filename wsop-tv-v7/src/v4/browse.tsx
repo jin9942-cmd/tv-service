@@ -125,14 +125,14 @@ export function YearsTab() {
     .flatMap((s) => s.events)
     .map(liveItem)
     .sort(newestFirst);
-  const tile = (y: (typeof ARCHIVE)[number], i: number) => {
+  const tile = (y: (typeof ARCHIVE)[number]) => {
     const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
     const ref = main ? archiveEvent(main.id) : undefined;
     const first = ref ? broadcastsOf(ref)[0] : undefined;
     const size = yearSize(y);
     // Classics: their own still and one broadcast (plays at once). Other years: a crop of real play, graphics left out.
     const own = CLASSIC_STILLS.find((x) => x.startsWith(String(y.year)));
-    const art = y.classic ? (own ? `${import.meta.env.BASE_URL}classics/classic-${own.slice(0, 4)}-${own.slice(4)}.jpg` : main ? archiveArt(main.id) : '') : `${import.meta.env.BASE_URL}crops/${CROP_POOL[i % CROP_POOL.length]}.jpg`;
+    const art = y.classic ? (own ? `${import.meta.env.BASE_URL}classics/classic-${own.slice(0, 4)}-${own.slice(4)}.jpg` : main ? archiveArt(main.id) : '') : seasonPhoto(y.year);
     return (
       <li key={y.year} className="min-w-0">
         <YearPhotoTile
@@ -145,9 +145,9 @@ export function YearsTab() {
       </li>
     );
   };
-  const row = (list: typeof ARCHIVE, offset = 0) => (
+  const row = (list: typeof ARCHIVE) => (
     <div className="mt-4">
-      <Carousel className={yearRowGrid}>{list.map((y, i) => tile(y, i + offset))}</Carousel>
+      <Carousel className={yearRowGrid}>{list.map(tile)}</Carousel>
     </div>
   );
   return (
@@ -186,14 +186,14 @@ export function YearsTab() {
         {row(recent)}
       </section>
 
-      {decades.map((d, di) => {
+      {decades.map((d) => {
         const ys = older.filter((y) => Math.floor(y.year / 10) * 10 === d);
         // The years the archive holds (2018 – 2010, 2009 – 2003), newest first, as F1 TV heads its decades.
         const label = `${ys[0].year} – ${ys[ys.length - 1].year}`;
         return (
           <section key={d} aria-label={label} className="mt-10">
             <h2 className="text-xl sm:text-2xl tnum">{label}</h2>
-            {row(ys, (di + 1) * 5)}
+            {row(ys)}
           </section>
         );
       })}
@@ -212,10 +212,8 @@ export function YearsTab() {
 
 /** The Classics' own broadcast stills (public/classics, from the NAS: classic-<year>-<a|b>.jpg), first per year. */
 const CLASSIC_STILLS = '1973a 1978a 1979a 1981a 1983a 1987a 1988a 1989a 1990a 1991a 1992a 1993a 1994a 1995a 1997a 1998a 1999b 2000a 2001b 2002a'.split(' ');
-/** Graphic-free crops of real play (public/crops) for the tiles of years without a picture of their own. */
-/** The photo for a modern season's tile (a crop of real play, in turn). */
-export const seasonPhoto = (i: number) => `${import.meta.env.BASE_URL}crops/${CROP_POOL[i % CROP_POOL.length]}.jpg`;
-const CROP_POOL = ['lv-hr', 'classic-a1', 'lv-hu', 'classic-a4', 'lv-plo', 'classic-a3', 'lv-mmm', 'lv-ms', 'classic-a2', 'lv-ppc', 'lv-seniors', 'lv-ladies'];
+/** A modern season's tile photo: a frame of that year's own broadcast (public/frames/year-<year>.jpg, from the NAS). */
+export const seasonPhoto = (year: number) => `${import.meta.env.BASE_URL}frames/year-${year}.jpg`;
 const yearRowGrid = 'gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]';
 
 /** A season as F1 TV draws one: the picture, the year large across it, and what it holds underneath. */

@@ -9,7 +9,7 @@ import { duration, money } from '../lib/format';
 import { VENUE_TZ, fmtDateTime } from '../lib/time';
 import { isOnAir } from '../lib/broadcast';
 import { mediaFor } from '../features/channels/Channels';
-import { CHANNEL_ART, EXTERIOR, PLAYER_ART, PROMO_ART, TABLE_ART, VENUE_ART } from '../lib/brand';
+import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, PROMO_ART, SEASON_ART, TABLE_ART, VENUE_ART } from '../lib/brand';
 import type { StreamStatus } from '../data/types';
 
 export type VideoKind = 'broadcast' | 'classic' | 'clip' | 'channel';
@@ -189,12 +189,43 @@ for (const [playerId, photos] of Object.entries(PLAYER_ART)) {
   const theirs = clips.filter((v) => v.tags.some((t) => t.slug === `player-${playerId}`)).sort((a, b) => b.views - a.views);
   photos.forEach((a, i) => theirs[i] && Object.assign(theirs[i], { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit }));
 }
-// Events with no broadcast still of their own: a crop of real WSOP broadcast footage (public/crops, cut from the NAS
-// stills to the players at the table, leaving out the broadcast graphics), used for the event's broadcast and its clips.
-const CROPPED = new Set(['lv-hu', 'lv-mmm', 'lv-ms', 'lv-seniors', 'lv-ppc', 'lv-ladies', 'lv-plo', 'lv-hr', 'classic-a1', 'classic-a2', 'classic-a3', 'classic-a4']);
-for (const v of [...days, ...clips])
-  if (v.eventId && CROPPED.has(v.eventId) && !PROMO_ART[v.id])
-    Object.assign(v, { thumb: `${import.meta.env.BASE_URL}crops/${v.eventId}.jpg`, thumbPos: '50% 50%', thumbFit: undefined });
+// ---- one picture per video, none twice ---------------------------------------------------------------------------
+// Frames taken from each event's own broadcast on the NAS (public/frames, by scripts on the NAS files): a Main Event day
+// shows that day; an event's final table and its clips show that event, a different frame each. What runs out takes
+// a picture nothing else uses (the leftover stills and crops). The hero still is kept for the hero alone.
+const FRAME = (n: string) => `${import.meta.env.BASE_URL}frames/${n}.jpg`;
+const range = (k: string, n: number) => Array.from({ length: n }, (_, i) => `${k}-${i + 1}`);
+const EVENT_FRAMES: Record<string, string[]> = {
+  'lv-main': ['me-ft-4', 'me-ft-1', 'me-ft-2', 'me-ft-3', 'me-ft-5', 'me-ft-6', 'me-ft-7', ...range('me-x', 8)],
+  ...Object.fromEntries(['lv-mmm', 'lv-hu', 'lv-ms', 'lv-seniors', 'lv-ppc', 'lv-ladies', 'lv-plo'].map((k) => [k, range(k, 5)])),
+  ...Object.fromEntries(['classic-a1', 'classic-a2', 'classic-a3', 'classic-a4'].map((k) => [k, range(k, 3)])),
+};
+const DAY_FRAME = (id: string) => (id.startsWith('lv-main-day') ? `me-${id.slice('lv-main-'.length)}` : undefined);
+/** Pictures already on screen somewhere else (the hero, the 24/7 channels), never handed to a card. */
+const TAKEN = new Set<string>([HERO_IMAGES.finalTable, SEASON_ART.src, ...Object.values(CHANNEL_ART).map((a) => a.src)]);
+/** Thumbnails in use, so other rows (collection covers, year tiles) can stay clear of them. */
+export const USED_THUMBS = new Set<string>();
+{
+  const keep = (v: Video, src: string, pos = '50% 50%') => {
+    Object.assign(v, { thumb: src, thumbPos: pos, thumbFit: undefined });
+    USED_THUMBS.add(src);
+  };
+  const free = (src: string) => !USED_THUMBS.has(src) && !TAKEN.has(src);
+  // Leftovers, for videos whose event has no frames left: the stills and crops no fixed pick uses.
+  const spare = [...TABLE_ART, ...VENUE_ART.filter((a) => !EXTERIOR.has(a.src))].map((a) => a.src).concat(['lv-hr', 'classic-a1', 'classic-a2', 'classic-a3', 'classic-a4', 'lv-hu', 'lv-mmm', 'lv-ms', 'lv-seniors', 'lv-ppc', 'lv-ladies', 'lv-plo'].map((k) => `${import.meta.env.BASE_URL}crops/${k}.jpg`));
+  const ordered = [...days, ...clips];
+  // Fixed picks first (their own broadcast still), except the ones that would repeat the hero.
+  for (const v of ordered) {
+    const day = DAY_FRAME(v.id);
+    if (day) keep(v, FRAME(day));
+    else if (PROMO_ART[v.id] && free(PROMO_ART[v.id].src)) keep(v, PROMO_ART[v.id].src, PROMO_ART[v.id].pos);
+  }
+  for (const v of ordered) {
+    if (USED_THUMBS.has(v.thumb) && (DAY_FRAME(v.id) || PROMO_ART[v.id]?.src === v.thumb)) continue;
+    const own = (v.eventId && EVENT_FRAMES[v.eventId]?.map(FRAME).find(free)) || spare.find(free);
+    if (own) keep(v, own);
+  }
+}
 
 /** Everything on demand or live from an event (channels are built on request, since what's on changes). */
 export const catalog: Video[] = [...days, ...clips];

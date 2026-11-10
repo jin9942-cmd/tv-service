@@ -18,8 +18,8 @@ import { BrowseTabs, PlayersTab, YearPhotoTile, YearsTab, pastSeasons, seasonPho
 import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
-import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
-import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
+import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, SEASON_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
+import { USED_THUMBS, byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
 import { activeThemes, featuredTheme, homeHands, inSeason, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
 import { DaySchedule, OtherYearsSection, otherYears } from './loop';
@@ -719,11 +719,11 @@ function SeasonTiles() {
       {/* Photo tiles, as Browse > Years, swiped or stepped with the arrows: this year (live) first. */}
       <Carousel className="gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]">
         <li className="min-w-0">
-          <YearPhotoTile year={CURRENT_SEASON} art={HERO_IMAGES.finalTable} to={`/videos/year/${CURRENT_SEASON}`} line={liveNow ? 'Live · the Main Event final table is on air' : 'This year'} />
+          <YearPhotoTile year={CURRENT_SEASON} art={SEASON_ART.src} to={`/videos/year/${CURRENT_SEASON}`} line={liveNow ? 'Live · the Main Event final table is on air' : 'This year'} />
         </li>
-        {past.map((s, i) => (
+        {past.map((s) => (
           <li key={s.year} className="min-w-0">
-            <YearPhotoTile year={s.year} art={seasonPhoto(i)} to={`/videos/year/${s.year}`} line={s.line} />
+            <YearPhotoTile year={s.year} art={seasonPhoto(s.year)} to={`/videos/year/${s.year}`} line={s.line} />
           </li>
         ))}
       </Carousel>
@@ -788,7 +788,8 @@ type Pic = { thumb: string; thumbPos: string; thumbFit?: 'contain' };
 function photoPicker(skip: Set<string>) {
   const onPage = new Set<string>([...Object.values(HERO_IMAGES), ...Object.values(CHANNEL_ART).map((a) => a.src), ...[...skip].map((id) => videoById(id)?.thumb ?? '')]);
   // One photo per pictured player (several of the same face side by side read as repeats).
-  const pool = [...TABLE_ART, ...Object.values(PLAYER_ART).map((list) => list[0]), ...VENUE_ART.filter((a) => !EXTERIOR.has(a.src))].filter((a, i, all) => all.findIndex((x) => x.src === a.src) === i);
+  // Pictures no video card, channel or tile uses (so a cover never repeats a thumbnail on the page).
+  const pool = [...TABLE_ART, ...Object.values(PLAYER_ART).map((list) => list[0]), ...VENUE_ART.filter((a) => !EXTERIOR.has(a.src))].filter((a, i, all) => all.findIndex((x) => x.src === a.src) === i && !USED_THUMBS.has(a.src) && a.src !== SEASON_ART.src);
   const faces = new Set(Object.values(PLAYER_ART).flat().map((a) => a.src));
   const uses = new Map<string, number>();
   return (own?: Pic): Pic => {
@@ -861,7 +862,7 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
     <Section title="Collections">
       <ul className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-2*1rem)/3)]">
         {list.map(({ theme, videos }) => {
-          const art = pick(videos[0]);
+          const art = pick();
           return (
             <li key={theme.id} className="min-w-0">
               <Link to={`/collections/${theme.id}`} className="group relative block aspect-video overflow-hidden rounded-card bg-surface-2">

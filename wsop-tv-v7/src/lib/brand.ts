@@ -62,25 +62,24 @@ export const VENUE_ART: Art[] = NAS ? NAS.stills.venue.map((x) => art(x)) : [
   art(`${PROMO}venue-horseshoe.png`, '15% 50%'),
   art(`${PROMO}tournament-hall.webp`),
 ];
-/** Each 24/7 channel's own picture (the Channel guide's channel cards). */
-export const CHANNEL_ART: Record<string, Art> = {
-  wsop1: TABLE_ART[0],
-  wsop2: TABLE_ART[1],
-  hands: TABLE_ART[3],
-  classics: NAS ? TABLE_ART[8] : art(`${PROMO}wpc-stage.png`, '50% 35%'),
+/** A NAS still by file name (vegas-ft-05 → its URL), from the manifest the build turns into URLs. */
+export const nas = (file: string): Art | undefined => {
+  const src = NAS && Object.values(NAS.stills).flat().find((u: string) => u.includes(`/${file}.`));
+  return src ? art(src) : undefined;
 };
+const nasOr = (file: string, i: number) => nas(file) ?? TABLE_ART[i];
+/** The current season's tile on Home (a Main Event still no video card uses). */
+export const SEASON_ART: Art = (NAS && nas('vegas-d5-06')) || TABLE_ART[2];
+/** Each 24/7 channel's own picture (the Channel guide's channel cards): stills no video card uses. */
+export const CHANNEL_ART: Record<string, Art> = NAS
+  ? { wsop1: nasOr('vegas-ft-12', 0), wsop2: nasOr('vegas-ft-13', 1), hands: nasOr('paradise-hl-08', 3), classics: nasOr('vegas-ft-11', 8) }
+  : { wsop1: TABLE_ART[0], wsop2: TABLE_ART[1], hands: TABLE_ART[3], classics: art(`${PROMO}wpc-stage.png`, '50% 35%') };
 
-/** Fixed picks for the videos people see first (the rest walk the pools in order). */
 /**
  * With the WSOP footage (NAS): each video gets the still from its own broadcast, read off the broadcast graphic on the
  * still (event and day). Main Event Day 1 / Day 5 / final table, #38 $100K and #46 $250K have their own stills; the
  * other days of the Main Event use the nearest day's stills. Events with no still of their own keep the pool.
  */
-/** A NAS still by file name (vegas-ft-05 → its URL), from the manifest the build turns into URLs. */
-const nas = (file: string): Art | undefined => {
-  const src = NAS && Object.values(NAS.stills).flat().find((u: string) => u.includes(`/${file}.`));
-  return src ? art(src) : undefined;
-};
 const NAS_PICKS_RAW: Record<string, Art | undefined> = {
   'lv-main-day1a': nas('vegas-d1-01'),
   'lv-main-day1b': nas('vegas-d1-04'),
