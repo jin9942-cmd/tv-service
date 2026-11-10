@@ -111,52 +111,6 @@ export function SeasonTile({ year, line, live, big }: { year: number; line: stri
 }
 
 /**
- * This year, at the top of Years: the season's type art beside the live Main Event picture (or the year's latest
- * broadcast); one button to watch, the rest of the card opens the year.
- */
-function ThisYearCard() {
-  const { state } = useApp();
-  const live = catalog.find((v) => v.eventId === 'lv-main' && isLive(v, state.streamMode));
-  const latest = live ?? catalog.filter((v) => v.kind === 'broadcast' && v.status === 'vod' && seriesById(events.find((e) => e.id === v.eventId)?.seriesId ?? '')?.name.startsWith(String(CURRENT_YEAR))).sort((a, b) => b.views - a.views)[0];
-  const evs = currentYear().flatMap((s) => s.events);
-  const watch = latest && (live ? `/watch/${latest.id}` : `/watch/${latest.id}?play=1`);
-  return (
-    <div className="grid overflow-hidden rounded-panel border border-white/10 bg-[radial-gradient(120%_90%_at_0%_0%,rgba(212,175,55,0.18),transparent_60%),linear-gradient(160deg,#1a1712,#0b0b0b)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
-      <div className="relative flex flex-col justify-between gap-6 overflow-hidden p-6 sm:p-8">
-        <span aria-hidden className="pointer-events-none absolute -bottom-[18%] -left-[2%] text-[10rem] leading-none font-black tracking-tighter text-transparent [-webkit-text-stroke:1px_rgba(212,175,55,0.22)] sm:text-[13rem]">
-          {CURRENT_YEAR}
-        </span>
-        <span className="relative flex items-center gap-2">
-          <img src={WSOP_LOGO} alt="" className="h-6 w-auto sm:h-7" />
-          {live && <LiveTag />}
-        </span>
-        <div className="relative">
-          <h2 className="text-5xl leading-none sm:text-6xl">
-            <Link to={`/videos/year/${CURRENT_YEAR}`} className="hover:underline hover:decoration-2 hover:underline-offset-4">
-              {CURRENT_YEAR}
-            </Link>
-          </h2>
-          <p className="mt-2 text-[15px] text-text/85">{live ? 'The Main Event final table is on air now' : 'This year · live and on demand'}</p>
-          <p className="mt-1 text-sm text-muted tnum">
-            {currentYear().map((s) => s.name).join(' · ')} · {evs.length} events
-          </p>
-          {watch && (
-            <Link to={watch} onClick={live ? undefined : enterFullScreen} className="mt-5 inline-block">
-              <Button variant="primary" tabIndex={-1}>
-                <Icon name="play" size={16} /> {live ? 'Watch live' : 'Watch'}
-              </Button>
-            </Link>
-          )}
-        </div>
-      </div>
-      <Link to={`/videos/year/${CURRENT_YEAR}`} className="group relative block aspect-video overflow-hidden bg-surface-2 lg:aspect-auto lg:min-h-72">
-        <img src={latest?.thumb ?? TABLE_ART[0].src} style={artStyle({ pos: latest?.thumbPos ?? TABLE_ART[0].pos, fit: latest?.thumbFit })} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-      </Link>
-    </div>
-  );
-}
-
-/**
  * Years, as F1 TV's archive: this year large, then every season as a photo tile (a picture of play with the year
  * large on it, and a line under it), recent seasons first, the older ones by decade, then the Classics (one broadcast
  * a year, so their tile plays it straight away).
@@ -167,6 +121,10 @@ export function YearsTab() {
   const older = modern.filter((y) => y.year < RECENT_FROM);
   const decades = [...new Set(older.map((y) => Math.floor(y.year / 10) * 10))].sort((a, b) => b - a);
   const classics = ARCHIVE.filter((y) => y.classic);
+  const thisYear = currentYear()
+    .flatMap((s) => s.events)
+    .map(liveItem)
+    .sort(newestFirst);
   const tile = (y: (typeof ARCHIVE)[number], i: number) => {
     const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
     const ref = main ? archiveEvent(main.id) : undefined;
@@ -194,8 +152,33 @@ export function YearsTab() {
   );
   return (
     <>
+      {/* This year: its events, not just the live one — the season's tiles (live first, then newest), and the way in. */}
       <section aria-label="This year" className="mt-6">
-        <ThisYearCard />
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="flex items-center gap-2 text-[11px] font-bold tracking-wide text-gold-strong uppercase">
+              <LiveTag /> This season
+            </p>
+            <h2 className="mt-1 text-2xl sm:text-3xl">
+              <Link to={`/videos/year/${CURRENT_YEAR}`} className="hover:underline hover:decoration-2 hover:underline-offset-4">
+                {CURRENT_YEAR} World Series of Poker
+              </Link>
+            </h2>
+            <p className="mt-1 text-sm text-muted tnum">
+              Las Vegas · {thisYear.length} events · {thisYear.reduce((n, x) => n + x.broadcasts, 0)} broadcasts
+            </p>
+          </div>
+          <Link to={`/videos/year/${CURRENT_YEAR}`} className="text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
+            The whole season →
+          </Link>
+        </div>
+        <Carousel className="gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]">
+          {thisYear.map((x) => (
+            <li key={x.id} className="min-w-0">
+              <EventTile x={x} />
+            </li>
+          ))}
+        </Carousel>
       </section>
 
       <section aria-label="Recent seasons" className="mt-10">
