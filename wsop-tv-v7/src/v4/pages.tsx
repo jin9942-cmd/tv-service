@@ -14,8 +14,10 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseTabs, PlayersTab, YearsTab } from './browse';
-import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle, type Art } from '../lib/brand';
+import { BrowseTabs, PlayersTab, SeasonTile, YearsTab, pastSeasons } from './browse';
+/** This year's season (the live series). */
+const CURRENT_SEASON = 2026;
+import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, videoById, type Video } from './catalog';
 import { activeThemes, featuredTheme, handsOfTheWeek, inSeason, themeById } from './themes';
 
@@ -568,8 +570,8 @@ export function HomeRows() {
           <ThemeRow id={ownRow} now={now} />
         </>
       )}
-      <EditorsPick picks={picks} />
       <SeasonTiles />
+      <EditorsPick picks={picks} />
       <ThemeShelf skip={shown} now={now} placed={placed} />
       {/* Personal rows last. */}
       <ContinueRow items={continuing} onRemove={removeContinue} />
@@ -694,44 +696,21 @@ function archiveGroups(by: 'year' | 'player'): ArchiveGroup[] {
 const archiveGroup = (key: string) => archiveGroups(key.startsWith('year-') ? 'year' : 'player').find((g) => g.key === key);
 
 /**
- * Past WSOPs as TV seasons: one tile per year, newest first. No broadcast still (the archive reuses the same few clips,
- * so every tile would look alike) and no players: each tile is type-only key art (the year, large and outlined, cropped
- * at the corner) with how many broadcasts the season has. A tile opens that season's broadcasts.
+ * Seasons: this year and the six before it as type-only season tiles (the same tiles and counts as Browse > Years);
+ * each opens the year in Browse, and All years opens Browse.
  */
 function SeasonTiles() {
-  const groups = archiveGroups('year');
-  if (!groups.length) return null;
+  const { state } = useApp();
+  const liveNow = catalog.some((v) => v.eventId && isLive(v, state.streamMode));
+  const seasons = [{ year: CURRENT_SEASON, line: liveNow ? 'Final table on air' : 'This year' }, ...pastSeasons()].slice(0, 7);
   return (
-    <Section title="Seasons">
+    <Section title="Seasons" action={more('/videos', 'All years')}>
       <ul className="hscroll gap-2.5 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*0.625rem)/4)] lg:[&>*]:w-[calc((100%-6*0.625rem)/7)]">
-        {groups.map((g) => {
-          const n = g.entries.length;
-          return (
-            <li key={g.key} className="min-w-0">
-              <Link
-                to={`/archive/${g.key}`}
-                className="group relative block aspect-video overflow-hidden rounded-card border border-white/10 bg-[radial-gradient(120%_90%_at_100%_0%,rgba(212,175,55,0.20),transparent_60%),linear-gradient(160deg,#1a1712,#0b0b0b)] transition-colors hover:border-white/40"
-                aria-label={`WSOP ${g.label} season · ${n} broadcast${n === 1 ? '' : 's'}`}
-              >
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute -right-[4%] -bottom-[30%] text-[5.5rem] leading-none font-black tracking-tighter text-transparent transition-transform duration-300 [-webkit-text-stroke:1px_rgba(212,175,55,0.3)] group-hover:-translate-y-1 sm:text-[6.5rem]"
-                >
-                  {g.label}
-                </span>
-                <span className="absolute inset-0 flex flex-col justify-between p-3">
-                  <img src={WSOP_LOGO} alt="" className="h-4 w-auto self-start opacity-90 sm:h-5" />
-                  <span>
-                    <span className="block text-2xl leading-none font-black text-white sm:text-[1.7rem]">{g.label}</span>
-                    <span className="mt-1 block text-xs text-muted group-hover:text-text">
-                      {n} broadcast{n === 1 ? '' : 's'}
-                    </span>
-                  </span>
-                </span>
-              </Link>
-            </li>
-          );
-        })}
+        {seasons.map((s, i) => (
+          <li key={s.year} className="min-w-0">
+            <SeasonTile year={s.year} line={s.line} live={i === 0 && liveNow} />
+          </li>
+        ))}
       </ul>
     </Section>
   );
@@ -740,6 +719,8 @@ function SeasonTiles() {
 /** One year or one champion from the archive: every video in it. */
 export function ArchivePage() {
   const { key = '' } = useParams();
+  // A year now lives in Browse (old /archive/year-2025 links land there).
+  if (key.startsWith('year-')) return <Navigate to={`/videos/year/${key.slice(5)}`} replace />;
   const g = archiveGroup(key);
   if (!g) return <NotFound />;
   const vs = g.entries.map((x) => x.v);

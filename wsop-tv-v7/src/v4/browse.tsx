@@ -5,13 +5,13 @@
 //   Events: the events that come back every year → a chronicle of each, year by year.
 //   The event page is where all three tabs land: its facts, the days that were broadcast, full broadcasts or highlights.
 import { useState, type ReactNode } from 'react';
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../state/app';
-import { Avatar, BraceletCount, Button, CountryCode, FilterChip, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
+import { Avatar, BraceletCount, Button, CountryCode, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
 import { HERO_DAY_ID, events, players, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
-import { duration, money } from '../lib/format';
-import { TABLE_ART, VENUE_ART, artStyle } from '../lib/brand';
+import { money } from '../lib/format';
+import { TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle } from '../lib/brand';
 import { catalog, isLive, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
@@ -52,6 +52,7 @@ const enterFullScreen = () => {
 const playsFull = (v: Video) => ({ href: `/watch/${v.id}?play=1`, onOpen: enterFullScreen });
 
 const daysNote = (n: number) => `${n} broadcast${n === 1 ? '' : 's'}`;
+const eventsNote = (n: number) => `${n} event${n === 1 ? '' : 's'}`;
 
 // ---- Years -----------------------------------------------------------------------------------------
 
@@ -62,42 +63,156 @@ const yearSize = (y: (typeof ARCHIVE)[number]) => {
   return { events: evs.length, casts, line: `${evs.length} event${evs.length === 1 ? '' : 's'} · ${casts} broadcast${casts === 1 ? '' : 's'}` };
 };
 
-/** Years: one tile a year, newest first, with its Main Event champion; WSOP Classics once the rights are cleared. */
-export function YearsTab() {
-  const { state } = useApp();
-  const liveNow = catalog.some((v) => v.eventId && isLive(v, state.streamMode));
-  const tile = (y: (typeof ARCHIVE)[number]) => {
-    const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
-    return <YearTile key={y.year} to={`/videos/year/${y.year}`} year={y.year} art={archiveArt(main?.id ?? String(y.year))} line={yearSize(y).line} />;
-  };
+/** Years before this one shown as full season tiles; older ones are listed compactly by decade. */
+const RECENT_FROM = 2019;
+
+/** Every season from the archive (not the Classics), newest first, with what it holds. Home's Seasons row uses it too. */
+export const pastSeasons = () => ARCHIVE.filter((y) => !y.classic).map((y) => ({ year: y.year, line: eventsNote(yearSize(y).events) }));
+
+/**
+ * A season as type-only key art: the WSOP mark, the year large (and again, outlined, cropped at the corner) and what
+ * it holds. No broadcast still, so no two tiles look alike. Shared by Home's Seasons row and Browse.
+ */
+export function SeasonTile({ year, line, live, big }: { year: number; line: string; live?: boolean; big?: boolean }) {
   return (
-    <>
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <YearTile to={`/videos/year/${CURRENT_YEAR}`} year={CURRENT_YEAR} art={TABLE_ART[0].src} line={liveNow ? 'Main Event final table on air' : 'This year'} live={liveNow} />
-        {ARCHIVE.filter((y) => !y.classic).map(tile)}
-      </div>
-      {/* WSOP Classics: the Main Event broadcasts from Binion's Horseshoe, 1973 – 2002. */}
-      <section aria-label="WSOP Classics" className="mt-10">
-        <h2 className="text-xl sm:text-2xl">WSOP Classics</h2>
-        <p className="mt-1 text-sm text-muted">
-          <span className="tnum">{CLASSIC_RANGE}</span> · The Main Event from Binion’s Horseshoe, as it was broadcast
-        </p>
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">{ARCHIVE.filter((y) => y.classic).map(tile)}</div>
-      </section>
-    </>
-  );
-}
-function YearTile({ to, year, art, line, live }: { to: string; year: number; art: string; line: string; live?: boolean }) {
-  return (
-    <Link to={to} className="group relative block aspect-[4/3] overflow-hidden rounded-card bg-surface-2">
-      <img src={art} alt="" className="absolute inset-0 size-full object-cover opacity-70 transition-transform duration-200 group-hover:scale-[1.04]" />
-      <span className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" aria-hidden />
-      {live && <LiveTag className="absolute top-2 left-2" />}
-      <span className="absolute inset-x-0 bottom-0 p-3">
-        <span className="block font-display text-3xl leading-none tnum">{year}</span>
-        {line && <span className="mt-1 block truncate text-xs text-white/85">{line}</span>}
+    <Link
+      to={`/videos/year/${year}`}
+      className={cx(
+        'group relative block overflow-hidden rounded-card border border-white/10 bg-[radial-gradient(120%_90%_at_100%_0%,rgba(212,175,55,0.20),transparent_60%),linear-gradient(160deg,#1a1712,#0b0b0b)] transition-colors hover:border-white/40',
+        big ? 'aspect-[16/7] sm:aspect-[16/5]' : 'aspect-video',
+      )}
+      aria-label={`${year} World Series of Poker · ${line}`}
+    >
+      <span
+        aria-hidden
+        className={cx(
+          'pointer-events-none absolute leading-none font-black tracking-tighter text-transparent transition-transform duration-300 [-webkit-text-stroke:1px_rgba(212,175,55,0.3)] group-hover:-translate-y-1',
+          big ? '-right-[2%] -bottom-[24%] text-[9rem] sm:text-[14rem]' : '-right-[4%] -bottom-[30%] text-[5.5rem] sm:text-[6.5rem]',
+        )}
+      >
+        {year}
+      </span>
+      <span className={cx('absolute inset-0 flex flex-col justify-between', big ? 'p-5 sm:p-7' : 'p-3')}>
+        <span className="flex items-center gap-2">
+          <img src={WSOP_LOGO} alt="" className={cx('w-auto opacity-90', big ? 'h-6 sm:h-7' : 'h-4 sm:h-5')} />
+          {live && <LiveTag />}
+        </span>
+        <span>
+          <span className={cx('block leading-none font-black text-white', big ? 'text-5xl sm:text-7xl' : 'text-2xl sm:text-[1.7rem]')}>{year}</span>
+          <span className={cx('mt-1.5 block group-hover:text-text', big ? 'text-sm text-text/80 sm:text-base' : 'text-xs text-muted')}>{line}</span>
+        </span>
       </span>
     </Link>
+  );
+}
+
+/**
+ * This year, at the top of Years: the season's type art beside the live Main Event picture (or the year's latest
+ * broadcast); one button to watch, the rest of the card opens the year.
+ */
+function ThisYearCard() {
+  const { state } = useApp();
+  const live = catalog.find((v) => v.eventId === 'lv-main' && isLive(v, state.streamMode));
+  const latest = live ?? catalog.filter((v) => v.kind === 'broadcast' && v.status === 'vod' && seriesById(events.find((e) => e.id === v.eventId)?.seriesId ?? '')?.name.startsWith(String(CURRENT_YEAR))).sort((a, b) => b.views - a.views)[0];
+  const evs = currentYear().flatMap((s) => s.events);
+  const watch = latest && (live ? `/watch/${latest.id}` : `/watch/${latest.id}?play=1`);
+  return (
+    <div className="grid overflow-hidden rounded-panel border border-white/10 bg-[radial-gradient(120%_90%_at_0%_0%,rgba(212,175,55,0.18),transparent_60%),linear-gradient(160deg,#1a1712,#0b0b0b)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+      <div className="relative flex flex-col justify-between gap-6 overflow-hidden p-6 sm:p-8">
+        <span aria-hidden className="pointer-events-none absolute -bottom-[18%] -left-[2%] text-[10rem] leading-none font-black tracking-tighter text-transparent [-webkit-text-stroke:1px_rgba(212,175,55,0.22)] sm:text-[13rem]">
+          {CURRENT_YEAR}
+        </span>
+        <span className="relative flex items-center gap-2">
+          <img src={WSOP_LOGO} alt="" className="h-6 w-auto sm:h-7" />
+          {live && <LiveTag />}
+        </span>
+        <div className="relative">
+          <h2 className="text-5xl leading-none sm:text-6xl">
+            <Link to={`/videos/year/${CURRENT_YEAR}`} className="hover:underline hover:decoration-2 hover:underline-offset-4">
+              {CURRENT_YEAR}
+            </Link>
+          </h2>
+          <p className="mt-2 text-[15px] text-text/85">{live ? 'The Main Event final table is on air now' : 'This year · live and on demand'}</p>
+          <p className="mt-1 text-sm text-muted tnum">
+            {currentYear().map((s) => s.name).join(' · ')} · {evs.length} events
+          </p>
+          {watch && (
+            <Link to={watch} onClick={live ? undefined : enterFullScreen} className="mt-5 inline-block">
+              <Button variant="primary" tabIndex={-1}>
+                <Icon name="play" size={16} /> {live ? 'Watch live' : 'Watch'}
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
+      <Link to={`/videos/year/${CURRENT_YEAR}`} className="group relative block aspect-video overflow-hidden bg-surface-2 lg:aspect-auto lg:min-h-72">
+        <img src={latest?.thumb ?? TABLE_ART[0].src} style={artStyle({ pos: latest?.thumbPos ?? TABLE_ART[0].pos, fit: latest?.thumbFit })} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+      </Link>
+    </div>
+  );
+}
+
+/** A small year box for the older archive: the year and what it holds. */
+function YearChip({ year, line }: { year: number; line: string }) {
+  return (
+    <Link to={`/videos/year/${year}`} className="group block rounded-card border border-line bg-surface px-3 py-2.5 transition-colors hover:border-white/40">
+      <span className="block text-lg leading-tight font-black tnum">{year}</span>
+      <span className="block truncate text-xs text-muted group-hover:text-text">{line}</span>
+    </Link>
+  );
+}
+
+/**
+ * Years: this year large (live when it is), the recent seasons as season tiles, the older archive by decade as small
+ * boxes (older years hold less, so they take less room), then the Classics.
+ */
+export function YearsTab() {
+  const modern = ARCHIVE.filter((y) => !y.classic);
+  const recent = modern.filter((y) => y.year >= RECENT_FROM);
+  const older = modern.filter((y) => y.year < RECENT_FROM);
+  const decades = [...new Set(older.map((y) => Math.floor(y.year / 10) * 10))].sort((a, b) => b - a);
+  const classics = ARCHIVE.filter((y) => y.classic);
+  return (
+    <>
+      <section aria-label="This year" className="mt-6">
+        <ThisYearCard />
+      </section>
+
+      <section aria-label="Recent seasons" className="mt-10">
+        <h2 className="text-xl sm:text-2xl">Recent seasons</h2>
+        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
+          {recent.map((y) => (
+            <SeasonTile key={y.year} year={y.year} line={eventsNote(yearSize(y).events)} />
+          ))}
+        </div>
+      </section>
+
+      {decades.map((d) => (
+        <section key={d} aria-label={`The ${d}s`} className="mt-10">
+          <h2 className="text-xl sm:text-2xl">The {d}s</h2>
+          <div className="mt-4 grid grid-cols-3 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
+            {older
+              .filter((y) => Math.floor(y.year / 10) * 10 === d)
+              .map((y) => (
+                <YearChip key={y.year} year={y.year} line={daysNote(yearSize(y).casts)} />
+              ))}
+          </div>
+        </section>
+      ))}
+
+      {/* WSOP Classics: the Main Event broadcasts from Binion's Horseshoe, 1973 – 2002. */}
+      {classics.length > 0 && (
+        <section aria-label="WSOP Classics" className="mt-10">
+          <h2 className="text-xl sm:text-2xl">WSOP Classics</h2>
+          <p className="mt-1 text-sm text-muted tnum">{CLASSIC_RANGE} · Binion’s Horseshoe</p>
+          <div className="mt-4 grid grid-cols-3 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
+            {classics.map((y) => (
+              <YearChip key={y.year} year={y.year} line={daysNote(yearSize(y).casts)} />
+            ))}
+          </div>
+        </section>
+      )}
+    </>
   );
 }
 
@@ -112,13 +227,32 @@ function currentYear() {
   return series;
 }
 
-type GameF = 'all' | string;
-/** A year: series tabs (Las Vegas · Europe · Paradise · Circuit), its Main Event, then the bracelet events with filters. */
+/** An event as a card: the buy-in large (type, no still), then the name, the game and what there is to watch. */
+type EventCardData = { id: string; to: string; name: string; number: number | null; buyLabel: string; game: string; days: number; live?: boolean };
+function EventCard({ c }: { c: EventCardData }) {
+  return (
+    <Link to={c.to} className="group flex h-full flex-col justify-between gap-4 rounded-card border border-line bg-surface p-4 transition-colors hover:border-white/40 hover:bg-surface-2">
+      <span className="flex items-start justify-between gap-2">
+        <span className="font-display text-2xl leading-none tnum sm:text-3xl">{c.buyLabel || 'Invitational'}</span>
+        {c.live ? <LiveTag /> : c.number != null && <span className="text-xs text-muted tnum">#{c.number}</span>}
+      </span>
+      <span className="min-w-0">
+        <span className="line-clamp-2 font-semibold leading-snug group-hover:text-gold-strong">{c.name}</span>
+        <span className="mt-1 block truncate text-xs text-muted">
+          {c.game} · {c.live ? 'Final table on air now' : c.days ? daysNote(c.days) : 'Coming up'}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+/**
+ * A year: the Main Event first, then the year's final tables (play straight away), then every bracelet event as a
+ * card, one section per stop of the series (Las Vegas, Europe, …), the biggest buy-ins first. No filters.
+ */
 export function YearPage() {
   const { year = '' } = useParams();
-  const [params, setParams] = useSearchParams();
   const y = Number(year);
-  const [game, setGame] = useState<GameF>('all');
   const {
     state: { streamMode },
   } = useApp();
@@ -127,19 +261,21 @@ export function YearPage() {
   if (!isCurrent && !arch) return <Navigate to="/videos" replace />;
 
   // One shape for both: the live year (mock data) and archive years.
-  type Card = { id: string; to: string; art: string; name: string; number: number | null; buyIn: number; buyLabel: string; game: string; kind: string; days: number; live?: boolean; video?: string };
+  type Card = EventCardData & { art: string; buyIn: number; kind: string; video?: string; finalTable?: Video };
   const seriesList: { key: string; name: string; cards: Card[] }[] = isCurrent
     ? currentYear().map((s) => ({
         key: s.key,
         name: s.name,
         cards: s.events.map((e: TourEvent) => {
           const v = catalog.find((x) => x.eventId === e.id && x.kind === 'broadcast');
+          const ft = catalog.find((x) => x.eventId === e.id && x.kind === 'broadcast' && /Final Table/.test(x.title) && (x.status === 'vod' || isLive(x, streamMode)));
           return {
             id: e.id,
             to: `/events/${e.id}`,
             // Stills of the series' own look (the live Main Event keeps its broadcast picture).
             art: e.days.some((d) => d.id === HERO_DAY_ID) ? (v?.thumb ?? VENUE_ART[0].src) : seriesArt(s.key as SeriesKey, e.id),
             video: catalog.find((x) => x.eventId === e.id && isLive(x, streamMode))?.id,
+            finalTable: ft,
             name: e.name.replace(' World Championship', ''),
             number: e.number,
             buyIn: e.buyIn,
@@ -157,131 +293,123 @@ export function YearPage() {
         cards: s.events.map((e: ArchiveEvent) => {
           const ref = archiveEvent(e.id)!;
           const all = broadcastsOf(ref);
-          return { id: e.id, to: `/videos/event/${e.id}`, art: archiveArt(e.id), name: e.name, number: e.number, buyIn: e.currency === '$' ? e.buyIn : Math.round(e.buyIn * 1.1), buyLabel: fmtBuyIn(e), game: e.game, kind: e.kind, days: e.days.length, video: all[all.length - 1]?.id };
+          const fi = e.days.findIndex((d) => /final/i.test(d.label));
+          return {
+            id: e.id,
+            to: `/videos/event/${e.id}`,
+            art: archiveArt(e.id),
+            name: e.name,
+            number: e.number,
+            buyIn: e.currency === '$' ? e.buyIn : Math.round(e.buyIn * 1.1),
+            buyLabel: fmtBuyIn(e),
+            game: e.game,
+            kind: e.kind,
+            days: e.days.length,
+            video: all[all.length - 1]?.id,
+            finalTable: fi >= 0 ? all[fi] : undefined,
+          };
         }),
       }));
-  const sKey = seriesList.find((s) => s.key === params.get('series'))?.key ?? seriesList[0]?.key;
-  const current = seriesList.find((s) => s.key === sKey);
-  const main = current?.cards.find((c) => c.kind === 'Main Event');
+
+  // The Main Event: Las Vegas' first, else the first series that has one.
+  const mainSeries = seriesList.find((s) => s.cards.some((c) => c.kind === 'Main Event')) ?? seriesList[0];
+  const main = mainSeries?.cards.find((c) => c.kind === 'Main Event');
   const mainRef = main && !isCurrent ? archiveEvent(main.id) : undefined;
-  const rest = (current?.cards ?? []).filter((c) => c !== main);
-  const games = [...new Set(rest.map((c) => c.game))];
-  rest.sort((a, b) => Number(!!b.live) - Number(!!a.live));
-  const shown = rest.filter((c) => (game === 'all' || c.game === game));
+  const byBuyIn = (a: Card, b: Card) => Number(!!b.live) - Number(!!a.live) || b.buyIn - a.buyIn;
+  const sections = seriesList.map((s) => ({ ...s, cards: s.cards.filter((c) => c !== main).sort(byBuyIn) })).filter((s) => s.cards.length);
+  const finals = seriesList
+    .flatMap((s) => s.cards)
+    .filter((c) => c !== main && c.finalTable)
+    .sort(byBuyIn)
+    .map((c) => c.finalTable!);
+  const mainHref = main && (main.live && main.video ? `/watch/${main.video}` : main.video ? `/watch/${main.video}?play=1` : main.to);
   return (
     <Page className="max-w-[96rem]">
       {back('/videos', 'Years')}
       <h1 className="mt-3 text-title">{y} World Series of Poker</h1>
       {arch?.classic && <p className="mt-1 text-xs font-bold tracking-wide text-gold-strong uppercase">WSOP Classics · Binion’s Horseshoe</p>}
-      {arch && <p className="mt-1 text-sm text-muted tnum">{yearSize(arch).line}</p>}
-      {isCurrent && <p className="mt-1 text-sm text-muted">This year · live and on demand</p>}
+      <p className="mt-1 text-sm text-muted tnum">{arch ? yearSize(arch).line : 'This year · live and on demand'}</p>
 
-      {/* Series tabs */}
-      <div hidden={seriesList.length < 2} className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Series">
-        {seriesList.map((s) => (
-          <FilterChip key={s.key} on={s.key === sKey} onClick={() => (setParams({ series: s.key }, { replace: true }), setGame('all'))}>
-            {s.name}
-          </FilterChip>
-        ))}
-      </div>
-
-      {/* Main Event: the featured card with its champion. */}
+      {/* Main Event: one card, the picture and what it is; one button to watch, the title opens the event. */}
       {main && (
         <section aria-label="Main Event" className="mt-6">
-          {/* One card: the picture and, beside it, what the Main Event is and how to watch it. */}
           <div className="grid overflow-hidden rounded-panel border border-line bg-surface lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-            <Link to={main.video && main.live ? `/watch/${main.video}` : main.to} className="group relative block aspect-video overflow-hidden bg-surface-2 lg:aspect-auto lg:min-h-80">
+            <Link to={mainHref!} onClick={main.live ? undefined : enterFullScreen} className="group relative block aspect-video overflow-hidden bg-surface-2 lg:aspect-auto lg:min-h-80">
               <img src={main.art} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
               {main.live && <LiveTag className="absolute top-3 left-3" />}
             </Link>
             <div className="flex flex-col justify-center p-6 lg:p-8">
               <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">
-                {current!.name} · Main Event{main.number != null && ` · Event #${main.number}`}
+                {mainSeries!.name} · Main Event{main.number != null && ` · Event #${main.number}`}
               </p>
-              <h2 className="mt-2 text-2xl sm:text-3xl">{main.name}</h2>
+              <h2 className="mt-2 text-2xl sm:text-3xl">
+                <Link to={main.to} className="hover:underline hover:decoration-2 hover:underline-offset-4">
+                  {main.name}
+                </Link>
+              </h2>
               <p className="mt-1 text-sm text-muted">{[main.buyLabel, main.game, daysNote(main.days)].filter(Boolean).join(' · ')}</p>
-              {arch?.champion && sKey === 'lv' ? (
+              {arch?.champion && mainSeries!.key === 'lv' ? (
                 <p className="mt-4 text-[15px]">
                   Champion · <span className="font-semibold">{arch.champion.name}</span> <CountryCode cc={arch.champion.cc} />
                 </p>
               ) : (
                 main.live && <p className="mt-4 text-[15px] font-semibold">The final table is on air now</p>
               )}
-              <div className="mt-6 flex flex-wrap gap-3">
-                {main.video && (
-                  <Link to={main.live ? `/watch/${main.video}` : `/watch/${main.video}?play=1`} onClick={main.live ? undefined : enterFullScreen}>
+              {main.video && (
+                <div className="mt-6">
+                  <Link to={mainHref!} onClick={main.live ? undefined : enterFullScreen}>
                     <Button variant="primary" tabIndex={-1}>
                       <Icon name="play" size={16} /> {main.live ? 'Watch live' : arch?.classic ? 'Watch the broadcast' : 'Watch the final table'}
                     </Button>
                   </Link>
-                )}
-                <Link to={main.to}>
-                  <Button variant="outline" tabIndex={-1}>
-                    Open the event
-                  </Button>
-                </Link>
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
       )}
 
-      {/* Bracelet events, with one filter: the game (part of every event name, so it holds for the whole archive). */}
-      {rest.length > 0 && (
-        <section aria-label="Bracelet events" className="mt-10">
-          <h2 className="text-xl sm:text-2xl">Bracelet events</h2>
-          <div hidden={games.length < 2} className="mt-3">
-            <div className="flex flex-wrap gap-2" aria-label="Game">
-              <FilterChip on={game === 'all'} onClick={() => setGame('all')}>
-                All games
-              </FilterChip>
-              {games.map((g) => (
-                <FilterChip key={g} on={game === g} onClick={() => setGame(g)}>
-                  {g}
-                </FilterChip>
-              ))}
-            </div>
-          </div>
-          {shown.length ? (
-            <ul className="mt-4 divide-y divide-line rounded-panel border border-line bg-surface">
-              {shown.map((c) => (
-                <li key={c.id}>
-                  <Link to={c.to} className="group flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
-                    <span className="w-12 shrink-0 text-sm text-muted tnum">{c.number != null ? `#${c.number}` : ''}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2">
-                        {c.live && <LiveTag />}
-                        <span className="truncate font-semibold group-hover:text-gold-strong">{c.name}</span>
-                      </span>
-                      <span className="block truncate text-xs text-muted">{[c.buyLabel, c.game].filter(Boolean).join(' · ')}</span>
-                    </span>
-                    <span className={cx('hidden shrink-0 text-sm sm:block', c.live ? 'font-semibold text-text' : 'text-muted')}>{c.live ? 'Final table on air now' : c.days ? daysNote(c.days) : 'Coming up'}</span>
-                    <Icon name="chevron" size={16} className="shrink-0 text-muted" />
-                  </Link>
+      {/* The year's final tables: what people come for, ready to play. */}
+      {finals.length > 0 && (
+        <section aria-label="Final tables" className="mt-10">
+          <h2 className="text-xl sm:text-2xl">Final tables</h2>
+          <ul className="hscroll mt-4 gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+            <BadgeScope videos={finals}>
+              {finals.map((v) => (
+                <li key={v.id} className="min-w-0">
+                  <VideoCard v={v} {...(isLive(v, streamMode) ? {} : playsFull(v))} />
                 </li>
               ))}
-            </ul>
-          ) : (
-            <p className="mt-5 rounded-panel border border-line bg-surface p-5 text-sm text-muted">No events match these filters.</p>
-          )}
+            </BadgeScope>
+          </ul>
         </section>
       )}
 
-      {!rest.length && mainRef && (
-        <section aria-label="Main Event broadcasts" className="mt-10">
-          <h2 className="text-xl sm:text-2xl">Main Event broadcasts</h2>
-          <ol className="mt-4 divide-y divide-line rounded-panel border border-line bg-surface">
-            {broadcastsOf(mainRef).map((v, i) => (
-              <li key={v.id}>
-                <Link to={`/watch/${v.id}?play=1`} onClick={enterFullScreen} className="group flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
-                  <span className="w-8 shrink-0 text-sm text-muted tnum">{i + 1}</span>
-                  <span className="min-w-0 flex-1 truncate font-semibold group-hover:text-gold-strong">{mainRef.event.days[i].label}</span>
-                  <span className="shrink-0 text-sm text-muted tnum">{duration(v.durationSec)}</span>
-                  <Icon name="play" size={16} className="shrink-0 text-muted group-hover:text-text" />
-                </Link>
+      {/* Every bracelet event as a card, a section per stop, biggest buy-ins first. */}
+      {sections.map((s) => (
+        <section key={s.key} aria-label={s.name} className="mt-10">
+          <h2 className="text-xl sm:text-2xl">{sections.length > 1 || s.key !== 'lv' ? s.name : 'Bracelet events'}</h2>
+          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {s.cards.map((c) => (
+              <li key={c.id} className="min-w-0">
+                <EventCard c={c} />
               </li>
             ))}
-          </ol>
+          </ul>
+        </section>
+      ))}
+
+      {/* A year with only its Main Event (the Classics): its broadcasts as cards. */}
+      {!sections.length && mainRef && (
+        <section aria-label="Main Event broadcasts" className="mt-10">
+          <h2 className="text-xl sm:text-2xl">Main Event broadcasts</h2>
+          <div className={cx(rowGrid, 'mt-4')}>
+            <BadgeScope videos={broadcastsOf(mainRef)}>
+              {broadcastsOf(mainRef).map((v) => (
+                <VideoCard key={v.id} v={v} {...playsFull(v)} />
+              ))}
+            </BadgeScope>
+          </div>
         </section>
       )}
     </Page>
