@@ -38,6 +38,9 @@ const isFullBroadcast = (v: Video) => v.kind === 'classic' || (v.kind === 'broad
 const isFinalTable = (v: Video) => v.kind === 'classic' || dayOf(v)?.label === 'Final Table';
 const hasTag = (v: Video, slug: string) => v.tags.some((t) => t.slug === slug);
 const currentSeries = () => seriesById(dayById(HERO_DAY_ID)!.event.seriesId);
+/** The live season, named in titles: "2025 WSOP Las Vegas" (the Las Vegas series is the World Series of Poker itself). */
+const SEASON_YEAR = currentSeries().name.slice(0, 4);
+const SEASON = `${SEASON_YEAR} WSOP ${currentSeries().city.split(',')[0]}`;
 const yearOf = (v: Video) => {
   const e = eventOf(v);
   return e ? Number((isClassicEvent(e) ? e.name : seriesById(e.seriesId).name).slice(0, 4)) : 0;
@@ -71,15 +74,16 @@ export const THEMES: Theme[] = [
   },
   {
     id: 'this-series',
-    title: 'Final tables from this series',
-    blurb: 'Every bracelet decided so far this summer, newest first.',
+    // Named by its season ("2025 WSOP Las Vegas"), not "this series": the title says which one.
+    title: `${SEASON} Final Tables`,
+    blurb: `Every bracelet decided so far at the ${SEASON}, newest first.`,
     when: (now) => inSeason(now),
     rule: () => broadcasts().filter((v) => isFinalTable(v) && eventOf(v)?.seriesId === currentSeries().id).sort(newest),
   },
   {
     id: 'main-event-day-by-day',
-    title: 'Main Event, Day by Day',
-    blurb: 'This year’s Main Event in order, from Day 1 to the final table.',
+    title: `${SEASON_YEAR} Main Event, Day by Day`,
+    blurb: `The ${SEASON_YEAR} Main Event in order, from Day 1 to the final table.`,
     when: (now) => inSeason(now),
     rule: () =>
       catalog
