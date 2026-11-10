@@ -515,35 +515,6 @@ export function PlayersTab() {
           ]}
         />
       </div>
-      {/* Poker Hall of Fame (WSOP.com's list), by class, newest first. */}
-      <section aria-label="Poker Hall of Fame" className="mt-8">
-        <h2 className="text-xl sm:text-2xl">Poker Hall of Fame</h2>
-        <p className="mt-1 text-sm text-muted">Inducted since 1979 · WSOP.com</p>
-        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-          {HALL_OF_FAME.map((x) => {
-            const body = (
-              <span className="flex h-full flex-col justify-between gap-4 rounded-card border border-line bg-surface p-4">
-                <span className="flex items-start justify-between gap-2">
-                  <span className="font-display text-2xl leading-none tnum">{x.year}</span>
-                  <span className="text-xs font-semibold text-muted">{x.cc}</span>
-                </span>
-                <span className="line-clamp-2 text-sm leading-snug font-bold group-hover:text-gold-strong">{x.name}</span>
-              </span>
-            );
-            return (
-              <li key={x.name} className="min-w-0">
-                {x.to ? (
-                  <Link to={x.to} className="group block h-full [&>span]:hover:border-white/40">
-                    {body}
-                  </Link>
-                ) : (
-                  <div className="h-full">{body}</div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
       {legends.length > 0 && (
         <section aria-label="Bracelet legends" className="mt-10">
           <h2 className="text-xl sm:text-2xl">Bracelet legends</h2>
@@ -557,6 +528,42 @@ export function PlayersTab() {
           </ul>
         </section>
       )}
+      {/* Poker Hall of Fame (WSOP.com's list): the names first, by the decade they were inducted, newest first. */}
+      <section aria-label="Poker Hall of Fame" className="mt-12">
+        <h2 className="text-xl sm:text-2xl">Poker Hall of Fame</h2>
+        <p className="mt-1 text-sm text-muted">{HALL_OF_FAME.length} members since 1979 · WSOP.com</p>
+        {[...new Set(HALL_OF_FAME.map((x) => Math.floor(x.year / 10) * 10))].map((d) => (
+          <div key={d} className="mt-6">
+            <h3 className="mb-3 font-display text-lg text-gold-strong tnum">{d}s</h3>
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {HALL_OF_FAME.filter((x) => Math.floor(x.year / 10) * 10 === d).map((x) => {
+                const body = (
+                  <span className="flex h-full items-center gap-3.5 rounded-card border border-line bg-surface p-3.5 transition-colors group-hover:border-white/40">
+                    <Avatar name={x.name.replace(/ “[^”]+”/, '')} hue={[...x.name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)} size={48} ring />
+                    <span className="min-w-0">
+                      <span className="block text-base leading-snug font-bold group-hover:text-gold-strong">{x.name}</span>
+                      <span className="mt-0.5 block text-xs text-muted tnum">
+                        Inducted {x.year} · {x.country}
+                      </span>
+                    </span>
+                  </span>
+                );
+                return (
+                  <li key={x.name} className="min-w-0">
+                    {x.to ? (
+                      <Link to={x.to} className="group block h-full">
+                        {body}
+                      </Link>
+                    ) : (
+                      <div className="h-full">{body}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </section>
       {/* Only real players here: the demo's own players are made up, so they are not listed. */}
     </>
   );
