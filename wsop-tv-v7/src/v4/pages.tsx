@@ -827,7 +827,6 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
   const f = featuredTheme(now, skip);
   if (!f) return null;
   const { theme, videos } = f;
-  const first = videos.slice(0, 3);
   return (
     <section aria-label={theme.title} className="relative overflow-hidden rounded-card border border-line bg-[radial-gradient(90%_120%_at_0%_0%,rgba(212,175,55,0.16),transparent_60%),linear-gradient(180deg,#141210,#0b0b0b)] p-5 sm:p-7">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-center">
@@ -848,15 +847,18 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
             </Link>
           </div>
         </div>
-        <ol className="grid gap-4 sm:grid-cols-3">
-          <BadgeScope videos={first}>
-            {first.map((v) => (
-              <li key={v.id} className="min-w-0">
-                <VideoCard v={v} />
-              </li>
-            ))}
-          </BadgeScope>
-        </ol>
+        {/* Every video of the theme, three at a time, swiped or stepped with the arrows (the count above is what's here). */}
+        <div className="min-w-0">
+          <Carousel label={`${theme.title}: videos`} className="gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-2rem)/3)]">
+            <BadgeScope videos={videos}>
+              {videos.map((v) => (
+                <li key={v.id} className="min-w-0">
+                  <VideoCard v={v} />
+                </li>
+              ))}
+            </BadgeScope>
+          </Carousel>
+        </div>
       </div>
     </section>
   );
