@@ -189,6 +189,13 @@ for (const [playerId, photos] of Object.entries(PLAYER_ART)) {
   const theirs = clips.filter((v) => v.tags.some((t) => t.slug === `player-${playerId}`)).sort((a, b) => b.views - a.views);
   photos.forEach((a, i) => theirs[i] && Object.assign(theirs[i], { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit }));
 }
+// Events with no broadcast still of their own: a crop of real WSOP broadcast footage (public/crops, cut from the NAS
+// stills so no broadcast graphic, event name or recognizable face shows), used for the event's broadcast and its clips.
+const CROPPED = new Set(['lv-hu', 'lv-mmm', 'lv-ms', 'lv-seniors', 'lv-ppc', 'lv-ladies', 'lv-plo', 'lv-hr', 'classic-a1', 'classic-a2', 'classic-a3', 'classic-a4']);
+for (const v of [...days, ...clips])
+  if (v.eventId && CROPPED.has(v.eventId) && !PROMO_ART[v.id])
+    Object.assign(v, { thumb: `${import.meta.env.BASE_URL}crops/${v.eventId}.jpg`, thumbPos: '50% 50%', thumbFit: undefined });
+
 /** Everything on demand or live from an event (channels are built on request, since what's on changes). */
 export const catalog: Video[] = [...days, ...clips];
 
