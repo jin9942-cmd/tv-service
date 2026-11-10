@@ -498,7 +498,8 @@ export function TagPage() {
 export function VideosPage({ tab }: { tab: 'years' | 'players' }) {
   return (
     <Page className="max-w-[96rem]">
-      <h1 className="text-title">Browse</h1>
+      {/* The two tabs are the page's headline (Years · Players); the word Browse is already lit in the menu. */}
+      <h1 className="sr-only">Browse</h1>
       <BrowseTabs tab={tab} />
       {tab === 'years' ? <YearsTab /> : <PlayersTab />}
     </Page>

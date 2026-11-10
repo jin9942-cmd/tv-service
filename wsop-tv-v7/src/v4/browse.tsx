@@ -32,9 +32,10 @@ export function BrowseTabs({ tab }: { tab: 'years' | 'players' }) {
   ] as const;
   return (
     <>
-      <nav className="mt-4 flex gap-6 border-b border-line" aria-label="Browse">
+      {/* Big display-type tabs, as the page's headline: the one you are on in white with the gold bar, the other dimmed. */}
+      <nav className="flex gap-8 border-b border-line sm:gap-10" aria-label="Browse">
         {tabs.map(([to, label, k]) => (
-          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-[3px] pb-2.5 text-[15px] font-semibold', tab === k ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text')}>
+          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-4 pb-3 font-display text-4xl leading-none uppercase transition-colors sm:text-5xl', tab === k ? 'border-gold text-text' : 'border-transparent text-white/35 hover:text-white/75')}>
             {label}
           </Link>
         ))}
