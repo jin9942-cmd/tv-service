@@ -17,6 +17,7 @@ import { Player } from './Player';
 import { BrowseTabs, PlayersTab, YearsTab } from './browse';
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
+import { activeThemes, featuredTheme, themeById } from './themes';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -594,9 +595,10 @@ export function HomeRows() {
     <>
       {/* Recommended for you takes the place of Coming up (the schedule has the next broadcasts). */}
       <VideoRow title="Recommended for you" videos={recs} />
+      <FeaturedTheme />
       <EditorsPick picks={picks} />
       <SeasonTiles />
-      <CollectionsRow />
+      <ThemeShelf skip={shown} />
       <HighlightsRow pool={highlightPool} skip={shown} />
       {/* Personal rows last. */}
       <ContinueRow items={continuing} onRemove={removeContinue} />
@@ -796,13 +798,15 @@ function MyListRow({ videos }: { videos: Video[] }) {
 
 // ---- curated collections ----------------------------------------------------------------------------
 
-const withTag = (slug: string) => highlightClips.filter((v) => v.tags.some((t) => t.slug === slug));
-export const COLLECTIONS: { id: string; title: string; blurb: string; videos: () => Video[] }[] = [
-  { id: 'final-tables', title: 'Greatest final tables', blurb: 'Classic and recent final tables, start to finish.', videos: editorsFinalTables },
-  { id: 'legendary-bluffs', title: 'Legendary bluffs', blurb: 'Big lies, bigger pots.', videos: () => withTag('bluff') },
-  { id: 'coolers', title: 'Coolers, nowhere to hide', blurb: 'Big hands running into bigger ones.', videos: () => withTag('cooler') },
-  { id: 'bad-beats', title: 'Bad beats & comebacks', blurb: 'The hands nobody saw coming.', videos: () => withTag('bad-beat') },
-];
+// The themes themselves (rules, rotation, pin) live in ./themes.ts.
+/** Editor's pick shows this theme already, so the featured spot and the shelf leave it out. */
+const EDITORS_THEME = 'final-tables';
+/** How long a theme runs, in words: "46 hours", "59 min". */
+const themeLength = (vs: Video[]) => {
+  const sec = vs.reduce((n, v) => n + v.durationSec, 0);
+  return sec >= 5400 ? `${Math.round(sec / 3600)} hours` : `${Math.max(1, Math.round(sec / 60))} min`;
+};
+const playAll = (v: Video) => `/watch/${v.id}?play=1`;
 
 
 /** Curated collections (from the archive): four tiles, each opening its own page. */
@@ -850,44 +854,107 @@ function HighlightsRow({ pool, skip }: { pool: Video[]; skip: Set<string> }) {
   );
 }
 
-/** Collections on Home: wide tiles, two a row (cover, title, note, how many videos); each opens its page. */
-function CollectionsRow() {
-  const list = COLLECTIONS.slice(1).map((c) => ({ c, vs: c.videos() })).filter((x) => x.vs.length);
+const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: 'Right now', weekly: 'This week’s collection' } as const;
+
+/**
+ * The featured theme on Home: one wide card (title, note, how long, Play all) with its first videos beside it. Which
+ * theme it is comes from ./themes.ts: the operator's pin, a seasonal theme while it's on, or the weekly rotation.
+ */
+function FeaturedTheme() {
+  const f = featuredTheme(Date.now(), [EDITORS_THEME]);
+  if (!f) return null;
+  const { theme, videos } = f;
+  const first = videos.slice(0, 3);
+  return (
+    <section aria-label={theme.title} className="relative overflow-hidden rounded-card border border-line bg-[radial-gradient(90%_120%_at_0%_0%,rgba(212,175,55,0.16),transparent_60%),linear-gradient(180deg,#141210,#0b0b0b)] p-5 sm:p-7">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-center">
+        <div>
+          <p className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{FEATURED_LABEL[f.why]}</p>
+          <h2 className="mt-2 text-3xl leading-tight sm:text-4xl">{theme.title}</h2>
+          <p className="mt-2 text-[15px] leading-relaxed text-text/85">{theme.blurb}</p>
+          <p className="mt-3 text-sm text-muted tnum">
+            {videos.length} videos · {themeLength(videos)}
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link to={playAll(videos[0])} onClick={enterFullScreen} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-white/85">
+              <Icon name="play" size={16} /> Play all
+            </Link>
+            <Link to={`/collections/${theme.id}`} className="inline-flex items-center rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:border-white/60">
+              See all
+            </Link>
+          </div>
+        </div>
+        <ol className="grid gap-4 sm:grid-cols-3">
+          <BadgeScope videos={first}>
+            {first.map((v, i) => (
+              <li key={v.id} className="min-w-0">
+                <span className="mb-1.5 block text-xs font-bold text-muted tnum">{String(i + 1).padStart(2, '0')}</span>
+                <VideoCard v={v} />
+              </li>
+            ))}
+          </BadgeScope>
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Every other theme on show, as a shelf of covers (title, note, how many videos); each opens its page. Filled by
+ * ./themes.ts, so a new theme appears here on its own and one with too few videos drops out.
+ */
+function ThemeShelf({ skip }: { skip: Set<string> }) {
+  const now = Date.now();
+  const featured = featuredTheme(now, [EDITORS_THEME])?.theme.id;
+  const list = activeThemes(now).filter((x) => x.theme.id !== EDITORS_THEME && x.theme.id !== featured);
   if (!list.length) return null;
+  const pick = photoPicker(skip);
   return (
     <Section title="Collections">
-      <div className="grid gap-5 sm:grid-cols-2">
-        {list.slice(0, 2).map(({ c, vs }) => (
-          <Link key={c.id} to={`/collections/${c.id}`} className="group relative block aspect-[21/9] overflow-hidden rounded-card bg-surface-2">
-            <img src={vs[0].thumb} style={artStyle({ pos: vs[0].thumbPos, fit: vs[0].thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-            <span className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" aria-hidden />
-            <span className="absolute inset-y-0 left-0 flex max-w-[70%] flex-col justify-end p-5">
-              <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">Collection · {vs.length} videos</span>
-              <span className="mt-1 text-xl leading-tight font-bold sm:text-2xl">{c.title}</span>
-              <span className="mt-1 text-sm text-white/80">{c.blurb}</span>
-            </span>
-          </Link>
-        ))}
-      </div>
+      <ul className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-2*1rem)/3)]">
+        {list.map(({ theme, videos }) => {
+          const art = pick(videos[0]);
+          return (
+            <li key={theme.id} className="min-w-0">
+              <Link to={`/collections/${theme.id}`} className="group relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+                <img src={art.thumb} style={artStyle({ pos: art.thumbPos, fit: art.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+                <span className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10" aria-hidden />
+                <span className="absolute inset-x-0 bottom-0 flex flex-col p-4">
+                  <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase tnum">
+                    {videos.length} videos · {themeLength(videos)}
+                  </span>
+                  <span className="mt-1 text-lg leading-tight font-bold sm:text-xl">{theme.title}</span>
+                  <span className="mt-1 line-clamp-1 text-sm text-white/75">{theme.blurb}</span>
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </Section>
   );
 }
 
+/** A theme's page: its note, Play all, and the videos in watching order. */
 export function CollectionPage() {
   const { id = '' } = useParams();
-  const c = COLLECTIONS.find((x) => x.id === id);
-  if (!c) return <NotFound />;
-  const vs = c.videos();
+  const t = themeById(id);
+  if (!t || !t.videos.length) return <NotFound />;
+  const { theme, videos: vs } = t;
   return (
     <Page className="max-w-[96rem]">
       <Link to="/" className="text-sm text-muted hover:text-text">
         ← Home
       </Link>
-      <p className="mt-3 text-sm text-muted">Collection</p>
-      <h1 className="mt-1 text-title">{c.title}</h1>
-      <p className="mt-1 text-sm text-muted">
-        {c.blurb} · {vs.length} videos
+      <p className="mt-3 text-[11px] font-bold tracking-wide text-gold-strong uppercase">Collection</p>
+      <h1 className="mt-1 text-title">{theme.title}</h1>
+      <p className="mt-2 max-w-2xl text-[15px] text-text/85">{theme.blurb}</p>
+      <p className="mt-1 text-sm text-muted tnum">
+        {vs.length} videos · {themeLength(vs)}
       </p>
+      <Link to={playAll(vs[0])} onClick={enterFullScreen} className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-white/85">
+        <Icon name="play" size={16} /> Play all
+      </Link>
       <div className={cx(rowGrid, 'mt-6')}>
         <BadgeScope videos={vs}>
         {vs.map((v) => (
