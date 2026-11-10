@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: #050505;
+  --color-surface: #121212;
+  --color-surface-2: #1b1b1b;
+  --color-surface-3: #2a2a2a;
+  --color-line: #262626;
+  --color-line-strong: #4a4a4a;
+  --color-text: #fff;
+  --color-muted: #a8a8a8;
+  --color-subtle: #8a8a8a;
+  --color-red: #ed1c23;
+  --color-red-strong: #ff4d53;
+  --color-gold: #d4af37;
+  --color-gold-dim: #d4af3726;
+  --font-sans: 'Roboto', system-ui, sans-serif;
+  --font-display: 'Oswald', 'Roboto Condensed', system-ui, sans-serif;
+}
+
+@layer base {
+  html { background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  body { min-height: 100dvh; background: var(--color-bg); }
+  :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  button { cursor: pointer; }
+}
+
+@layer components {
+  .display { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.01em; font-weight: 700; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-muted); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 4px; font-size: 13px; font-weight: 600; border: 1px solid var(--color-line-strong); color: #fff; background: transparent; white-space: nowrap; transition: background .15s, border-color .15s; }
+  .btn:hover { background: var(--color-surface-3); border-color: #777; }
+  .btn-white { background: #fff; color: #000; border-color: #fff; }
+  .btn-white:hover { background: #ddd; border-color: #ddd; }
+  .btn-gold { background: var(--color-gold); color: #111; border-color: var(--color-gold); }
+  .btn-gold:hover { background: #e8c552; border-color: #e8c552; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px; border-radius: 2px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+}
+
+@keyframes pulse-dot { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+.live-dot { width: 6px; height: 6px; border-radius: 99px; background: currentColor; animation: pulse-dot 1.4s infinite; }
+@keyframes flash { from { background: #d4af3740 } to { background: transparent } }
+.flash { animation: flash 1.2s ease-out; }
