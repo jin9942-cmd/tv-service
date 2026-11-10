@@ -8,13 +8,14 @@ import { useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Avatar, BraceletCount, Button, CountryCode, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
-import { HERO_DAY_ID, events, players, seriesById } from '../data/mock';
+import { HERO_DAY_ID, classicEvents, events, players, seatsFor, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle } from '../lib/brand';
 import { catalog, highlightClips, isLive, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { HALL_OF_FAME } from './halloffame';
+import { EventRows, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, type EventItem } from './loop';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
 /** The demo's live series: the 2025 World Series of Poker in Las Vegas, reconstructed from the real broadcasts. */
@@ -229,22 +230,6 @@ function currentYear() {
 
 /** An event as a card: the buy-in large (type, no still), then the name, the game and what there is to watch. */
 type EventCardData = { id: string; to: string; name: string; number: number | null; buyLabel: string; game: string; days: number; live?: boolean };
-function EventCard({ c }: { c: EventCardData }) {
-  return (
-    <Link to={c.to} className="group flex h-full flex-col justify-between gap-4 rounded-card border border-line bg-surface p-4 transition-colors hover:border-white/40 hover:bg-surface-2">
-      <span className="flex items-start justify-between gap-2">
-        <span className="font-display text-2xl leading-none tnum sm:text-3xl">{c.buyLabel || 'Invitational'}</span>
-        {c.live ? <LiveTag /> : c.number != null && <span className="text-xs text-muted tnum">#{c.number}</span>}
-      </span>
-      <span className="min-w-0">
-        <span className="line-clamp-2 font-semibold leading-snug group-hover:text-gold-strong">{c.name}</span>
-        <span className="mt-1 block truncate text-xs text-muted">
-          {c.game} · {c.live ? 'Final table on air now' : c.days ? daysNote(c.days) : 'Coming up'}
-        </span>
-      </span>
-    </Link>
-  );
-}
 
 /**
  * A year (like an F1 season): its series as cards (Las Vegas, Europe, Paradise, Circuit). A series (like a race
@@ -313,7 +298,6 @@ export function YearPage() {
         }),
       }));
 
-  const byBuyIn = (a: Card, b: Card) => Number(!!b.live) - Number(!!a.live) || b.buyIn - a.buyIn;
   const titleOf = (s: { name: string }) => (s.name === 'Las Vegas' ? `${y} World Series of Poker` : `${y} WSOP ${s.name}`);
   const castsOf = (s: { cards: Card[] }) => s.cards.reduce((n, c) => n + c.days, 0);
   const lineOf = (s: { cards: Card[] }) => `${s.cards.length} event${s.cards.length === 1 ? '' : 's'} · ${daysNote(castsOf(s))}`;
@@ -368,8 +352,12 @@ export function YearPage() {
   const main = current.cards.find((c) => c.kind === 'Main Event');
   const mainRef = main && !isCurrent ? archiveEvent(main.id) : undefined;
   const mainDays: Video[] = main ? (mainRef ? broadcastsOf(mainRef) : catalog.filter((v) => v.eventId === main.id && v.kind === 'broadcast')) : [];
-  const others = current.cards.filter((c) => c !== main).sort(byBuyIn);
-  const finals = others.filter((c) => c.finalTable).map((c) => c.finalTable!);
+  const others = current.cards.filter((c) => c !== main);
+  // The event list (one template: play · event · winner), newest first.
+  const archSeries = arch?.series.find((x) => x.key === current.key);
+  const items: EventItem[] = others
+    .map((c) => (isCurrent ? liveItem(events.find((e) => e.id === c.id)!) : archiveItem(y, archSeries!, archSeries!.events.find((e) => e.id === c.id)!)))
+    .sort(newestFirst);
   const ids = new Set(current.cards.map((c) => c.id));
   const hands: Video[] = isCurrent
     ? highlightClips.filter((v) => v.eventId && ids.has(v.eventId))
@@ -427,7 +415,13 @@ export function YearPage() {
       )}
 
       <SeriesRow title="Main Event, day by day" videos={mainDays.length > 1 ? mainDays : []} play={playable} />
-      <SeriesRow title="Final tables" videos={finals} play={playable} />
+      {items.length > 0 && (
+        <section aria-label="Events" className="mt-10">
+          <h2 className="text-xl sm:text-2xl">Events</h2>
+          <p className="mt-1 mb-4 text-sm text-muted">Newest first · play the final table, open the event, or follow the winner</p>
+          <EventRows items={items} />
+        </section>
+      )}
       <SeriesRow title="Highlights" videos={hands} play={playable} />
       {SHOW_PLANNED && (
         <>
@@ -436,19 +430,6 @@ export function YearPage() {
         </>
       )}
 
-      {/* Every bracelet event as a card, live and the biggest buy-ins first. */}
-      {others.length > 0 && (
-        <section aria-label="Bracelet events" className="mt-10">
-          <h2 className="text-xl sm:text-2xl">Bracelet events</h2>
-          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {others.map((c) => (
-              <li key={c.id} className="min-w-0">
-                <EventCard c={c} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </Page>
   );
 }
@@ -595,6 +576,19 @@ export function PlayerPage() {
     .map((r) => ({ r, e: events.find((e) => e.id === r.eventId) }))
     .filter((x): x is { r: (typeof p.recent)[number]; e: TourEvent } => !!x.e);
   const asLegend = LEGENDS.find((l) => l.playerId === p.id);
+  // The loop: their seat at the live final table, and every event they made the final table of (live series and
+  // classics) as event rows, newest first, with their place where it isn't a win.
+  const seats = seatsFor(HERO_DAY_ID);
+  const seat = seats.find((s) => s.playerId === p.id);
+  const seatRank = seat ? seats.indexOf(seat) + 1 : 0;
+  const results: EventItem[] = [
+    // Their own place goes in the event line when it isn't a win; the winner stays the event's real winner.
+    ...finals.map(({ r, e }) => {
+      const x = liveItem(e);
+      return r.place === 1 ? x : { ...x, name: `${x.name} · ${r.place}${r.place === 2 ? 'nd' : r.place === 3 ? 'rd' : 'th'} place` };
+    }),
+    ...classicEvents.filter((e) => e.winnerId === p.id).map((e) => ({ ...liveItem(e), to: `/watch/${e.days[0].id}`, name: e.name.replace(/^\d{4} /, ''), year: Number(e.name.slice(0, 4)) })),
+  ].sort(newestFirst);
   const yearOfEvent = (e: TourEvent) => Number(seriesById(e.seriesId).name.match(/\d{4}/)?.[0] ?? CURRENT_YEAR);
   const byYear = [...new Set(finals.map((x) => yearOfEvent(x.e)))]
     .sort((a, b) => b - a)
@@ -621,8 +615,32 @@ export function PlayerPage() {
         </div>
       </header>
 
-      {/* Results (WSOP records): a row per final table, by year; each opens the event and its broadcasts. */}
-      <section aria-label="Results" className="mt-10">
+      {/* At the live Main Event final table right now: straight back to the broadcast (the loop: player → video). */}
+      {seat && (
+        <Link to={`/watch/${HERO_DAY_ID}`} className="mt-8 flex flex-wrap items-center gap-4 rounded-panel border border-line bg-surface p-4 hover:border-white/40">
+          <LiveTag />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">At the Main Event final table now</span>
+            <span className="block text-sm text-muted tnum">
+              {(seat.stack / 1e6).toFixed(1)}M chips · {seatRank} of {seats.length} in chips
+            </span>
+          </span>
+          <Button variant="primary" tabIndex={-1}>
+            <Icon name="play" size={16} /> Watch live
+          </Button>
+        </Link>
+      )}
+
+      {/* Results (WSOP records): a row per event, newest first; play its final table, open the event, follow its winner. */}
+      {results.length > 0 && (
+        <section aria-label="Results as rows" className="mt-10">
+          <h2 className="text-xl sm:text-2xl">Results</h2>
+          <div className="mt-4">
+            <EventRows items={results} showYear />
+          </div>
+        </section>
+      )}
+      <section aria-label="Results" className="mt-10" hidden={results.length > 0}>
         <h2 className="text-xl sm:text-2xl">Results</h2>
         {byYear.length ? (
           byYear.map(({ y, rows }) => (
@@ -846,7 +864,7 @@ export function ArchiveEventPage() {
           </p>
           {champion && (
             <p className="mt-2 text-sm font-semibold">
-              Champion · {champion.name} <CountryCode cc={champion.cc} />
+              Champion · {playerLink(champion.name) ? <Link to={playerLink(champion.name)!} className="text-gold-strong hover:underline">{champion.name}</Link> : champion.name} <CountryCode cc={champion.cc} />
             </p>
           )}
         </Page>
@@ -870,6 +888,9 @@ export function ArchiveEventPage() {
             </section>
           ) : null,
         )}
+        <div className="mt-2">
+          <OtherYearsSection items={otherYears(event.name, event.kind, series.key, event.id)} />
+        </div>
       </Page>
     </>
   );

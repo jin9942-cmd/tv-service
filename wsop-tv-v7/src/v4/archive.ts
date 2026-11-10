@@ -36,6 +36,10 @@ export interface ArchiveYear {
 }
 
 export const ARCHIVE = data as ArchiveYear[];
+// The file list files some Las Vegas Main Events as open events (2021, 2022: "$10,000 No-Limit Hold'em Main Event").
+for (const y of ARCHIVE)
+  for (const s of y.series)
+    for (const e of s.events) if (s.key === 'lv' && e.kind !== 'Main Event' && /^\$10,000 No.?Limit Hold'em Main Event$/i.test(e.name)) e.kind = 'Main Event';
 /** WSOP Classics: the 1973–2002 Main Event broadcasts. */
 export const CLASSIC_RANGE = '1973 – 2002';
 

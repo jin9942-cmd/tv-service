@@ -21,6 +21,7 @@ import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, a
 import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, videoById, type Video } from './catalog';
 import { activeThemes, featuredTheme, homeHands, inSeason, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
+import { OtherYearsSection, otherYears } from './loop';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -1472,6 +1473,18 @@ export function EventPage() {
             {seriesById(e.seriesId).name} · {e.game} · Buy-in {e.buyIn ? money(e.buyIn) : 'Invitational'} · {e.entrants.toLocaleString('en-US')} entries · Prize pool {money(e.prizePool)}
           </span>
         </p>
+        {/* The winner: on to their page (the loop: event → player). */}
+        {e.winnerId ? (
+          <p className="mt-3 text-[15px]">
+            Winner ·{' '}
+            <Link to={`/videos/players/${e.winnerId}`} className="font-semibold text-gold-strong hover:underline">
+              {playerById(e.winnerId).name}
+            </Link>{' '}
+            <span className="text-muted tnum">· {money(e.firstPrize)}</span>
+          </p>
+        ) : (
+          live && <p className="mt-3 text-[15px] font-semibold">The final table is on air now</p>
+        )}
       </div>
       <section aria-label="Broadcasts">
         <h2 className="mb-3 text-xl sm:text-2xl">Broadcasts</h2>
@@ -1487,6 +1500,10 @@ export function EventPage() {
         </div>
       </section>
       <VideoRow title="Key hands" videos={clips} action={<Link to={`/tag/event-${e.id}`} className="text-sm font-semibold text-muted hover:text-text">All videos →</Link>} />
+      {/* The Main Event's final table: its players (on to their pages). */}
+      {e.id === 'lv-main' && <FinalNine />}
+      {/* The same event in other years (the loop: event → another event). */}
+      <OtherYearsSection items={otherYears(e.name, /main event/i.test(e.name) ? 'Main Event' : 'Open', 'lv', e.id)} />
     </Page>
   );
 }

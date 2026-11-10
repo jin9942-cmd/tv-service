@@ -261,14 +261,21 @@ export function relatedTo(v: Video, n = 10): Video[] {
   if (v.id.startsWith('arc.')) return archiveRelated(v, n);
   const self = (x: Video) => x.id === v.id || x.id === v.dayId;
   const same = v.eventId ? catalog.filter((x) => !self(x) && x.eventId === v.eventId).sort((a, b) => airedAt(b) - airedAt(a) || Number(a.kind === 'clip') - Number(b.kind === 'clip') || b.views - a.views) : [];
+  // The loop after this event: its winner's other final tables, then the series' other final tables, newest first.
+  const ev = v.dayId ? dayById(v.dayId)?.event : undefined;
+  const isFinal = (x: Video) => x.kind === 'broadcast' && /Final Table/.test(x.title) && x.eventId !== v.eventId;
+  const evOf = (x: Video) => (x.dayId ? dayById(x.dayId)?.event : undefined);
+  const winners = ev?.winnerId ? catalog.filter((x) => isFinal(x) && evOf(x)?.winnerId === ev.winnerId) : [];
+  const seriesFinals = ev ? catalog.filter((x) => isFinal(x) && evOf(x)?.seriesId === ev.seriesId && !winners.includes(x)).sort((a, b) => airedAt(b) - airedAt(a)) : [];
+  const loop = [...winners, ...seriesFinals];
   const slugs = new Set(v.tags.map((t) => t.slug));
   const byTags = catalog
-    .filter((x) => !self(x) && !same.includes(x))
+    .filter((x) => !self(x) && !same.includes(x) && !loop.includes(x))
     .map((x) => ({ x, score: x.tags.filter((t) => slugs.has(t.slug)).length }))
     .filter((r) => r.score > 0)
     .sort((a, b) => b.score - a.score || b.x.views - a.x.views)
     .map((r) => r.x);
-  return [...same, ...byTags].slice(0, n);
+  return [...same, ...loop, ...byTags].slice(0, n);
 }
 
 export function byTag(slug: string): { tag?: Tag; videos: Video[] } {
