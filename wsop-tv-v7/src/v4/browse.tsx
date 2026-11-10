@@ -448,9 +448,9 @@ export function YearPage() {
 
 /**
  * Interviews and Features are planned sections: the archive holds no such videos yet. For the design review they show
- * as marked empty slots (no invented videos); set false to hide them until there is content.
+ * as marked empty slots (no invented videos). Off: hidden until there is content (set true to show the slots).
  */
-const SHOW_PLANNED = true;
+const SHOW_PLANNED = false;
 
 /** A row of a series page: its videos sideways, each playing straight away (live ones open their player). */
 function SeriesRow({ title, videos, play }: { title: string; videos: Video[]; play: (v: Video) => { href?: string; onOpen?: () => void } }) {
