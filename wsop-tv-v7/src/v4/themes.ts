@@ -84,7 +84,6 @@ export const THEMES: Theme[] = [
   },
   {
     id: 'main-event-day-by-day',
-    eyebrow: `${SEASON_YEAR} Main Event`,
     // The first prize is on record from the start ($10,000,000), so the title holds while the final table is still on.
     title: 'The Road to $10 Million',
     blurb: `The ${SEASON_YEAR} Main Event in order, from Day 1 to the final table.`,
