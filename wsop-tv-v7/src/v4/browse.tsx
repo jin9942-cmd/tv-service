@@ -155,19 +155,10 @@ function ThisYearCard() {
   );
 }
 
-/** A small year box for the older archive: the year and what it holds. */
-function YearChip({ year, line }: { year: number; line: string }) {
-  return (
-    <Link to={`/videos/year/${year}`} className="group block rounded-card border border-line bg-surface px-3 py-2.5 transition-colors hover:border-white/40">
-      <span className="block text-lg leading-tight font-black tnum">{year}</span>
-      <span className="block truncate text-xs text-muted group-hover:text-text">{line}</span>
-    </Link>
-  );
-}
-
 /**
- * Years: this year large (live when it is), the recent seasons as season tiles, the older archive by decade as small
- * boxes (older years hold less, so they take less room), then the Classics.
+ * Years, as F1 TV's archive: this year large, then every season as a photo tile (a picture of play with the year
+ * large on it, and a line under it), recent seasons first, the older ones by decade, then the Classics (one broadcast
+ * a year, so their tile plays it straight away).
  */
 export function YearsTab() {
   const modern = ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_YEAR);
@@ -175,6 +166,27 @@ export function YearsTab() {
   const older = modern.filter((y) => y.year < RECENT_FROM);
   const decades = [...new Set(older.map((y) => Math.floor(y.year / 10) * 10))].sort((a, b) => b - a);
   const classics = ARCHIVE.filter((y) => y.classic);
+  const tile = (y: (typeof ARCHIVE)[number], i: number) => {
+    const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
+    const ref = main ? archiveEvent(main.id) : undefined;
+    const first = ref ? broadcastsOf(ref)[0] : undefined;
+    const size = yearSize(y);
+    // Classics: their own still and one broadcast (plays at once). Other years: a crop of real play, graphics left out.
+    const own = CLASSIC_STILLS.find((x) => x.startsWith(String(y.year)));
+    const art = y.classic ? (own ? `${import.meta.env.BASE_URL}classics/classic-${own.slice(0, 4)}-${own.slice(4)}.jpg` : main ? archiveArt(main.id) : '') : `${import.meta.env.BASE_URL}crops/${CROP_POOL[i % CROP_POOL.length]}.jpg`;
+    return (
+      <li key={y.year} className="min-w-0">
+        <YearPhotoTile
+          year={y.year}
+          art={art}
+          to={y.classic && first ? `/watch/${first.id}?play=1` : `/videos/year/${y.year}`}
+          play={!!(y.classic && first)}
+          line={y.classic ? 'Main Event · Full broadcast' : `${eventsNote(size.events)} · ${daysNote(size.casts)}`}
+        />
+      </li>
+    );
+  };
+  const row = (list: typeof ARCHIVE, offset = 0) => <ul className={yearRowGrid}>{list.map((y, i) => tile(y, i + offset))}</ul>;
   return (
     <>
       <section aria-label="This year" className="mt-6">
@@ -183,39 +195,61 @@ export function YearsTab() {
 
       <section aria-label="Recent seasons" className="mt-10">
         <h2 className="text-xl sm:text-2xl">Recent seasons</h2>
-        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
-          {recent.map((y) => (
-            <SeasonTile key={y.year} year={y.year} line={eventsNote(yearSize(y).events)} />
-          ))}
-        </div>
+        {row(recent)}
       </section>
 
-      {decades.map((d) => (
-        <section key={d} aria-label={`The ${d}s`} className="mt-10">
-          <h2 className="text-xl sm:text-2xl">The {d}s</h2>
-          <div className="mt-4 grid grid-cols-3 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
-            {older
-              .filter((y) => Math.floor(y.year / 10) * 10 === d)
-              .map((y) => (
-                <YearChip key={y.year} year={y.year} line={daysNote(yearSize(y).casts)} />
-              ))}
-          </div>
-        </section>
-      ))}
+      {decades.map((d, di) => {
+        const ys = older.filter((y) => Math.floor(y.year / 10) * 10 === d);
+        // The years the archive holds (2018 – 2010, 2009 – 2003), newest first, as F1 TV heads its decades.
+        const label = `${ys[0].year} – ${ys[ys.length - 1].year}`;
+        return (
+          <section key={d} aria-label={label} className="mt-10">
+            <h2 className="text-xl sm:text-2xl tnum">{label}</h2>
+            {row(ys, (di + 1) * 5)}
+          </section>
+        );
+      })}
 
       {/* WSOP Classics: the Main Event broadcasts from Binion's Horseshoe, 1973 – 2002. */}
       {classics.length > 0 && (
         <section aria-label="WSOP Classics" className="mt-10">
           <h2 className="text-xl sm:text-2xl">WSOP Classics</h2>
-          <p className="mt-1 text-sm text-muted tnum">{CLASSIC_RANGE} · Binion’s Horseshoe</p>
-          <div className="mt-4 grid grid-cols-3 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
-            {classics.map((y) => (
-              <YearChip key={y.year} year={y.year} line={daysNote(yearSize(y).casts)} />
-            ))}
-          </div>
+          <p className="mt-1 text-sm text-muted tnum">{CLASSIC_RANGE} · Binion’s Horseshoe · the Main Event, as it was broadcast</p>
+          {row(classics)}
         </section>
       )}
     </>
+  );
+}
+
+/** The Classics' own broadcast stills (public/classics, from the NAS: classic-<year>-<a|b>.jpg), first per year. */
+const CLASSIC_STILLS = '1973a 1978a 1979a 1981a 1983a 1987a 1988a 1989a 1990a 1991a 1992a 1993a 1994a 1995a 1997a 1998a 1999b 2000a 2001b 2002a'.split(' ');
+/** Graphic-free crops of real play (public/crops) for the tiles of years without a picture of their own. */
+const CROP_POOL = ['lv-hr', 'classic-a1', 'lv-hu', 'classic-a4', 'lv-plo', 'classic-a3', 'lv-mmm', 'lv-ms', 'classic-a2', 'lv-ppc', 'lv-seniors', 'lv-ladies'];
+const yearRowGrid = 'hscroll mt-4 gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]';
+
+/** A season as F1 TV draws one: the picture, the year large across it, and what it holds underneath. */
+function YearPhotoTile({ year, art, to, line, play }: { year: number; art: string; to: string; line: string; play?: boolean }) {
+  return (
+    <Link to={to} onClick={play ? enterFullScreen : undefined} className="group block">
+      <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+        <img src={art} alt="" loading="lazy" className="absolute inset-0 size-full object-cover opacity-80 transition-transform duration-200 group-hover:scale-[1.04]" />
+        <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/10" aria-hidden />
+        <span className="absolute inset-0 grid place-items-center">
+          <span className="font-display text-6xl leading-none text-white/95 tnum drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] sm:text-7xl">{year}</span>
+        </span>
+        {play && (
+          <span className="absolute right-2 bottom-2 grid size-8 place-items-center rounded-full bg-white/90 text-black" aria-hidden>
+            <Icon name="play" size={14} />
+          </span>
+        )}
+      </span>
+      <span className="mt-2 flex items-center gap-2">
+        <img src={WSOP_LOGO} alt="" className="h-3.5 w-auto opacity-80" />
+        <span className="font-semibold group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4">{year} Season</span>
+      </span>
+      <span className="mt-0.5 block text-xs text-muted">{line}</span>
+    </Link>
   );
 }
 
