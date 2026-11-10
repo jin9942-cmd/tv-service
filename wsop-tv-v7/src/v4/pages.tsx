@@ -489,61 +489,14 @@ export function TagPage() {
 
 // ---- Videos ------------------------------------------------------------------------------------------
 
-const HAND_FILTERS = [
-  ['all', 'All'],
-  ['bluff', 'Bluffs'],
-  ['hero-call', 'Hero calls'],
-  ['cooler', 'Coolers'],
-  ['bad-beat', 'Bad beats'],
-  ['big-pot', 'Big pots'],
-  ['winning-moment', 'Winning moments'],
-] as const;
-
-const chip = (on: boolean) => cx('h-9 shrink-0 rounded-full border px-4 text-sm font-semibold', on ? 'border-text bg-text text-bg' : 'border-line-strong text-muted hover:text-text');
-
-/** Browse (as v8): Years and Players; Highlights (hand clips) on a page of its own. */
-export function VideosPage({ tab }: { tab: 'years' | 'players' | 'highlights' }) {
-  if (tab === 'highlights')
-    return (
-      <Page className="max-w-[96rem]">
-        <Link to="/videos" className="text-sm text-muted hover:text-text">
-          ← Browse
-        </Link>
-        <h1 className="mt-3 text-title">Highlights</h1>
-        <HighlightsTab />
-      </Page>
-    );
+/** Browse (as v8): Years and Players. Hand clips have no page of their own (Home's Hands of the Week and the themes carry them). */
+export function VideosPage({ tab }: { tab: 'years' | 'players' }) {
   return (
     <Page className="max-w-[96rem]">
       <h1 className="text-title">Browse</h1>
       <BrowseTabs tab={tab} />
       {tab === 'years' ? <YearsTab /> : <PlayersTab />}
     </Page>
-  );
-}
-
-/** Hand clips by views, filtered by hand type (All first). */
-function HighlightsTab() {
-  const [f, setF] = useState<string>('all');
-  const filters = HAND_FILTERS;
-  const list = f === 'all' ? highlightClips : highlightClips.filter((v) => v.tags.some((t) => t.slug === f));
-  return (
-    <>
-      <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Hand type">
-        {filters.map(([k, label]) => (
-          <button key={k} role="tab" aria-selected={f === k} onClick={() => setF(k)} className={chip(f === k)}>
-            {label}
-          </button>
-        ))}
-      </div>
-      <div className={cx(rowGrid, 'mt-6')}>
-        <BadgeScope videos={list}>
-        {list.map((v) => (
-          <VideoCard key={v.id} v={v} />
-        ))}
-        </BadgeScope>
-      </div>
-    </>
   );
 }
 
@@ -555,7 +508,7 @@ export { catalog };
 /**
  * v7 Home rows, programmed like a sports network (see ./themes.ts):
  * - in season (the series and two weeks after): the featured theme (this series' final tables), Main Event day by
- *   day, Hand of the Day;
+ *   day, Hands of the Week;
  * - off-season: the week's featured theme, Hands of the Week, This Day in WSOP History;
  * then Editor's pick, Seasons, the Collections shelf, and Continue watching and My List at the bottom.
  */
@@ -607,11 +560,11 @@ export function HomeRows() {
       {season ? (
         <>
           <ThemeRow id={ownRow} now={now} />
-          <VideoRow title="Hands of the Week" videos={hands} action={more('/videos/highlights', 'All highlights')} />
+          <VideoRow title="Hands of the Week" videos={hands} />
         </>
       ) : (
         <>
-          <VideoRow title="Hands of the Week" videos={hands} action={more('/videos/highlights', 'All highlights')} />
+          <VideoRow title="Hands of the Week" videos={hands} />
           <ThemeRow id={ownRow} now={now} />
         </>
       )}
@@ -869,16 +822,17 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-center">
         <div>
           <p className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{FEATURED_LABEL[f.why]}</p>
-          <h2 className="mt-2 text-3xl leading-tight sm:text-4xl">{theme.title}</h2>
+          <h2 className="mt-2 text-3xl leading-tight sm:text-4xl">
+            <Link to={`/collections/${theme.id}`} className="hover:underline hover:decoration-2 hover:underline-offset-4">
+              {theme.title}
+            </Link>
+          </h2>
           <p className="mt-3 text-sm text-muted tnum">
             {videos.length} videos · {themeLength(videos)}
           </p>
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="mt-5">
             <Link to={playAll(videos[0])} onClick={enterFullScreen} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-white/85">
               <Icon name="play" size={16} /> Play all
-            </Link>
-            <Link to={`/collections/${theme.id}`} className="inline-flex items-center rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:border-white/60">
-              See all
             </Link>
           </div>
         </div>
