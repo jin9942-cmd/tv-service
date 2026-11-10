@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <radialGradient id="g" cx="0" cy="0" r="1.1"><stop offset="0" stop-color="#1e3a8a" stop-opacity="0.45"/><stop offset="0.6" stop-color="#1e3a8a" stop-opacity="0"/></radialGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c1813"/><stop offset="1" stop-color="#090909"/></linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#b)"/>
+  <rect width="1280" height="720" fill="url(#g)"/>
+  <g transform="translate(905 360)">
+  <g transform="translate(-100 190)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 174)">
+    <ellipse rx="64" ry="20.48" fill="#14532d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 158)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 142)">
+    <ellipse rx="64" ry="20.48" fill="#14532d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 126)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 110)">
+    <ellipse rx="64" ry="20.48" fill="#14532d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 94)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 78)">
+    <ellipse rx="64" ry="20.48" fill="#14532d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 62)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 46)">
+    <ellipse rx="64" ry="20.48" fill="#14532d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 30)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 14)">
+    <ellipse rx="64" ry="20.48" fill="#14532d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 -2)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 -18)">
+    <ellipse rx="64" ry="20.48" fill="#14532d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 -34)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 -50)">
+    <ellipse rx="64" ry="20.48" fill="#14532d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 -66)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(-100 -82)">
+    <ellipse rx="64" ry="20.48" fill="#14532d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 190)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 174)">
+    <ellipse rx="64" ry="20.48" fill="#7c2d12" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 158)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 142)">
+    <ellipse rx="64" ry="20.48" fill="#7c2d12" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 126)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 110)">
+    <ellipse rx="64" ry="20.48" fill="#7c2d12" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 94)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 78)">
+    <ellipse rx="64" ry="20.48" fill="#7c2d12" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 62)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 46)">
+    <ellipse rx="64" ry="20.48" fill="#7c2d12" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 30)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 14)">
+    <ellipse rx="64" ry="20.48" fill="#7c2d12" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 -2)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(60 -18)">
+    <ellipse rx="64" ry="20.48" fill="#7c2d12" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(200 190)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(200 174)">
+    <ellipse rx="64" ry="20.48" fill="#1e3a8b" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(200 158)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(200 142)">
+    <ellipse rx="64" ry="20.48" fill="#1e3a8b" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(200 126)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(200 110)">
+    <ellipse rx="64" ry="20.48" fill="#1e3a8b" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(200 94)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(200 78)">
+    <ellipse rx="64" ry="20.48" fill="#1e3a8b" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(200 62)">
+    <ellipse rx="64" ry="20.48" fill="#1d1d1d" stroke="#d4af37" stroke-width="3"/>
+  </g>
+  <g transform="translate(200 46)">
+    <ellipse rx="64" ry="20.48" fill="#1e3a8b" stroke="#d4af37" stroke-width="3"/>
+  </g></g>
+  <text x="72" y="104" font-size="30" font-weight="700" letter-spacing="5" fill="#d4af37" font-family="Arial, Helvetica, sans-serif">WSOP CLASSICS</text>
+  <text x="66" y="430" font-size="150" font-weight="900" fill="#ffffff" font-family="Impact, Arial Narrow, sans-serif">2022</text>
+  <text x="72" y="500" font-size="44" font-weight="700" fill="#ffffff" font-family="Arial, Helvetica, sans-serif">$250,000 Super High Roller</text>
+  <rect x="72" y="560" width="271" height="56" rx="28" fill="none" stroke="#d4af37" stroke-width="3"/>
+  <text x="92" y="598" font-size="26" font-weight="700" letter-spacing="4" fill="#d4af37" font-family="Arial, Helvetica, sans-serif">FINAL TABLE</text>
+</svg>

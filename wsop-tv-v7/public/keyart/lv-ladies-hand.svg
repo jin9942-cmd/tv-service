@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <radialGradient id="g" cx="0" cy="0" r="1.1"><stop offset="0" stop-color="#9d174d" stop-opacity="0.45"/><stop offset="0.6" stop-color="#9d174d" stop-opacity="0"/></radialGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c1813"/><stop offset="1" stop-color="#090909"/></linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#b)"/>
+  <rect width="1280" height="720" fill="url(#g)"/>
+  <g transform="translate(905 360)">
+  <g transform="translate(-60 10) rotate(-10)">
+    <rect x="-70" y="-100" width="140" height="200" rx="14" fill="#f4f1ea" stroke="#d4af37" stroke-width="3"/>
+    <text x="-48" y="-52" font-size="46" font-weight="700" fill="#c0392b" font-family="Georgia, serif">Q</text>
+    <text x="0" y="40" font-size="96" text-anchor="middle" fill="#c0392b" font-family="Georgia, serif">♥</text>
+  </g>
+  <g transform="translate(60 10) rotate(10)">
+    <rect x="-70" y="-100" width="140" height="200" rx="14" fill="#f4f1ea" stroke="#d4af37" stroke-width="3"/>
+    <text x="-48" y="-52" font-size="46" font-weight="700" fill="#c0392b" font-family="Georgia, serif">Q</text>
+    <text x="0" y="40" font-size="96" text-anchor="middle" fill="#c0392b" font-family="Georgia, serif">♦</text>
+  </g></g>
+  <text x="72" y="104" font-size="30" font-weight="700" letter-spacing="5" fill="#d4af37" font-family="Arial, Helvetica, sans-serif">WSOP 2025 · EVENT #70</text>
+  <text x="66" y="430" font-size="150" font-weight="900" fill="#ffffff" font-family="Impact, Arial Narrow, sans-serif">$1,000</text>
+  <text x="72" y="500" font-size="44" font-weight="700" fill="#ffffff" font-family="Arial, Helvetica, sans-serif">Ladies Championship</text>
+  <rect x="72" y="560" width="208" height="56" rx="28" fill="none" stroke="#d4af37" stroke-width="3"/>
+  <text x="92" y="598" font-size="26" font-weight="700" letter-spacing="4" fill="#d4af37" font-family="Arial, Helvetica, sans-serif">KEY HAND</text>
+</svg>

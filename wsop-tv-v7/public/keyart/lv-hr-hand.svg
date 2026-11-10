@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <radialGradient id="g" cx="0" cy="0" r="1.1"><stop offset="0" stop-color="#065f46" stop-opacity="0.45"/><stop offset="0.6" stop-color="#065f46" stop-opacity="0"/></radialGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c1813"/><stop offset="1" stop-color="#090909"/></linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#b)"/>
+  <rect width="1280" height="720" fill="url(#g)"/>
+  <g transform="translate(905 360)"><ellipse rx="210" ry="120" fill="#0f3d24" stroke="#d4af37" stroke-width="5"/><circle cx="1.5308084989341916e-14" cy="-160" r="28" fill="#1d1d1d" stroke="#d4af37" stroke-width="4"/><circle cx="216.50635094610965" cy="-80" r="28" fill="#1d1d1d" stroke="#d4af37" stroke-width="4"/><circle cx="216.50635094610968" cy="79.99999999999997" r="28" fill="#1d1d1d" stroke="#d4af37" stroke-width="4"/><circle cx="1.5308084989341916e-14" cy="160" r="28" fill="#1d1d1d" stroke="#d4af37" stroke-width="4"/><circle cx="-216.50635094610962" cy="80.00000000000006" r="28" fill="#1d1d1d" stroke="#d4af37" stroke-width="4"/><circle cx="-216.50635094610965" cy="-80.00000000000001" r="28" fill="#1d1d1d" stroke="#d4af37" stroke-width="4"/><text x="0" y="22" font-size="64" text-anchor="middle" fill="#d4af37" font-family="Impact, Arial Narrow, sans-serif">6</text></g>
+  <text x="72" y="104" font-size="30" font-weight="700" letter-spacing="5" fill="#d4af37" font-family="Arial, Helvetica, sans-serif">WSOP 2025 · EVENT #94</text>
+  <text x="66" y="430" font-size="150" font-weight="900" fill="#ffffff" font-family="Impact, Arial Narrow, sans-serif">$10,000</text>
+  <text x="72" y="500" font-size="44" font-weight="700" fill="#ffffff" font-family="Arial, Helvetica, sans-serif">No-Limit Hold’em 6-Handed</text>
+  <rect x="72" y="560" width="208" height="56" rx="28" fill="none" stroke="#d4af37" stroke-width="3"/>
+  <text x="92" y="598" font-size="26" font-weight="700" letter-spacing="4" fill="#d4af37" font-family="Arial, Helvetica, sans-serif">KEY HAND</text>
+</svg>
