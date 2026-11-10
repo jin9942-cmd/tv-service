@@ -552,8 +552,8 @@ export { catalog };
 // ---- Home rows ---------------------------------------------------------------------------------------
 
 /**
- * v7 Home rows: Recommended for you, Editor's pick (best final tables), the archive as tile rows (World Series of Poker by year,
- * Champions), Collections, Highlights (automatic, by hand type), then Continue watching and My List at the bottom. No Shorts, no Latest replays.
+ * v7 Home rows: Recommended for you, Editor's pick (best final tables), the archive as one tile row (Seasons:
+ * one type-only tile per past year), Collections, Highlights (automatic, by hand type), then Continue watching and My List at the bottom. No Shorts, no Latest replays.
  */
 export function HomeRows() {
   const { state, set, toast, signedIn } = useApp();
@@ -595,8 +595,7 @@ export function HomeRows() {
       {/* Recommended for you takes the place of Coming up (the schedule has the next broadcasts). */}
       <VideoRow title="Recommended for you" videos={recs} />
       <EditorsPick picks={picks} />
-      <ArchiveTiles title="World Series of Poker" by="year" />
-      <ArchiveTiles title="Champions" by="player" />
+      <SeasonTiles />
       <CollectionsRow />
       <HighlightsRow pool={highlightPool} skip={shown} />
       {/* Personal rows last. */}
@@ -721,23 +720,40 @@ function archiveGroups(by: 'year' | 'player'): ArchiveGroup[] {
 }
 const archiveGroup = (key: string) => archiveGroups(key.startsWith('year-') ? 'year' : 'player').find((g) => g.key === key);
 
-/** A row of small tiles, as WPT lists its seasons: a picture with the WSOP mark and the year (or the champion) on it. */
-function ArchiveTiles({ title, by }: { title: string; by: 'year' | 'player' }) {
-  const groups = archiveGroups(by);
+/**
+ * Past WSOPs as TV seasons: one tile per year, newest first. No broadcast still (the archive reuses the same few clips,
+ * so every tile would look alike) and no players: each tile is type-only key art (the year, large and outlined, cropped
+ * at the corner) with how many broadcasts the season has. A tile opens that season's broadcasts.
+ */
+function SeasonTiles() {
+  const groups = archiveGroups('year');
   if (!groups.length) return null;
   return (
-    <Section title={title}>
+    <Section title="Seasons">
       <ul className="hscroll gap-2.5 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*0.625rem)/4)] lg:[&>*]:w-[calc((100%-6*0.625rem)/7)]">
         {groups.map((g) => {
-          const v = g.entries[0].v;
+          const n = g.entries.length;
           return (
             <li key={g.key} className="min-w-0">
-              <Link to={`/archive/${g.key}`} className="group relative block aspect-video overflow-hidden rounded-card bg-surface-2" aria-label={`${g.label} · ${g.entries.length} videos`}>
-                <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
-                <span className="absolute inset-0 bg-black/45 transition-colors group-hover:bg-black/30" aria-hidden />
-                <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-2 text-center">
-                  {by === 'year' && <img src={WSOP_LOGO} alt="" className="h-6 w-auto sm:h-7" />}
-                  <span className={cx('leading-tight font-bold text-white drop-shadow', by === 'year' ? 'text-lg sm:text-xl' : 'text-sm sm:text-base')}>{g.label}</span>
+              <Link
+                to={`/archive/${g.key}`}
+                className="group relative block aspect-video overflow-hidden rounded-card border border-white/10 bg-[radial-gradient(120%_90%_at_100%_0%,rgba(212,175,55,0.20),transparent_60%),linear-gradient(160deg,#1a1712,#0b0b0b)] transition-colors hover:border-white/40"
+                aria-label={`WSOP ${g.label} season · ${n} broadcast${n === 1 ? '' : 's'}`}
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -right-[4%] -bottom-[30%] text-[5.5rem] leading-none font-black tracking-tighter text-transparent transition-transform duration-300 [-webkit-text-stroke:1px_rgba(212,175,55,0.3)] group-hover:-translate-y-1 sm:text-[6.5rem]"
+                >
+                  {g.label}
+                </span>
+                <span className="absolute inset-0 flex flex-col justify-between p-3">
+                  <img src={WSOP_LOGO} alt="" className="h-4 w-auto self-start opacity-90 sm:h-5" />
+                  <span>
+                    <span className="block text-2xl leading-none font-black text-white sm:text-[1.7rem]">{g.label}</span>
+                    <span className="mt-1 block text-xs text-muted group-hover:text-text">
+                      {n} broadcast{n === 1 ? '' : 's'}
+                    </span>
+                  </span>
                 </span>
               </Link>
             </li>
@@ -759,7 +775,7 @@ export function ArchivePage() {
       <Link to="/" className="text-sm text-muted hover:text-text">
         ← Home
       </Link>
-      <p className="mt-3 text-sm text-muted">{key.startsWith('year-') ? 'World Series of Poker' : 'Champion'}</p>
+      <p className="mt-3 text-sm text-muted">{key.startsWith('year-') ? 'WSOP Season' : 'Champion'}</p>
       <h1 className="mt-1 text-title">{key.startsWith('year-') ? `${g.label} WSOP` : g.label}</h1>
       <p className="mt-1 text-sm text-muted">{vs.length} video{vs.length === 1 ? '' : 's'}</p>
       <div className={cx(rowGrid, 'mt-6')}>
