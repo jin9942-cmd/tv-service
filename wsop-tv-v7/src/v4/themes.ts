@@ -168,6 +168,16 @@ export function handOfTheDay(now = Date.now()): Video | undefined {
   return pool[Math.floor(now / 864e5) % pool.length];
 }
 
+/** Hands of the Week: the last seven days' hands of the day, today's first (one new hand joins each day). */
+export function handsOfTheWeek(now = Date.now()): Video[] {
+  const out: Video[] = [];
+  for (let d = 0; d < 7; d++) {
+    const v = handOfTheDay(now - d * 864e5);
+    if (v && !out.includes(v)) out.push(v);
+  }
+  return out;
+}
+
 export type LiveTheme = { theme: Theme; videos: Video[]; seasonal: boolean };
 
 /** The themes on show right now: seasonal ones first (while on), then the rest, each with enough videos. */
