@@ -715,7 +715,7 @@ function SeasonTiles() {
   const liveNow = catalog.some((v) => v.eventId && isLive(v, state.streamMode));
   const past = pastSeasons().slice(0, 9);
   return (
-    <Section title="Seasons" action={more('/videos', 'All years')}>
+    <Section title="WSOP Through the Years" action={more('/videos', 'All years')}>
       {/* Photo tiles, as Browse > Years, swiped or stepped with the arrows: this year (live) first. */}
       <Carousel className="gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]">
         <li className="min-w-0">
@@ -827,8 +827,9 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
             {videos.length} videos · {themeLength(videos)}
           </p>
           <div className="mt-5">
-            <Link to={playAll(videos[0])} onClick={enterFullScreen} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-white/85">
-              <Icon name="play" size={16} /> Play all
+            {/* The button opens the list (the theme page: every video in order, each playable, and Play all there). */}
+            <Link to={`/collections/${theme.id}`} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-white/85">
+              See all {videos.length} <Icon name="chevron" size={16} />
             </Link>
           </div>
         </div>
