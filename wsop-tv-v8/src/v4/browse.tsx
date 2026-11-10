@@ -7,7 +7,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../state/app';
-import { Avatar, BraceletCount, Button, CountryCode, FilterChip, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
+import { Avatar, BraceletCount, Button, CountryCode, FilterChip, Icon, LiveTag, Page, cx } from '../components/ui';
 import { HERO_DAY_ID, events, players, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { duration, money } from '../lib/format';
@@ -772,12 +772,10 @@ export function ArchiveEventPage() {
   const { id = '' } = useParams();
   const nav = useNavigate();
   const ref = archiveEvent(id);
-  const [format, setFormat] = useState<'full' | 'highlights'>('full');
   if (!ref) return <Navigate to="/videos" replace />;
   const { year, series, event } = ref;
   const full = broadcastsOf(ref);
   const clips = highlightsOf(ref);
-  const list = format === 'full' ? full : clips;
   const facts = [fmtBuyIn(event) && `Buy-in ${fmtBuyIn(event)}`, event.game, event.kind !== 'Open' ? event.kind : '', `${full.length} broadcast day${full.length === 1 ? '' : 's'}`].filter(Boolean);
   const champion = event.kind === 'Main Event' && series.key === 'lv' ? year.champion : null;
   return (
@@ -813,28 +811,25 @@ export function ArchiveEventPage() {
         </Page>
       </div>
       <Page className="py-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Segmented
-            label="Format"
-            value={format}
-            onChange={setFormat}
-            options={[
-              { value: 'full', label: `Full broadcast (${full.length})` },
-              { value: 'highlights', label: `Highlights (${clips.length})`, disabled: !clips.length, title: clips.length ? undefined : 'No highlights for this event yet' },
-            ]}
-          />
-          <p className="text-sm text-muted">Days that were broadcast · a day plays full screen</p>
-        </div>
-        {list.length ? (
-          <BadgeScope videos={list}>
-            <div className={cx(rowGrid, 'mt-5')}>
-              {list.map((v) => (
-                <VideoCard key={v.id} v={v} {...playsFull(v)} />
-              ))}
-            </div>
-          </BadgeScope>
-        ) : (
-          <p className="mt-5 rounded-panel border border-line bg-surface p-5 text-sm text-muted">No highlights for this event yet.</p>
+        {/* No Full broadcast / Highlights switch: the broadcasts are the page; highlights follow as their own row only when there are any. */}
+        {[
+          ['Broadcasts', full],
+          ['Highlights', clips],
+        ].map(([title, list]) =>
+          (list as Video[]).length ? (
+            <section key={title as string} aria-label={title as string} className="mb-10">
+              <h2 className="text-xl sm:text-2xl">
+                {title as string} <span className="text-base font-semibold text-muted tnum">{(list as Video[]).length}</span>
+              </h2>
+              <BadgeScope videos={list as Video[]}>
+                <div className={cx(rowGrid, 'mt-4')}>
+                  {(list as Video[]).map((v) => (
+                    <VideoCard key={v.id} v={v} {...playsFull(v)} />
+                  ))}
+                </div>
+              </BadgeScope>
+            </section>
+          ) : null,
         )}
       </Page>
     </>
