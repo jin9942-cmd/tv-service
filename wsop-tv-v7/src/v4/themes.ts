@@ -179,7 +179,7 @@ export function homeHands(now = Date.now()): { title: string; eyebrow?: string; 
   const s = currentSeries();
   const own = highlightClips.filter((v) => eventOf(v)?.seriesId === s.id && startOf(v) <= now);
   return inSeason(now)
-    ? { eyebrow: SEASON, title: 'Hands of the Week', videos: [...own].sort((a, b) => startOf(b) - startOf(a) || b.views - a.views) }
+    ? { eyebrow: SEASON, title: 'Must-See Hands', videos: [...own].sort((a, b) => startOf(b) - startOf(a) || b.views - a.views) }
     : { title: `Best Hands of the ${s.name.slice(0, 4)} WSOP`, videos: own };
 }
 

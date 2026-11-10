@@ -512,7 +512,7 @@ export { catalog };
 /**
  * v7 Home rows, programmed like a sports network (see ./themes.ts):
  * - in season (the series and two weeks after): the featured theme (this series' final tables), Main Event day by
- *   day, Hands of the Week (no chip-count rows: the launch service has no chip feed);
+ *   day, Must-See Hands (no chip-count rows: the launch service has no chip feed);
  * - off-season: the week's featured theme, Best Hands of the <year> WSOP, This Day in WSOP History, Poker Hall of Fame;
  * then Seasons, the Collections shelf (six themes), and Continue watching and My List at the bottom.
  */
@@ -817,7 +817,7 @@ function photoPicker(skip: Set<string>) {
   };
 }
 
-const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: 'Right now', weekly: 'This week’s collection' } as const;
+const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: 'Right now', weekly: 'Featured collection' } as const;
 
 /**
  * The featured theme on Home: one wide card (title, note, how long, Play all) with its first videos beside it. Which
