@@ -12,7 +12,7 @@ import { HERO_DAY_ID, events, players, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle } from '../lib/brand';
-import { catalog, isLive, videoById, type Video } from './catalog';
+import { catalog, highlightClips, isLive, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { HALL_OF_FAME } from './halloffame';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
@@ -247,11 +247,12 @@ function EventCard({ c }: { c: EventCardData }) {
 }
 
 /**
- * A year: the Main Event first, then the year's final tables (play straight away), then every bracelet event as a
- * card, one section per stop of the series (Las Vegas, Europe, …), the biggest buy-ins first. No filters.
+ * A year (like an F1 season): its series as cards (Las Vegas, Europe, Paradise, Circuit). A series (like a race
+ * weekend): the Main Event, its days, the final tables, the hands, interviews and features (planned), every bracelet
+ * event. A year with one series opens that series straight away.
  */
 export function YearPage() {
-  const { year = '' } = useParams();
+  const { year = '', series: seriesKey } = useParams();
   const y = Number(year);
   const {
     state: { streamMode },
@@ -312,24 +313,79 @@ export function YearPage() {
         }),
       }));
 
-  // The Main Event: Las Vegas' first, else the first series that has one.
-  const mainSeries = seriesList.find((s) => s.cards.some((c) => c.kind === 'Main Event')) ?? seriesList[0];
-  const main = mainSeries?.cards.find((c) => c.kind === 'Main Event');
-  const mainRef = main && !isCurrent ? archiveEvent(main.id) : undefined;
   const byBuyIn = (a: Card, b: Card) => Number(!!b.live) - Number(!!a.live) || b.buyIn - a.buyIn;
-  const sections = seriesList.map((s) => ({ ...s, cards: s.cards.filter((c) => c !== main).sort(byBuyIn) })).filter((s) => s.cards.length);
-  const finals = seriesList
-    .flatMap((s) => s.cards)
-    .filter((c) => c !== main && c.finalTable)
-    .sort(byBuyIn)
-    .map((c) => c.finalTable!);
+  const titleOf = (s: { name: string }) => (s.name === 'Las Vegas' ? `${y} World Series of Poker` : `${y} WSOP ${s.name}`);
+  const castsOf = (s: { cards: Card[] }) => s.cards.reduce((n, c) => n + c.days, 0);
+  const lineOf = (s: { cards: Card[] }) => `${s.cards.length} event${s.cards.length === 1 ? '' : 's'} · ${daysNote(castsOf(s))}`;
+
+  // ---- the year: its series, as a season calendar (a year with one series opens it straight away) ----
+  if (!seriesKey) {
+    if (seriesList.length === 1) return <Navigate to={`/videos/year/${y}/${seriesList[0].key}`} replace />;
+    return (
+      <Page className="max-w-[96rem]">
+        {back('/videos', 'Years')}
+        <h1 className="mt-3 text-title">{y} WSOP</h1>
+        <p className="mt-1 text-sm text-muted tnum">
+          {seriesList.length} series · {arch ? yearSize(arch).line : 'live and on demand'}
+        </p>
+        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {seriesList.map((s) => {
+            const live = s.cards.some((c) => c.live);
+            const champ = s.key === 'lv' ? arch?.champion : null;
+            return (
+              <li key={s.key} className="min-w-0">
+                <Link
+                  to={`/videos/year/${y}/${s.key}`}
+                  className="group relative flex aspect-[4/3] flex-col justify-between overflow-hidden rounded-card border border-white/10 bg-[radial-gradient(120%_90%_at_100%_0%,rgba(212,175,55,0.18),transparent_60%),linear-gradient(160deg,#1a1712,#0b0b0b)] p-5 transition-colors hover:border-white/40"
+                >
+                  <span className="flex items-center gap-2">
+                    <img src={WSOP_LOGO} alt="" className="h-5 w-auto opacity-90" />
+                    {live && <LiveTag />}
+                  </span>
+                  <span>
+                    <span className="block text-xs font-bold tracking-wide text-gold-strong uppercase">{s.name}</span>
+                    <span className="mt-1 block text-2xl leading-tight font-black group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4">{titleOf(s)}</span>
+                    <span className="mt-2 block text-sm text-muted tnum">{lineOf(s)}</span>
+                    {champ && (
+                      <span className="mt-1 block text-sm text-text/85">
+                        Main Event · {champ.name} <CountryCode cc={champ.cc} />
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </Page>
+    );
+  }
+
+  // ---- one series, laid out like a race weekend: the Main Event, its days, the final tables, the hands, then
+  // interviews and features (planned), then every bracelet event ----
+  const current = seriesList.find((s) => s.key === seriesKey);
+  if (!current) return <Navigate to={`/videos/year/${y}`} replace />;
+  const main = current.cards.find((c) => c.kind === 'Main Event');
+  const mainRef = main && !isCurrent ? archiveEvent(main.id) : undefined;
+  const mainDays: Video[] = main ? (mainRef ? broadcastsOf(mainRef) : catalog.filter((v) => v.eventId === main.id && v.kind === 'broadcast')) : [];
+  const others = current.cards.filter((c) => c !== main).sort(byBuyIn);
+  const finals = others.filter((c) => c.finalTable).map((c) => c.finalTable!);
+  const ids = new Set(current.cards.map((c) => c.id));
+  const hands: Video[] = isCurrent
+    ? highlightClips.filter((v) => v.eventId && ids.has(v.eventId))
+    : current.cards.flatMap((c) => {
+        const ref = archiveEvent(c.id);
+        return ref ? highlightsOf(ref) : [];
+      });
   const mainHref = main && (main.live && main.video ? `/watch/${main.video}` : main.video ? `/watch/${main.video}?play=1` : main.to);
+  const playable = (v: Video) => (isLive(v, streamMode) ? {} : playsFull(v));
   return (
     <Page className="max-w-[96rem]">
-      {back('/videos', 'Years')}
-      <h1 className="mt-3 text-title">{y} World Series of Poker</h1>
+      {back(seriesList.length > 1 ? `/videos/year/${y}` : '/videos', seriesList.length > 1 ? `${y} WSOP` : 'Years')}
+      <p className="mt-3 text-xs font-bold tracking-wide text-gold-strong uppercase">{current.name}</p>
+      <h1 className="mt-1 text-title">{titleOf(current)}</h1>
       {arch?.classic && <p className="mt-1 text-xs font-bold tracking-wide text-gold-strong uppercase">WSOP Classics · Binion’s Horseshoe</p>}
-      <p className="mt-1 text-sm text-muted tnum">{arch ? yearSize(arch).line : 'This year · live and on demand'}</p>
+      <p className="mt-1 text-sm text-muted tnum">{isCurrent ? `${lineOf(current)} · live and on demand` : lineOf(current)}</p>
 
       {/* Main Event: one card, the picture and what it is; one button to watch, the title opens the event. */}
       {main && (
@@ -341,7 +397,7 @@ export function YearPage() {
             </Link>
             <div className="flex flex-col justify-center p-6 lg:p-8">
               <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">
-                {mainSeries!.name} · Main Event{main.number != null && ` · Event #${main.number}`}
+                Main Event{main.number != null && main.number > 0 && ` · Event #${main.number}`}
               </p>
               <h2 className="mt-2 text-2xl sm:text-3xl">
                 <Link to={main.to} className="hover:underline hover:decoration-2 hover:underline-offset-4">
@@ -349,7 +405,7 @@ export function YearPage() {
                 </Link>
               </h2>
               <p className="mt-1 text-sm text-muted">{[main.buyLabel, main.game, daysNote(main.days)].filter(Boolean).join(' · ')}</p>
-              {arch?.champion && mainSeries!.key === 'lv' ? (
+              {arch?.champion && current.key === 'lv' ? (
                 <p className="mt-4 text-[15px]">
                   Champion · <span className="font-semibold">{arch.champion.name}</span> <CountryCode cc={arch.champion.cc} />
                 </p>
@@ -370,50 +426,76 @@ export function YearPage() {
         </section>
       )}
 
-      {/* The year's final tables: what people come for, ready to play. */}
-      {finals.length > 0 && (
-        <section aria-label="Final tables" className="mt-10">
-          <h2 className="text-xl sm:text-2xl">Final tables</h2>
-          <ul className="hscroll mt-4 gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
-            <BadgeScope videos={finals}>
-              {finals.map((v) => (
-                <li key={v.id} className="min-w-0">
-                  <VideoCard v={v} {...(isLive(v, streamMode) ? {} : playsFull(v))} />
-                </li>
-              ))}
-            </BadgeScope>
-          </ul>
-        </section>
+      <SeriesRow title="Main Event, day by day" videos={mainDays.length > 1 ? mainDays : []} play={playable} />
+      <SeriesRow title="Final tables" videos={finals} play={playable} />
+      <SeriesRow title="Highlights" videos={hands} play={playable} />
+      {SHOW_PLANNED && (
+        <>
+          <PlannedRow title="Interviews" what="Winner interviews and press conferences" />
+          <PlannedRow title="Features" what="Documentaries, player stories and behind the scenes" />
+        </>
       )}
 
-      {/* Every bracelet event as a card, a section per stop, biggest buy-ins first. */}
-      {sections.map((s) => (
-        <section key={s.key} aria-label={s.name} className="mt-10">
-          <h2 className="text-xl sm:text-2xl">{sections.length > 1 || s.key !== 'lv' ? s.name : 'Bracelet events'}</h2>
+      {/* Every bracelet event as a card, live and the biggest buy-ins first. */}
+      {others.length > 0 && (
+        <section aria-label="Bracelet events" className="mt-10">
+          <h2 className="text-xl sm:text-2xl">Bracelet events</h2>
           <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {s.cards.map((c) => (
+            {others.map((c) => (
               <li key={c.id} className="min-w-0">
                 <EventCard c={c} />
               </li>
             ))}
           </ul>
         </section>
-      ))}
-
-      {/* A year with only its Main Event (the Classics): its broadcasts as cards. */}
-      {!sections.length && mainRef && (
-        <section aria-label="Main Event broadcasts" className="mt-10">
-          <h2 className="text-xl sm:text-2xl">Main Event broadcasts</h2>
-          <div className={cx(rowGrid, 'mt-4')}>
-            <BadgeScope videos={broadcastsOf(mainRef)}>
-              {broadcastsOf(mainRef).map((v) => (
-                <VideoCard key={v.id} v={v} {...playsFull(v)} />
-              ))}
-            </BadgeScope>
-          </div>
-        </section>
       )}
     </Page>
+  );
+}
+
+/**
+ * Interviews and Features are planned sections: the archive holds no such videos yet. For the design review they show
+ * as marked empty slots (no invented videos); set false to hide them until there is content.
+ */
+const SHOW_PLANNED = true;
+
+/** A row of a series page: its videos sideways, each playing straight away (live ones open their player). */
+function SeriesRow({ title, videos, play }: { title: string; videos: Video[]; play: (v: Video) => { href?: string; onOpen?: () => void } }) {
+  if (!videos.length) return null;
+  return (
+    <section aria-label={title} className="mt-10">
+      <h2 className="text-xl sm:text-2xl">{title}</h2>
+      <ul className="hscroll mt-4 gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        <BadgeScope videos={videos}>
+          {videos.map((v) => (
+            <li key={v.id} className="min-w-0">
+              <VideoCard v={v} {...play(v)} />
+            </li>
+          ))}
+        </BadgeScope>
+      </ul>
+    </section>
+  );
+}
+
+/** A planned section with no content yet: dashed slots, clearly marked, so the layout can be reviewed. */
+function PlannedRow({ title, what }: { title: string; what: string }) {
+  return (
+    <section aria-label={title} className="mt-10">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 className="text-xl sm:text-2xl">{title}</h2>
+        <span className="rounded-full border border-dashed border-white/30 px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-muted uppercase">Planned · no source yet</span>
+      </div>
+      <ul className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <li key={i} className={cx('min-w-0', i > 1 && 'hidden lg:block')}>
+            <div className="grid aspect-video place-items-center rounded-card border border-dashed border-white/20 bg-white/[0.02] p-4 text-center">
+              <span className="text-xs text-muted">{what}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -748,7 +830,7 @@ export function ArchiveEventPage() {
             ← Back
           </button>
           <p className="mt-8 text-xs font-bold tracking-wide text-gold-strong uppercase">
-            <Link to={`/videos/year/${year.year}?series=${series.key}`} className="hover:underline">
+            <Link to={`/videos/year/${year.year}/${series.key}`} className="hover:underline">
               {seriesTitle(year.year, series)}
             </Link>
             {event.number != null && ` · Event #${event.number}`}

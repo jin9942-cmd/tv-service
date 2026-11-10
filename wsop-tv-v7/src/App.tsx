@@ -46,6 +46,7 @@ export default function App() {
             <Route path="videos/highlights" element={<Navigate to="/videos" replace />} />
             <Route path="videos/replays" element={<Navigate to="/videos" replace />} />
             <Route path="videos/year/:year" element={<YearPage />} />
+            <Route path="videos/year/:year/:series" element={<YearPage />} />
             <Route path="videos/players/:playerId" element={<PlayerPage />} />
             <Route path="videos/events/:slug" element={<EventChronicle />} />
             <Route path="videos/event/:id" element={<ArchiveEventPage />} />
