@@ -607,11 +607,11 @@ export function HomeRows() {
       {season ? (
         <>
           <ThemeRow id={ownRow} now={now} numbered />
-          <HandOfTheDay v={hand} now={now} />
+          <HandOfTheDay v={hand} />
         </>
       ) : (
         <>
-          <HandOfTheDay v={hand} now={now} />
+          <HandOfTheDay v={hand} />
           <ThemeRow id={ownRow} now={now} />
         </>
       )}
@@ -677,7 +677,7 @@ function EditorsPick({ picks }: { picks: Video[] }) {
   if (!picks.length) return null;
   const total = picks.reduce((n, v) => n + v.durationSec, 0);
   return (
-    <Section title="The best final tables" label="Editor’s pick" action={more('/collections/final-tables', 'All final tables')}>
+    <Section title="The best final tables" action={more('/collections/final-tables', 'All final tables')}>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
         <div className="flex flex-col justify-between gap-3 rounded-card border border-line bg-surface p-4">
           <p className="text-[15px] leading-relaxed text-text/85">
@@ -870,7 +870,6 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
         <div>
           <p className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{FEATURED_LABEL[f.why]}</p>
           <h2 className="mt-2 text-3xl leading-tight sm:text-4xl">{theme.title}</h2>
-          <p className="mt-2 text-[15px] leading-relaxed text-text/85">{theme.blurb}</p>
           <p className="mt-3 text-sm text-muted tnum">
             {videos.length} videos · {themeLength(videos)}
           </p>
@@ -922,7 +921,6 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
                     {videos.length} videos · {themeLength(videos)}
                   </span>
                   <span className="mt-1 text-lg leading-tight font-bold sm:text-xl">{theme.title}</span>
-                  <span className="mt-1 line-clamp-1 text-sm text-white/75">{theme.blurb}</span>
                 </span>
               </Link>
             </li>
@@ -940,7 +938,6 @@ function ThemeRow({ id, now, numbered }: { id: string; now: number; numbered?: b
   const { theme, videos } = t;
   return (
     <Section title={theme.title} action={more(`/collections/${theme.id}`, 'See all')}>
-      <p className="-mt-1 mb-3 text-sm text-muted">{theme.blurb}</p>
       <ol className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={videos}>
           {videos.map((v, i) => (
@@ -956,11 +953,10 @@ function ThemeRow({ id, now, numbered }: { id: string; now: number; numbered?: b
 }
 
 /** Hand of the Day: one hand a day, the same for everyone, wide (picture left, the hand right). */
-function HandOfTheDay({ v, now }: { v?: Video; now: number }) {
+function HandOfTheDay({ v }: { v?: Video }) {
   if (!v) return null;
-  const day = new Date(now).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
   return (
-    <Section title="Hand of the Day" label={day}>
+    <Section title="Hand of the Day">
       <Link to={playAll(v)} onClick={enterFullScreen} className="group grid overflow-hidden rounded-card border border-line bg-surface sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)]">
         <span className="relative block aspect-video overflow-hidden bg-surface-2">
           <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
@@ -973,7 +969,7 @@ function HandOfTheDay({ v, now }: { v?: Video; now: number }) {
         <span className="flex flex-col justify-center gap-2 p-5 sm:p-7">
           <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{v.subtitle}</span>
           <span className="text-2xl leading-tight font-bold sm:text-3xl">{v.title}</span>
-          <span className="text-sm text-muted tnum">{duration(v.durationSec)} · a new hand every day</span>
+          <span className="text-sm text-muted tnum">{duration(v.durationSec)}</span>
           <span className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black group-hover:bg-white/85">
             <Icon name="play" size={16} /> Watch the hand
           </span>
