@@ -73,11 +73,18 @@ export const THEMES: Theme[] = [
     id: 'this-series',
     title: 'Final tables from this series',
     blurb: 'Every bracelet decided so far this summer, newest first.',
-    when: (now) => {
-      const s = currentSeries();
-      return now >= Date.parse(s.start) && now <= Date.parse(s.end) + 14 * 864e5;
-    },
+    when: (now) => inSeason(now),
     rule: () => broadcasts().filter((v) => isFinalTable(v) && eventOf(v)?.seriesId === currentSeries().id).sort(newest),
+  },
+  {
+    id: 'main-event-day-by-day',
+    title: 'Main Event, Day by Day',
+    blurb: 'This year’s Main Event in order, from Day 1 to the final table.',
+    when: (now) => inSeason(now),
+    rule: () =>
+      catalog
+        .filter((v) => (v.kind === 'broadcast' && (v.status === 'vod' || v.status === 'live')) && eventOf(v)?.seriesId === currentSeries().id && /^Main Event/.test(eventOf(v)?.name ?? ''))
+        .sort((a, b) => startOf(a) - startOf(b)),
   },
   {
     id: 'road-to-the-bracelet',
@@ -100,8 +107,14 @@ export const THEMES: Theme[] = [
     rule: () => broadcasts().filter((v) => (eventOf(v)?.buyIn ?? 0) >= 25_000).sort(newest),
   },
   {
+    id: 'plo-and-mixed',
+    title: 'PLO & Mixed Games',
+    blurb: 'Four cards, eight games. For when Hold’em feels too simple.',
+    rule: () => broadcasts().filter((v) => eventOf(v)?.game !== 'No-Limit Hold’em').sort(newest),
+  },
+  {
     id: 'this-time-of-year',
-    title: 'This Time of Year',
+    title: 'This Day in WSOP History',
     blurb: 'Broadcasts from around this date in past WSOP seasons.',
     rule: (now) =>
       broadcasts()
@@ -129,6 +142,8 @@ export const THEMES: Theme[] = [
     blurb: 'Mystery bounties and millionaire makers: the events built for surprises.',
     rule: () => broadcasts().filter((v) => /mystery|millionaire|million\$/i.test(eventOf(v)?.name ?? '')).sort(newest),
   },
+  { id: 'winning-moment', title: 'The Winning Moment', blurb: 'The last hand of the tournament, when the bracelet is decided.', rule: () => clipsTagged('winning-moment') },
+  { id: 'monster-pots', title: 'Monster Pots', blurb: 'The pots everyone at the table remembers.', rule: () => clipsTagged('big-pot') },
   { id: 'legendary-bluffs', title: 'Legendary bluffs', blurb: 'Big lies, bigger pots.', rule: () => clipsTagged('bluff') },
   { id: 'hero-calls', title: 'Hero calls', blurb: 'One pair, one read, all the chips.', rule: () => clipsTagged('hero-call') },
   { id: 'coolers', title: 'Coolers, nowhere to hide', blurb: 'Big hands running into bigger ones.', rule: () => clipsTagged('cooler') },
@@ -136,6 +151,22 @@ export const THEMES: Theme[] = [
 ];
 
 // ---- what's on ----------------------------------------------------------------------------------------------------
+
+/**
+ * Season mode: from the start of the series to two weeks after it ends, Home leads with live play and last night's
+ * final tables; the rest of the year (off-season) it leads with the week's theme and the daily hand.
+ */
+export function inSeason(now = Date.now()) {
+  const s = currentSeries();
+  return now >= Date.parse(s.start) && now <= Date.parse(s.end) + 14 * 864e5;
+}
+
+/** Hand of the Day: one hand clip a day, the same for everyone that day, going through the best hands in turn. */
+export function handOfTheDay(now = Date.now()): Video | undefined {
+  const pool = highlightClips.filter((v) => !hasTag(v, 'winning-moment'));
+  if (!pool.length) return undefined;
+  return pool[Math.floor(now / 864e5) % pool.length];
+}
 
 export type LiveTheme = { theme: Theme; videos: Video[]; seasonal: boolean };
 

@@ -16,8 +16,8 @@ import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } fr
 import { Player } from './Player';
 import { BrowseTabs, PlayersTab, YearsTab } from './browse';
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle, type Art } from '../lib/brand';
-import { byTag, catalog, channelVideo, highlightClips, isLive, recommended, relatedTo, replays, videoById, type Video } from './catalog';
-import { activeThemes, featuredTheme, themeById } from './themes';
+import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, videoById, type Video } from './catalog';
+import { activeThemes, featuredTheme, handOfTheDay, inSeason, themeById } from './themes';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -553,8 +553,11 @@ export { catalog };
 // ---- Home rows ---------------------------------------------------------------------------------------
 
 /**
- * v7 Home rows: Recommended for you, Editor's pick (best final tables), the archive as one tile row (Seasons:
- * one type-only tile per past year), Collections (themes), then Continue watching and My List at the bottom. No Shorts, no Latest replays.
+ * v7 Home rows, programmed like a sports network (see ./themes.ts):
+ * - in season (the series and two weeks after): the featured theme (this series' final tables), Main Event day by
+ *   day, Hand of the Day;
+ * - off-season: the week's featured theme, Hand of the Day, This Day in WSOP History;
+ * then Editor's pick, Seasons, the Collections shelf, and Continue watching and My List at the bottom.
  */
 export function HomeRows() {
   const { state, set, toast, signedIn } = useApp();
@@ -589,15 +592,32 @@ export function HomeRows() {
   };
   const myRow = take(mine, 4);
   const picks = take(editorsFinalTables(), 3);
-  const recs = take(recommended, 4);
+  // The programming follows the calendar (see ./themes.ts). `?date=2026-11-10` shows Home as it reads on that day.
+  const [params] = useSearchParams();
+  const now = Date.parse(params.get('date') ?? '') || Date.now();
+  const season = inSeason(now);
+  // Themes with their own row here stay out of the featured spot and the shelf.
+  const ownRow = season ? 'main-event-day-by-day' : 'this-time-of-year';
+  const placed = [EDITORS_THEME, ownRow];
+  const hand = handOfTheDay(now);
   return (
     <>
-      {/* Recommended for you takes the place of Coming up (the schedule has the next broadcasts). */}
-      <VideoRow title="Recommended for you" videos={recs} />
-      <FeaturedTheme />
+      {/* No "Recommended for you": every row says why it is there. */}
+      <FeaturedTheme now={now} skip={placed} />
+      {season ? (
+        <>
+          <ThemeRow id={ownRow} now={now} numbered />
+          <HandOfTheDay v={hand} now={now} />
+        </>
+      ) : (
+        <>
+          <HandOfTheDay v={hand} now={now} />
+          <ThemeRow id={ownRow} now={now} />
+        </>
+      )}
       <EditorsPick picks={picks} />
       <SeasonTiles />
-      <ThemeShelf skip={shown} />
+      <ThemeShelf skip={shown} now={now} placed={placed} />
       {/* Personal rows last. */}
       <ContinueRow items={continuing} onRemove={removeContinue} />
       <MyListRow videos={myRow} />
@@ -839,8 +859,8 @@ const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: 'Right now', w
  * The featured theme on Home: one wide card (title, note, how long, Play all) with its first videos beside it. Which
  * theme it is comes from ./themes.ts: the operator's pin, a seasonal theme while it's on, or the weekly rotation.
  */
-function FeaturedTheme() {
-  const f = featuredTheme(Date.now(), [EDITORS_THEME]);
+function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
+  const f = featuredTheme(now, skip);
   if (!f) return null;
   const { theme, videos } = f;
   const first = videos.slice(0, 3);
@@ -882,10 +902,9 @@ function FeaturedTheme() {
  * Every other theme on show, as a shelf of covers (title, note, how many videos); each opens its page. Filled by
  * ./themes.ts, so a new theme appears here on its own and one with too few videos drops out.
  */
-function ThemeShelf({ skip }: { skip: Set<string> }) {
-  const now = Date.now();
-  const featured = featuredTheme(now, [EDITORS_THEME])?.theme.id;
-  const list = activeThemes(now).filter((x) => x.theme.id !== EDITORS_THEME && x.theme.id !== featured);
+function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; placed: string[] }) {
+  const featured = featuredTheme(now, placed)?.theme.id;
+  const list = activeThemes(now).filter((x) => !placed.includes(x.theme.id) && x.theme.id !== featured);
   if (!list.length) return null;
   const pick = photoPicker(skip);
   return (
@@ -910,6 +929,56 @@ function ThemeShelf({ skip }: { skip: Set<string> }) {
           );
         })}
       </ul>
+    </Section>
+  );
+}
+
+/** One theme as its own Home row: title, its note, the videos in order (numbered for a run like Day 1 → final table). */
+function ThemeRow({ id, now, numbered }: { id: string; now: number; numbered?: boolean }) {
+  const t = activeThemes(now).find((x) => x.theme.id === id);
+  if (!t) return null;
+  const { theme, videos } = t;
+  return (
+    <Section title={theme.title} action={more(`/collections/${theme.id}`, 'See all')}>
+      <p className="-mt-1 mb-3 text-sm text-muted">{theme.blurb}</p>
+      <ol className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        <BadgeScope videos={videos}>
+          {videos.map((v, i) => (
+            <li key={v.id} className="min-w-0">
+              {numbered && <span className="mb-1.5 block text-xs font-bold text-muted tnum">{String(i + 1).padStart(2, '0')}</span>}
+              <VideoCard v={v} />
+            </li>
+          ))}
+        </BadgeScope>
+      </ol>
+    </Section>
+  );
+}
+
+/** Hand of the Day: one hand a day, the same for everyone, wide (picture left, the hand right). */
+function HandOfTheDay({ v, now }: { v?: Video; now: number }) {
+  if (!v) return null;
+  const day = new Date(now).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return (
+    <Section title="Hand of the Day" label={day}>
+      <Link to={playAll(v)} onClick={enterFullScreen} className="group grid overflow-hidden rounded-card border border-line bg-surface sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)]">
+        <span className="relative block aspect-video overflow-hidden bg-surface-2">
+          <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+          <span className="absolute inset-0 grid place-items-center bg-black/20 transition-colors group-hover:bg-black/35" aria-hidden>
+            <span className="grid size-14 place-items-center rounded-full bg-white/90 text-black">
+              <Icon name="play" size={24} />
+            </span>
+          </span>
+        </span>
+        <span className="flex flex-col justify-center gap-2 p-5 sm:p-7">
+          <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{v.subtitle}</span>
+          <span className="text-2xl leading-tight font-bold sm:text-3xl">{v.title}</span>
+          <span className="text-sm text-muted tnum">{duration(v.durationSec)} · a new hand every day</span>
+          <span className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black group-hover:bg-white/85">
+            <Icon name="play" size={16} /> Watch the hand
+          </span>
+        </span>
+      </Link>
     </Section>
   );
 }
