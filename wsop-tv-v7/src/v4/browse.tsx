@@ -253,8 +253,8 @@ export function YearsTab() {
 
 /** The Classics' own broadcast stills (public/classics, from the NAS: classic-<year>-<a|b>.jpg), first per year. */
 const CLASSIC_STILLS = '1973a 1978a 1979a 1981a 1983a 1987a 1988a 1989a 1990a 1991a 1992a 1993a 1994a 1995a 1997a 1998a 1999b 2000a 2001b 2002a'.split(' ');
-/** A modern season's tile photo: a frame of that year's own broadcast (public/frames/year-<year>.jpg, from the NAS). */
-export const seasonPhoto = (year: number) => `${import.meta.env.BASE_URL}frames/year-${year}.jpg`;
+/** A modern season's tile photo: its Main Event champion at the winning moment (public/frames/champ-<year>.jpg, from the final table on the NAS), as F1 TV shows each season's champion; other years a frame of their own broadcast. */
+export const seasonPhoto = (year: number) => `${import.meta.env.BASE_URL}frames/${year >= 2003 && year <= 2024 ? 'champ' : 'year'}-${year}.jpg`;
 const yearRowGrid = 'gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]';
 
 /** A season as F1 TV draws one: the picture, the year large across it, and what it holds underneath. */
@@ -263,10 +263,10 @@ export function YearPhotoTile({ year, art, to, line, play }: { year: number; art
     <Link to={to} onClick={play ? enterFullScreen : undefined} className="group block">
       <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2 [container-type:inline-size]">
         <img src={art} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
-        <span className="absolute inset-0 bg-black/25" aria-hidden />
+        <span className="absolute inset-0 bg-black/15" aria-hidden />
         {/* F1 TV's season tile: the year huge and see-through, so the champion's moment shows through it. */}
         <span className="absolute inset-0 grid place-items-center">
-          <span className="font-display text-[38cqw] leading-none font-bold tracking-tight text-white/55 tnum">{year}</span>
+          <span className="font-display text-[36cqw] leading-none font-bold tracking-tight text-white/45 tnum">{year}</span>
         </span>
         {play && (
           <span className="absolute right-2 bottom-2 grid size-8 place-items-center rounded-full bg-white/90 text-black" aria-hidden>
