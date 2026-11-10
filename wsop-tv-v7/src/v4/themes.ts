@@ -161,21 +161,17 @@ export function inSeason(now = Date.now()) {
   return now >= Date.parse(s.start) && now <= Date.parse(s.end) + 14 * 864e5;
 }
 
-/** Hand of the Day: one hand clip a day, the same for everyone that day, going through the best hands in turn. */
-export function handOfTheDay(now = Date.now()): Video | undefined {
-  const pool = highlightClips.filter((v) => !hasTag(v, 'winning-moment'));
-  if (!pool.length) return undefined;
-  return pool[Math.floor(now / 864e5) % pool.length];
-}
-
-/** Hands of the Week: the last seven days' hands of the day, today's first (one new hand joins each day). */
-export function handsOfTheWeek(now = Date.now()): Video[] {
-  const out: Video[] = [];
-  for (let d = 0; d < 7; d++) {
-    const v = handOfTheDay(now - d * 864e5);
-    if (v && !out.includes(v)) out.push(v);
-  }
-  return out;
+/**
+ * The hands row, by where the hands come from rather than by the calendar: in season, Latest Hands (the most recent
+ * broadcasts first, so it changes as each final table finishes); off-season, Best of the <year> WSOP (the last
+ * series' hands, most watched first).
+ */
+export function homeHands(now = Date.now()): { title: string; videos: Video[] } {
+  const s = currentSeries();
+  const own = highlightClips.filter((v) => eventOf(v)?.seriesId === s.id && startOf(v) <= now);
+  return inSeason(now)
+    ? { title: 'Latest Hands', videos: [...own].sort((a, b) => startOf(b) - startOf(a) || b.views - a.views) }
+    : { title: `Best of the ${s.name.slice(0, 4)} WSOP`, videos: own };
 }
 
 export type LiveTheme = { theme: Theme; videos: Video[]; seasonal: boolean };

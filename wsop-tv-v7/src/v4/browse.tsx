@@ -14,6 +14,7 @@ import { money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle } from '../lib/brand';
 import { catalog, isLive, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
+import { HALL_OF_FAME } from './halloffame';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
 /** The demo's live series: the 2025 World Series of Poker in Las Vegas, reconstructed from the real broadcasts. */
@@ -439,8 +440,37 @@ export function PlayersTab() {
           ]}
         />
       </div>
+      {/* Poker Hall of Fame (WSOP.com's list), by class, newest first. */}
+      <section aria-label="Poker Hall of Fame" className="mt-8">
+        <h2 className="text-xl sm:text-2xl">Poker Hall of Fame</h2>
+        <p className="mt-1 text-sm text-muted">Inducted since 1979 · WSOP.com</p>
+        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          {HALL_OF_FAME.map((x) => {
+            const body = (
+              <span className="flex h-full flex-col justify-between gap-4 rounded-card border border-line bg-surface p-4">
+                <span className="flex items-start justify-between gap-2">
+                  <span className="font-display text-2xl leading-none tnum">{x.year}</span>
+                  <span className="text-xs font-semibold text-muted">{x.cc}</span>
+                </span>
+                <span className="line-clamp-2 text-sm leading-snug font-bold group-hover:text-gold-strong">{x.name}</span>
+              </span>
+            );
+            return (
+              <li key={x.name} className="min-w-0">
+                {x.to ? (
+                  <Link to={x.to} className="group block h-full [&>span]:hover:border-white/40">
+                    {body}
+                  </Link>
+                ) : (
+                  <div className="h-full">{body}</div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
       {legends.length > 0 && (
-        <section aria-label="Bracelet legends" className="mt-8">
+        <section aria-label="Bracelet legends" className="mt-10">
           <h2 className="text-xl sm:text-2xl">Bracelet legends</h2>
           <p className="mt-1 text-sm text-muted">The most WSOP bracelets of all time</p>
           <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">

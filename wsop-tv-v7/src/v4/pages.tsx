@@ -5,7 +5,7 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-r
 import { useApp, useTick } from '../state/app';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
-import { HERO_DAY_ID, classicEvents, dayById, eventById, events, isClassicEvent, players, series, seriesById } from '../data/mock';
+import { HERO_DAY_ID, classicEvents, dayById, eventById, events, isClassicEvent, playerById, players, seatsFor, series, seriesById } from '../data/mock';
 import type { Day, TourEvent } from '../data/types';
 import { VENUE_TZ, fmtDate, fmtTime, tzAbbr } from '../lib/time';
 import { isBroadcasting } from '../lib/broadcast';
@@ -19,7 +19,8 @@ import { BrowseTabs, PlayersTab, SeasonTile, YearsTab, pastSeasons } from './bro
 const CURRENT_SEASON = 2025;
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, videoById, type Video } from './catalog';
-import { activeThemes, featuredTheme, handsOfTheWeek, inSeason, themeById } from './themes';
+import { activeThemes, featuredTheme, homeHands, inSeason, themeById } from './themes';
+import { HALL_OF_FAME } from './halloffame';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -491,7 +492,7 @@ export function TagPage() {
 
 // ---- Videos ------------------------------------------------------------------------------------------
 
-/** Browse (as v8): Years and Players. Hand clips have no page of their own (Home's Hands of the Week and the themes carry them). */
+/** Browse (as v8): Years and Players. Hand clips have no page of their own (Home's hands row and the themes carry them). */
 export function VideosPage({ tab }: { tab: 'years' | 'players' }) {
   return (
     <Page className="max-w-[96rem]">
@@ -510,8 +511,8 @@ export { catalog };
 /**
  * v7 Home rows, programmed like a sports network (see ./themes.ts):
  * - in season (the series and two weeks after): the featured theme (this series' final tables), Main Event day by
- *   day, Hands of the Week;
- * - off-season: the week's featured theme, Hands of the Week, This Day in WSOP History;
+ *   day, Latest Hands, The Final Nine (the Main Event final table: who's in, with chips; who's out, where);
+ * - off-season: the week's featured theme, Best of the <year> WSOP, This Day in WSOP History, Poker Hall of Fame;
  * then Seasons, the Collections shelf (six themes), and Continue watching and My List at the bottom.
  */
 export function HomeRows() {
@@ -553,7 +554,7 @@ export function HomeRows() {
   // Themes with their own row here stay out of the featured spot and the shelf.
   const ownRow = season ? 'main-event-day-by-day' : 'this-time-of-year';
   const placed = [EDITORS_THEME, ownRow];
-  const hands = handsOfTheWeek(now);
+  const hands = homeHands(now);
   return (
     <>
       {/* No "Recommended for you": every row says why it is there. */}
@@ -561,12 +562,14 @@ export function HomeRows() {
       {season ? (
         <>
           <ThemeRow id={ownRow} now={now} />
-          <VideoRow title="Hands of the Week" videos={hands} />
+          <VideoRow title={hands.title} videos={hands.videos} />
+          <FinalNine />
         </>
       ) : (
         <>
-          <VideoRow title="Hands of the Week" videos={hands} />
+          <VideoRow title={hands.title} videos={hands.videos} />
           <ThemeRow id={ownRow} now={now} />
+          <HallOfFameRow />
         </>
       )}
       <SeasonTiles />
@@ -575,6 +578,84 @@ export function HomeRows() {
       <ContinueRow items={continuing} onRemove={removeContinue} />
       <MyListRow videos={myRow} />
     </>
+  );
+}
+
+// ---- players on Home ---------------------------------------------------------------------------------
+
+/** 151,400,000 → 151.4M */
+const chipsShort = (n: number) => (n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : `${Math.round(n / 1e3)}K`);
+
+/** A player card: type only (no photos yet), the name large, a line of fact under it. */
+function PlayerTile({ to, rank, name, cc, line, out }: { to?: string; rank: string; name: string; cc: string; line: string; out?: boolean }) {
+  const body = (
+    <span className={cx('flex h-full flex-col justify-between gap-5 rounded-card border border-line bg-surface p-4 transition-colors', to && 'group-hover:border-white/40 group-hover:bg-surface-2', out && 'opacity-60')}>
+      <span className="flex items-start justify-between gap-2">
+        <span className="font-display text-3xl leading-none tnum">{rank}</span>
+        <span className="text-xs font-semibold text-muted">{cc}</span>
+      </span>
+      <span className="min-w-0">
+        <span className="line-clamp-2 text-[15px] leading-snug font-bold group-hover:text-gold-strong">{name}</span>
+        <span className="mt-1 block truncate text-xs text-muted tnum">{line}</span>
+      </span>
+    </span>
+  );
+  return to ? (
+    <Link to={to} className="group block h-full">
+      {body}
+    </Link>
+  ) : (
+    <div className="h-full">{body}</div>
+  );
+}
+
+const playerRowGrid = 'hscroll gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-3*0.75rem)/4)] lg:[&>*]:w-[calc((100%-8*0.75rem)/9)]';
+
+/**
+ * The Final Nine (in season): the Main Event final table at the demo moment — the players still in by chips, then
+ * those already out, with their place and prize (2025 results; the stacks are the broadcast graphic's).
+ */
+function FinalNine() {
+  const main = eventById('lv-main');
+  if (!main) return null;
+  const seats = seatsFor(HERO_DAY_ID);
+  const out = players
+    .flatMap((p) => p.recent.filter((r) => r.eventId === main.id).map((r) => ({ p, r })))
+    .sort((a, b) => a.r.place - b.r.place);
+  return (
+    <Section title="The Final Nine" action={more(`/watch/${HERO_DAY_ID}`, 'Watch live')}>
+      <ul className={playerRowGrid}>
+        {seats.map((s, i) => {
+          const p = playerById(s.playerId);
+          return (
+            <li key={p.id} className="min-w-0">
+              <PlayerTile to={`/videos/players/${p.id}`} rank={String(i + 1)} name={p.name} cc={p.cc} line={`${chipsShort(s.stack)} chips`} />
+            </li>
+          );
+        })}
+        {out.map(({ p, r }) => (
+          <li key={p.id} className="min-w-0">
+            <PlayerTile out to={`/videos/players/${p.id}`} rank={`${r.place}th`} name={p.name} cc={p.cc} line={`Out · ${money(r.prize)}`} />
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+/** Poker Hall of Fame (off-season): the latest classes from WSOP.com's list, newest first; legends open their page. */
+function HallOfFameRow() {
+  const list = HALL_OF_FAME.slice(0, 12);
+  return (
+    <Section title="Poker Hall of Fame" action={more('/videos/players', 'All players')}>
+      <ul className={playerRowGrid}>
+        {list.map((x) => (
+          <li key={x.name} className="min-w-0">
+            <PlayerTile to={x.to} rank={String(x.year)} name={x.name} cc={x.cc} line={x.country} />
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
 
