@@ -18,7 +18,7 @@ import { BrowseTabs, PlayersTab, SeasonTile, YearsTab, pastSeasons } from './bro
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
-import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, videoById, type Video } from './catalog';
+import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
 import { activeThemes, featuredTheme, homeHands, inSeason, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
 import { DaySchedule, OtherYearsSection, otherYears } from './loop';
@@ -1175,7 +1175,7 @@ const eventVideos = (id: string) => catalog.filter((v) => v.eventId === id && v.
 export function EventCard({ e }: { e: TourEvent }) {
   const { state } = useApp();
   const list = eventVideos(e.id);
-  const cover = list.find((v) => v.title.endsWith('Final Table')) ?? list[list.length - 1];
+  const cover = list.find((v) => stageOf(v) === 'Final Table') ?? list[list.length - 1];
   const art = cover ? { src: cover.thumb, pos: cover.thumbPos, fit: cover.thumbFit } : dayArt(e, e.days[0]);
   const ahead = e.days.filter((d) => d.status === 'upcoming').length;
   // Replays only: a broadcast that is on air now is not counted, and the card carries no LIVE tag.

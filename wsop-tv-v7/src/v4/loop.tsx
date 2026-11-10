@@ -9,7 +9,7 @@ import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
 import { artStyle } from '../lib/brand';
 import { ARCHIVE, LEGENDS, RECURRING, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, type ArchiveEvent, type ArchiveSeries } from './archive';
-import { catalog, type Video } from './catalog';
+import { catalog, stageOf, type Video } from './catalog';
 
 /** One event, whichever data it comes from (the live 2025 series or the archive). */
 export interface EventItem {
@@ -49,7 +49,7 @@ export function playerLink(name: string): string | undefined {
 /** An event of the live series as a list item. */
 export function liveItem(e: TourEvent): EventItem {
   const days = catalog.filter((v) => v.eventId === e.id && (v.kind === 'broadcast' || v.kind === 'classic'));
-  const final = days.find((v) => /Final Table/.test(v.title) || v.kind === 'classic');
+  const final = days.find((v) => stageOf(v) === 'Final Table' || v.kind === 'classic');
   const ft = e.days.find((d) => d.label === 'Final Table');
   const winner = e.winnerId ? players.find((p) => p.id === e.winnerId) : undefined;
   return {
@@ -213,7 +213,7 @@ export const scheduleOrder = (a: EventItem, b: EventItem) => (a.number ?? 999) -
 /** The broadcast days of an event as a schedule strip (F1 TV's weekend schedule): a chip a day, each plays it. */
 export function DaySchedule({ videos, isLiveNow }: { videos: Video[]; isLiveNow: (v: Video) => boolean }) {
   if (videos.length < 2) return null;
-  const label = (v: Video) => v.title.split(' · ').pop() ?? v.title;
+  const label = stageOf;
   const hm = (s: number) => `${Math.floor(s / 3600)}h${String(Math.round((s % 3600) / 60)).padStart(2, '0')}`;
   return (
     <section aria-label="Schedule">

@@ -12,7 +12,7 @@ import { HERO_DAY_ID, classicEvents, events, players, seatsFor, seriesById } fro
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle } from '../lib/brand';
-import { catalog, highlightClips, isLive, videoById, type Video } from './catalog';
+import { catalog, highlightClips, isLive, stageOf, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { HALL_OF_FAME } from './halloffame';
 import { DaySchedule, EventRows, EventTile, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, scheduleOrder, type EventItem } from './loop';
@@ -255,7 +255,7 @@ export function YearPage() {
         name: s.name,
         cards: s.events.map((e: TourEvent) => {
           const v = catalog.find((x) => x.eventId === e.id && x.kind === 'broadcast');
-          const ft = catalog.find((x) => x.eventId === e.id && x.kind === 'broadcast' && /Final Table/.test(x.title) && (x.status === 'vod' || isLive(x, streamMode)));
+          const ft = catalog.find((x) => x.eventId === e.id && x.kind === 'broadcast' && stageOf(x) === 'Final Table' && (x.status === 'vod' || isLive(x, streamMode)));
           return {
             id: e.id,
             to: `/events/${e.id}`,

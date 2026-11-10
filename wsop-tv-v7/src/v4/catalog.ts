@@ -112,6 +112,24 @@ const shortMoney = (n: number) => '$' + (n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` 
 const dayLine = (e: TourEvent, d: Day) =>
   d.label === 'Final Table' ? `${entries(e)} · ${shortMoney(e.firstPrize)} to the winner` : `${new Date(d.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: VENUE_TZ })} · ${entries(e)}`;
 
+/**
+ * Recap titles, as NBA titles its videos (the player and what happened first): a decided final table leads with its
+ * winner ("Michael Wang wins the $10,000 Pot-Limit Omaha Championship"); the live Main Event final table says who
+ * leads and how many are left; other days keep the event and the day. Facts only: winners and the leader are data.
+ */
+function recapTitle(e: TourEvent, d: Day): string {
+  const name = e.seriesId === 'classics' ? e.name.replace(/ Final Table$/, '') : short(e);
+  if (d.label !== 'Final Table') return `${name} · ${d.label}`;
+  if (e.winnerId) return `${playerById(e.winnerId).name} wins the ${name}`;
+  if (d.id === HERO_DAY && e.leaderId) return `${name} Final Table · ${playerById(e.leaderId).name.split(' ').slice(-1)[0]} leads, ${e.remaining} left`;
+  return `${name} · Final Table`;
+}
+
+/** The stage of a broadcast (Day 1A … Final Table): from its day, not its title (titles lead with the story). */
+export function stageOf(v: Video): string {
+  return (v.dayId && dayById(v.dayId)?.day.label) || v.title.split(' · ').pop() || v.title;
+}
+
 function dayVideo(e: TourEvent, d: Day, i: number): Video {
   const classic = e.seriesId === 'classics';
   const a = classic ? archive.find((x) => `classic-${x.id}` === e.id) : undefined;
@@ -119,9 +137,9 @@ function dayVideo(e: TourEvent, d: Day, i: number): Video {
   return {
     id: d.id,
     kind: classic ? 'classic' : 'broadcast',
-    title: classic ? e.name : `${short(e)} · ${d.label}`,
+    title: recapTitle(e, d),
     // The line under the title says why it's worth watching: a final table's field and first prize; another day's date and field.
-    subtitle: classic ? (a?.subtitle ?? 'WSOP Classics') : dayLine(e, d),
+    subtitle: dayLine(e, d),
     description: classic
       ? `${a?.subtitle ?? ''}. The full final table from the ${e.name.slice(0, 4)} WSOP, edited for on-demand viewing.`
       : d.label === 'Final Table'
@@ -263,7 +281,7 @@ export function relatedTo(v: Video, n = 10): Video[] {
   const same = v.eventId ? catalog.filter((x) => !self(x) && x.eventId === v.eventId).sort((a, b) => airedAt(b) - airedAt(a) || Number(a.kind === 'clip') - Number(b.kind === 'clip') || b.views - a.views) : [];
   // The loop after this event: its winner's other final tables, then the series' other final tables, newest first.
   const ev = v.dayId ? dayById(v.dayId)?.event : undefined;
-  const isFinal = (x: Video) => x.kind === 'broadcast' && /Final Table/.test(x.title) && x.eventId !== v.eventId;
+  const isFinal = (x: Video) => x.kind === 'broadcast' && stageOf(x) === 'Final Table' && x.eventId !== v.eventId;
   const evOf = (x: Video) => (x.dayId ? dayById(x.dayId)?.event : undefined);
   const winners = ev?.winnerId ? catalog.filter((x) => isFinal(x) && evOf(x)?.winnerId === ev.winnerId) : [];
   const seriesFinals = ev ? catalog.filter((x) => isFinal(x) && evOf(x)?.seriesId === ev.seriesId && !winners.includes(x)).sort((a, b) => airedAt(b) - airedAt(a)) : [];
