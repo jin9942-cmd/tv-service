@@ -166,16 +166,16 @@ export function inSeason(now = Date.now()) {
 }
 
 /**
- * The hands row, by where the hands come from rather than by the calendar: in season, Latest Hands (the most recent
- * broadcasts first, so it changes as each final table finishes); off-season, Best of the <year> WSOP (the last
+ * The hands row, by where the hands come from rather than by the calendar: in season, Key Hands (the same name as an event page's row; the most recent
+ * broadcasts first, so it changes as each final table finishes); off-season, Key Hands of the <year> WSOP (the last
  * series' hands, most watched first).
  */
 export function homeHands(now = Date.now()): { title: string; videos: Video[] } {
   const s = currentSeries();
   const own = highlightClips.filter((v) => eventOf(v)?.seriesId === s.id && startOf(v) <= now);
   return inSeason(now)
-    ? { title: 'Latest Hands', videos: [...own].sort((a, b) => startOf(b) - startOf(a) || b.views - a.views) }
-    : { title: `Best of the ${s.name.slice(0, 4)} WSOP`, videos: own };
+    ? { title: 'Key Hands', videos: [...own].sort((a, b) => startOf(b) - startOf(a) || b.views - a.views) }
+    : { title: `Key Hands of the ${s.name.slice(0, 4)} WSOP`, videos: own };
 }
 
 export type LiveTheme = { theme: Theme; videos: Video[]; seasonal: boolean };

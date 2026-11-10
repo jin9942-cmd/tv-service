@@ -513,8 +513,8 @@ export { catalog };
 /**
  * v7 Home rows, programmed like a sports network (see ./themes.ts):
  * - in season (the series and two weeks after): the featured theme (this series' final tables), Main Event day by
- *   day, Latest Hands (no chip-count rows: the launch service has no chip feed);
- * - off-season: the week's featured theme, Best of the <year> WSOP, This Day in WSOP History, Poker Hall of Fame;
+ *   day, Key Hands (no chip-count rows: the launch service has no chip feed);
+ * - off-season: the week's featured theme, Key Hands of the <year> WSOP, This Day in WSOP History, Poker Hall of Fame;
  * then Seasons, the Collections shelf (six themes), and Continue watching and My List at the bottom.
  */
 export function HomeRows() {
@@ -1473,7 +1473,7 @@ export function EventPage() {
           ))}
         </div>
       </section>
-      <VideoRow title="Key hands" videos={clips} action={<Link to={`/tag/event-${e.id}`} className="text-sm font-semibold text-muted hover:text-text">All videos →</Link>} />
+      <VideoRow title="Key Hands" videos={clips} action={<Link to={`/tag/event-${e.id}`} className="text-sm font-semibold text-muted hover:text-text">All videos →</Link>} />
       {/* The same event in other years (the loop: event → another event). */}
       <OtherYearsSection items={otherYears(e.name, /main event/i.test(e.name) ? 'Main Event' : 'Open', 'lv', e.id)} />
     </Page>
