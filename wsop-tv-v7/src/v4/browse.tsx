@@ -15,7 +15,7 @@ import { TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle } from '../lib/brand';
 import { catalog, highlightClips, isLive, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { HALL_OF_FAME } from './halloffame';
-import { EventRows, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, type EventItem } from './loop';
+import { DaySchedule, EventRows, EventTile, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, scheduleOrder, type EventItem } from './loop';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
 /** The demo's live series: the 2025 World Series of Poker in Las Vegas, reconstructed from the real broadcasts. */
@@ -302,62 +302,20 @@ export function YearPage() {
   const castsOf = (s: { cards: Card[] }) => s.cards.reduce((n, c) => n + c.days, 0);
   const lineOf = (s: { cards: Card[] }) => `${s.cards.length} event${s.cards.length === 1 ? '' : 's'} · ${daysNote(castsOf(s))}`;
 
-  // ---- the year: its series, as a season calendar (a year with one series opens it straight away) ----
-  if (!seriesKey) {
-    if (seriesList.length === 1) return <Navigate to={`/videos/year/${y}/${seriesList[0].key}`} replace />;
-    return (
-      <Page className="max-w-[96rem]">
-        {back('/videos', 'Years')}
-        <h1 className="mt-3 text-title">{y} WSOP</h1>
-        <p className="mt-1 text-sm text-muted tnum">
-          {seriesList.length} series · {arch ? yearSize(arch).line : 'live and on demand'}
-        </p>
-        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {seriesList.map((s) => {
-            const live = s.cards.some((c) => c.live);
-            const champ = s.key === 'lv' ? arch?.champion : null;
-            return (
-              <li key={s.key} className="min-w-0">
-                <Link
-                  to={`/videos/year/${y}/${s.key}`}
-                  className="group relative flex aspect-[4/3] flex-col justify-between overflow-hidden rounded-card border border-white/10 bg-[radial-gradient(120%_90%_at_100%_0%,rgba(212,175,55,0.18),transparent_60%),linear-gradient(160deg,#1a1712,#0b0b0b)] p-5 transition-colors hover:border-white/40"
-                >
-                  <span className="flex items-center gap-2">
-                    <img src={WSOP_LOGO} alt="" className="h-5 w-auto opacity-90" />
-                    {live && <LiveTag />}
-                  </span>
-                  <span>
-                    <span className="block text-xs font-bold tracking-wide text-gold-strong uppercase">{s.name}</span>
-                    <span className="mt-1 block text-2xl leading-tight font-black group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4">{titleOf(s)}</span>
-                    <span className="mt-2 block text-sm text-muted tnum">{lineOf(s)}</span>
-                    {champ && (
-                      <span className="mt-1 block text-sm text-text/85">
-                        Main Event · {champ.name} <CountryCode cc={champ.cc} />
-                      </span>
-                    )}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </Page>
-    );
-  }
-
-  // ---- one series, laid out like a race weekend: the Main Event, its days, the final tables, the hands, then
-  // interviews and features (planned), then every bracelet event ----
-  const current = seriesList.find((s) => s.key === seriesKey);
+  // ---- a season page, as F1 TV lays out a season: the headline (the Main Event), the other series of the year, the
+  // events in schedule order as tiles, the hands, then interviews and features (planned). The year opens its main
+  // series (Las Vegas); the others have their own page with the same layout. ----
+  const current = (seriesKey ? seriesList.find((s) => s.key === seriesKey) : (seriesList.find((s) => s.key === 'lv') ?? seriesList[0]));
   if (!current) return <Navigate to={`/videos/year/${y}`} replace />;
+  const isMainSeries = current === (seriesList.find((s) => s.key === 'lv') ?? seriesList[0]);
+  if (seriesKey && isMainSeries) return <Navigate to={`/videos/year/${y}`} replace />;
+  const siblings = seriesList.filter((s) => s !== current);
   const main = current.cards.find((c) => c.kind === 'Main Event');
-  const mainRef = main && !isCurrent ? archiveEvent(main.id) : undefined;
-  const mainDays: Video[] = main ? (mainRef ? broadcastsOf(mainRef) : catalog.filter((v) => v.eventId === main.id && v.kind === 'broadcast')) : [];
   const others = current.cards.filter((c) => c !== main);
-  // The event list (one template: play · event · winner), newest first.
   const archSeries = arch?.series.find((x) => x.key === current.key);
-  const items: EventItem[] = others
+  const tiles: EventItem[] = others
     .map((c) => (isCurrent ? liveItem(events.find((e) => e.id === c.id)!) : archiveItem(y, archSeries!, archSeries!.events.find((e) => e.id === c.id)!)))
-    .sort(newestFirst);
+    .sort(scheduleOrder);
   const ids = new Set(current.cards.map((c) => c.id));
   const hands: Video[] = isCurrent
     ? highlightClips.filter((v) => v.eventId && ids.has(v.eventId))
@@ -369,13 +327,13 @@ export function YearPage() {
   const playable = (v: Video) => (isLive(v, streamMode) ? {} : playsFull(v));
   return (
     <Page className="max-w-[96rem]">
-      {back(seriesList.length > 1 ? `/videos/year/${y}` : '/videos', seriesList.length > 1 ? `${y} WSOP` : 'Years')}
-      <p className="mt-3 text-xs font-bold tracking-wide text-gold-strong uppercase">{current.name}</p>
+      {back(isMainSeries ? '/videos' : `/videos/year/${y}`, isMainSeries ? 'Years' : `${y} season`)}
+      <p className="mt-3 text-xs font-bold tracking-wide text-gold-strong uppercase">{isMainSeries ? `${y} season` : current.name}</p>
       <h1 className="mt-1 text-title">{titleOf(current)}</h1>
       {arch?.classic && <p className="mt-1 text-xs font-bold tracking-wide text-gold-strong uppercase">WSOP Classics · Binion’s Horseshoe</p>}
       <p className="mt-1 text-sm text-muted tnum">{isCurrent ? `${lineOf(current)} · live and on demand` : lineOf(current)}</p>
 
-      {/* Main Event: one card, the picture and what it is; one button to watch, the title opens the event. */}
+      {/* The headline (F1 TV's season review): the Main Event. One button to watch; the title opens the event. */}
       {main && (
         <section aria-label="Main Event" className="mt-6">
           <div className="grid overflow-hidden rounded-panel border border-line bg-surface lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
@@ -395,7 +353,7 @@ export function YearPage() {
               <p className="mt-1 text-sm text-muted">{[main.buyLabel, main.game, daysNote(main.days)].filter(Boolean).join(' · ')}</p>
               {arch?.champion && current.key === 'lv' ? (
                 <p className="mt-4 text-[15px]">
-                  Champion · <span className="font-semibold">{arch.champion.name}</span> <CountryCode cc={arch.champion.cc} />
+                  Champion · {playerLink(arch.champion.name) ? <Link to={playerLink(arch.champion.name)!} className="font-semibold text-gold-strong hover:underline">{arch.champion.name}</Link> : <span className="font-semibold">{arch.champion.name}</span>} <CountryCode cc={arch.champion.cc} />
                 </p>
               ) : (
                 main.live && <p className="mt-4 text-[15px] font-semibold">The final table is on air now</p>
@@ -414,14 +372,47 @@ export function YearPage() {
         </section>
       )}
 
-      <SeriesRow title="Main Event, day by day" videos={mainDays.length > 1 ? mainDays : []} play={playable} />
-      {items.length > 0 && (
-        <section aria-label="Events" className="mt-10">
-          <h2 className="text-xl sm:text-2xl">Events</h2>
-          <p className="mt-1 mb-4 text-sm text-muted">Newest first · play the final table, open the event, or follow the winner</p>
-          <EventRows items={items} />
+      {/* The other series of the year (F1 TV's F2 / F3 tiles). */}
+      {siblings.length > 0 && (
+        <section aria-label={`Also in ${y}`} className="mt-10">
+          <h2 className="text-xl sm:text-2xl">Also in {y}</h2>
+          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {siblings.map((s) => {
+              const isMain = s === (seriesList.find((x) => x.key === 'lv') ?? seriesList[0]);
+              return (
+                <li key={s.key} className="min-w-0">
+                  <Link
+                    to={isMain ? `/videos/year/${y}` : `/videos/year/${y}/${s.key}`}
+                    className="flex h-full flex-col justify-between gap-6 rounded-card border border-white/10 bg-[radial-gradient(120%_90%_at_100%_0%,rgba(212,175,55,0.16),transparent_60%),linear-gradient(160deg,#1a1712,#0b0b0b)] p-4 transition-colors hover:border-white/40"
+                  >
+                    <img src={WSOP_LOGO} alt="" className="h-4 w-auto self-start opacity-90" />
+                    <span>
+                      <span className="block font-bold">{titleOf(s)}</span>
+                      <span className="mt-0.5 block text-xs text-muted tnum">{lineOf(s)}</span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </section>
       )}
+
+      {/* The events in schedule order (F1 TV's Grand Prix grid), each opening its event page. */}
+      {tiles.length > 0 && (
+        <section aria-label="Events" className="mt-10">
+          <h2 className="text-xl sm:text-2xl">{y} {current.name === 'Las Vegas' ? 'WSOP' : current.name} events</h2>
+          <p className="mt-1 text-sm text-muted">In schedule order</p>
+          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {tiles.map((x) => (
+              <li key={x.id} className="min-w-0">
+                <EventTile x={x} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <SeriesRow title="Highlights" videos={hands} play={playable} />
       {SHOW_PLANNED && (
         <>
@@ -429,7 +420,6 @@ export function YearPage() {
           <PlannedRow title="Features" what="Documentaries, player stories and behind the scenes" />
         </>
       )}
-
     </Page>
   );
 }
@@ -870,7 +860,10 @@ export function ArchiveEventPage() {
         </Page>
       </div>
       <Page className="py-8">
-        {/* No format tabs: the broadcasts, and the highlights below them only when there are any. */}
+        {/* The broadcast days as a schedule strip (F1 TV's weekend schedule), then the broadcasts and, when there are any, the highlights. */}
+        <div className="mb-10">
+          <DaySchedule videos={full} isLiveNow={() => false} />
+        </div>
         {[
           ['Broadcasts', full],
           ['Highlights', clips],

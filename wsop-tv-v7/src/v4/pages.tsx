@@ -21,7 +21,7 @@ import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, a
 import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, videoById, type Video } from './catalog';
 import { activeThemes, featuredTheme, homeHands, inSeason, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
-import { OtherYearsSection, otherYears } from './loop';
+import { DaySchedule, OtherYearsSection, otherYears } from './loop';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -1463,8 +1463,8 @@ export function EventPage() {
   return (
     <Page className="max-w-[96rem] space-y-10">
       <div>
-        <Link to={`/videos/replays?series=${e.seriesId}`} className="text-sm text-muted hover:text-text">
-          ← Replays
+        <Link to={`/videos/year/${seriesById(e.seriesId).name.slice(0, 4)}`} className="text-sm text-muted hover:text-text">
+          ← {seriesById(e.seriesId).name.slice(0, 4)} season
         </Link>
         <h1 className="mt-2 text-title">{e.name.replace(' World Championship', '')}</h1>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -1486,6 +1486,8 @@ export function EventPage() {
           live && <p className="mt-3 text-[15px] font-semibold">The final table is on air now</p>
         )}
       </div>
+      {/* The broadcast days as a schedule strip (F1 TV's weekend schedule): a chip a day, each plays it. */}
+      <DaySchedule videos={list.filter((v) => v.kind === 'broadcast')} isLiveNow={(v) => isLive(v, state.streamMode)} />
       <section aria-label="Broadcasts">
         <h2 className="mb-3 text-xl sm:text-2xl">Broadcasts</h2>
         <div className={rowGrid}>

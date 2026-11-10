@@ -182,9 +182,62 @@ export function otherYears(name: string, kind: ArchiveEvent['kind'], seriesKey: 
 export function OtherYearsSection({ items }: { items: EventItem[] }) {
   if (!items.length) return null;
   return (
-    <section aria-label="Other years">
-      <h2 className="mb-3 text-xl sm:text-2xl">Other years</h2>
+    <section aria-label="From the archive">
+      <h2 className="mb-3 text-xl sm:text-2xl">From the archive</h2>
       <EventRows items={items.slice(0, 8)} showYear />
+    </section>
+  );
+}
+
+/** An event as a tile (F1 TV's Grand Prix card): its final table picture, number and date, name, buy-in, winner. */
+export function EventTile({ x }: { x: EventItem }) {
+  return (
+    <Link to={x.to} className="group block h-full overflow-hidden rounded-card border border-line bg-surface transition-colors hover:border-white/40">
+      <span className="relative block aspect-video overflow-hidden bg-surface-2">
+        {x.final && <img src={x.final.thumb} style={artStyle({ pos: x.final.thumbPos, fit: x.final.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />}
+        {x.live && <LiveTag className="absolute top-2 left-2" />}
+      </span>
+      <span className="block p-3">
+        <span className="block text-xs text-muted tnum">{[x.number ? `Event #${x.number}` : '', x.date ? dateLabel(x.date) : ''].filter(Boolean).join(' · ') || ' '}</span>
+        <span className="mt-1 line-clamp-2 min-h-[2.5em] text-[15px] leading-tight font-bold group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4">{x.name}</span>
+        <span className="mt-1 block truncate text-xs text-muted tnum">{[x.buyLabel, x.game].filter(Boolean).join(' · ')}</span>
+        <span className="mt-2 block truncate border-t border-line pt-2 text-xs">{x.live ? <span className="font-semibold">On air now</span> : x.winner ? <><span className="text-muted">Winner · </span><span className="font-semibold">{x.winner.name}</span></> : <span className="text-muted">{x.broadcasts} broadcast{x.broadcasts === 1 ? '' : 's'}</span>}</span>
+      </span>
+    </Link>
+  );
+}
+
+/** Schedule order (F1 TV lists a season by round): event number, then date. */
+export const scheduleOrder = (a: EventItem, b: EventItem) => (a.number ?? 999) - (b.number ?? 999) || (a.date && b.date ? Date.parse(a.date) - Date.parse(b.date) : 0);
+
+/** The broadcast days of an event as a schedule strip (F1 TV's weekend schedule): a chip a day, each plays it. */
+export function DaySchedule({ videos, isLiveNow }: { videos: Video[]; isLiveNow: (v: Video) => boolean }) {
+  if (videos.length < 2) return null;
+  const label = (v: Video) => v.title.split(' · ').pop() ?? v.title;
+  const hm = (s: number) => `${Math.floor(s / 3600)}h${String(Math.round((s % 3600) / 60)).padStart(2, '0')}`;
+  return (
+    <section aria-label="Schedule">
+      <h2 className="mb-3 text-xl sm:text-2xl">Schedule</h2>
+      <ol className="hscroll gap-2">
+        {videos.map((v) => {
+          const live = isLiveNow(v);
+          return (
+            <li key={v.id} className="shrink-0">
+              <Link
+                to={live ? `/watch/${v.id}` : `/watch/${v.id}?play=1`}
+                onClick={live ? undefined : enterFullScreen}
+                className={cx('flex min-w-36 flex-col gap-1 rounded-card border px-3.5 py-2.5 transition-colors', live ? 'border-live bg-live/10' : 'border-line bg-surface hover:border-white/40')}
+              >
+                <span className="flex items-center gap-2 text-sm font-bold">
+                  {live ? <LiveTag /> : <Icon name="play" size={12} />}
+                  {label(v)}
+                </span>
+                <span className="text-xs text-muted tnum">{live ? 'On air now' : hm(v.durationSec)}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }
