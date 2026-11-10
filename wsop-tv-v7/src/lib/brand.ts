@@ -71,7 +71,42 @@ export const CHANNEL_ART: Record<string, Art> = {
 };
 
 /** Fixed picks for the videos people see first (the rest walk the pools in order). */
-export const PROMO_ART: Record<string, Art> = NAS ? {} : {
+/**
+ * With the WSOP footage (NAS): each video gets the still from its own broadcast, read off the broadcast graphic on the
+ * still (event and day). Main Event Day 1 / Day 5 / final table, #38 $100K and #46 $250K have their own stills; the
+ * other days of the Main Event use the nearest day's stills. Events with no still of their own keep the pool.
+ */
+/** A NAS still by file name (vegas-ft-05 → its URL), from the manifest the build turns into URLs. */
+const nas = (file: string): Art | undefined => {
+  const src = NAS && Object.values(NAS.stills).flat().find((u: string) => u.includes(`/${file}.`));
+  return src ? art(src) : undefined;
+};
+const NAS_PICKS_RAW: Record<string, Art | undefined> = {
+  'lv-main-day1a': nas('vegas-d1-01'),
+  'lv-main-day1b': nas('vegas-d1-04'),
+  'lv-main-day1c': nas('vegas-d1-05'),
+  'lv-main-day1d': nas('vegas-d1-06'),
+  'lv-main-day2abc': nas('vegas-d1-03'),
+  'lv-main-day2d': nas('vegas-d5-08'),
+  'lv-main-day3': nas('vegas-d5-02'),
+  'lv-main-day4': nas('vegas-d5-04'),
+  'lv-main-day5': nas('vegas-d5-01'),
+  'lv-main-day6': nas('vegas-d5-03'),
+  'lv-main-day7': nas('vegas-d5-05'),
+  'lv-main-day8': nas('vegas-d5-07'),
+  'lv-main-finaltable': nas('vegas-ft-05'),
+  'lv-100k-finaltable': nas('vegas-hr-01'),
+  'lv-tc-finaltable': nas('vegas-shr-01'),
+  // The three real Main Event final-table hands
+  r1: nas('vegas-ft-01'),
+  r2: nas('vegas-ft-04'),
+  r3: nas('vegas-ft-06'),
+  // Winning hands of #38 and #46 (w3, w4: the order of the finished events in data/mock.ts)
+  w3: nas('vegas-hr-02'),
+  w4: nas('vegas-shr-03'),
+};
+const NAS_PICKS = Object.fromEntries(Object.entries(NAS_PICKS_RAW).filter(([, a]) => a)) as Record<string, Art>;
+export const PROMO_ART: Record<string, Art> = NAS ? NAS_PICKS : {
   'lv-main-finaltable': TABLE_ART[0],
   'lv-hr-finaltable': TABLE_ART[1],
   'lv-ppc-finaltable': TABLE_ART[6],
