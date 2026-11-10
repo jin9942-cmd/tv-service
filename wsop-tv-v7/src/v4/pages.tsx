@@ -837,13 +837,10 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
               {theme.title}
             </Link>
           </h2>
-          <p className="mt-3 text-sm text-muted tnum">
-            {videos.length} videos · {themeLength(videos)}
-          </p>
-          <div className="mt-5">
-            {/* The button opens the list (the theme page: every video in order, each playable, and Play all there). */}
+          <div className="mt-6">
+            {/* No count or running time here: the videos are right beside it. The button opens the full list. */}
             <Link to={`/collections/${theme.id}`} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-white/85">
-              View collection <Icon name="chevron" size={16} />
+              See more <Icon name="chevron" size={16} />
             </Link>
           </div>
         </div>
@@ -907,7 +904,7 @@ function ThemeRow({ id, now }: { id: string; now: number }) {
   if (!t) return null;
   const { theme, videos } = t;
   return (
-    <Section title={theme.title} eyebrow={theme.eyebrow} action={more(`/collections/${theme.id}`, 'View collection')}>
+    <Section title={theme.title} eyebrow={theme.eyebrow} action={more(`/collections/${theme.id}`, 'View all')}>
       <ol className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={videos}>
           {videos.map((v) => (
