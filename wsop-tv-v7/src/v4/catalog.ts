@@ -96,7 +96,7 @@ function aboutDay(e: TourEvent, d: Day): [string, string][] {
     ['Tournament', e.seriesId === 'classics' ? e.name : short(e)],
     ['Broadcast', d.label],
     ['Game', e.game],
-    ['Buy-in', e.buyIn ? money(e.buyIn) : 'Invitational'],
+    ['Buy-in', e.buyIn ? (e.currency === '€' ? `€${e.buyIn.toLocaleString('en-US')}` : money(e.buyIn)) : 'Invitational'],
     ['Entries', e.entrants.toLocaleString('en-US')],
     ['Prize pool', money(e.prizePool)],
     ['Aired', `${fmtDateTime(d.start, VENUE_TZ)} PT`],

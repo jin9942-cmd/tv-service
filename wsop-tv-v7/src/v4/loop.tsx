@@ -59,7 +59,7 @@ export function liveItem(e: TourEvent): EventItem {
     year: Number(seriesById(e.seriesId).name.slice(0, 4)),
     number: e.number || null,
     date: ft?.start,
-    buyLabel: e.buyIn ? money(e.buyIn) : 'Invitational',
+    buyLabel: e.buyIn ? (e.currency === '€' ? `€${e.buyIn.toLocaleString('en-US')}` : money(e.buyIn)) : 'Invitational',
     game: e.game,
     entrants: e.entrants || undefined,
     firstPrize: e.firstPrize || undefined,

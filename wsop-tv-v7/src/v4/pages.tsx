@@ -1181,7 +1181,7 @@ const SEASON: SeriesStop[] = [
     const starts = events.filter((e) => e.seriesId === s.id).flatMap((e) => e.days.map((d) => d.start));
     const first = [s.start, ...starts].sort()[0];
     const last = [s.end, ...starts].sort().pop()!;
-    return { ...s, start: first, end: last, art: s.id === 'lv25' ? TABLE_ART[0] : s.id === 'pa25' ? VENUE_ART[3] : s.id === 'eu26' ? VENUE_ART[2] : VENUE_ART[0] };
+    return { ...s, start: first, end: last, art: s.id === 'lv25' ? TABLE_ART[0] : s.id === 'pa24' ? VENUE_ART[3] : s.id === 'eu25' ? VENUE_ART[2] : VENUE_ART[0] };
   }),
 ];
 
@@ -1396,7 +1396,7 @@ function BroadcastRow({ e, d, st, venueTz }: ScheduleItem & { st: Day['status'];
           </Link>
         </span>
       </td>
-      <td className="px-4 py-3 tnum">{e.buyIn ? money(e.buyIn) : 'TBA'}</td>
+      <td className="px-4 py-3 tnum">{e.buyIn ? (e.currency === '€' ? `€${e.buyIn.toLocaleString('en-US')}` : money(e.buyIn)) : 'TBA'}</td>
       <td className="px-4 py-3">{e.game}</td>
       <td className="px-4 py-3 text-right">
         {live ? (
