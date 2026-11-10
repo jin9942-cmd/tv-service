@@ -129,9 +129,8 @@ export function YearsTab() {
   const tile = (y: (typeof ARCHIVE)[number]) => {
     const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
     const ref = main ? archiveEvent(main.id) : undefined;
-    const first = ref ? broadcastsOf(ref)[0] : undefined;
     const size = yearSize(y);
-    // Classics: their own still and one broadcast (plays at once). Other years: a crop of real play, graphics left out.
+    // Classics: their own still. Other years: a crop of real play, graphics left out.
     const own = CLASSIC_STILLS.find((x) => x.startsWith(String(y.year)));
     const art = y.classic ? (own ? `${import.meta.env.BASE_URL}classics/classic-${own.slice(0, 4)}-${own.slice(4)}.jpg` : main ? archiveArt(main.id) : '') : seasonPhoto(y.year);
     return (
@@ -139,8 +138,8 @@ export function YearsTab() {
         <YearPhotoTile
           year={y.year}
           art={art}
-          to={y.classic && first ? `/watch/${first.id}?play=1` : `/videos/year/${y.year}`}
-          play={!!(y.classic && first)}
+          // Like every other thumbnail, a tile opens a page first: a Classic its Main Event page (the broadcast, Play there).
+          to={y.classic && ref ? `/videos/event/${ref.event.id}` : `/videos/year/${y.year}`}
           line={y.classic ? 'Main Event · Full broadcast' : `${eventsNote(size.events)} · ${daysNote(size.casts)}`}
         />
       </li>
