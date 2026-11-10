@@ -775,7 +775,7 @@ export function ArchivePage() {
 
 /** My List: the standard card, four across (same size as the rows around it). */
 function MyListRow({ videos }: { videos: Video[] }) {
-  return <VideoRow title="My List" videos={videos} action={more('/my-list', 'See all')} />;
+  return <VideoRow title="My List" videos={videos} action={more('/my-list', 'Go to My List')} />;
 }
 
 // ---- curated collections ----------------------------------------------------------------------------
@@ -843,7 +843,7 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
           <div className="mt-5">
             {/* The button opens the list (the theme page: every video in order, each playable, and Play all there). */}
             <Link to={`/collections/${theme.id}`} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-white/85">
-              See all {videos.length} <Icon name="chevron" size={16} />
+              View collection <Icon name="chevron" size={16} />
             </Link>
           </div>
         </div>
@@ -907,7 +907,7 @@ function ThemeRow({ id, now }: { id: string; now: number }) {
   if (!t) return null;
   const { theme, videos } = t;
   return (
-    <Section title={theme.title} eyebrow={theme.eyebrow} action={more(`/collections/${theme.id}`, 'See all')}>
+    <Section title={theme.title} eyebrow={theme.eyebrow} action={more(`/collections/${theme.id}`, 'View collection')}>
       <ol className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={videos}>
           {videos.map((v) => (
