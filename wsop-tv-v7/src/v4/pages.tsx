@@ -14,7 +14,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, EYEBROW, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseTabs, PlayersTab, YearPhotoTile, YearsTab, pastSeasons, seasonPhoto } from './browse';
+import { BrowseTabs, PlayersTab, YearsTab, seasonPhoto } from './browse';
 import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
@@ -23,6 +23,7 @@ import { USED_THUMBS, byTag, catalog, channelVideo, highlightClips, isLive, rela
 import { activeThemes, featuredTheme, homeHands, inSeason, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
 import { DaySchedule, OtherYearsSection, otherYears } from './loop';
+import { ARCHIVE, archiveEvent, broadcastsOf } from './archive';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -725,22 +726,36 @@ const archiveGroup = (key: string) => archiveGroups(key.startsWith('year-') ? 'y
  * Seasons: this year and the six before it as type-only season tiles (the same tiles and counts as Browse > Years);
  * each opens the year in Browse, and All years opens Browse.
  */
+/**
+ * Popular Final Tables From the Archive (F1 TV's "Popular Races From The Archive"): the past Main Event final tables as
+ * videos, most watched first, each on its champion's winning moment. Home doesn't repeat Browse's year tiles.
+ */
+const archiveFinals = (): Video[] =>
+  ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_SEASON)
+    .map((y) => {
+      const ref = archiveEvent(`${y.year}-lv-main`);
+      if (!ref) return undefined;
+      const days = broadcastsOf(ref);
+      const i = ref.event.days.findIndex((d) => /final/i.test(d.label));
+      const v = days[i >= 0 ? i : days.length - 1];
+      return v ? ({ ...v, title: `${y.year} Main Event Final Table`, subtitle: y.champion ? `Won by ${y.champion.name}` : v.subtitle, thumb: seasonPhoto(y.year), thumbPos: '50% 50%', thumbFit: undefined } as Video) : undefined;
+    })
+    .filter((v): v is Video => !!v)
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 10);
+
 function SeasonTiles() {
-  const { state } = useApp();
-  const liveNow = catalog.some((v) => v.eventId && isLive(v, state.streamMode));
-  const past = pastSeasons().slice(0, 9);
+  const finals = archiveFinals();
   return (
-    <Section title="WSOP Through the Years" action={more('/videos', 'All years')}>
-      {/* Photo tiles, as Browse > Years, swiped or stepped with the arrows: this year (live) first. */}
-      <Carousel className="gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]">
-        <li className="min-w-0">
-          <YearPhotoTile year={CURRENT_SEASON} art={SEASON_ART.src} to={`/videos/year/${CURRENT_SEASON}`} line={liveNow ? 'Live · the Main Event final table is on air' : 'This year'} />
-        </li>
-        {past.map((s) => (
-          <li key={s.year} className="min-w-0">
-            <YearPhotoTile year={s.year} art={seasonPhoto(s.year)} to={`/videos/year/${s.year}`} line={s.line} />
-          </li>
-        ))}
+    <Section title="Popular Final Tables From the Archive" action={more('/videos', 'View all')}>
+      <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        <BadgeScope videos={finals}>
+          {finals.map((v) => (
+            <li key={v.id} className="min-w-0">
+              <VideoCard v={v} />
+            </li>
+          ))}
+        </BadgeScope>
       </Carousel>
     </Section>
   );
