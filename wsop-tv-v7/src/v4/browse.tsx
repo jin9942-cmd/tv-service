@@ -611,7 +611,6 @@ export function PlayerPage() {
   // classics) as event rows, newest first, with their place where it isn't a win.
   const seats = seatsFor(HERO_DAY_ID);
   const seat = seats.find((s) => s.playerId === p.id);
-  const seatRank = seat ? seats.indexOf(seat) + 1 : 0;
   const results: EventItem[] = [
     // Their own place goes in the event line when it isn't a win; the winner stays the event's real winner.
     ...finals.map(({ r, e }) => {
@@ -653,7 +652,7 @@ export function PlayerPage() {
           <span className="min-w-0 flex-1">
             <span className="block font-semibold">At the Main Event final table now</span>
             <span className="block text-sm text-muted tnum">
-              {(seat.stack / 1e6).toFixed(1)}M chips · {seatRank} of {seats.length} in chips
+              {seats.length} players left · on air now
             </span>
           </span>
           <Button variant="primary" tabIndex={-1}>
