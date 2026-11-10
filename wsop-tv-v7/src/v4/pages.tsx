@@ -14,7 +14,8 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseTabs, PlayersTab, SeasonTile, YearsTab, pastSeasons } from './browse';
+import { BrowseTabs, PlayersTab, YearPhotoTile, YearsTab, pastSeasons, seasonPhoto } from './browse';
+import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
@@ -623,23 +624,61 @@ function FinalNine() {
   const out = players
     .flatMap((p) => p.recent.filter((r) => r.eventId === main.id).map((r) => ({ p, r })))
     .sort((a, b) => a.r.place - b.r.place);
+  if (!seats.length) return null;
+  const total = seats.reduce((n, s) => n + s.stack, 0);
+  const top = seats[0];
+  const leader = playerById(top.playerId);
   return (
     <Section title="The Final Nine" action={more(`/watch/${HERO_DAY_ID}`, 'Watch live')}>
-      <ul className={playerRowGrid}>
-        {seats.map((s, i) => {
-          const p = playerById(s.playerId);
-          return (
-            <li key={p.id} className="min-w-0">
-              <PlayerTile to={`/videos/players/${p.id}`} rank={String(i + 1)} name={p.name} cc={p.cc} line={`${chipsShort(s.stack)} chips`} />
+      {/* A chip-count leaderboard: the leader large, every stack as a bar against the leader's, those out below. */}
+      <div className="grid overflow-hidden rounded-panel border border-line bg-[radial-gradient(80%_120%_at_0%_0%,rgba(212,175,55,0.14),transparent_60%),linear-gradient(180deg,#141210,#0b0b0b)] lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+        <Link to={`/videos/players/${leader.id}`} className="group relative flex min-h-64 flex-col justify-between gap-6 overflow-hidden border-b border-line p-6 lg:border-r lg:border-b-0">
+          {/* The final table itself behind the leader (the broadcast still the hero uses). */}
+          <img src={HERO_IMAGES.finalTable} alt="" className="absolute inset-0 size-full object-cover opacity-35 transition-transform duration-300 group-hover:scale-[1.03]" style={{ objectPosition: '60% 40%' }} />
+          <span className="absolute inset-0 bg-gradient-to-t from-[#0b0b0b] via-[#0b0b0b]/60 to-transparent" aria-hidden />
+          <span className="relative flex items-center gap-2 text-[11px] font-bold tracking-wide text-gold-strong uppercase">
+            <LiveTag /> Chip leader · {seats.length} left
+          </span>
+          <span className="relative">
+            <span className="block font-display text-6xl leading-none tnum">{chipsShort(top.stack)}</span>
+            <span className="mt-3 block text-2xl leading-tight font-bold group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4">{leader.name}</span>
+            <span className="mt-1 block text-sm text-muted tnum">
+              {leader.cc} · {Math.round((top.stack / total) * 100)}% of the chips in play
+            </span>
+          </span>
+        </Link>
+        <ol className="divide-y divide-line">
+          {seats.map((s, i) => {
+            const p = playerById(s.playerId);
+            return (
+              <li key={p.id}>
+                <Link to={`/videos/players/${p.id}`} className="group grid grid-cols-[2rem_minmax(0,11rem)_minmax(0,1fr)_4.5rem] items-center gap-3 px-5 py-2.5 hover:bg-white/[0.03]">
+                  <span className="font-display text-lg tnum text-muted">{i + 1}</span>
+                  <span className="truncate font-semibold group-hover:text-gold-strong">
+                    {p.name} <span className="text-xs font-normal text-muted">{p.cc}</span>
+                  </span>
+                  <span className="h-2 overflow-hidden rounded-full bg-white/[0.06]" aria-hidden>
+                    <span className={cx('block h-full rounded-full', i === 0 ? 'bg-gold-strong' : 'bg-white/45')} style={{ width: `${(s.stack / top.stack) * 100}%` }} />
+                  </span>
+                  <span className="text-right text-sm tnum">{chipsShort(s.stack)}</span>
+                </Link>
+              </li>
+            );
+          })}
+          {out.map(({ p, r }) => (
+            <li key={p.id}>
+              <Link to={`/videos/players/${p.id}`} className="grid grid-cols-[2rem_minmax(0,11rem)_minmax(0,1fr)_4.5rem] items-center gap-3 px-5 py-2.5 text-muted hover:bg-white/[0.03]">
+                <span className="font-display text-lg tnum">{r.place}</span>
+                <span className="truncate">
+                  {p.name} <span className="text-xs">{p.cc}</span>
+                </span>
+                <span className="text-xs">Out in {r.place}th</span>
+                <span className="text-right text-sm tnum">{money(r.prize)}</span>
+              </Link>
             </li>
-          );
-        })}
-        {out.map(({ p, r }) => (
-          <li key={p.id} className="min-w-0">
-            <PlayerTile out to={`/videos/players/${p.id}`} rank={`${r.place}th`} name={p.name} cc={p.cc} line={`Out · ${money(r.prize)}`} />
-          </li>
-        ))}
-      </ul>
+          ))}
+        </ol>
+      </div>
     </Section>
   );
 }
@@ -747,16 +786,20 @@ const archiveGroup = (key: string) => archiveGroups(key.startsWith('year-') ? 'y
 function SeasonTiles() {
   const { state } = useApp();
   const liveNow = catalog.some((v) => v.eventId && isLive(v, state.streamMode));
-  const seasons = [{ year: CURRENT_SEASON, line: liveNow ? 'Final table on air' : 'This year' }, ...pastSeasons()].slice(0, 7);
+  const past = pastSeasons().slice(0, 9);
   return (
     <Section title="Seasons" action={more('/videos', 'All years')}>
-      <ul className="hscroll gap-2.5 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*0.625rem)/4)] lg:[&>*]:w-[calc((100%-6*0.625rem)/7)]">
-        {seasons.map((s, i) => (
+      {/* Photo tiles, as Browse > Years, swiped or stepped with the arrows: this year (live) first. */}
+      <Carousel className="gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]">
+        <li className="min-w-0">
+          <YearPhotoTile year={CURRENT_SEASON} art={HERO_IMAGES.finalTable} to={`/videos/year/${CURRENT_SEASON}`} line={liveNow ? 'Live · the Main Event final table is on air' : 'This year'} />
+        </li>
+        {past.map((s, i) => (
           <li key={s.year} className="min-w-0">
-            <SeasonTile year={s.year} line={s.line} live={i === 0 && liveNow} />
+            <YearPhotoTile year={s.year} art={seasonPhoto(i)} to={`/videos/year/${s.year}`} line={s.line} />
           </li>
         ))}
-      </ul>
+      </Carousel>
     </Section>
   );
 }

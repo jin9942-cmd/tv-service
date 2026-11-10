@@ -15,6 +15,7 @@ import { TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle } from '../lib/brand';
 import { catalog, highlightClips, isLive, stageOf, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { HALL_OF_FAME } from './halloffame';
+import { Carousel } from './carousel';
 import { DaySchedule, EventRows, EventTile, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, scheduleOrder, type EventItem } from './loop';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
@@ -186,7 +187,11 @@ export function YearsTab() {
       </li>
     );
   };
-  const row = (list: typeof ARCHIVE, offset = 0) => <ul className={yearRowGrid}>{list.map((y, i) => tile(y, i + offset))}</ul>;
+  const row = (list: typeof ARCHIVE, offset = 0) => (
+    <div className="mt-4">
+      <Carousel className={yearRowGrid}>{list.map((y, i) => tile(y, i + offset))}</Carousel>
+    </div>
+  );
   return (
     <>
       <section aria-label="This year" className="mt-6">
@@ -225,11 +230,13 @@ export function YearsTab() {
 /** The Classics' own broadcast stills (public/classics, from the NAS: classic-<year>-<a|b>.jpg), first per year. */
 const CLASSIC_STILLS = '1973a 1978a 1979a 1981a 1983a 1987a 1988a 1989a 1990a 1991a 1992a 1993a 1994a 1995a 1997a 1998a 1999b 2000a 2001b 2002a'.split(' ');
 /** Graphic-free crops of real play (public/crops) for the tiles of years without a picture of their own. */
+/** The photo for a modern season's tile (a crop of real play, in turn). */
+export const seasonPhoto = (i: number) => `${import.meta.env.BASE_URL}crops/${CROP_POOL[i % CROP_POOL.length]}.jpg`;
 const CROP_POOL = ['lv-hr', 'classic-a1', 'lv-hu', 'classic-a4', 'lv-plo', 'classic-a3', 'lv-mmm', 'lv-ms', 'classic-a2', 'lv-ppc', 'lv-seniors', 'lv-ladies'];
-const yearRowGrid = 'hscroll mt-4 gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]';
+const yearRowGrid = 'gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]';
 
 /** A season as F1 TV draws one: the picture, the year large across it, and what it holds underneath. */
-function YearPhotoTile({ year, art, to, line, play }: { year: number; art: string; to: string; line: string; play?: boolean }) {
+export function YearPhotoTile({ year, art, to, line, play }: { year: number; art: string; to: string; line: string; play?: boolean }) {
   return (
     <Link to={to} onClick={play ? enterFullScreen : undefined} className="group block">
       <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">

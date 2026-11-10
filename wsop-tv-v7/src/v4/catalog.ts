@@ -190,7 +190,7 @@ for (const [playerId, photos] of Object.entries(PLAYER_ART)) {
   photos.forEach((a, i) => theirs[i] && Object.assign(theirs[i], { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit }));
 }
 // Events with no broadcast still of their own: a crop of real WSOP broadcast footage (public/crops, cut from the NAS
-// stills so no broadcast graphic, event name or recognizable face shows), used for the event's broadcast and its clips.
+// stills to the players at the table, leaving out the broadcast graphics), used for the event's broadcast and its clips.
 const CROPPED = new Set(['lv-hu', 'lv-mmm', 'lv-ms', 'lv-seniors', 'lv-ppc', 'lv-ladies', 'lv-plo', 'lv-hr', 'classic-a1', 'classic-a2', 'classic-a3', 'classic-a4']);
 for (const v of [...days, ...clips])
   if (v.eventId && CROPPED.has(v.eventId) && !PROMO_ART[v.id])
