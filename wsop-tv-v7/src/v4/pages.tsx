@@ -1230,10 +1230,12 @@ export function SchedulePage() {
       return n;
     });
   return (
-    <Page className="max-w-[72rem]">
-      <h1 className="text-2xl sm:text-3xl">Schedule</h1>
-      <p className="mt-1 text-sm text-muted">This season's series. Open one to see its broadcasts.</p>
-      <div className="mt-5 flex flex-col gap-3">
+    <Page className="max-w-[96rem]">
+      {/* The same headline as Browse's Years / Players tabs: big display type, gold bar, a rule under it. */}
+      <div className="flex border-b border-line">
+        <h1 className="-mb-px border-b-4 border-gold pb-3 font-display text-4xl leading-none uppercase sm:text-5xl">Schedule</h1>
+      </div>
+      <div className="mt-6 flex flex-col gap-3">
         {byStart.map((x) => (
           <SeriesFold key={x.id} s={x} open={open.has(x.id)} onToggle={() => toggle(x.id)} now={now} />
         ))}
