@@ -788,7 +788,6 @@ const themeLength = (vs: Video[]) => {
   const sec = vs.reduce((n, v) => n + v.durationSec, 0);
   return sec >= 5400 ? `${Math.round(sec / 3600)} hours` : `${Math.max(1, Math.round(sec / 60))} min`;
 };
-const playAll = (v: Video) => `/watch/${v.id}?play=1`;
 
 
 /** Curated collections (from the archive): four tiles, each opening its own page. */
@@ -924,6 +923,16 @@ function ThemeRow({ id, now }: { id: string; now: number }) {
 
 
 /** A theme's page: its note, Play all, and the videos in watching order. */
+/** ← Back: the previous screen in history (Home when the page was opened directly). */
+function BackLink() {
+  const nav = useNavigate();
+  return (
+    <button onClick={() => (window.history.state?.idx > 0 ? nav(-1) : nav('/'))} className="text-sm text-muted hover:text-text">
+      ← Back
+    </button>
+  );
+}
+
 export function CollectionPage() {
   const { id = '' } = useParams();
   const t = themeById(id);
@@ -931,18 +940,15 @@ export function CollectionPage() {
   const { theme, videos: vs } = t;
   return (
     <Page className="max-w-[96rem]">
-      <Link to="/" className="text-sm text-muted hover:text-text">
-        ← Home
-      </Link>
+      {/* Back goes to exactly the screen (and the place on it) you came from. */}
+      <BackLink />
       <p className="mt-3 text-[11px] font-bold tracking-wide text-gold-strong uppercase">Collection</p>
       <h1 className="mt-1 text-title">{theme.title}</h1>
       <p className="mt-2 max-w-2xl text-[15px] text-text/85">{theme.blurb}</p>
       <p className="mt-1 text-sm text-muted tnum">
         {vs.length} videos · {themeLength(vs)}
       </p>
-      <Link to={playAll(vs[0])} onClick={enterFullScreen} className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-white/85">
-        <Icon name="play" size={16} /> Play all
-      </Link>
+      {/* No Play all: the collection is a set of videos to pick from, not a playlist. */}
       <div className={cx(rowGrid, 'mt-6')}>
         <BadgeScope videos={vs}>
         {vs.map((v) => (
