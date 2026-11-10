@@ -15,6 +15,8 @@ import { catalog, highlightClips, type Video } from './catalog';
 export interface Theme {
   id: string;
   title: string;
+  /** Editorial rows: a small label over the title saying where the videos are from (the title says why to watch). */
+  eyebrow?: string;
   /** One line under the title. */
   blurb: string;
   /** The videos, in the order to watch them. */
@@ -68,21 +70,24 @@ const daysApartInYear = (a: number, b: number) => {
 export const THEMES: Theme[] = [
   {
     id: 'final-tables',
-    title: 'Greatest final tables',
+    title: 'Greatest Final Tables',
     blurb: 'Classic and recent final tables, start to finish.',
     rule: () => distinctPictures(broadcasts().filter(isFinalTable).sort(mostWatched)),
   },
   {
     id: 'this-series',
     // Named by its season ("2025 WSOP Las Vegas"), not "this series": the title says which one.
-    title: `${SEASON} Final Tables`,
+    eyebrow: SEASON,
+    title: 'This Summer’s Bracelet Winners',
     blurb: `Every bracelet decided so far at the ${SEASON}, newest first.`,
     when: (now) => inSeason(now),
     rule: () => broadcasts().filter((v) => isFinalTable(v) && eventOf(v)?.seriesId === currentSeries().id).sort(newest),
   },
   {
     id: 'main-event-day-by-day',
-    title: `${SEASON_YEAR} Main Event, Day by Day`,
+    eyebrow: `${SEASON_YEAR} Main Event`,
+    // The first prize is on record from the start ($10,000,000), so the title holds while the final table is still on.
+    title: 'The Road to $10 Million',
     blurb: `The ${SEASON_YEAR} Main Event in order, from Day 1 to the final table.`,
     when: (now) => inSeason(now),
     rule: () =>
@@ -127,7 +132,7 @@ export const THEMES: Theme[] = [
   },
   {
     id: 'one-hour-binge',
-    title: 'The One-Hour Binge',
+    title: 'One Hour of Best Hands',
     blurb: 'The best hands back to back, about an hour in all.',
     rule: () => {
       const out: Video[] = [];
@@ -146,12 +151,12 @@ export const THEMES: Theme[] = [
     blurb: 'Mystery bounties and millionaire makers: the events built for surprises.',
     rule: () => broadcasts().filter((v) => /mystery|millionaire|million\$/i.test(eventOf(v)?.name ?? '')).sort(newest),
   },
-  { id: 'winning-moment', title: 'The Winning Moment', blurb: 'The last hand of the tournament, when the bracelet is decided.', rule: () => clipsTagged('winning-moment') },
+  { id: 'winning-moment', title: 'Bracelet Moments', blurb: 'The last hand of the tournament, when the bracelet is decided.', rule: () => clipsTagged('winning-moment') },
   { id: 'monster-pots', title: 'Monster Pots', blurb: 'The pots everyone at the table remembers.', rule: () => clipsTagged('big-pot') },
-  { id: 'legendary-bluffs', title: 'Legendary bluffs', blurb: 'Big lies, bigger pots.', rule: () => clipsTagged('bluff') },
-  { id: 'hero-calls', title: 'Hero calls', blurb: 'One pair, one read, all the chips.', rule: () => clipsTagged('hero-call') },
-  { id: 'coolers', title: 'Coolers, nowhere to hide', blurb: 'Big hands running into bigger ones.', rule: () => clipsTagged('cooler') },
-  { id: 'bad-beats', title: 'Bad beats & comebacks', blurb: 'The hands nobody saw coming.', rule: () => clipsTagged('bad-beat') },
+  { id: 'legendary-bluffs', title: 'Legendary Bluffs', blurb: 'Big lies, bigger pots.', rule: () => clipsTagged('bluff') },
+  { id: 'hero-calls', title: 'Hero Calls', blurb: 'One pair, one read, all the chips.', rule: () => clipsTagged('hero-call') },
+  { id: 'coolers', title: 'Coolers', blurb: 'Big hands running into bigger ones.', rule: () => clipsTagged('cooler') },
+  { id: 'bad-beats', title: 'Bad Beats', blurb: 'The hands nobody saw coming.', rule: () => clipsTagged('bad-beat') },
 ];
 
 // ---- what's on ----------------------------------------------------------------------------------------------------
@@ -170,12 +175,12 @@ export function inSeason(now = Date.now()) {
  * broadcasts first, so it changes as each final table finishes); off-season, Key Hands of the <year> WSOP (the last
  * series' hands, most watched first).
  */
-export function homeHands(now = Date.now()): { title: string; videos: Video[] } {
+export function homeHands(now = Date.now()): { title: string; eyebrow?: string; videos: Video[] } {
   const s = currentSeries();
   const own = highlightClips.filter((v) => eventOf(v)?.seriesId === s.id && startOf(v) <= now);
   return inSeason(now)
-    ? { title: 'Key Hands', videos: [...own].sort((a, b) => startOf(b) - startOf(a) || b.views - a.views) }
-    : { title: `Key Hands of the ${s.name.slice(0, 4)} WSOP`, videos: own };
+    ? { eyebrow: SEASON, title: 'Hands of the Week', videos: [...own].sort((a, b) => startOf(b) - startOf(a) || b.views - a.views) }
+    : { title: `Best Hands of the ${s.name.slice(0, 4)} WSOP`, videos: own };
 }
 
 export type LiveTheme = { theme: Theme; videos: Video[]; seasonal: boolean };

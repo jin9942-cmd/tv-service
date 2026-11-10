@@ -12,7 +12,7 @@ import { isBroadcasting } from '../lib/broadcast';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
-import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
+import { About, BadgeScope, EYEBROW, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
 import { BrowseTabs, PlayersTab, YearPhotoTile, YearsTab, pastSeasons, seasonPhoto } from './browse';
 import { Carousel } from './carousel';
@@ -512,8 +512,8 @@ export { catalog };
 /**
  * v7 Home rows, programmed like a sports network (see ./themes.ts):
  * - in season (the series and two weeks after): the featured theme (this series' final tables), Main Event day by
- *   day, Key Hands (no chip-count rows: the launch service has no chip feed);
- * - off-season: the week's featured theme, Key Hands of the <year> WSOP, This Day in WSOP History, Poker Hall of Fame;
+ *   day, Hands of the Week (no chip-count rows: the launch service has no chip feed);
+ * - off-season: the week's featured theme, Best Hands of the <year> WSOP, This Day in WSOP History, Poker Hall of Fame;
  * then Seasons, the Collections shelf (six themes), and Continue watching and My List at the bottom.
  */
 export function HomeRows() {
@@ -563,11 +563,11 @@ export function HomeRows() {
       {season ? (
         <>
           <ThemeRow id={ownRow} now={now} />
-          <VideoRow title={hands.title} videos={hands.videos} />
+          <VideoRow title={hands.title} eyebrow={hands.eyebrow} videos={hands.videos} />
         </>
       ) : (
         <>
-          <VideoRow title={hands.title} videos={hands.videos} />
+          <VideoRow title={hands.title} eyebrow={hands.eyebrow} videos={hands.videos} />
           <ThemeRow id={ownRow} now={now} />
           <HallOfFameRow />
         </>
@@ -832,7 +832,7 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
     <section aria-label={theme.title} className="relative overflow-hidden rounded-card border border-line bg-[radial-gradient(90%_120%_at_0%_0%,rgba(212,175,55,0.16),transparent_60%),linear-gradient(180deg,#141210,#0b0b0b)] p-5 sm:p-7">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-center">
         <div>
-          <p className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{FEATURED_LABEL[f.why]}</p>
+          <p className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{theme.eyebrow ?? FEATURED_LABEL[f.why]}</p>
           <h2 className="mt-2 text-3xl leading-tight sm:text-4xl">
             <Link to={`/collections/${theme.id}`} className="hover:underline hover:decoration-2 hover:underline-offset-4">
               {theme.title}
@@ -876,7 +876,7 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
   if (!list.length) return null;
   const pick = photoPicker(skip);
   return (
-    <Section title="Collections">
+    <Section title="WSOP Collections">
       {/* Tall poster covers (2:3), unlike the wide video rows around it: a collection reads as a set, not one video. */}
       <ul className="hscroll gap-4 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*1rem)/3.5)] lg:[&>*]:w-[calc((100%-5*1rem)/6)]">
         {list.map(({ theme, videos }) => {
@@ -908,7 +908,7 @@ function ThemeRow({ id, now }: { id: string; now: number }) {
   if (!t) return null;
   const { theme, videos } = t;
   return (
-    <Section title={theme.title} action={more(`/collections/${theme.id}`, 'See all')}>
+    <Section title={theme.title} eyebrow={theme.eyebrow} action={more(`/collections/${theme.id}`, 'See all')}>
       <ol className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={videos}>
           {videos.map((v) => (
@@ -962,12 +962,15 @@ const more = (to: string, label = 'More') => (
 );
 
 /** A Home section: the title (editorial ones carry a gold label beside it, as Curated collections does) and a link. */
-function Section({ title, label, action, children }: { title: string; label?: string; action?: ReactNode; children: ReactNode }) {
+function Section({ title, eyebrow, label, action, children }: { title: string; eyebrow?: string; label?: string; action?: ReactNode; children: ReactNode }) {
   return (
     <section aria-label={title}>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex items-end justify-between gap-3">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h2 className="text-xl sm:text-2xl">{title}</h2>
+          <h2 className="text-xl sm:text-2xl">
+            {eyebrow && <span className={EYEBROW}>{eyebrow}</span>}
+            {title}
+          </h2>
           {label && <EditorialLabel>{label}</EditorialLabel>}
         </div>
         {action}

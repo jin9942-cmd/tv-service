@@ -154,13 +154,16 @@ export const SIZE_GRID: Record<CardSize, { grid: string; count: number }> = {
   sm: { grid: 'grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5', count: 5 },
 };
 
-export function VideoRow({ title, videos, action, progressOf, onRemove, size = 'md' }: { title: string; videos: Video[]; action?: ReactNode; progressOf?: (v: Video) => number | undefined; onRemove?: (v: Video) => void; size?: CardSize }) {
+export function VideoRow({ title, eyebrow, videos, action, progressOf, onRemove, size = 'md' }: { title: string; eyebrow?: string; videos: Video[]; action?: ReactNode; progressOf?: (v: Video) => number | undefined; onRemove?: (v: Video) => void; size?: CardSize }) {
   if (!videos.length) return null;
   const g = SIZE_GRID[size];
   return (
     <section aria-label={title}>
       <div className="mb-3 flex items-end justify-between gap-3">
-        <h2 className="text-xl sm:text-2xl">{title}</h2>
+        <h2 className="text-xl sm:text-2xl">
+          {eyebrow && <span className={EYEBROW}>{eyebrow}</span>}
+          {title}
+        </h2>
         {action}
       </div>
       <BadgeScope videos={videos.slice(0, g.count)}>
@@ -173,3 +176,6 @@ export function VideoRow({ title, videos, action, progressOf, onRemove, size = '
     </section>
   );
 }
+
+/** The small label over an editorial row's title: where its videos are from (the title says why to watch). */
+export const EYEBROW = 'mb-1 block font-sans text-[11px] font-bold tracking-wide text-gold-strong uppercase';
