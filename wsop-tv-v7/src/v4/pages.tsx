@@ -12,7 +12,7 @@ import { isBroadcasting } from '../lib/broadcast';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
-import { About, BadgeScope, SIZE_GRID, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
+import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
 import { BrowseTabs, PlayersTab, YearsTab } from './browse';
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle, type Art } from '../lib/brand';
@@ -554,7 +554,7 @@ export { catalog };
 
 /**
  * v7 Home rows: Recommended for you, Editor's pick (best final tables), the archive as one tile row (Seasons:
- * one type-only tile per past year), Collections, Highlights (automatic, by hand type), then Continue watching and My List at the bottom. No Shorts, no Latest replays.
+ * one type-only tile per past year), Collections (themes), then Continue watching and My List at the bottom. No Shorts, no Latest replays.
  */
 export function HomeRows() {
   const { state, set, toast, signedIn } = useApp();
@@ -590,7 +590,6 @@ export function HomeRows() {
   const myRow = take(mine, 4);
   const picks = take(editorsFinalTables(), 3);
   const recs = take(recommended, 4);
-  const highlightPool = highlightClips.filter((v) => !shown.has(v.id));
   return (
     <>
       {/* Recommended for you takes the place of Coming up (the schedule has the next broadcasts). */}
@@ -599,7 +598,6 @@ export function HomeRows() {
       <EditorsPick picks={picks} />
       <SeasonTiles />
       <ThemeShelf skip={shown} />
-      <HighlightsRow pool={highlightPool} skip={shown} />
       {/* Personal rows last. */}
       <ContinueRow items={continuing} onRemove={removeContinue} />
       <MyListRow videos={myRow} />
@@ -833,25 +831,6 @@ function photoPicker(skip: Set<string>) {
     uses.set(a.src, (uses.get(a.src) ?? 0) + 1);
     return { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit };
   };
-}
-
-/** Highlights: hand clips, filled automatically (the hand-type filters are on Videos > Highlights). */
-function HighlightsRow({ pool, skip }: { pool: Video[]; skip: Set<string> }) {
-  // Photos instead of the look-alike broadcast stills, so the same face doesn't fill the row.
-  const pick = photoPicker(skip);
-  const list = pool.slice(0, SIZE_GRID.sm.count).map((v) => ({ ...v, ...pick(v) }));
-  if (!list.length) return null;
-  return (
-    <Section title="Highlights" action={more('/videos/highlights', 'All highlights')}>
-      <div className={SIZE_GRID.sm.grid}>
-        <BadgeScope videos={list}>
-        {list.map((v) => (
-          <VideoCard key={v.id} v={v} size="sm" />
-        ))}
-        </BadgeScope>
-      </div>
-    </Section>
-  );
 }
 
 const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: 'Right now', weekly: 'This week’s collection' } as const;
