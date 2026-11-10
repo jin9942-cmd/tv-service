@@ -558,7 +558,8 @@ export { catalog };
  * Highlights (automatic, by hand type) and Shorts. No video appears in two rows.
  */
 /** Home, last: Continue watching and My List (shown only when they have something). */
-export function PersonalRows() {
+/** Continue watching and My List; `only` shows one of them (each shows nothing while it is empty). */
+export function PersonalRows({ only }: { only?: 'continue' | 'mylist' } = {}) {
   const { state, set, toast, signedIn } = useApp();
   // Remove one video from Continue Watching (with Undo).
   const removeContinue = (v: Video) => {
@@ -592,8 +593,8 @@ export function PersonalRows() {
   const myRow = take(mine, 4);
   return (
     <>
-      <ContinueRow items={continuing} onRemove={removeContinue} />
-      <MyListRow videos={myRow} />
+      {only !== 'mylist' && <ContinueRow items={continuing} onRemove={removeContinue} />}
+      {only !== 'continue' && <MyListRow videos={myRow} />}
     </>
   );
 }
