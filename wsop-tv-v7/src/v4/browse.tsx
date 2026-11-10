@@ -1,5 +1,5 @@
 // v8 — Browse, built on the WSOP archive (year → series → event → day):
-//   Years (default): the years 2026 → 2003 (each with its Main Event champion), WSOP Classics after rights clearance;
+//   Years (default): the years 2025 → 2003 (each with its Main Event champion), WSOP Classics after rights clearance;
 //                    a year page has series tabs, its Main Event, then the bracelet events with filters.
 //   Players: the player grid (sort) → a player page (profile, final tables by year, appearances by year).
 //   Events: the events that come back every year → a chronicle of each, year by year.
@@ -16,7 +16,8 @@ import { catalog, isLive, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
-const CURRENT_YEAR = 2026;
+/** The demo's live series: the 2025 World Series of Poker in Las Vegas, reconstructed from the real broadcasts. */
+const CURRENT_YEAR = 2025;
 
 // ---- shared bits -------------------------------------------------------------------------------------
 
@@ -67,7 +68,7 @@ const yearSize = (y: (typeof ARCHIVE)[number]) => {
 const RECENT_FROM = 2019;
 
 /** Every season from the archive (not the Classics), newest first, with what it holds. Home's Seasons row uses it too. */
-export const pastSeasons = () => ARCHIVE.filter((y) => !y.classic).map((y) => ({ year: y.year, line: eventsNote(yearSize(y).events) }));
+export const pastSeasons = () => ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_YEAR).map((y) => ({ year: y.year, line: eventsNote(yearSize(y).events) }));
 
 /**
  * A season as type-only key art: the WSOP mark, the year large (and again, outlined, cropped at the corner) and what
@@ -167,7 +168,7 @@ function YearChip({ year, line }: { year: number; line: string }) {
  * boxes (older years hold less, so they take less room), then the Classics.
  */
 export function YearsTab() {
-  const modern = ARCHIVE.filter((y) => !y.classic);
+  const modern = ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_YEAR);
   const recent = modern.filter((y) => y.year >= RECENT_FROM);
   const older = modern.filter((y) => y.year < RECENT_FROM);
   const decades = [...new Set(older.map((y) => Math.floor(y.year / 10) * 10))].sort((a, b) => b - a);
@@ -220,9 +221,7 @@ export function YearsTab() {
 function currentYear() {
   const ofSeries = (sid: string) => events.filter((e) => e.seriesId === sid);
   const series = [
-    { key: 'lv', name: 'Las Vegas', events: ofSeries('lv26') },
-    { key: 'eu', name: 'Europe', events: ofSeries('eu26') },
-    { key: 'circuit', name: 'Circuit', events: ofSeries('ca26') },
+    { key: 'lv', name: 'Las Vegas', events: ofSeries('lv25') },
   ].filter((s) => s.events.length);
   return series;
 }
@@ -257,7 +256,8 @@ export function YearPage() {
     state: { streamMode },
   } = useApp();
   const isCurrent = y === CURRENT_YEAR;
-  const arch = ARCHIVE.find((x) => x.year === y);
+  // This year is the live series (its archive entry, if any, would show results that have not happened yet).
+  const arch = isCurrent ? undefined : ARCHIVE.find((x) => x.year === y);
   if (!isCurrent && !arch) return <Navigate to="/videos" replace />;
 
   // One shape for both: the live year (mock data) and archive years.
@@ -501,7 +501,7 @@ export function PlayerPage() {
             <div className="flex items-center gap-2">
               <dt className="text-muted">Bracelets</dt>
               <dd>
-                <BraceletCount n={p.bracelets} />
+                {p.bracelets != null ? <BraceletCount n={p.bracelets} /> : <span className="text-muted">—</span>}
               </dd>
             </div>
           </dl>
@@ -801,7 +801,7 @@ export function YearsRow() {
   const { state } = useApp();
   const [year, setYear] = useState(CURRENT_YEAR);
   const liveVideo = catalog.find((v) => v.eventId === 'lv-main' && isLive(v, state.streamMode));
-  const modern = ARCHIVE.filter((y) => !y.classic);
+  const modern = ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_YEAR);
   const classics = ARCHIVE.filter((y) => y.classic);
   const arch = ARCHIVE.find((y) => y.year === year);
   const ref = arch ? archiveEvent(`${year}-lv-main`) : undefined;

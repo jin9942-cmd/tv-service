@@ -234,10 +234,7 @@ const DAY_MS = 86_400_000;
 /** Library additions (demo data): days ago each was added. */
 const ADDED_DAYS_AGO: Record<string, number> = {
   'classic-a5-finaltable': 2,
-  'sp-main-finaltable': 4,
   'classic-a3-finaltable': 6,
-  'eu-main-finaltable': 9,
-  'classic-a6-finaltable': 12,
 };
 const runningSeriesId = (now: number) => {
   const ref = HERO_DAY ? dayById(HERO_DAY) : undefined;
@@ -292,7 +289,7 @@ export const replays = days.filter((v) => v.kind === 'broadcast' && v.status ===
 export const highlightClips = [...clips].sort((a, b) => b.views - a.views);
 /** "Recommended for you": a fixed, varied mix (final tables, classics and the most-watched hands). */
 export const recommended: Video[] = [
-  days.find((v) => v.id === 'lv-mm-finaltable'),
+  days.find((v) => v.id === 'lv-ppc-finaltable'),
   highlightClips[0],
   classics[2],
   days.find((v) => v.id === 'lv-plo-finaltable'),

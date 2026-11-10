@@ -74,14 +74,13 @@ export const CHANNEL_ART: Record<string, Art> = {
 export const PROMO_ART: Record<string, Art> = NAS ? {} : {
   'lv-main-finaltable': TABLE_ART[0],
   'lv-hr-finaltable': TABLE_ART[1],
-  'lv-mm-finaltable': TABLE_ART[6],
-  'classic-a6-finaltable': TABLE_ART[2],
+  'lv-ppc-finaltable': TABLE_ART[6],
   'classic-a5-finaltable': TABLE_ART[3],
   'classic-a1-finaltable': TABLE_ART[7],
   'classic-a4-finaltable': TABLE_ART[5],
   // v7: the Main Event's earlier days (Continue watching) show play, not the casino outside.
   'lv-main-day3': art(`${PROMO}player-w-sweater.webp`, '50% 30%'),
-  'lv-main-day2': art(`${PROMO}tournament-hall.webp`),
+  'lv-main-day2abc': art(`${PROMO}tournament-hall.webp`),
   'lv-main-day1b': art(`${PROMO}table-crowd.webp`, '50% 35%'),
   'lv-main-day1a': art(`${PROMO}player-thinking.jpg`, '50% 30%'),
 };

@@ -22,8 +22,8 @@ import { MyListButton } from '../features/library/listActions';
 import { DayResults, HandList, VodPanel, maskHand, neutralTitle, useRevealed } from '../features/player/VodPanel';
 
 const CAPTIONS: Record<AudioTrack, string[]> = {
-  en: ['Han has been patient all level — this is the spot she was waiting for.', 'Whitfield takes his time. Seven-time champion, never rushed.', 'The crowd in Las Vegas is completely silent.'],
-  es: ['Han ha sido paciente todo el nivel.', 'Whitfield se toma su tiempo.', 'Silencio absoluto en Las Vegas.'],
+  en: ['Seven left, and every pay jump is worth hundreds of thousands now.', 'He takes his time here. No reason to rush with this much on the line.', 'The crowd in Las Vegas is completely silent.'],
+  es: ['Quedan siete, y cada salto de premio vale cientos de miles.', 'Se toma su tiempo.', 'Silencio absoluto en Las Vegas.'],
   natural: ['[Crowd murmurs]', '[Dealer: "Action is on you, sir."]', '[Applause from the rail]'],
 };
 

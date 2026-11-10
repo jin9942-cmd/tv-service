@@ -28,7 +28,7 @@ export interface SearchItem {
 const statusOf = (s: StreamStatus): SearchStatus => (isOnAir(s) || s === 'late' || s === 'interrupted' ? 'live' : s === 'upcoming' ? 'upcoming' : 'vod');
 const lastName = (id: string) => playerById(id).name.split(' ').slice(-1)[0];
 /** Spoiler-free title for a hand: who and how big, not what happened. */
-export const safeHandTitle = (h: (typeof hands)[number]) => `${lastName(h.playerIds[0])} vs ${lastName(h.playerIds[1])} · ${chips(h.pot)} pot`;
+export const safeHandTitle = (h: (typeof hands)[number]) => (h.playerIds.length > 1 ? `${lastName(h.playerIds[0])} vs ${lastName(h.playerIds[1])} · ${chips(h.pot)} pot` : `${chips(h.pot)} pot`);
 
 export function buildIndex(streamMode: StreamStatus, spoilerFree: boolean): SearchItem[] {
   const dayStatus = (id: string, s: StreamStatus) => (id === HERO_DAY_ID ? streamMode : s);

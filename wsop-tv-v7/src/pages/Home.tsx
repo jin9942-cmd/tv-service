@@ -20,7 +20,7 @@ export function Home() {
     // one card per event: its next broadcast day
     .filter((x, i, arr) => arr.findIndex((y) => y.e.id === x.e.id) === i)
     .slice(0, 8);
-  const featuredPlayers = [...players].sort((a, b) => b.poyPoints - a.poyPoints).slice(0, 10);
+  const featuredPlayers = [...players].sort((a, b) => (b.bracelets ?? 0) - (a.bracelets ?? 0)).slice(0, 10);
   const continueItems = Object.entries(state.progress)
     .map(([id, sec]) => ({ ref: dayById(id)!, sec }))
     .filter((x) => x.ref)

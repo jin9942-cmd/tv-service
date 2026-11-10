@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { eventById, hands, players } from '../data/mock';
-import { count, money, ordinal } from '../lib/format';
+import { money, ordinal } from '../lib/format';
 import { useApp } from '../state/app';
 import { HandCard, PlayerTile } from '../components/cards';
 import { Avatar, BraceletCount, Button, CountryCode, EmptyState, Icon, Page, SectionHeader, Switch } from '../components/ui';
@@ -11,7 +11,7 @@ export function Players() {
   const [q, setQ] = useState('');
   const [cc, setCc] = useState('');
   const countries = useMemo(() => [...new Set(players.map((p) => p.country))].sort(), []);
-  const list = players.filter((p) => (!cc || p.country === cc) && (!q || p.name.toLowerCase().includes(q.toLowerCase()))).sort((a, b) => b.earnings - a.earnings);
+  const list = players.filter((p) => (!cc || p.country === cc) && (!q || p.name.toLowerCase().includes(q.toLowerCase()))).sort((a, b) => (b.bracelets ?? 0) - (a.bracelets ?? 0) || a.name.localeCompare(b.name));
 
   return (
     <Page>
@@ -58,7 +58,6 @@ export function PlayerProfile() {
   if (!p) return <NotFound />;
   const follow = state.followed[p.id];
   const highlights = hands.filter((h) => h.playerIds.includes(p.id)).slice(0, 6);
-  const rank = [...players].sort((a, b) => b.poyPoints - a.poyPoints).findIndex((x) => x.id === p.id) + 1;
 
   const toggleFollow = () => {
     if (!signedIn) return requireLogin({ reason: `Sign in to follow ${p.name}.` });
@@ -80,7 +79,7 @@ export function PlayerProfile() {
         / <span className="text-text">{p.name}</span>
       </nav>
       <section className="flex flex-col gap-6 rounded-panel border border-line bg-surface p-6 md:flex-row md:items-center">
-        <Avatar name={p.name} hue={p.hue} photo={p.photo} size={112} ring={p.bracelets > 0} />
+        <Avatar name={p.name} hue={p.hue} photo={p.photo} size={112} ring={(p.bracelets ?? 0) > 0} />
         <div className="flex-1">
           <p className="flex items-center gap-2 text-sm text-muted">
             <CountryCode cc={p.cc} /> {p.country}
@@ -88,18 +87,10 @@ export function PlayerProfile() {
           <h1 className="mt-1 text-title font-black tracking-tight">{p.name}</h1>
           <dl className="mt-4 grid grid-cols-3 gap-4 sm:max-w-lg">
             <div>
-              <dt className="label text-subtle">Total earnings</dt>
-              <dd className="mt-1 text-lg font-black tnum">{money(p.earnings)}</dd>
-            </div>
-            <div>
               <dt className="label text-subtle">Bracelets</dt>
               <dd className="mt-1 text-lg">
-                <BraceletCount n={p.bracelets} size={20} />
+                {p.bracelets != null ? <BraceletCount n={p.bracelets} size={20} /> : <span className="text-muted">—</span>}
               </dd>
-            </div>
-            <div>
-              <dt className="label text-subtle">POY rank</dt>
-              <dd className="mt-1 text-lg font-black tnum">#{rank}</dd>
             </div>
           </dl>
         </div>
@@ -158,7 +149,7 @@ export function PlayerProfile() {
           <EmptyState title="No highlight hands yet" />
         )}
       </section>
-      <p className="text-xs text-subtle">Player of the Year points: {count(p.poyPoints)} · Fictional player for demo purposes.</p>
+      <p className="text-xs text-subtle">Results: 2025 WSOP (PokerNews live reporting).</p>
     </Page>
   );
 }

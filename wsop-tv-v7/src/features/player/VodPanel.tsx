@@ -15,9 +15,8 @@ import { ChipCounts } from './SidePanel';
 import { HAND_META, HandGlyph } from './markers';
 
 const lastName = (id: string) => playerById(id).name.split(' ').slice(-1)[0];
-
-/** Neutral title: who and how big, never what happened. */
-export const neutralTitle = (h: Hand) => `${lastName(h.playerIds[0])} vs ${lastName(h.playerIds[1])} · ${chips(h.pot)} pot`;
+/** Neutral title: who and how big, never what happened (clips that name nobody: how big only). */
+export const neutralTitle = (h: Hand) => (h.playerIds.length > 1 ? `${lastName(h.playerIds[0])} vs ${lastName(h.playerIds[1])} · ${chips(h.pot)} pot` : `${chips(h.pot)} pot`);
 
 /** Revealed on purpose. (The player adds hands that actually played through — skipping past one never opens it.) */
 export function useRevealed() {

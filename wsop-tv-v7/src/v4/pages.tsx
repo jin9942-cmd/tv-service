@@ -16,7 +16,7 @@ import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } fr
 import { Player } from './Player';
 import { BrowseTabs, PlayersTab, SeasonTile, YearsTab, pastSeasons } from './browse';
 /** This year's season (the live series). */
-const CURRENT_SEASON = 2026;
+const CURRENT_SEASON = 2025;
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, videoById, type Video } from './catalog';
 import { activeThemes, featuredTheme, handsOfTheWeek, inSeason, themeById } from './themes';
@@ -546,7 +546,7 @@ export function HomeRows() {
     return out;
   };
   const myRow = take(mine, 4);
-  // The programming follows the calendar (see ./themes.ts). `?date=2026-11-10` shows Home as it reads on that day.
+  // The programming follows the calendar (see ./themes.ts). `?date=2025-11-10` shows Home as it reads on that day.
   const [params] = useSearchParams();
   const now = Date.parse(params.get('date') ?? '') || Date.now();
   const season = inSeason(now);
@@ -1120,14 +1120,14 @@ type ScheduleItem = { e: TourEvent; d: Day };
 type SeriesStop = { id: string; name: string; venue: string; city: string; tz?: string; start: string; end: string; art: Art };
 
 const DAY_MS = 86_400_000;
-/** The season's WSOP series (2025 Paradise, 2026 WSOP Europe, 2026 Las Vegas, 2026 Super Circuit Canada), from the data. */
+/** The season's WSOP series (the 2025 Las Vegas series), from the data. */
 const SEASON: SeriesStop[] = [
   // The demo series' dates cover all of their broadcasts.
   ...series.map((s) => {
     const starts = events.filter((e) => e.seriesId === s.id).flatMap((e) => e.days.map((d) => d.start));
     const first = [s.start, ...starts].sort()[0];
     const last = [s.end, ...starts].sort().pop()!;
-    return { ...s, start: first, end: last, art: s.id === 'lv26' ? TABLE_ART[0] : s.id === 'pa25' ? VENUE_ART[3] : s.id === 'eu26' ? VENUE_ART[2] : VENUE_ART[0] };
+    return { ...s, start: first, end: last, art: s.id === 'lv25' ? TABLE_ART[0] : s.id === 'pa25' ? VENUE_ART[3] : s.id === 'eu26' ? VENUE_ART[2] : VENUE_ART[0] };
   }),
 ];
 

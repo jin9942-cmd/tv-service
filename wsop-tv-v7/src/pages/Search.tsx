@@ -280,7 +280,7 @@ function ResultRow({ it }: { it: SearchItem }) {
 /** Empty query: recent searches + quick ideas. */
 function StartState({ onPick, onRemove }: { onPick: (v: string) => void; onRemove: (v: string) => void }) {
   const { state } = useApp();
-  const ideas = ['Main Event', 'Final Table', 'High Roller', 'Lindgren', 'Pot-Limit Omaha', 'All-in'];
+  const ideas = ['Main Event', 'Final Table', 'High Roller', 'Mizrachi', 'Pot-Limit Omaha', 'All-in'];
   return (
     <div className="mt-8 grid gap-8 md:grid-cols-2">
       <section aria-label="Recent searches">

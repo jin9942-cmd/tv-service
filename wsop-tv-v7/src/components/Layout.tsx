@@ -275,7 +275,7 @@ function Footer() {
         </div>
       </div>
       <p className="border-t border-line px-gutter py-4 text-center text-xs text-subtle">
-        WSOP TV · Interactive demo · Player names, results and figures are fictional · Footage: {NAS ? NAS.credit : 'World Poker Tour (CC BY 3.0), BrewCrewCountry93 (CC BY-SA 4.0) via Wikimedia Commons'}
+        WSOP TV · Interactive demo · A reconstruction of the 2025 World Series of Poker (results: PokerNews) · Footage: {NAS ? NAS.credit : 'World Poker Tour (CC BY 3.0), BrewCrewCountry93 (CC BY-SA 4.0) via Wikimedia Commons'}
       </p>
     </footer>
   );

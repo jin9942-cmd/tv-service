@@ -124,7 +124,7 @@ export function TvArchive() {
       </section>
 
       <section aria-label="Full broadcasts by event">
-        <SectionHeader title="Full broadcasts" kicker={`${seriesById(replayEvents[0]?.seriesId ?? 'lv26').name} · by event`} />
+        <SectionHeader title="Full broadcasts" kicker={`${seriesById(replayEvents[0]?.seriesId ?? 'lv25').name} · by event`} />
         <div className="space-y-3">
           {replayEvents.map((e) => (
             <EventCollection key={e.id} eventId={e.id} />

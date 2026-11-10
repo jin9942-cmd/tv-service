@@ -47,7 +47,7 @@ export const channels: LinearChannel[] = [
   { id: 'wsop1', number: 1, name: 'Main Event', short: 'Main Event', tagline: 'The Main Event, live and on replay', lang: 'EN', hue: 40 },
   { id: 'wsop2', number: 2, name: 'Final Tables', short: 'Final Tables', tagline: 'Every final table of the series', lang: 'EN', hue: 210 },
   { id: 'hands', number: 3, name: 'Best Hands', short: 'Best Hands', tagline: 'Big pots, bluffs and bad beats, nonstop · free', lang: 'EN', hue: 0, free: true },
-  { id: 'classics', number: 4, name: '2025 WSOP Main Event', short: '2025 Main Event', tagline: 'Legendary final tables from past series · free', lang: 'EN', hue: 150, free: true },
+  { id: 'classics', number: 4, name: 'Main Event Classics', short: 'ME Classics', tagline: 'Legendary final tables from past series · free', lang: 'EN', hue: 150, free: true },
 ];
 
 export const channelById = (id: string) => channels.find((c) => c.id === id);
@@ -86,11 +86,11 @@ const FILLERS: Record<string, Filler[]> = {
   wsop1: [
     studio('The Rail · Final Table Preview', 'Studio show · stacks, storylines and picks', 60, 1),
     replay('lv-main-day3', 120, 'Main Event · Day 3 Encore'),
-    replay('lv-main-day2', 120),
+    replay('lv-main-day2abc', 120),
     replay('lv-main-day1a', 120),
   ],
   wsop2: [
-    replay('lv-mm-finaltable', 120),
+    replay('lv-ppc-finaltable', 120),
     highlights('Bracelet Moments', 'Every winning hand of the week', 30, 3),
     replay('lv-plo-finaltable', 120),
     replay('lv-tc-finaltable', 120),

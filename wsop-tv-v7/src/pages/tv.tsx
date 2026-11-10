@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
 import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
-import { HERO_DAY_ID, dayById, hands } from '../data/mock';
+import { HERO_DAY_ID, dayById, hands, seriesById } from '../data/mock';
 import { isOnAir } from '../lib/broadcast';
 import { FOOTAGE, thumbFor } from '../lib/media';
 import { HERO_IMAGES } from '../lib/brand';
@@ -87,7 +87,7 @@ function PromoBanner() {
     {
       img: HERO_IMAGES.finalTable,
       pos: '50% 60%',
-      kicker: '2026 · World Series of Poker · Las Vegas',
+      kicker: `${seriesById(event.seriesId).name} · Las Vegas`,
       title: `Main Event ${day.label}`,
       facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
       line: 'On air now from Horseshoe / Paris Las Vegas',

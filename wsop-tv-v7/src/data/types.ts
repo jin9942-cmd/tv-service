@@ -1,11 +1,11 @@
 // Data model: Series → Event (bracelet event) → Day (1A, 1B, 2, 3, Final Table) → Broadcast (stream).
-// Players ↔ hands/events are many-to-many. All names and results are fictional.
+// Players ↔ hands/events are many-to-many. The demo data reconstructs the real 2025 WSOP (see data/mock.ts).
 
 // late = the broadcast hasn't started at its scheduled time · interrupted = temporarily off air (production side).
 export type StreamStatus = 'live' | 'delayed' | 'vod' | 'upcoming' | 'late' | 'interrupted';
 /** Who can play a piece of content: anyone, any signed-in GGPASS account, or subscribers only. */
 export type Access = 'free' | 'signin' | 'subscriber';
-export type DayLabel = 'Day 1A' | 'Day 1B' | 'Day 2' | 'Day 3' | 'Final Table';
+export type DayLabel = 'Day 1A' | 'Day 1B' | 'Day 1C' | 'Day 1D' | 'Day 2' | 'Day 2ABC' | 'Day 2D' | 'Day 3' | 'Day 4' | 'Day 5' | 'Day 6' | 'Day 7' | 'Day 8' | 'Final Table';
 export type HandType = 'bluff' | 'herocall' | 'cooler' | 'badbeat' | 'bigpot' | 'winning';
 
 export interface Player {
@@ -14,9 +14,11 @@ export interface Player {
   country: string;
   /** ISO 3166-1 alpha-2, shown as a text code (no flag images). */
   cc: string;
-  bracelets: number;
-  earnings: number;
-  poyPoints: number;
+  /** WSOP bracelets, only where confirmed (real players: unknown counts are left out, not guessed). */
+  bracelets?: number;
+  /** Career earnings / Player of the Year points: not shown for real players (no verified source in the demo). */
+  earnings?: number;
+  poyPoints?: number;
   /** Most recent finishes: event id + place. */
   recent: { eventId: string; place: number; prize: number }[];
   hue: number;
