@@ -642,14 +642,13 @@ function HallOfFameRow() {
   );
 }
 
-/** Continue watching: big pictures with a thick progress bar, the time left beside the title; one sideways line. */
+/** Continue watching: big pictures with a thick progress bar and the title (no time left); one sideways line. */
 function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; onRemove: (v: Video) => void }) {
   if (!items.length) return null;
   return (
     <Section title="Continue watching">
       <ul className="hscroll gap-5 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1.25rem)/2)] lg:[&>*]:w-[calc((100%-2.5rem)/3)]">
         {items.map(({ v, sec }) => {
-          const left = Math.max(60, v.durationSec - sec);
           const pct = Math.min(100, Math.round((sec / v.durationSec) * 100));
           return (
             <li key={v.id} className="group relative min-w-0">
@@ -662,7 +661,6 @@ function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; 
                 </span>
                 <span className="mt-2 flex items-baseline justify-between gap-3">
                   <span className="min-w-0 truncate text-[15px] font-semibold group-hover:text-gold-strong">{v.title}</span>
-                  <span className="shrink-0 text-xs text-muted tnum">{left >= 3600 ? `${Math.floor(left / 3600)}h ${Math.round((left % 3600) / 60)}m left` : `${Math.round(left / 60)} min left`}</span>
                 </span>
               </Link>
               <button
