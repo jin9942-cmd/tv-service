@@ -182,7 +182,6 @@ export function YearsTab() {
           <div className="grid overflow-hidden rounded-panel border border-line bg-surface lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
             <Link to={leadHref} onClick={lead.live ? undefined : enterFullScreen} className="group relative block aspect-video overflow-hidden bg-surface-2" aria-label={`Watch ${lead.name}`}>
               {lead.final && <img src={lead.final.thumb} style={artStyle({ pos: lead.final.thumbPos, fit: lead.final.thumbFit })} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />}
-              {lead.live && <LiveTag className="absolute top-3 left-3" />}
             </Link>
             <div className="flex flex-col justify-center p-6 lg:p-8">
               <p className="text-xs font-bold tracking-wide text-gold-strong uppercase tnum">
@@ -404,7 +403,6 @@ export function YearPage() {
           <div className="grid overflow-hidden rounded-panel border border-line bg-surface lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <Link to={mainHref!} onClick={main.live ? undefined : enterFullScreen} className="group relative block aspect-video overflow-hidden bg-surface-2 lg:aspect-auto lg:min-h-80">
               <img src={main.art} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-              {main.live && <LiveTag className="absolute top-3 left-3" />}
             </Link>
             <div className="flex flex-col justify-center p-6 lg:p-8">
               <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">
@@ -1033,7 +1031,6 @@ export function YearsRow() {
         <Link to={ftVideo ? `/watch/${ftVideo}${isNow ? '' : '?play=1'}` : `/videos/year/${year}`} onClick={isNow ? undefined : enterFullScreen} className="group relative block aspect-video overflow-hidden bg-surface-2 lg:aspect-auto lg:min-h-72">
           <img key={art} src={art} alt="" style={isNow ? artStyle(TABLE_ART[0]) : undefined} className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
           <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden />
-          {isNow && liveVideo && <LiveTag className="absolute top-3 left-3" />}
           <span className="absolute bottom-3 left-4 font-display text-5xl leading-none tnum">{year}</span>
         </Link>
         <div className="flex flex-col justify-center p-6 lg:p-8">

@@ -172,7 +172,7 @@ function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; l
                 <button onClick={() => pick(x)} className="group flex w-full gap-3 rounded-card p-2 text-left hover:bg-white/10">
                   <span className="relative aspect-video w-36 shrink-0 overflow-hidden rounded-card bg-surface-2">
                     <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" className="absolute inset-0 size-full object-cover" />
-                    {isLive(x, state.streamMode) ? <LiveTag className="absolute top-1.5 left-1.5" /> : <span className="absolute right-1.5 bottom-1.5 rounded-[4px] bg-black/80 px-1 text-[10px] font-semibold text-white tnum">{duration(x.durationSec)}</span>}
+                    {isLive(x, state.streamMode) ? null : <span className="absolute right-1.5 bottom-1.5 rounded-[4px] bg-black/80 px-1 text-[10px] font-semibold text-white tnum">{duration(x.durationSec)}</span>}
                   </span>
                   <span className="min-w-0">
                     <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
@@ -264,7 +264,6 @@ function UpcomingView({ e, d }: { e: TourEvent; d: Day }) {
                   <Link to={`/watch/${x.id}`} className="group flex gap-3">
                     <span className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2">
                       <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-                      {isLive(x, state.streamMode) && <LiveTag className="absolute top-1.5 left-1.5" />}
                     </span>
                     <span className="min-w-0">
                       <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
@@ -302,7 +301,6 @@ function UpcomingCard({ e, d }: { e: TourEvent; d: Day }) {
 }
 
 function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: boolean; liveEdge?: () => number; channelId?: string; now: number }) {
-  const { state } = useApp();
   // Mini player: scrolling the player out of view docks it bottom-right and it keeps playing.
   const holder = useRef<HTMLDivElement>(null);
   const [mini, setMini] = useState(false);
@@ -382,7 +380,6 @@ function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: bool
                   <Link to={`/watch/${x.id}`} className="group flex gap-3">
                     <span className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2">
                       <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-                      {isLive(x, state.streamMode) && <LiveTag className="absolute top-1.5 left-1.5" />}
                     </span>
                     <span className="min-w-0">
                       <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>

@@ -111,7 +111,6 @@ export function EventRows({ items, showYear }: { items: EventItem[]; showYear?: 
                   <Icon name="play" size={16} />
                 </span>
               </span>
-              {x.live && <LiveTag className="absolute top-1.5 left-1.5" />}
             </Link>
           ) : (
             <span className="block aspect-video rounded-card bg-surface-2" aria-hidden />
@@ -195,7 +194,6 @@ export function EventTile({ x }: { x: EventItem }) {
     <Link to={x.to} className="group block h-full overflow-hidden rounded-card border border-line bg-surface transition-colors hover:border-white/40">
       <span className="relative block aspect-video overflow-hidden bg-surface-2">
         {x.final && <img src={x.final.thumb} style={artStyle({ pos: x.final.thumbPos, fit: x.final.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />}
-        {x.live && <LiveTag className="absolute top-2 left-2" />}
       </span>
       <span className="block p-3">
         <span className="block text-xs text-muted tnum">{[x.number ? `Event #${x.number}` : '', x.date ? dateLabel(x.date) : ''].filter(Boolean).join(' · ') || ' '}</span>

@@ -2,7 +2,7 @@
 import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../state/app';
-import { Icon, LiveTag, cx } from '../components/ui';
+import { Icon, cx } from '../components/ui';
 import { duration } from '../lib/format';
 import { artStyle } from '../lib/brand';
 import type { ListKind } from '../state/app';
@@ -49,7 +49,8 @@ export function About({ v }: { v: Video }) {
  */
 /** A thumbnail badge, drawn by the UI over the picture: Live (red), New (white) or Recently added (dark, outlined). */
 export function CardBadge({ b, className }: { b: Badge; className?: string }) {
-  if (b === 'Live') return <LiveTag className={className} />;
+  // No LIVE badge on pictures (what's on air says so in its text and its Watch live button).
+  if (b === 'Live') return null;
   return (
     <span className={cx('label rounded-[4px] px-1.5 py-0.5 text-[10px]', b === 'New' ? 'bg-white text-black' : 'bg-black/75 text-white ring-1 ring-white/50', className)}>
       {b === 'New' ? 'New' : 'Recently added'}
