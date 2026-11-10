@@ -77,7 +77,6 @@ export const THEMES: Theme[] = [
   {
     id: 'this-series',
     // Named by its season ("2025 WSOP Las Vegas"), not "this series": the title says which one.
-    eyebrow: SEASON,
     title: 'This Summer’s Bracelet Winners',
     blurb: `Every bracelet decided so far at the ${SEASON}, newest first.`,
     when: (now) => inSeason(now),
@@ -179,7 +178,7 @@ export function homeHands(now = Date.now()): { title: string; eyebrow?: string; 
   const s = currentSeries();
   const own = highlightClips.filter((v) => eventOf(v)?.seriesId === s.id && startOf(v) <= now);
   return inSeason(now)
-    ? { eyebrow: SEASON, title: 'Must-See Hands', videos: [...own].sort((a, b) => startOf(b) - startOf(a) || b.views - a.views) }
+    ? { title: 'Must-See Hands', videos: [...own].sort((a, b) => startOf(b) - startOf(a) || b.views - a.views) }
     : { title: `Best Hands of the ${s.name.slice(0, 4)} WSOP`, videos: own };
 }
 

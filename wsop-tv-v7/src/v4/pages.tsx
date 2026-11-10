@@ -832,7 +832,8 @@ function photoPicker(skip: Set<string>) {
   };
 }
 
-const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: 'Right now', weekly: 'Featured collection' } as const;
+// The season's own theme carries no label (its title says it); a pinned or rotating one is marked Featured collection.
+const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: '', weekly: 'Featured collection' } as const;
 
 /**
  * The featured theme on Home: one wide card (title, note, how long, Play all) with its first videos beside it. Which
@@ -846,7 +847,7 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
     <section aria-label={theme.title} className="relative overflow-hidden rounded-card border border-line bg-[radial-gradient(90%_120%_at_0%_0%,rgba(212,175,55,0.16),transparent_60%),linear-gradient(180deg,#141210,#0b0b0b)] p-5 sm:p-7">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-center">
         <div>
-          <p className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{theme.eyebrow ?? FEATURED_LABEL[f.why]}</p>
+          {(theme.eyebrow ?? FEATURED_LABEL[f.why]) && <p className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{theme.eyebrow ?? FEATURED_LABEL[f.why]}</p>}
           <h2 className="mt-2 text-3xl leading-tight sm:text-4xl">
             <Link to={`/collections/${theme.id}`} className="hover:underline hover:decoration-2 hover:underline-offset-4">
               {theme.title}
