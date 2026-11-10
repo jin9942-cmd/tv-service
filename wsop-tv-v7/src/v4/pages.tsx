@@ -1335,14 +1335,7 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
         <p className="text-sm text-muted">
           {st === 'past' ? 'Every broadcast is on demand. ' : ''}Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with local time in {s.city.split(',')[0]}.
         </p>
-        {/* A series that is over: its replays as event cards in Browse. */}
-        {st === 'past' && (
-          <Link to={`/videos/replays?series=${s.id}`}>
-            <Button size="sm" variant="primary" tabIndex={-1}>
-              <Icon name="play" size={14} /> All replays in Browse
-            </Button>
-          </Link>
-        )}
+        {/* A series that is over: no extra button here; its Videos row below carries the one All replays → link. */}
       </div>
       {/* One table: a series that is over reads first day to last; a running one puts live and upcoming on top. */}
       {rows.length > 0 && table(ahead.length === 0 ? [...earlier].reverse() : [...ahead, ...earlier])}
@@ -1351,7 +1344,7 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
         <div className="mt-6">
           <div className="mb-3 flex items-end justify-between gap-3">
             <h3 className="text-base font-bold">Videos from this series</h3>
-            <Link to={`/videos/replays?series=${s.id}`} className="text-sm font-semibold text-muted hover:text-text">
+            <Link to={`/videos/year/${s.name.slice(0, 4)}`} className="text-sm font-semibold text-muted hover:text-text">
               All replays →
             </Link>
           </div>
