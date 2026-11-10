@@ -499,7 +499,8 @@ export function VideosPage({ tab }: { tab: 'years' | 'players' }) {
   return (
     <Page className="max-w-[96rem]">
       {/* The two tabs are the page's headline (Years · Players); the word Browse is already lit in the menu. */}
-      <h1 className="sr-only">Browse</h1>
+      {/* The page title (as Schedule's), then Browse's own sub-menu: Years · Players. */}
+      <h1 className={PAGE_TITLE}>Browse</h1>
       <BrowseTabs tab={tab} />
       {tab === 'years' ? <YearsTab /> : <PlayersTab />}
     </Page>
@@ -621,6 +622,9 @@ function PlayerTile({ to, rank, name, cc, line, out, photo }: { to?: string; ran
     <div className="h-full">{body}</div>
   );
 }
+
+/** A top-level page's title (Browse, Schedule): the same size and type on every page. */
+export const PAGE_TITLE = 'font-display text-4xl leading-none uppercase sm:text-5xl';
 
 const playerRowGrid = 'hscroll gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-3*0.75rem)/4)] lg:[&>*]:w-[calc((100%-8*0.75rem)/9)]';
 
@@ -1231,10 +1235,8 @@ export function SchedulePage() {
     });
   return (
     <Page className="max-w-[96rem]">
-      {/* The same headline as Browse's Years / Players tabs: big display type, gold bar, a rule under it. */}
-      <div className="flex border-b border-line">
-        <h1 className="-mb-px border-b-4 border-gold pb-3 font-display text-4xl leading-none uppercase sm:text-5xl">Schedule</h1>
-      </div>
+      {/* The page title, the same as Browse's (Schedule has no sub-menu, so no tabs under it). */}
+      <h1 className={PAGE_TITLE}>Schedule</h1>
       <div className="mt-6 flex flex-col gap-3">
         {byStart.map((x) => (
           <SeriesFold key={x.id} s={x} open={open.has(x.id)} onToggle={() => toggle(x.id)} now={now} />

@@ -32,10 +32,10 @@ export function BrowseTabs({ tab }: { tab: 'years' | 'players' }) {
   ] as const;
   return (
     <>
-      {/* Big display-type tabs, as the page's headline: the one you are on in white with the gold bar, the other dimmed. */}
-      <nav className="flex gap-8 border-b border-line sm:gap-10" aria-label="Browse">
+      {/* The sub-menu under the page title: a step smaller than the title, still easy to see (white + gold bar on, dimmed off). */}
+      <nav className="mt-5 flex gap-7 border-b border-line" aria-label="Browse">
         {tabs.map(([to, label, k]) => (
-          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-4 pb-3 font-display text-4xl leading-none uppercase transition-colors sm:text-5xl', tab === k ? 'border-gold text-text' : 'border-transparent text-white/35 hover:text-white/75')}>
+          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-[3px] pb-2.5 text-lg font-bold transition-colors sm:text-xl', tab === k ? 'border-gold text-text' : 'border-transparent text-white/45 hover:text-white/80')}>
             {label}
           </Link>
         ))}
@@ -72,7 +72,9 @@ const yearSize = (y: (typeof ARCHIVE)[number]) => {
 const RECENT_FROM = 2019;
 
 /** Every season from the archive (not the Classics), newest first, with what it holds. Home's Seasons row uses it too. */
-export const pastSeasons = () => ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_YEAR).map((y) => ({ year: y.year, line: eventsNote(yearSize(y).events) }));
+export const pastSeasons = () => ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_YEAR).map((y) => ({ year: y.year, line: seasonLine(y) }));
+/** Under a season tile: its Main Event champion (as F1 TV's tiles carry the season's story), then what it holds. */
+export const seasonLine = (y: (typeof ARCHIVE)[number]) => [y.champion && `Champion ${y.champion.name}`, eventsNote(yearSize(y).events)].filter(Boolean).join(' · ');
 
 /**
  * A season as type-only key art: the WSOP mark, the year large (and again, outlined, cropped at the corner) and what
@@ -129,7 +131,6 @@ export function YearsTab() {
   const tile = (y: (typeof ARCHIVE)[number]) => {
     const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
     const ref = main ? archiveEvent(main.id) : undefined;
-    const size = yearSize(y);
     // Classics: their own still. Other years: a crop of real play, graphics left out.
     const own = CLASSIC_STILLS.find((x) => x.startsWith(String(y.year)));
     const art = y.classic ? (own ? `${import.meta.env.BASE_URL}classics/classic-${own.slice(0, 4)}-${own.slice(4)}.jpg` : main ? archiveArt(main.id) : '') : seasonPhoto(y.year);
@@ -140,7 +141,7 @@ export function YearsTab() {
           art={art}
           // Like every other thumbnail, a tile opens a page first: a Classic its Main Event page (the broadcast, Play there).
           to={y.classic && ref ? `/videos/event/${ref.event.id}` : `/videos/year/${y.year}`}
-          line={y.classic ? 'Main Event · Full broadcast' : `${eventsNote(size.events)} · ${daysNote(size.casts)}`}
+          line={y.classic ? (y.champion ? `Champion ${y.champion.name}` : 'Main Event') : seasonLine(y)}
         />
       </li>
     );
@@ -220,11 +221,12 @@ const yearRowGrid = 'gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] l
 export function YearPhotoTile({ year, art, to, line, play }: { year: number; art: string; to: string; line: string; play?: boolean }) {
   return (
     <Link to={to} onClick={play ? enterFullScreen : undefined} className="group block">
-      <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-        <img src={art} alt="" loading="lazy" className="absolute inset-0 size-full object-cover opacity-80 transition-transform duration-200 group-hover:scale-[1.04]" />
-        <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/10" aria-hidden />
+      <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2 [container-type:inline-size]">
+        <img src={art} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+        <span className="absolute inset-0 bg-black/25" aria-hidden />
+        {/* F1 TV's season tile: the year huge and see-through, so the champion's moment shows through it. */}
         <span className="absolute inset-0 grid place-items-center">
-          <span className="font-display text-6xl leading-none text-white/95 tnum drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] sm:text-7xl">{year}</span>
+          <span className="font-display text-[38cqw] leading-none font-bold tracking-tight text-white/55 tnum">{year}</span>
         </span>
         {play && (
           <span className="absolute right-2 bottom-2 grid size-8 place-items-center rounded-full bg-white/90 text-black" aria-hidden>
