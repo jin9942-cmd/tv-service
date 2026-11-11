@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
+import { DEMO_NOW } from '../lib/clock';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
 import { HERO_DAY_ID, classicEvents, dayById, eventById, events, isClassicEvent, playerById, players, series, seriesById } from '../data/mock';
@@ -1207,6 +1208,8 @@ type SeriesStop = { id: string; name: string; venue: string; city: string; tz?: 
 
 const DAY_MS = 86_400_000;
 /** The season's WSOP series (the 2025 Las Vegas series), from the data. */
+/** The Schedule's moment (see SchedulePage). */
+const SCHEDULE_AT = Date.parse('2026-07-14T21:00:00Z');
 const SEASON: SeriesStop[] = [
   // The demo series' dates cover all of their broadcasts.
   // The season as signed off: 2025 Paradise, 2026 WSOP Europe (Prague), the 2026 World Series of Poker, 2026 Super Circuit Canada.
@@ -1228,7 +1231,9 @@ const shortDate = (iso: string, tz: string) => new Intl.DateTimeFormat('en-US', 
  */
 export function SchedulePage() {
   const { seriesId } = useParams();
-  const now = useTick(60_000);
+  // The Schedule shows the season as signed off: Jul 14, 2026 in Las Vegas, the Main Event final table on air (the rest of
+  // the demo is set on May 15, 2026). The clock keeps moving from there.
+  const now = useTick(60_000) - DEMO_NOW + SCHEDULE_AT;
   const byStart = [...SEASON].sort((a, b) => a.start.localeCompare(b.start));
   const first =
     SEASON.find((x) => x.id === seriesId) ??
@@ -1315,7 +1320,8 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
   const st = seriesState(s, now);
   // Recommended from this series: its latest replays, then its key hands (four in all).
   const ofSeries = catalog.filter((v) => v.eventId && eventById(v.eventId)?.seriesId === s.id && !isLive(v, state.streamMode));
-  const seriesVideos = [...ofSeries.filter((v) => v.kind === 'broadcast').reverse().slice(0, 2), ...ofSeries.filter((v) => v.kind === 'clip').slice(0, 2)];
+  // The 2026 series: the WSOP channel's real uploads of it (its broadcasts here are schedule entries, not files).
+  const seriesVideos = s.id === 'lv26' ? ytGroup('season26').slice(0, 4) : [...ofSeries.filter((v) => v.kind === 'broadcast').reverse().slice(0, 2), ...ofSeries.filter((v) => v.kind === 'clip').slice(0, 2)];
   const status = (d: Day) => (d.id === HERO_DAY_ID ? state.streamMode : d.status);
   const all = events
     .filter((e) => e.seriesId === s.id)

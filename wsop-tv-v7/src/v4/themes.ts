@@ -50,7 +50,8 @@ const yearOf = (v: Video) => {
   return e ? Number((isClassicEvent(e) ? e.name : seriesById(e.seriesId).name).slice(0, 4)) : 0;
 };
 
-const broadcasts = () => catalog.filter(isFullBroadcast);
+// The 2026 series' days are Schedule entries only (no files): they stay out of every row.
+const broadcasts = () => catalog.filter((v) => isFullBroadcast(v) && eventOf(v)?.seriesId !== 'lv26');
 const newest = (a: Video, b: Video) => startOf(b) - startOf(a);
 const mostWatched = (a: Video, b: Video) => b.views - a.views;
 /** Different pictures side by side. */

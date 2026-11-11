@@ -6,7 +6,7 @@ import { FOOTAGE } from '../lib/media';
 import type { Video } from './catalog';
 import { archiveEvent, broadcastsOf, highlightsOf } from './archive';
 
-type Group = 'mizrachi' | 'hands' | 'iconic' | 'event';
+type Group = 'mizrachi' | 'hands' | 'iconic' | 'event' | 'season26';
 interface Yt {
   id: string;
   title: string;
@@ -67,6 +67,14 @@ const LIST: Yt[] = [
   Y('6TnQxvLRdRw', '🥇€1,140,000 for 1st🏆€10,350 WSOPE MAIN EVENT NLH European Championship - Final Table 👑🎙️Luka Bojovic', '2025-10-08', 'event', 'eu:main'),
   Y('5VhUDMsnnA4', '🏆 WSOPE NLH Colossus - Final Day [BRACELET EVENT #7] live from King\'s 👑 #wsop #poker', '2025-09-28', 'event', 'eu:7'),
   Y('KAQtghf5o38', '$5M GTD | WSOP Super Circuit Cyprus Main Event - Final Day', '2025-10-21', 'event', 'circuit:main'),
+  // The 2026 World Series of Poker as the Schedule shows it (Jul 14, 2026): the channel's uploads up to that day. Only
+  // the Schedule uses these (the rest of the demo is set on May 15, 2026).
+  Y('XjKaiw5oAY0', 'The BIGGEST POT In The 2026 MAIN EVENT', '2026-07-13', 'season26'),
+  Y('CeVpt52Ao2Y', 'Michael Mizrachi’s Day 5 Was Pure Chaos', '2026-07-11', 'season26'),
+  Y('y5PZt0XW-H8', 'The Sickest Bluff Of The Main Event', '2026-07-10', 'season26'),
+  Y('HwEHTLyTBE4', "The Most ABSURD Main Event Hand We've Seen", '2026-07-10', 'season26'),
+  Y('IMZVcSsG5PI', "Michael Mizrachi's Bracelet #9 Run | $10,000 PLO Championship Final Table", '2026-06-29', 'season26'),
+  Y('deAsBMKAaFk', '$50,000 PPC - Final Table | World Series of Poker', '2026-06-25', 'season26'),
 ];
 
 const toVideo = (y: Yt, i: number): Video => ({

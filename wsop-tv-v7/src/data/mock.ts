@@ -77,7 +77,7 @@ export const series: Series[] = [
   // The Schedule's season (as signed off): 2025 Paradise, 2026 WSOP Europe in Prague (Mar 31 – Apr 12, 2026), the 2026
   // World Series of Poker and the 2026 WSOP Super Circuit Canada (Aug 26 – Sep 12, 2026: https://www.newswire.ca/news-releases/a-historic-first-for-canada-from-august-26-to-september-12-2026-the-wsop-super-circuit-comes-to-canada-with-more-than-14-million-in-guaranteed-prize-pools-811014038.html).
   { id: 'eu26', name: '2026 WSOP Europe', venue: 'King’s Casino Prague', city: 'Prague, CZ', tz: 'Europe/Prague', start: '2026-03-31T10:00:00Z', end: '2026-04-12T21:59:00Z' },
-  { id: 'ca26', name: '2026 WSOP Super Circuit Canada', venue: 'Playground Poker Club', city: 'Kahnawake, QC', tz: 'America/Toronto', start: '2026-08-26T16:00:00Z', end: '2026-09-13T03:59:00Z' },
+  { id: 'ca26', name: '2026 WSOP Super Circuit Canada', venue: 'Playground Poker Club', city: 'Kahnawake, QC', tz: 'America/Toronto', start: '2026-08-24T16:00:00Z', end: '2026-09-10T03:59:00Z' }, // dates as on the signed-off Schedule (the press release says Aug 26 – Sep 12)
 ];
 
 /** A final table is a single table, so its extra streams are camera feeds of that table; earlier days have outer tables. */
@@ -211,7 +211,8 @@ export const events: TourEvent[] = [
     // Its event number isn't on the schedule source, so none is shown (0 = no number).
     id: 'lv26-main', seriesId: 'lv26', number: 82, name: 'Main Event', game: 'No-Limit Hold’em', startingStack: 60_000,
     buyIn: 10_000, entrants: 0, prizePool: 0, firstPrize: 0, level: 0, remaining: 0,
-    days: [day('lv26-main', 'Day 1A', noon('2026-07-02'), 600, 'upcoming')],
+    // On the Schedule (as signed off, at Jul 14, 2026): the final table on air.
+    days: [day('lv26-main', 'Final Table', at('2026-07-14T20:00:00Z'), 540, 'live')],
   },
   // The 2026 series' broadcast final tables, as on the signed-off Schedule (event, buy-in, Las Vegas date, 2:30 PM); none played yet.
   ...(
@@ -229,7 +230,8 @@ export const events: TourEvent[] = [
   ).map(([id, number, name, buyIn, date, game]): TourEvent => ({
     id, seriesId: 'lv26', number, name, game: game ?? 'No-Limit Hold’em', startingStack: 0,
     buyIn, entrants: 0, prizePool: 0, firstPrize: 0, level: 0, remaining: 0,
-    days: [day(id, 'Final Table', at(`${date}T21:30:00Z`), 480, 'upcoming')],
+    // Aired by the Schedule's moment (Jul 14, 2026); #94 is on air then, right after the Main Event final table.
+    days: [id === 'lv26-94' ? day(id, 'Final Table', at('2026-07-14T20:45:00Z'), 480, 'live') : day(id, 'Final Table', at(`${date}T21:30:00Z`), 480, 'vod')],
   })),
 ];
 
