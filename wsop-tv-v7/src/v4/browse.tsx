@@ -17,7 +17,7 @@ import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { HALL_OF_FAME, hofPhoto } from './halloffame';
 import { Carousel } from './carousel';
 import { photoOf } from './photos';
-import { ytForEvent } from './youtube';
+import { YT_VIDEOS, ytForEvent } from './youtube';
 import { EventRows, EventTile, archiveItem, liveItem, newestFirst, playerLink, scheduleOrder, type EventItem } from './loop';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
@@ -728,6 +728,9 @@ export function PlayerPage() {
           <p className="mt-3 text-sm text-muted">No final tables on record yet.</p>
         )}
       </section>
+      <div className="mt-12">
+        <PlayerVideosBlock name={p.name} />
+      </div>
     </Page>
   );
 }
@@ -802,6 +805,10 @@ function LegendPage({ l }: { l: Legend }) {
           <p className="mt-3 text-sm text-muted">No Main Event final tables on record here yet.</p>
         )}
       </section>
+      {/* Their videos from the whole archive (events they won, videos that name them, the WSOP channel's), under the results. */}
+      <div className="mt-12">
+        <PlayerVideosBlock name={l.name} />
+      </div>
     </Page>
   );
 }
@@ -1122,10 +1129,8 @@ export function BrowseAll() {
     return () => window.removeEventListener('scroll', on);
   }, []);
   // Which years are on the page: one year; or, for All, the newest `more` years; picking players searches every year.
-  const shownYears = picked.length ? years : year === 'all' ? years.slice(0, more) : [year];
-  const groups = shownYears
-    .map((y) => ({ y, rows: seasonRows(y).filter((r) => !picked.length || picked.some((p) => r.players.includes(p))) }))
-    .filter((g) => g.rows.length);
+  const shownYears = picked.length ? [] : year === 'all' ? years.slice(0, more) : [year];
+  const groups = shownYears.map((y) => ({ y, rows: seasonRows(y) })).filter((g) => g.rows.length);
   const nextYear = !picked.length && year === 'all' ? years[more] : undefined;
   const needle = q.trim().toLowerCase();
   const shown = needle ? ALL_PLAYER_NAMES.filter((n) => n.toLowerCase().includes(needle)) : MOST_SEARCHED;
@@ -1155,7 +1160,7 @@ export function BrowseAll() {
             <Icon name="chevron" size={16} className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 rotate-90 text-muted" />
           </label>
           {/* Players: a search box; its list (Most Searched, or the matches) opens under it only while searching. */}
-          <div ref={box} className="relative min-w-64 flex-1">
+          <div ref={box} className="relative w-full sm:w-80">
             <label className="flex h-11 items-center gap-2 rounded-chip border border-line-strong bg-surface px-3 focus-within:border-white/60">
               <Icon name="search" size={16} className="text-muted" />
               <input id="browse-player-search" value={q} onFocus={() => setOpen(true)} onChange={(e) => (setQ(e.target.value), setOpen(true))} placeholder="Search players" aria-label="Search players" aria-expanded={open} className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
@@ -1166,7 +1171,7 @@ export function BrowseAll() {
               )}
             </label>
             {open && (
-              <div className="absolute inset-x-0 top-full z-30 mt-2 rounded-card border border-line bg-surface p-4 shadow-2xl shadow-black/60 lg:left-auto lg:w-[min(48rem,calc(100vw-4rem))]">
+              <div className="absolute top-full left-0 z-30 mt-2 w-[min(44rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-4 shadow-2xl shadow-black/60">
                 <p className="mb-2 text-sm font-bold">{needle ? `Players matching "${q.trim()}"` : 'Most Searched'}</p>
                 {shown.length ? (
                   <ul className="grid max-h-64 grid-cols-1 gap-x-4 gap-y-0.5 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -1206,7 +1211,17 @@ export function BrowseAll() {
       </div>
 
       <WsopLegendsRow />
-      {/* The series, newest first, one row each (no year headings: each series name carries its year). */}
+      {/* Players picked: each player's videos from the whole archive in one block (not split by year or series). */}
+      {picked.length > 0 ? (
+        <div className="mt-8 space-y-12">
+          {picked.map((n) => {
+            const vs = playerVideos(n);
+            const l = LEGENDS.find((x) => x.name === n);
+            return vs.length ? <VideoGridBlock key={n} title={n} to={l ? `/videos/players/${l.id}` : undefined} sub={`${vs.length} video${vs.length === 1 ? '' : 's'} · every year`} videos={vs} /> : <p key={n} className="rounded-card border border-line bg-surface p-5 text-sm text-muted">No videos of {n} yet.</p>;
+          })}
+        </div>
+      ) : (
+      /* The series, newest first, one row each (no year headings: each series name carries its year). */
       <div className="mt-8 space-y-10">
         {groups.length ? (
           groups.map((g) => (
@@ -1220,6 +1235,7 @@ export function BrowseAll() {
           <p className="rounded-card border border-line bg-surface p-5 text-sm text-muted">No videos match these filters.</p>
         )}
       </div>
+      )}
       {nextYear != null && (
         <div className="mt-10 flex justify-center">
           <button type="button" onClick={() => setMore((n) => n + 1)} className="inline-flex h-11 items-center gap-2 rounded-full border border-line-strong px-6 text-sm font-bold hover:border-white/60">
@@ -1397,6 +1413,53 @@ function BackToTop() {
   );
 }
 
+/**
+ * A player's videos from the whole archive, newest first: every video of an event they won, every video whose title
+ * names them, and the WSOP channel's uploads that name them (full name, or a surname only they have).
+ */
+const PLAYER_VIDEOS = new Map<string, Video[]>();
+export function playerVideos(name: string): Video[] {
+  const hit = PLAYER_VIDEOS.get(name);
+  if (hit) return hit;
+  const rows = ARCHIVE.flatMap((y) => seasonRows(y.year));
+  const last = name.split(' ').slice(-1)[0];
+  const ownSurname = last.length >= 4 && ALL_PLAYER_NAMES.filter((n) => n.split(' ').slice(-1)[0] === last).length === 1;
+  const names = (t: string) => t.includes(name) || (ownSurname && new RegExp(`\\b${last}\\b`, 'i').test(t));
+  const out = [...rows.flatMap((r) => (r.winner === name ? r.videos : r.videos.filter((v) => names(v.title)))), ...YT_VIDEOS.filter((v) => names(v.title))];
+  const list = out.filter((v, i) => out.findIndex((x) => x.id === v.id) === i);
+  PLAYER_VIDEOS.set(name, list);
+  return list;
+}
+
+/** A titled grid of videos: four on a line, "Show all N" opens the rest in place (player results, a player's page). */
+function VideoGridBlock({ title, to, sub, videos }: { title: string; to?: string; sub: string; videos: Video[] }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? videos : videos.slice(0, 4);
+  return (
+    <section aria-label={title}>
+      <div className="mb-4">
+        <h2 className="text-lg font-bold sm:text-xl">{to ? <Link to={to} className="hover:underline hover:decoration-2 hover:underline-offset-4">{title}</Link> : title}</h2>
+        <p className="mt-0.5 text-sm text-muted">{sub}</p>
+      </div>
+      <BadgeScope videos={shown}>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-4">
+          {shown.map((v) => (
+            <VideoCard key={v.id} v={v} />
+          ))}
+        </div>
+      </BadgeScope>
+      {videos.length > 4 && (
+        <div className="mt-5 flex justify-center">
+          <button type="button" onClick={() => setAll((x) => !x)} aria-expanded={all} className="inline-flex h-10 items-center gap-2 rounded-full border border-line-strong px-5 text-sm font-bold hover:border-white/60">
+            {all ? 'Show less' : `Show all ${videos.length}`}
+            <Icon name="chevron" size={16} className={all ? '-rotate-90' : 'rotate-90'} />
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /** One event: its name (opens the event page) and who won, then its videos — sideways, or all laid out (`grid`). */
 export function EventVideoRow({ r, grid }: { r: SeasonRow; grid?: boolean }) {
   // The full list (series page): one line of four, and "Show all" opens the rest in place (and closes it again).
@@ -1510,4 +1573,11 @@ function WsopLegendsRow() {
       </Carousel>
     </section>
   );
+}
+
+/** A player's page: their videos (Browse's player search finds the same set). */
+function PlayerVideosBlock({ name }: { name: string }) {
+  const vs = playerVideos(name);
+  if (!vs.length) return null;
+  return <VideoGridBlock title="Videos" sub={`${vs.length} video${vs.length === 1 ? '' : 's'} · every year`} videos={vs} />;
 }
