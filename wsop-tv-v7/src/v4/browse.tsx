@@ -743,7 +743,7 @@ function LegendPage({ l }: { l: Legend }) {
     <Page className="max-w-[96rem]">
       {back('/videos/players', 'Players')}
       <header className="mt-4 flex flex-wrap items-center gap-5">
-        <Avatar name={l.name} hue={l.hue} size={96} photo={hofPhoto(l.name)} ring />
+        <Avatar name={l.name} hue={l.hue} size={96} photo={photoOf(l.name) ?? hofPhoto(l.name)} ring />
         <div>
           <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">Bracelet legend</p>
           <h1 className="mt-1 text-title">{l.name}</h1>
@@ -915,7 +915,7 @@ export function ArchiveEventPage() {
             </Link>
             {event.number != null && ` · Event #${event.number}`}
           </p>
-          <h1 className="mt-2 max-w-3xl font-sans text-3xl leading-tight font-bold normal-case sm:text-5xl">{event.name}</h1>
+          <h1 className="mt-2 max-w-3xl font-sans text-3xl leading-tight font-bold normal-case sm:text-5xl">{ARCHIVE_FIX[event.id]?.title.replace(/^#\d+ · /, '') ?? event.name}</h1>
           <p className="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-sm text-white/80">
             {facts.map((x, i) => (
               <span key={i} className="inline-flex items-center gap-2">
