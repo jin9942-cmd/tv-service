@@ -1390,17 +1390,58 @@ export function SeriesEventsPage() {
       <p className="mt-1 text-sm text-muted tnum">
         {g.events.length} event{g.events.length === 1 ? '' : 's'} · {videos} videos
       </p>
-      <div className="mt-8 space-y-10">
+      {/* Every event with all its videos laid out (no sideways rows here: this page is the full list). */}
+      <div className="mt-8 divide-y divide-line">
         {g.events.map((r) => (
-          <EventVideoRow key={r.key} r={r} />
+          <div key={r.key} className="py-8 first:pt-0">
+            <EventVideoRow r={r} grid />
+          </div>
         ))}
       </div>
+      <BackToTop />
     </Page>
   );
 }
 
-/** One event as a row of its videos: its name (opens the event page) and who won, then the videos sideways. */
-export function EventVideoRow({ r }: { r: SeasonRow }) {
+/** Back to the top: a round button at the bottom right once the page has scrolled. */
+function BackToTop() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const on = () => setShow(window.scrollY > 800);
+    on();
+    window.addEventListener('scroll', on, { passive: true });
+    return () => window.removeEventListener('scroll', on);
+  }, []);
+  if (!show) return null;
+  return (
+    <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Back to top" className="fixed right-[max(1.25rem,env(safe-area-inset-right))] bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-40 grid size-12 place-items-center rounded-full bg-white text-black shadow-lg shadow-black/50 hover:bg-white/85">
+      <Icon name="chevron" size={20} className="-rotate-90" />
+    </button>
+  );
+}
+
+/** One event: its name (opens the event page) and who won, then its videos — sideways, or all laid out (`grid`). */
+export function EventVideoRow({ r, grid }: { r: SeasonRow; grid?: boolean }) {
+  if (grid)
+    return (
+      <section aria-label={r.title}>
+        <div className="mb-4">
+          <h3 className="text-base font-bold sm:text-lg">
+            <Link to={r.to} className="hover:underline hover:decoration-2 hover:underline-offset-4">
+              {r.title}
+            </Link>
+          </h3>
+          <p className="mt-0.5 text-sm text-muted">{[r.winner && `Won by ${r.winner}`, `${r.videos.length} video${r.videos.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</p>
+        </div>
+        <BadgeScope videos={r.videos}>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-4">
+            {r.videos.map((v) => (
+              <VideoCard key={v.id} v={v} />
+            ))}
+          </div>
+        </BadgeScope>
+      </section>
+    );
   return (
     <section aria-label={r.title}>
       {/* The event's name (opens the event page) and who won; the series line above already says where. */}
