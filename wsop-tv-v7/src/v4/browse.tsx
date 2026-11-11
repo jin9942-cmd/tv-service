@@ -1451,7 +1451,7 @@ function VideoGridBlock({ title, to, sub, videos }: { title: string; to?: string
       {videos.length > 4 && (
         <div className="mt-5 flex justify-center">
           <button type="button" onClick={() => setAll((x) => !x)} aria-expanded={all} className="inline-flex h-10 items-center gap-2 rounded-full border border-line-strong px-5 text-sm font-bold hover:border-white/60">
-            {all ? 'Show less' : `Show all ${videos.length}`}
+            {all ? 'See less' : 'See more'}
             <Icon name="chevron" size={16} className={all ? '-rotate-90' : 'rotate-90'} />
           </button>
         </div>
@@ -1487,7 +1487,7 @@ export function EventVideoRow({ r, grid }: { r: SeasonRow; grid?: boolean }) {
         {r.videos.length > GRID_FIRST && (
           <div className="mt-5 flex justify-center">
             <button type="button" onClick={() => setAll((x) => !x)} aria-expanded={all} className="inline-flex h-10 items-center gap-2 rounded-full border border-line-strong px-5 text-sm font-bold hover:border-white/60">
-              {all ? 'Show less' : `Show all ${r.videos.length}`}
+              {all ? 'See less' : 'See more'}
               <Icon name="chevron" size={16} className={all ? '-rotate-90' : 'rotate-90'} />
             </button>
           </div>
