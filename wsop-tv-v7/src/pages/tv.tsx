@@ -1,7 +1,7 @@
 // v4 — WSOP TV, OTT-standard (Netflix / YouTube): promotion banner, 24/7 channels, then the rows; plus the
 // schedule, shows and how to watch. Labels stay minimal.
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
 import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
 import { HERO_DAY_ID, dayById, hands, seriesById } from '../data/mock';
@@ -80,7 +80,9 @@ function ChannelTabs({ active, now, onSelect }: { active: string; now: number; o
  */
 function PromoBanner() {
   const { state } = useApp();
-  const [slide, setSlide] = useState(0);
+  // `?slide=2` opens the banner on that slide, `?still` shows its photo without the preview video (reviews, captures).
+  const [params] = useSearchParams();
+  const [slide, setSlide] = useState(() => Math.max(0, (Number(params.get('slide')) || 1) - 1));
   const { event, day } = dayById(HERO_DAY_ID)!;
   const live = isOnAir(state.streamMode);
   // The demo is set before the 2026 series: the banner leads with what's next, then last summer's champion.
@@ -148,7 +150,7 @@ function PromoBanner() {
         <div className="hero-photo relative aspect-[16/10] w-full md:absolute md:inset-y-0 md:right-8 md:aspect-auto md:w-[64%]">
           <img key={sl.img} src={sl.img} alt="" className="size-full object-cover" style={{ objectPosition: sl.pos }} />
           {/* Live slide: a muted preview of the broadcast plays over the photo. */}
-          {sl.preview && <video key="hero-preview" src={`${FOOTAGE.ft.url}#t=200`} poster={sl.img} muted autoPlay loop playsInline aria-hidden className="absolute inset-0 size-full object-cover" />}
+          {sl.preview && !params.has('still') && <video key="hero-preview" src={`${FOOTAGE.ft.url}#t=200`} poster={sl.img} muted autoPlay loop playsInline aria-hidden className="absolute inset-0 size-full object-cover" />}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent md:hidden" aria-hidden />
         </div>
       </div>
