@@ -1,6 +1,6 @@
 // v4 — the common watch page, Live, Videos (Highlights / Replays), the schedule, tag pages and the Home season strip
 // (all built from the catalog and the one card).
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
 import { DEMO_NOW } from '../lib/clock';
@@ -879,15 +879,24 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
   const list = activeThemes(now).filter((x) => !placed.includes(x.theme.id) && x.theme.id !== featured).slice(0, 6);
   if (!list.length) return null;
   const pick = photoPicker(skip);
+  const usedArt = new Set<string>();
+  const skipThumbs = new Set([...skip].map((id) => videoById(id)?.thumb ?? ''));
   return (
     <Section title="WSOP Collections">
       {/* Tall poster covers (2:3), unlike the wide video rows around it: a collection reads as a set, not one video. */}
-      <ul className="hscroll gap-4 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*1rem)/3.5)] lg:[&>*]:w-[calc((100%-5*1rem)/6)]">
+      {/* On wide screens the covers share the full row (4–6 of them), so the shelf never ends short. */}
+      <ul
+        style={{ '--n': Math.max(4, list.length) } as CSSProperties}
+        className="hscroll gap-4 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*1rem)/3.5)] lg:[&>*]:w-[calc((100%_-_(var(--n)_-_1)*1rem)/var(--n))]"
+      >
         {list.map(({ theme, videos }) => {
-          const art = pick();
+          // Each cover is a picture from its own videos that no other cover (or card above) shows; else a spare still.
+          const own = videos.map((v) => v.thumb).find((t) => t && !usedArt.has(t) && !skipThumbs.has(t));
+          const art: Pic = own ? { thumb: own, thumbPos: 'center' } : pick();
+          usedArt.add(art.thumb);
           return (
             <li key={theme.id} className="min-w-0">
-              <Link to={`/collections/${theme.id}`} className="group relative block aspect-[2/3] overflow-hidden rounded-card border border-line bg-surface-2 transition-colors hover:border-white/40">
+              <Link to={`/collections/${theme.id}`} className="group relative block aspect-[2/3] lg:aspect-[4/5] overflow-hidden rounded-card border border-line bg-surface-2 transition-colors hover:border-white/40">
                 <img src={art.thumb} style={artStyle({ pos: art.thumbPos, fit: art.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
                 <span className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" aria-hidden />
                 <span className="absolute inset-x-0 top-0 h-1 bg-gold" aria-hidden />

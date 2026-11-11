@@ -81,7 +81,8 @@ const toVideo = (y: Yt, i: number): Video => ({
   id: `yt.${y.id}`,
   kind: 'clip',
   title: y.title,
-  subtitle: 'WSOP on YouTube',
+  // No line under the title (where it's from isn't something the viewer needs on the card).
+  subtitle: '',
   // The title is the channel's own text; no separate description.
   description: '',
   // hqdefault is 4:3 with the 16:9 picture letterboxed; the card's 16:9 crop of its middle drops the bars.
