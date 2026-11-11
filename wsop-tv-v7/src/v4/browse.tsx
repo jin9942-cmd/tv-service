@@ -1236,7 +1236,7 @@ export function BrowseAll() {
                 </button>
               </h2>
               {!folded.has(g.y) &&
-                seriesOf(g.rows).map((s) => <SeriesBlock key={s.key} s={s} limit={picked.length ? undefined : SERIES_PREVIEW} />)}
+                seriesOf(g.rows).map((s) => <SeriesBlock key={s.key} s={s} />)}
             </section>
           ))
         ) : (
@@ -1331,8 +1331,6 @@ export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
 }
 
 /** One event: its name (opens the event page), where and who won, then its videos in a sideways row. */
-/** How many events a series shows on Browse before its See more (the series page lists them all). */
-const SERIES_PREVIEW = 3;
 type SeriesGroup = { key: string; year: number; seriesKey: SeriesKey; name: string; events: SeasonRow[] };
 /** A year's rows gathered by series, in order (newest series first). */
 const seriesOf = (rows: SeasonRow[]): SeriesGroup[] => {
@@ -1347,11 +1345,11 @@ const seriesOf = (rows: SeasonRow[]): SeriesGroup[] => {
 
 /**
  * A series on Browse: its name with how many events and videos, See more on the right (the series page: all its
- * events), and under it its events, each a row of its own videos (the Main Event first, then the newest).
+ * events, each a row of its videos), and under it one row of all its videos, event by event.
  */
-function SeriesBlock({ s, limit }: { s: SeriesGroup; limit?: number }) {
+function SeriesBlock({ s }: { s: SeriesGroup }) {
   const videos = s.events.reduce((n, r) => n + r.videos.length, 0);
-  const list = limit ? s.events.slice(0, limit) : s.events;
+  const rowVideos = s.events.flatMap((r) => r.videos).filter((v, i, all) => all.findIndex((x) => x.id === v.id) === i);
   return (
     <section aria-label={s.name} className="space-y-6">
       <div className="flex items-baseline justify-between gap-4">
@@ -1365,9 +1363,16 @@ function SeriesBlock({ s, limit }: { s: SeriesGroup; limit?: number }) {
           See more →
         </Link>
       </div>
-      {list.map((r) => (
-        <EventVideoRow key={r.key} r={r} />
-      ))}
+      {/* One row per series: its videos, event by event (the Main Event first, then the newest events). */}
+      <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        <BadgeScope videos={rowVideos}>
+          {rowVideos.map((v) => (
+            <li key={v.id} className="min-w-0">
+              <VideoCard v={v} />
+            </li>
+          ))}
+        </BadgeScope>
+      </Carousel>
     </section>
   );
 }
