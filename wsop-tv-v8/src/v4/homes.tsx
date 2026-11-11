@@ -1,8 +1,8 @@
 // v8 Home, after Chris's write-up of Michael's feedback: a tournament hub, not a row of loose videos.
 //  Top: live first (the table on air, what comes next) or, off air, the championship archive (the Main Event, the
 //  Classics, the bracelet legends). Then the 24/7 channels, the Event Center (this series' final tables and results),
-//  Continue watching only once there is something to continue, the Main Event year by year, the bracelet legends,
-//  the events that come back every year, hands, the Classics, every series, and My List last.
+//  the Main Event year by year, the bracelet legends,
+//  the events that come back every year, hands, the Classics, every series, then Continue watching and My List last.
 //  Two drafts differ only in the top: A the featured slides, B the WSOP TV channel player. ?mode=live shows the on-air
 //  state (on 2025 footage, marked as an example); ?results=hide hides winners and prizes (spoiler-free).
 import { useState, type ReactNode } from 'react';
@@ -256,8 +256,15 @@ function ResultsSwitch() {
   );
 }
 
+/** The review bar (draft A/B, on air / off air, results) is off: v8 keeps draft A in its default state. */
+const SHOW_DRAFT_BAR = false;
+
 /** For the review: which draft this is, and what the demo stands on. */
 function DraftBar() {
+  if (!SHOW_DRAFT_BAR) return null;
+  return <DraftBarInner />;
+}
+function DraftBarInner() {
   const { pathname, search } = useLocation();
   const b = pathname === '/home-b';
   const tab = (to: string, on: boolean, label: string) => (
@@ -356,8 +363,8 @@ function HandsRow({ hide }: { hide: boolean }) {
 
 /**
  * The rows both drafts share, in order (Chris's write-up: curation → the series → the archive; personal rows only
- * when they have something): the 24/7 channels, the Event Center, Continue watching (once there is something), the
- * Main Event year by year, the bracelet legends, by event, hands, the Classics, every series, My List.
+ * when they have something): the 24/7 channels, the Event Center, the
+ * Main Event year by year, the bracelet legends, by event, hands, the Classics, every series, then Continue watching and My List.
  */
 function SharedRows({ mode }: { mode: Mode }) {
   const now = useTick(15_000);
@@ -405,7 +412,6 @@ function SharedRows({ mode }: { mode: Mode }) {
           ))}
         </ul>
       </Section>
-      <PersonalRows only="continue" />
       <Section title="The Main Event, year by year" note="Every Main Event in the archive since 2003" action={more('/videos', 'View More')}>
         <YearTiles years={modern} label={mainNote} />
       </Section>
@@ -416,7 +422,8 @@ function SharedRows({ mode }: { mode: Mode }) {
         <YearTiles years={classics} label={() => 'Main Event broadcast'} />
       </Section>
       <Tournaments />
-      <PersonalRows only="mylist" />
+      {/* Continue watching sits right above My List, at the bottom. */}
+      <PersonalRows />
     </Page>
   );
 }

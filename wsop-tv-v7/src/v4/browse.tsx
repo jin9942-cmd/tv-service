@@ -14,7 +14,7 @@ import { money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle } from '../lib/brand';
 import { catalog, highlightClips, isLive, stageOf, videoById, type Video } from './catalog';
 import { BadgeScope, VideoCard, rowGrid } from './detail';
-import { HALL_OF_FAME } from './halloffame';
+import { HALL_OF_FAME, hofPhoto } from './halloffame';
 import { Carousel } from './carousel';
 import { DaySchedule, EventRows, EventTile, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, scheduleOrder, type EventItem } from './loop';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
@@ -32,9 +32,10 @@ export function BrowseTabs({ tab }: { tab: 'years' | 'players' }) {
   ] as const;
   return (
     <>
-      <nav className="mt-4 flex gap-6 border-b border-line" aria-label="Browse">
+      {/* Browse's sub-menu, drawn as a menu: pill buttons under the title (the one you're on filled white). */}
+      <nav className="mt-4 flex gap-2" aria-label="Browse">
         {tabs.map(([to, label, k]) => (
-          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('-mb-px border-b-[3px] pb-2.5 text-[15px] font-semibold', tab === k ? 'border-gold text-text' : 'border-transparent text-muted hover:text-text')}>
+          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('inline-flex h-11 items-center rounded-full border px-6 text-base font-bold transition-colors', tab === k ? 'border-white bg-white text-black' : 'border-line-strong text-text/80 hover:border-white/60 hover:text-text')}>
             {label}
           </Link>
         ))}
@@ -71,7 +72,9 @@ const yearSize = (y: (typeof ARCHIVE)[number]) => {
 const RECENT_FROM = 2019;
 
 /** Every season from the archive (not the Classics), newest first, with what it holds. Home's Seasons row uses it too. */
-export const pastSeasons = () => ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_YEAR).map((y) => ({ year: y.year, line: eventsNote(yearSize(y).events) }));
+export const pastSeasons = () => ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_YEAR).map((y) => ({ year: y.year, line: seasonLine(y) }));
+/** Under a season tile: its Main Event champion (as F1 TV's tiles carry the season's story), then what it holds. */
+export const seasonLine = (y: (typeof ARCHIVE)[number]) => [y.champion && `Champion ${y.champion.name}`, eventsNote(yearSize(y).events)].filter(Boolean).join(' · ');
 
 /**
  * A season as type-only key art: the WSOP mark, the year large (and again, outlined, cropped at the corner) and what
@@ -125,29 +128,31 @@ export function YearsTab() {
     .flatMap((s) => s.events)
     .map(liveItem)
     .sort(newestFirst);
-  const tile = (y: (typeof ARCHIVE)[number], i: number) => {
+  // The lead: the event on air (live first in the order), else the newest final table.
+  const lead = thisYear.find((x) => x.final);
+  const leadHref = lead?.final ? (lead.live ? `/watch/${lead.final.id}` : `/watch/${lead.final.id}?play=1`) : (lead?.to ?? '/videos');
+  const related = thisYear.filter((x) => x !== lead && x.final).map((x) => x.final!);
+  const tile = (y: (typeof ARCHIVE)[number]) => {
     const main = y.series.find((s) => s.key === 'lv')?.events.find((e) => e.kind === 'Main Event') ?? y.series[0]?.events[0];
     const ref = main ? archiveEvent(main.id) : undefined;
-    const first = ref ? broadcastsOf(ref)[0] : undefined;
-    const size = yearSize(y);
-    // Classics: their own still and one broadcast (plays at once). Other years: a crop of real play, graphics left out.
+    // Classics: their own still. Other years: a crop of real play, graphics left out.
     const own = CLASSIC_STILLS.find((x) => x.startsWith(String(y.year)));
-    const art = y.classic ? (own ? `${import.meta.env.BASE_URL}classics/classic-${own.slice(0, 4)}-${own.slice(4)}.jpg` : main ? archiveArt(main.id) : '') : `${import.meta.env.BASE_URL}crops/${CROP_POOL[i % CROP_POOL.length]}.jpg`;
+    const art = y.classic ? (own ? `${import.meta.env.BASE_URL}classics/classic-${own.slice(0, 4)}-${own.slice(4)}.jpg` : main ? archiveArt(main.id) : '') : seasonPhoto(y.year);
     return (
       <li key={y.year} className="min-w-0">
         <YearPhotoTile
           year={y.year}
           art={art}
-          to={y.classic && first ? `/watch/${first.id}?play=1` : `/videos/year/${y.year}`}
-          play={!!(y.classic && first)}
-          line={y.classic ? 'Main Event · Full broadcast' : `${eventsNote(size.events)} · ${daysNote(size.casts)}`}
+          // Like every other thumbnail, a tile opens a page first: a Classic its Main Event page (the broadcast, Play there).
+          to={y.classic && ref ? `/videos/event/${ref.event.id}` : `/videos/year/${y.year}`}
+          line={y.classic ? (y.champion ? `Champion ${y.champion.name}` : 'Main Event') : seasonLine(y)}
         />
       </li>
     );
   };
-  const row = (list: typeof ARCHIVE, offset = 0) => (
+  const row = (list: typeof ARCHIVE) => (
     <div className="mt-4">
-      <Carousel className={yearRowGrid}>{list.map((y, i) => tile(y, i + offset))}</Carousel>
+      <Carousel className={yearRowGrid}>{list.map(tile)}</Carousel>
     </div>
   );
   return (
@@ -172,13 +177,49 @@ export function YearsTab() {
             The whole season →
           </Link>
         </div>
-        <Carousel className="gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]">
-          {thisYear.map((x) => (
-            <li key={x.id} className="min-w-0">
-              <EventTile x={x} />
-            </li>
-          ))}
-        </Carousel>
+        {/* One big picture: what's on now (or the latest final table) — two broadcasts at once is rare, so one leads. */}
+        {lead && (
+          <div className="grid overflow-hidden rounded-panel border border-line bg-surface lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+            <Link to={leadHref} onClick={lead.live ? undefined : enterFullScreen} className="group relative block aspect-video overflow-hidden bg-surface-2" aria-label={`Watch ${lead.name}`}>
+              {lead.final && <img src={lead.final.thumb} style={artStyle({ pos: lead.final.thumbPos, fit: lead.final.thumbFit })} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />}
+            </Link>
+            <div className="flex flex-col justify-center p-6 lg:p-8">
+              <p className="text-xs font-bold tracking-wide text-gold-strong uppercase tnum">
+                {lead.number != null ? `Event #${lead.number}` : 'Las Vegas'} · {lead.live ? 'Final table on air now' : 'Latest final table'}
+              </p>
+              <h3 className="mt-2 text-2xl leading-tight font-bold sm:text-3xl">{lead.name}</h3>
+              <p className="mt-1 text-sm text-muted">{[lead.buyLabel, lead.game].filter(Boolean).join(' · ')}</p>
+              {!lead.live && lead.winner && <p className="mt-3 text-[15px]">Winner · <span className="font-semibold">{lead.winner.name}</span></p>}
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link to={leadHref} onClick={lead.live ? undefined : enterFullScreen}>
+                  <Button variant="primary" tabIndex={-1}>
+                    <Icon name="play" size={16} /> {lead.live ? 'Watch live' : 'Watch the final table'}
+                  </Button>
+                </Link>
+                <Link to={lead.to}>
+                  <Button variant="outline" tabIndex={-1}>
+                    Open the event
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Under it, the season's other videos: each event's final table, newest first. */}
+        {related.length > 0 && (
+          <div className="mt-6">
+            <h3 className="mb-3 text-lg font-bold">More from the {CURRENT_YEAR} WSOP</h3>
+            <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+              <BadgeScope videos={related}>
+                {related.map((v) => (
+                  <li key={v.id} className="min-w-0">
+                    <VideoCard v={v} />
+                  </li>
+                ))}
+              </BadgeScope>
+            </Carousel>
+          </div>
+        )}
       </section>
 
       <section aria-label="Recent seasons" className="mt-10">
@@ -186,14 +227,14 @@ export function YearsTab() {
         {row(recent)}
       </section>
 
-      {decades.map((d, di) => {
+      {decades.map((d) => {
         const ys = older.filter((y) => Math.floor(y.year / 10) * 10 === d);
         // The years the archive holds (2018 – 2010, 2009 – 2003), newest first, as F1 TV heads its decades.
         const label = `${ys[0].year} – ${ys[ys.length - 1].year}`;
         return (
           <section key={d} aria-label={label} className="mt-10">
             <h2 className="text-xl sm:text-2xl tnum">{label}</h2>
-            {row(ys, (di + 1) * 5)}
+            {row(ys)}
           </section>
         );
       })}
@@ -212,21 +253,20 @@ export function YearsTab() {
 
 /** The Classics' own broadcast stills (public/classics, from the NAS: classic-<year>-<a|b>.jpg), first per year. */
 const CLASSIC_STILLS = '1973a 1978a 1979a 1981a 1983a 1987a 1988a 1989a 1990a 1991a 1992a 1993a 1994a 1995a 1997a 1998a 1999b 2000a 2001b 2002a'.split(' ');
-/** Graphic-free crops of real play (public/crops) for the tiles of years without a picture of their own. */
-/** The photo for a modern season's tile (a crop of real play, in turn). */
-export const seasonPhoto = (i: number) => `${import.meta.env.BASE_URL}crops/${CROP_POOL[i % CROP_POOL.length]}.jpg`;
-const CROP_POOL = ['lv-hr', 'classic-a1', 'lv-hu', 'classic-a4', 'lv-plo', 'classic-a3', 'lv-mmm', 'lv-ms', 'classic-a2', 'lv-ppc', 'lv-seniors', 'lv-ladies'];
+/** A modern season's tile photo: its Main Event champion at the winning moment (public/frames/champ-<year>.jpg, from the final table on the NAS), as F1 TV shows each season's champion; other years a frame of their own broadcast. */
+export const seasonPhoto = (year: number) => `${import.meta.env.BASE_URL}frames/${year >= 2003 && year <= 2024 ? 'champ' : 'year'}-${year}.jpg`;
 const yearRowGrid = 'gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]';
 
 /** A season as F1 TV draws one: the picture, the year large across it, and what it holds underneath. */
 export function YearPhotoTile({ year, art, to, line, play }: { year: number; art: string; to: string; line: string; play?: boolean }) {
   return (
     <Link to={to} onClick={play ? enterFullScreen : undefined} className="group block">
-      <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-        <img src={art} alt="" loading="lazy" className="absolute inset-0 size-full object-cover opacity-80 transition-transform duration-200 group-hover:scale-[1.04]" />
-        <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/10" aria-hidden />
+      <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2 [container-type:inline-size]">
+        <img src={art} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+        <span className="absolute inset-0 bg-black/15" aria-hidden />
+        {/* F1 TV's season tile: the year huge and see-through, so the champion's moment shows through it. */}
         <span className="absolute inset-0 grid place-items-center">
-          <span className="font-display text-6xl leading-none text-white/95 tnum drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] sm:text-7xl">{year}</span>
+          <span className="font-display text-[36cqw] leading-none font-bold tracking-tight text-white/45 tnum">{year}</span>
         </span>
         {play && (
           <span className="absolute right-2 bottom-2 grid size-8 place-items-center rounded-full bg-white/90 text-black" aria-hidden>
@@ -363,7 +403,6 @@ export function YearPage() {
           <div className="grid overflow-hidden rounded-panel border border-line bg-surface lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <Link to={mainHref!} onClick={main.live ? undefined : enterFullScreen} className="group relative block aspect-video overflow-hidden bg-surface-2 lg:aspect-auto lg:min-h-80">
               <img src={main.art} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-              {main.live && <LiveTag className="absolute top-3 left-3" />}
             </Link>
             <div className="flex flex-col justify-center p-6 lg:p-8">
               <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">
@@ -450,9 +489,9 @@ export function YearPage() {
 
 /**
  * Interviews and Features are planned sections: the archive holds no such videos yet. For the design review they show
- * as marked empty slots (no invented videos); set false to hide them until there is content.
+ * as marked empty slots (no invented videos). Off: hidden until there is content (set true to show the slots).
  */
-const SHOW_PLANNED = true;
+const SHOW_PLANNED = false;
 
 /** A row of a series page: its videos sideways, each playing straight away (live ones open their player). */
 function SeriesRow({ title, videos, play }: { title: string; videos: Video[]; play: (v: Video) => { href?: string; onOpen?: () => void } }) {
@@ -517,35 +556,6 @@ export function PlayersTab() {
           ]}
         />
       </div>
-      {/* Poker Hall of Fame (WSOP.com's list), by class, newest first. */}
-      <section aria-label="Poker Hall of Fame" className="mt-8">
-        <h2 className="text-xl sm:text-2xl">Poker Hall of Fame</h2>
-        <p className="mt-1 text-sm text-muted">Inducted since 1979 · WSOP.com</p>
-        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-          {HALL_OF_FAME.map((x) => {
-            const body = (
-              <span className="flex h-full flex-col justify-between gap-4 rounded-card border border-line bg-surface p-4">
-                <span className="flex items-start justify-between gap-2">
-                  <span className="font-display text-2xl leading-none tnum">{x.year}</span>
-                  <span className="text-xs font-semibold text-muted">{x.cc}</span>
-                </span>
-                <span className="line-clamp-2 text-sm leading-snug font-bold group-hover:text-gold-strong">{x.name}</span>
-              </span>
-            );
-            return (
-              <li key={x.name} className="min-w-0">
-                {x.to ? (
-                  <Link to={x.to} className="group block h-full [&>span]:hover:border-white/40">
-                    {body}
-                  </Link>
-                ) : (
-                  <div className="h-full">{body}</div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
       {legends.length > 0 && (
         <section aria-label="Bracelet legends" className="mt-10">
           <h2 className="text-xl sm:text-2xl">Bracelet legends</h2>
@@ -559,6 +569,42 @@ export function PlayersTab() {
           </ul>
         </section>
       )}
+      {/* Poker Hall of Fame (WSOP.com's list): the names first, by the decade they were inducted, newest first. */}
+      <section aria-label="Poker Hall of Fame" className="mt-12">
+        <h2 className="text-xl sm:text-2xl">Poker Hall of Fame</h2>
+        <p className="mt-1 text-sm text-muted">{HALL_OF_FAME.length} members since 1979 · WSOP.com</p>
+        {[...new Set(HALL_OF_FAME.map((x) => Math.floor(x.year / 10) * 10))].map((d) => (
+          <div key={d} className="mt-6">
+            <h3 className="mb-3 font-display text-lg text-gold-strong tnum">{d}s</h3>
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {HALL_OF_FAME.filter((x) => Math.floor(x.year / 10) * 10 === d).map((x) => {
+                const body = (
+                  <span className="flex h-full items-center gap-3.5 rounded-card border border-line bg-surface p-3.5 transition-colors group-hover:border-white/40">
+                    <Avatar name={x.name.replace(/ “[^”]+”/, '')} hue={[...x.name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)} size={56} photo={x.photo} ring />
+                    <span className="min-w-0">
+                      <span className="block text-base leading-snug font-bold group-hover:text-gold-strong">{x.name}</span>
+                      <span className="mt-0.5 block text-xs text-muted tnum">
+                        Inducted {x.year} · {x.country}
+                      </span>
+                    </span>
+                  </span>
+                );
+                return (
+                  <li key={x.name} className="min-w-0">
+                    {x.to ? (
+                      <Link to={x.to} className="group block h-full">
+                        {body}
+                      </Link>
+                    ) : (
+                      <div className="h-full">{body}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </section>
       {/* Only real players here: the demo's own players are made up, so they are not listed. */}
     </>
   );
@@ -566,7 +612,7 @@ export function PlayersTab() {
 
 /** A bracelet legend: initials, name, bracelets, Main Event titles. */
 function LegendCard({ l, compact }: { l: Legend; compact?: boolean }) {
-  const photo = l.playerId ? players.find((p) => p.id === l.playerId)?.photo : undefined;
+  const photo = (l.playerId ? players.find((p) => p.id === l.playerId)?.photo : undefined) ?? hofPhoto(l.name);
   return (
     <Link to={`/videos/players/${l.playerId ?? l.id}`} className="group flex h-full flex-col items-center rounded-card border border-line bg-surface p-4 text-center hover:border-line-strong hover:bg-surface-2">
       <Avatar name={l.name} hue={l.hue} size={compact ? 56 : 64} photo={photo} />
@@ -695,7 +741,7 @@ function LegendPage({ l }: { l: Legend }) {
     <Page className="max-w-[96rem]">
       {back('/videos/players', 'Players')}
       <header className="mt-4 flex flex-wrap items-center gap-5">
-        <Avatar name={l.name} hue={l.hue} size={96} ring />
+        <Avatar name={l.name} hue={l.hue} size={96} photo={hofPhoto(l.name)} ring />
         <div>
           <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">Bracelet legend</p>
           <h1 className="mt-1 text-title">{l.name}</h1>
@@ -985,7 +1031,6 @@ export function YearsRow() {
         <Link to={ftVideo ? `/watch/${ftVideo}${isNow ? '' : '?play=1'}` : `/videos/year/${year}`} onClick={isNow ? undefined : enterFullScreen} className="group relative block aspect-video overflow-hidden bg-surface-2 lg:aspect-auto lg:min-h-72">
           <img key={art} src={art} alt="" style={isNow ? artStyle(TABLE_ART[0]) : undefined} className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
           <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden />
-          {isNow && liveVideo && <LiveTag className="absolute top-3 left-3" />}
           <span className="absolute bottom-3 left-4 font-display text-5xl leading-none tnum">{year}</span>
         </Link>
         <div className="flex flex-col justify-center p-6 lg:p-8">

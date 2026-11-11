@@ -87,6 +87,8 @@ export interface TourEvent {
   /** Winner (spoiler) once the event has finished. */
   winnerId?: string;
   featured?: boolean;
+  /** Buy-in currency when not dollars (WSOP Europe: €). */
+  currency?: '€';
   days: Day[];
 }
 

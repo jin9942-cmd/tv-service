@@ -49,6 +49,8 @@ export const players: Player[] = [
   P('ensan', 'Hossein Ensan', 'Germany', 'DE', 240),
   P('cates', 'Dan Cates', 'United States', 'US', 160),
   P('weinman', 'Daniel Weinman', 'United States', 'US', 280),
+  // 2024 WSOP Paradise Super Main Event champion
+  P('zhou', 'Yinan Zhou', 'China', 'CN', 100),
   // A bracelet legend (Browse > Players links to him); no 2025 results are claimed for him here.
   { ...P('p04', 'Daniel Negreanu', 'Canada', 'CA', 270), photo: `${import.meta.env.BASE_URL}promo/negreanu-avatar.webp` },
 ];
@@ -56,8 +58,15 @@ export const players: Player[] = [
 // ---- series & events ----------------------------------------------------------------------------
 
 // https://www.pokernews.com/news/2025/02/2025-world-series-of-poker-schedule-47958.htm
+// The season around the demo moment (Jul 15, 2025), as the schedule shows it: the stop before Las Vegas (past),
+// Las Vegas (live), and the next two (announced; nothing about their results is shown). Dates and venues:
+// 2024 Paradise https://www.pokernews.com/tours/world-series-of-poker-paradise/2024-wsop-paradise/event-9-25-000-wsop-super-main-event/
+// 2025 WSOPC schedule (Canada, WSOP Europe) https://www.pokernews.com/news/2025/06/2025-world-series-of-poker-wsop-circuit-schedule-48804.htm
 export const series: Series[] = [
+  { id: 'pa24', name: '2024 WSOP Paradise', venue: 'Atlantis Paradise Island', city: 'Paradise Island, Bahamas', tz: 'America/Nassau', start: '2024-12-06T15:00:00Z', end: '2024-12-20T04:59:00Z' },
   { id: 'lv25', name: '2025 World Series of Poker', venue: 'Horseshoe / Paris Las Vegas', city: 'Las Vegas, NV', tz: 'America/Los_Angeles', start: '2025-05-27T19:00:00Z', end: '2025-07-17T06:59:00Z' },
+  { id: 'ca25', name: '2025 WSOP Super Circuit Canada', venue: 'Playground', city: 'Kahnawake, QC', tz: 'America/Toronto', start: '2025-08-18T16:00:00Z', end: '2025-09-03T03:59:00Z' },
+  { id: 'eu25', name: '2025 WSOP Europe', venue: 'King’s Resort', city: 'Rozvadov, CZ', tz: 'Europe/Prague', start: '2025-09-17T10:00:00Z', end: '2025-10-08T21:59:00Z' },
 ];
 
 /** A final table is a single table, so its extra streams are camera feeds of that table; earlier days have outer tables. */
@@ -81,6 +90,13 @@ const finalOnly = (id: string, date: string, minutes = 480) => [day(id, 'Final T
 
 const LV = 'lv25';
 export const events: TourEvent[] = [
+  {
+    // 2024 WSOP Paradise #9 $25,000 Super Main Event: 1,978 entries, the $50M guarantee paid out, $6,000,000 to Yinan
+    // Zhou (China), decided Dec 19, 2024 (PokerNews event page above).
+    id: 'pa-main', seriesId: 'pa24', number: 9, name: '$25,000 Super Main Event', game: 'No-Limit Hold’em', startingStack: 250_000,
+    buyIn: 25_000, entrants: 1_978, prizePool: 50_000_000, firstPrize: 6_000_000, level: 0, remaining: 1, winnerId: 'zhou',
+    days: [day('pa-main', 'Final Table', at('2024-12-19T17:00:00Z'), 540, 'vod')],
+  },
   // Every figure from the PokerNews event page named beside it.
   {
     // ${PN}/event-7-25000-heads-up-championship/
@@ -165,6 +181,12 @@ export const events: TourEvent[] = [
     id: 'lv-hr', seriesId: LV, number: 94, name: '$10,000 No-Limit Hold’em 6-Handed Championship', game: 'No-Limit Hold’em', startingStack: 300_000,
     buyIn: 10_000, entrants: 546, prizePool: 5_077_800, firstPrize: 986_337, level: 0, remaining: 6,
     days: [day('lv-hr', 'Final Table', noon('2025-07-15'), 480, 'live', 2)],
+  },
+  {
+    // 2025 WSOP Europe #14 €10,350 Main Event: Day 1A Oct 3, final Oct 8 (the published schedule); not played yet.
+    id: 'eu-main', seriesId: 'eu25', number: 14, name: 'Main Event', currency: '€', game: 'No-Limit Hold’em', startingStack: 60_000,
+    buyIn: 10_350, entrants: 0, prizePool: 0, firstPrize: 0, level: 0, remaining: 0,
+    days: [day('eu-main', 'Day 1A', at('2025-10-03T11:00:00Z'), 600, 'upcoming'), day('eu-main', 'Final Table', at('2025-10-08T13:00:00Z'), 540, 'upcoming')],
   },
 ];
 

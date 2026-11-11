@@ -95,7 +95,8 @@ const INITIAL: AppState = {
     { id: 'd3', name: 'iPad Air', kind: 'mobile', lastActive: 'Yesterday', streaming: true },
     { id: 'd4', name: 'Pixel 8', kind: 'mobile', lastActive: '3 days ago' },
   ],
-  progress: { 'lv-main-day3': 0.62 * 660 * 60, 'lv-ppc-finaltable': 0.31 * 540 * 60, 'lv-main-day2abc': 0.88 * 660 * 60, 'classic-a1-finaltable': 0.45 * (9 * 3600 + 1200) },
+  // Demo history: videos no other Home row shows, so nothing appears twice on the page.
+  progress: { 'lv-100k-finaltable': 0.62 * 420 * 60, 'lv-hu-finaltable': 0.31 * 480 * 60, 'lv-ms-finaltable': 0.58 * 480 * 60, 'classic-a1-finaltable': 0.45 * (9 * 3600 + 1200) },
   paidTier: PRESENTATION ? 'premium' : 'basic',
   includedFrom: 'basic',
   wsopPlusRecord: null,
@@ -103,9 +104,9 @@ const INITIAL: AppState = {
   recentSearches: ['Negreanu', 'final table', 'bluff'],
   myList: [
     { kind: 'day', id: 'lv-tc-finaltable', addedAt: 3 },
-    { kind: 'hand', id: 'h05', addedAt: 2 },
+    { kind: 'hand', id: 'w1', addedAt: 2 },
     { kind: 'day', id: 'classic-a3-finaltable', addedAt: 1 },
-    { kind: 'day', id: 'lv-ladies-finaltable', addedAt: 0 },
+    { kind: 'day', id: 'lv-seniors-finaltable', addedAt: 0 },
   ],
   pendingListAdd: null,
   paymentResult: 'success',

@@ -89,7 +89,8 @@ function PromoBanner() {
       pos: '50% 60%',
       kicker: `${seriesById(event.seriesId).name} · Las Vegas`,
       title: `Main Event ${day.label}`,
-      facts: [`${event.remaining} players left`, event.game, `${money(event.firstPrize)} to the winner`],
+      // No players-left count on Home (no live table data at launch).
+      facts: [event.game, `${money(event.firstPrize)} to the winner`],
       line: 'On air now from Horseshoe / Paris Las Vegas',
       preview: true,
       actions: (

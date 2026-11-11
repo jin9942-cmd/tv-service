@@ -2,7 +2,7 @@
 import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../state/app';
-import { Icon, LiveTag, cx } from '../components/ui';
+import { Icon, cx } from '../components/ui';
 import { duration } from '../lib/format';
 import { artStyle } from '../lib/brand';
 import type { ListKind } from '../state/app';
@@ -49,7 +49,8 @@ export function About({ v }: { v: Video }) {
  */
 /** A thumbnail badge, drawn by the UI over the picture: Live (red), New (white) or Recently added (dark, outlined). */
 export function CardBadge({ b, className }: { b: Badge; className?: string }) {
-  if (b === 'Live') return <LiveTag className={className} />;
+  // No LIVE badge on pictures (what's on air says so in its text and its Watch live button).
+  if (b === 'Live') return null;
   return (
     <span className={cx('label rounded-[4px] px-1.5 py-0.5 text-[10px]', b === 'New' ? 'bg-white text-black' : 'bg-black/75 text-white ring-1 ring-white/50', className)}>
       {b === 'New' ? 'New' : 'Recently added'}
@@ -153,13 +154,16 @@ export const SIZE_GRID: Record<CardSize, { grid: string; count: number }> = {
   sm: { grid: 'grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5', count: 5 },
 };
 
-export function VideoRow({ title, videos, action, progressOf, onRemove, size = 'md' }: { title: string; videos: Video[]; action?: ReactNode; progressOf?: (v: Video) => number | undefined; onRemove?: (v: Video) => void; size?: CardSize }) {
+export function VideoRow({ title, eyebrow, videos, action, progressOf, onRemove, size = 'md' }: { title: string; eyebrow?: string; videos: Video[]; action?: ReactNode; progressOf?: (v: Video) => number | undefined; onRemove?: (v: Video) => void; size?: CardSize }) {
   if (!videos.length) return null;
   const g = SIZE_GRID[size];
   return (
     <section aria-label={title}>
       <div className="mb-3 flex items-end justify-between gap-3">
-        <h2 className="text-xl sm:text-2xl">{title}</h2>
+        <h2 className="text-xl sm:text-2xl">
+          {eyebrow && <span className={EYEBROW}>{eyebrow}</span>}
+          {title}
+        </h2>
         {action}
       </div>
       <BadgeScope videos={videos.slice(0, g.count)}>
@@ -172,3 +176,6 @@ export function VideoRow({ title, videos, action, progressOf, onRemove, size = '
     </section>
   );
 }
+
+/** The small label over an editorial row's title: where its videos are from (the title says why to watch). */
+export const EYEBROW = 'mb-1 block font-sans text-[11px] font-bold tracking-wide text-gold-strong uppercase';

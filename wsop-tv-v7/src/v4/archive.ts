@@ -4,6 +4,7 @@
 import NAS from 'virtual:nas-media';
 import data from '../data/archive.json';
 import { FOOTAGE, thumbFor } from '../lib/media';
+import { CHANNEL_ART, HERO_IMAGES, PROMO_ART, SEASON_ART } from '../lib/brand';
 import type { Tag, Video } from './catalog';
 
 export type SeriesKey = 'lv' | 'eu' | 'pa' | 'circuit' | 'apac';
@@ -64,7 +65,50 @@ const SKIP = /vegas-(d1-02|d5-03|ft-0[379]|ft-10|shr-0[25])\.jpg$/; // dark, peo
 const PREFIX: Record<SeriesKey, string> = { lv: 'vegas-', eu: 'wsope-', pa: 'paradise-', apac: 'paradise-', circuit: 'cyprus-' };
 const poolOf = (key: SeriesKey) => ALL_STILLS.filter((p) => p.includes(`/${PREFIX[key]}`) && !SKIP.test(p));
 /** A still for an event of a series, picked steadily from its id. */
+/**
+ * Pictures handed out in order, per year and series, so a page never shows one twice: first each event's final (a
+ * year page lists one per event), then every other broadcast day (an event page lists its days). The pool wraps only
+ * when a year has more broadcasts than the series has stills.
+ */
+let SEQ: Map<string, string> | undefined;
+/** The archive's own pool: every still of every series and the crops, minus the ones the 2025 pages already show. */
+const SEQ_POOL = () => {
+  const taken = new Set([HERO_IMAGES.finalTable, SEASON_ART.src, ...Object.values(CHANNEL_ART).map((a) => a.src), ...Object.values(PROMO_ART).map((a) => a.src)]);
+  const crops = ['lv-hr', 'classic-a1', 'classic-a2', 'classic-a3', 'classic-a4', 'lv-hu', 'lv-mmm', 'lv-ms', 'lv-seniors', 'lv-ppc', 'lv-ladies', 'lv-plo'].map((k) => `${import.meta.env.BASE_URL}crops/${k}.jpg`);
+  return [...ALL_STILLS.filter((p) => !SKIP.test(p) && !taken.has(p)), ...crops];
+};
+function seqArt(id: string): string | undefined {
+  if (!SEQ) {
+    SEQ = new Map();
+    let yi = 0;
+    for (const y of ARCHIVE) {
+      if (y.classic) continue;
+      const pool = SEQ_POOL();
+      // Each year starts one picture further on and hands its Main Event the first one, so the Main Events of
+      // different years (an event page's From the archive) never share a picture either.
+      let k = yi++ % (pool.length || 1);
+      if (!pool.length) continue;
+      const finalOf = (e: ArchiveEvent) => {
+        const fi = e.days.findIndex((d) => /final/i.test(d.label));
+        return fi >= 0 ? fi : e.days.length - 1;
+      };
+      const all = y.series.flatMap((s) => s.events.map((e) => ({ e, lvMain: s.key === 'lv' && e.kind === 'Main Event' })));
+      const evs = [...all.filter((x) => x.lvMain), ...all.filter((x) => !x.lvMain)].map((x) => x.e);
+      // Every event's final first (a year page shows one per event), then the highlights, then the other days.
+      for (const e of evs) {
+        const src = pool[k++ % pool.length];
+        SEQ.set(`arc.${e.id}.${finalOf(e)}`, src);
+        SEQ.set(e.id, src);
+      }
+      for (const e of evs) for (let h = 0; h < e.highlights; h++) SEQ.set(`arc.${e.id}.h${h}`, pool[k++ % pool.length]);
+      for (const e of evs) e.days.forEach((_, d) => d !== finalOf(e) && SEQ!.set(`arc.${e.id}.${d}`, pool[k++ % pool.length]));
+    }
+  }
+  return SEQ.get(id);
+}
 export const seriesArt = (key: SeriesKey, id: string) => {
+  const own = seqArt(id);
+  if (own) return own;
   const pool = poolOf(key);
   return pool.length ? pool[hash(id) % pool.length] : thumbFor(`arc:${id}`);
 };

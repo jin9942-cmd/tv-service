@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Button, Icon, cx } from './ui';
 import { WSOP_LOGO } from '../lib/brand';
@@ -49,10 +49,30 @@ export function Layout() {
     document.addEventListener('click', onClick, true);
     return () => document.removeEventListener('click', onClick, true);
   }, []);
+  // Back returns to exactly where you were: each page's scroll is kept by its history entry, and a Back/Forward
+  // (POP) puts it back once the page has rendered tall enough; a new page (PUSH/REPLACE) starts at the top.
+  const navType = useNavigationType();
+  const scrolls = useRef(new Map<string, number>());
+  useEffect(() => {
+    const key = loc.key;
+    const save = () => scrolls.current.set(key, window.scrollY);
+    window.addEventListener('scroll', save, { passive: true });
+    return () => window.removeEventListener('scroll', save);
+  }, [loc.key]);
   useEffect(() => {
     setMenu(false);
-    window.scrollTo({ top: 0 });
-  }, [loc.pathname]);
+    const y = navType === 'POP' ? scrolls.current.get(loc.key) : undefined;
+    if (y == null) {
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    let tries = 0;
+    const restore = () => {
+      window.scrollTo({ top: y });
+      if (Math.abs(window.scrollY - y) > 2 && tries++ < 30) window.setTimeout(restore, 50);
+    };
+    restore();
+  }, [loc.key, navType]);
 
   return (
     <div className="flex min-h-dvh flex-col">

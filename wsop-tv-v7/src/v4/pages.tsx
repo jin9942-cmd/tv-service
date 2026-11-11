@@ -12,17 +12,18 @@ import { isBroadcasting } from '../lib/broadcast';
 import { duration, money } from '../lib/format';
 import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
-import { About, BadgeScope, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
+import { About, BadgeScope, EYEBROW, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseTabs, PlayersTab, YearPhotoTile, YearsTab, pastSeasons, seasonPhoto } from './browse';
+import { BrowseTabs, PlayersTab, YearsTab, seasonPhoto } from './browse';
 import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
-import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
-import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
+import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, SEASON_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
+import { USED_THUMBS, byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
 import { activeThemes, featuredTheme, homeHands, inSeason, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
 import { DaySchedule, OtherYearsSection, otherYears } from './loop';
+import { ARCHIVE, archiveEvent, broadcastsOf } from './archive';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -172,7 +173,7 @@ function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; l
                 <button onClick={() => pick(x)} className="group flex w-full gap-3 rounded-card p-2 text-left hover:bg-white/10">
                   <span className="relative aspect-video w-36 shrink-0 overflow-hidden rounded-card bg-surface-2">
                     <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" className="absolute inset-0 size-full object-cover" />
-                    {isLive(x, state.streamMode) ? <LiveTag className="absolute top-1.5 left-1.5" /> : <span className="absolute right-1.5 bottom-1.5 rounded-[4px] bg-black/80 px-1 text-[10px] font-semibold text-white tnum">{duration(x.durationSec)}</span>}
+                    {isLive(x, state.streamMode) ? null : <span className="absolute right-1.5 bottom-1.5 rounded-[4px] bg-black/80 px-1 text-[10px] font-semibold text-white tnum">{duration(x.durationSec)}</span>}
                   </span>
                   <span className="min-w-0">
                     <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
@@ -264,7 +265,6 @@ function UpcomingView({ e, d }: { e: TourEvent; d: Day }) {
                   <Link to={`/watch/${x.id}`} className="group flex gap-3">
                     <span className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2">
                       <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-                      {isLive(x, state.streamMode) && <LiveTag className="absolute top-1.5 left-1.5" />}
                     </span>
                     <span className="min-w-0">
                       <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
@@ -302,7 +302,6 @@ function UpcomingCard({ e, d }: { e: TourEvent; d: Day }) {
 }
 
 function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: boolean; liveEdge?: () => number; channelId?: string; now: number }) {
-  const { state } = useApp();
   // Mini player: scrolling the player out of view docks it bottom-right and it keeps playing.
   const holder = useRef<HTMLDivElement>(null);
   const [mini, setMini] = useState(false);
@@ -382,7 +381,6 @@ function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: bool
                   <Link to={`/watch/${x.id}`} className="group flex gap-3">
                     <span className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-chip bg-surface-2">
                       <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-                      {isLive(x, state.streamMode) && <LiveTag className="absolute top-1.5 left-1.5" />}
                     </span>
                     <span className="min-w-0">
                       <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
@@ -498,7 +496,9 @@ export function TagPage() {
 export function VideosPage({ tab }: { tab: 'years' | 'players' }) {
   return (
     <Page className="max-w-[96rem]">
-      <h1 className="text-title">Browse</h1>
+      {/* The two tabs are the page's headline (Years · Players); the word Browse is already lit in the menu. */}
+      {/* The page title (as Schedule's), then Browse's own sub-menu: Years · Players. */}
+      <h1 className={PAGE_TITLE}>Browse</h1>
       <BrowseTabs tab={tab} />
       {tab === 'years' ? <YearsTab /> : <PlayersTab />}
     </Page>
@@ -513,8 +513,8 @@ export { catalog };
 /**
  * v7 Home rows, programmed like a sports network (see ./themes.ts):
  * - in season (the series and two weeks after): the featured theme (this series' final tables), Main Event day by
- *   day, Latest Hands (no chip-count rows: the launch service has no chip feed);
- * - off-season: the week's featured theme, Best of the <year> WSOP, This Day in WSOP History, Poker Hall of Fame;
+ *   day, Must-See Hands (no chip-count rows: the launch service has no chip feed);
+ * - off-season: the week's featured theme, Best Hands of the <year> WSOP, This Day in WSOP History, Poker Hall of Fame;
  * then Seasons, the Collections shelf (six themes), and Continue watching and My List at the bottom.
  */
 export function HomeRows() {
@@ -564,11 +564,11 @@ export function HomeRows() {
       {season ? (
         <>
           <ThemeRow id={ownRow} now={now} />
-          <VideoRow title={hands.title} videos={hands.videos} />
+          <VideoRow title={hands.title} eyebrow={hands.eyebrow} videos={hands.videos} />
         </>
       ) : (
         <>
-          <VideoRow title={hands.title} videos={hands.videos} />
+          <VideoRow title={hands.title} eyebrow={hands.eyebrow} videos={hands.videos} />
           <ThemeRow id={ownRow} now={now} />
           <HallOfFameRow />
         </>
@@ -586,8 +586,21 @@ export function HomeRows() {
 
 
 /** A player card: type only (no photos yet), the name large, a line of fact under it. */
-function PlayerTile({ to, rank, name, cc, line, out }: { to?: string; rank: string; name: string; cc: string; line: string; out?: boolean }) {
-  const body = (
+function PlayerTile({ to, rank, name, cc, line, out, photo }: { to?: string; rank: string; name: string; cc: string; line: string; out?: boolean; photo?: string }) {
+  // With a photo: the face fills the card, the name under it (the Hall of Fame row).
+  const body = photo ? (
+    <span className="block">
+      <span className="relative block aspect-square overflow-hidden rounded-card border border-line bg-surface-2 transition-colors group-hover:border-white/40">
+        <img src={photo} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+        <span className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/85 to-transparent px-2.5 pt-8 pb-2">
+          <span className="font-display text-xl leading-none tnum">{rank}</span>
+          <span className="text-[11px] font-semibold text-white/80">{cc}</span>
+        </span>
+      </span>
+      <span className="mt-2 line-clamp-2 block text-[15px] leading-snug font-bold group-hover:text-gold-strong">{name}</span>
+      <span className="mt-0.5 block truncate text-xs text-muted">{line}</span>
+    </span>
+  ) : (
     <span className={cx('flex h-full flex-col justify-between gap-5 rounded-card border border-line bg-surface p-4 transition-colors', to && 'group-hover:border-white/40 group-hover:bg-surface-2', out && 'opacity-60')}>
       <span className="flex items-start justify-between gap-2">
         <span className="font-display text-3xl leading-none tnum">{rank}</span>
@@ -608,6 +621,9 @@ function PlayerTile({ to, rank, name, cc, line, out }: { to?: string; rank: stri
   );
 }
 
+/** A top-level page's title (Browse, Schedule): the same size and type on every page. */
+export const PAGE_TITLE = 'text-2xl sm:text-3xl';
+
 const playerRowGrid = 'hscroll gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-3*0.75rem)/4)] lg:[&>*]:w-[calc((100%-8*0.75rem)/9)]';
 
 /** Poker Hall of Fame (off-season): the latest classes from WSOP.com's list, newest first; legends open their page. */
@@ -618,7 +634,7 @@ function HallOfFameRow() {
       <ul className={playerRowGrid}>
         {list.map((x) => (
           <li key={x.name} className="min-w-0">
-            <PlayerTile to={x.to} rank={String(x.year)} name={x.name} cc={x.cc} line={x.country} />
+            <PlayerTile to={x.to} rank={String(x.year)} name={x.name} cc={x.cc} line={x.country} photo={x.photo} />
           </li>
         ))}
       </ul>
@@ -626,14 +642,13 @@ function HallOfFameRow() {
   );
 }
 
-/** Continue watching: big pictures with a thick progress bar, the time left beside the title; one sideways line. */
+/** Continue watching: big pictures with a thick progress bar and the title (no time left); one sideways line. */
 function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; onRemove: (v: Video) => void }) {
   if (!items.length) return null;
   return (
     <Section title="Continue watching">
       <ul className="hscroll gap-5 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1.25rem)/2)] lg:[&>*]:w-[calc((100%-2.5rem)/3)]">
         {items.map(({ v, sec }) => {
-          const left = Math.max(60, v.durationSec - sec);
           const pct = Math.min(100, Math.round((sec / v.durationSec) * 100));
           return (
             <li key={v.id} className="group relative min-w-0">
@@ -646,7 +661,6 @@ function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; 
                 </span>
                 <span className="mt-2 flex items-baseline justify-between gap-3">
                   <span className="min-w-0 truncate text-[15px] font-semibold group-hover:text-gold-strong">{v.title}</span>
-                  <span className="shrink-0 text-xs text-muted tnum">{left >= 3600 ? `${Math.floor(left / 3600)}h ${Math.round((left % 3600) / 60)}m left` : `${Math.round(left / 60)} min left`}</span>
                 </span>
               </Link>
               <button
@@ -710,22 +724,36 @@ const archiveGroup = (key: string) => archiveGroups(key.startsWith('year-') ? 'y
  * Seasons: this year and the six before it as type-only season tiles (the same tiles and counts as Browse > Years);
  * each opens the year in Browse, and All years opens Browse.
  */
+/**
+ * Popular Final Tables From the Archive (F1 TV's "Popular Races From The Archive"): the past Main Event final tables as
+ * videos, most watched first, each on its champion's winning moment. Home doesn't repeat Browse's year tiles.
+ */
+const archiveFinals = (): Video[] =>
+  ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_SEASON)
+    .map((y) => {
+      const ref = archiveEvent(`${y.year}-lv-main`);
+      if (!ref) return undefined;
+      const days = broadcastsOf(ref);
+      const i = ref.event.days.findIndex((d) => /final/i.test(d.label));
+      const v = days[i >= 0 ? i : days.length - 1];
+      return v ? ({ ...v, title: `${y.year} Main Event Final Table`, subtitle: y.champion ? `Won by ${y.champion.name}` : v.subtitle, thumb: seasonPhoto(y.year), thumbPos: '50% 50%', thumbFit: undefined } as Video) : undefined;
+    })
+    .filter((v): v is Video => !!v)
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 10);
+
 function SeasonTiles() {
-  const { state } = useApp();
-  const liveNow = catalog.some((v) => v.eventId && isLive(v, state.streamMode));
-  const past = pastSeasons().slice(0, 9);
+  const finals = archiveFinals();
   return (
-    <Section title="WSOP Through the Years" action={more('/videos', 'All years')}>
-      {/* Photo tiles, as Browse > Years, swiped or stepped with the arrows: this year (live) first. */}
-      <Carousel className="gap-3 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*0.75rem)/3)] lg:[&>*]:w-[calc((100%-3*0.75rem)/4)]">
-        <li className="min-w-0">
-          <YearPhotoTile year={CURRENT_SEASON} art={HERO_IMAGES.finalTable} to={`/videos/year/${CURRENT_SEASON}`} line={liveNow ? 'Live · the Main Event final table is on air' : 'This year'} />
-        </li>
-        {past.map((s, i) => (
-          <li key={s.year} className="min-w-0">
-            <YearPhotoTile year={s.year} art={seasonPhoto(i)} to={`/videos/year/${s.year}`} line={s.line} />
-          </li>
-        ))}
+    <Section title="Popular Final Tables From the Archive" action={more('/videos', 'View all')}>
+      <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        <BadgeScope videos={finals}>
+          {finals.map((v) => (
+            <li key={v.id} className="min-w-0">
+              <VideoCard v={v} />
+            </li>
+          ))}
+        </BadgeScope>
       </Carousel>
     </Section>
   );
@@ -760,7 +788,7 @@ export function ArchivePage() {
 
 /** My List: the standard card, four across (same size as the rows around it). */
 function MyListRow({ videos }: { videos: Video[] }) {
-  return <VideoRow title="My List" videos={videos} action={more('/my-list', 'See all')} />;
+  return <VideoRow title="My List" videos={videos} action={more('/my-list', 'Go to My List')} />;
 }
 
 // ---- curated collections ----------------------------------------------------------------------------
@@ -773,7 +801,6 @@ const themeLength = (vs: Video[]) => {
   const sec = vs.reduce((n, v) => n + v.durationSec, 0);
   return sec >= 5400 ? `${Math.round(sec / 3600)} hours` : `${Math.max(1, Math.round(sec / 60))} min`;
 };
-const playAll = (v: Video) => `/watch/${v.id}?play=1`;
 
 
 /** Curated collections (from the archive): four tiles, each opening its own page. */
@@ -788,7 +815,8 @@ type Pic = { thumb: string; thumbPos: string; thumbFit?: 'contain' };
 function photoPicker(skip: Set<string>) {
   const onPage = new Set<string>([...Object.values(HERO_IMAGES), ...Object.values(CHANNEL_ART).map((a) => a.src), ...[...skip].map((id) => videoById(id)?.thumb ?? '')]);
   // One photo per pictured player (several of the same face side by side read as repeats).
-  const pool = [...TABLE_ART, ...Object.values(PLAYER_ART).map((list) => list[0]), ...VENUE_ART.filter((a) => !EXTERIOR.has(a.src))].filter((a, i, all) => all.findIndex((x) => x.src === a.src) === i);
+  // Pictures no video card, channel or tile uses (so a cover never repeats a thumbnail on the page).
+  const pool = [...TABLE_ART, ...Object.values(PLAYER_ART).map((list) => list[0]), ...VENUE_ART.filter((a) => !EXTERIOR.has(a.src))].filter((a, i, all) => all.findIndex((x) => x.src === a.src) === i && !USED_THUMBS.has(a.src) && a.src !== SEASON_ART.src);
   const faces = new Set(Object.values(PLAYER_ART).flat().map((a) => a.src));
   const uses = new Map<string, number>();
   return (own?: Pic): Pic => {
@@ -802,7 +830,8 @@ function photoPicker(skip: Set<string>) {
   };
 }
 
-const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: 'Right now', weekly: 'This week’s collection' } as const;
+// The season's own theme carries no label (its title says it); a pinned or rotating one is marked Featured collection.
+const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: '', weekly: 'Featured collection' } as const;
 
 /**
  * The featured theme on Home: one wide card (title, note, how long, Play all) with its first videos beside it. Which
@@ -812,36 +841,35 @@ function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
   const f = featuredTheme(now, skip);
   if (!f) return null;
   const { theme, videos } = f;
-  const first = videos.slice(0, 3);
   return (
     <section aria-label={theme.title} className="relative overflow-hidden rounded-card border border-line bg-[radial-gradient(90%_120%_at_0%_0%,rgba(212,175,55,0.16),transparent_60%),linear-gradient(180deg,#141210,#0b0b0b)] p-5 sm:p-7">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-center">
         <div>
-          <p className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{FEATURED_LABEL[f.why]}</p>
+          {(theme.eyebrow ?? FEATURED_LABEL[f.why]) && <p className="text-[11px] font-bold tracking-wide text-gold-strong uppercase">{theme.eyebrow ?? FEATURED_LABEL[f.why]}</p>}
           <h2 className="mt-2 text-3xl leading-tight sm:text-4xl">
             <Link to={`/collections/${theme.id}`} className="hover:underline hover:decoration-2 hover:underline-offset-4">
               {theme.title}
             </Link>
           </h2>
-          <p className="mt-3 text-sm text-muted tnum">
-            {videos.length} videos · {themeLength(videos)}
-          </p>
-          <div className="mt-5">
-            {/* The button opens the list (the theme page: every video in order, each playable, and Play all there). */}
+          <div className="mt-6">
+            {/* No count or running time here: the videos are right beside it. The button opens the full list. */}
             <Link to={`/collections/${theme.id}`} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-white/85">
-              See all {videos.length} <Icon name="chevron" size={16} />
+              See more <Icon name="chevron" size={16} />
             </Link>
           </div>
         </div>
-        <ol className="grid gap-4 sm:grid-cols-3">
-          <BadgeScope videos={first}>
-            {first.map((v) => (
-              <li key={v.id} className="min-w-0">
-                <VideoCard v={v} />
-              </li>
-            ))}
-          </BadgeScope>
-        </ol>
+        {/* Every video of the theme, three at a time, swiped or stepped with the arrows (the count above is what's here). */}
+        <div className="min-w-0">
+          <Carousel label={`${theme.title}: videos`} className="gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-2rem)/3)]">
+            <BadgeScope videos={videos}>
+              {videos.map((v) => (
+                <li key={v.id} className="min-w-0">
+                  <VideoCard v={v} />
+                </li>
+              ))}
+            </BadgeScope>
+          </Carousel>
+        </div>
       </div>
     </section>
   );
@@ -858,20 +886,22 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
   if (!list.length) return null;
   const pick = photoPicker(skip);
   return (
-    <Section title="Collections">
-      <ul className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-2*1rem)/3)]">
+    <Section title="WSOP Collections">
+      {/* Tall poster covers (2:3), unlike the wide video rows around it: a collection reads as a set, not one video. */}
+      <ul className="hscroll gap-4 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*1rem)/3.5)] lg:[&>*]:w-[calc((100%-5*1rem)/6)]">
         {list.map(({ theme, videos }) => {
-          const art = pick(videos[0]);
+          const art = pick();
           return (
             <li key={theme.id} className="min-w-0">
-              <Link to={`/collections/${theme.id}`} className="group relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-                <img src={art.thumb} style={artStyle({ pos: art.thumbPos, fit: art.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
-                <span className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10" aria-hidden />
+              <Link to={`/collections/${theme.id}`} className="group relative block aspect-[2/3] overflow-hidden rounded-card border border-line bg-surface-2 transition-colors hover:border-white/40">
+                <img src={art.thumb} style={artStyle({ pos: art.thumbPos, fit: art.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+                <span className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" aria-hidden />
+                <span className="absolute inset-x-0 top-0 h-1 bg-gold" aria-hidden />
                 <span className="absolute inset-x-0 bottom-0 flex flex-col p-4">
-                  <span className="text-[11px] font-bold tracking-wide text-gold-strong uppercase tnum">
+                  <span className="font-display text-xl leading-[1.05] uppercase xl:text-2xl">{theme.title}</span>
+                  <span className="mt-2 text-[11px] font-bold tracking-wide text-gold-strong uppercase tnum">
                     {videos.length} videos · {themeLength(videos)}
                   </span>
-                  <span className="mt-1 text-lg leading-tight font-bold sm:text-xl">{theme.title}</span>
                 </span>
               </Link>
             </li>
@@ -888,7 +918,7 @@ function ThemeRow({ id, now }: { id: string; now: number }) {
   if (!t) return null;
   const { theme, videos } = t;
   return (
-    <Section title={theme.title} action={more(`/collections/${theme.id}`, 'See all')}>
+    <Section title={theme.title} eyebrow={theme.eyebrow} action={more(`/collections/${theme.id}`, 'View all')}>
       <ol className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={videos}>
           {videos.map((v) => (
@@ -904,6 +934,16 @@ function ThemeRow({ id, now }: { id: string; now: number }) {
 
 
 /** A theme's page: its note, Play all, and the videos in watching order. */
+/** ← Back: the previous screen in history (Home when the page was opened directly). */
+function BackLink() {
+  const nav = useNavigate();
+  return (
+    <button onClick={() => (window.history.state?.idx > 0 ? nav(-1) : nav('/'))} className="text-sm text-muted hover:text-text">
+      ← Back
+    </button>
+  );
+}
+
 export function CollectionPage() {
   const { id = '' } = useParams();
   const t = themeById(id);
@@ -911,18 +951,15 @@ export function CollectionPage() {
   const { theme, videos: vs } = t;
   return (
     <Page className="max-w-[96rem]">
-      <Link to="/" className="text-sm text-muted hover:text-text">
-        ← Home
-      </Link>
+      {/* Back goes to exactly the screen (and the place on it) you came from. */}
+      <BackLink />
       <p className="mt-3 text-[11px] font-bold tracking-wide text-gold-strong uppercase">Collection</p>
       <h1 className="mt-1 text-title">{theme.title}</h1>
       <p className="mt-2 max-w-2xl text-[15px] text-text/85">{theme.blurb}</p>
       <p className="mt-1 text-sm text-muted tnum">
         {vs.length} videos · {themeLength(vs)}
       </p>
-      <Link to={playAll(vs[0])} onClick={enterFullScreen} className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black hover:bg-white/85">
-        <Icon name="play" size={16} /> Play all
-      </Link>
+      {/* No Play all: the collection is a set of videos to pick from, not a playlist. */}
       <div className={cx(rowGrid, 'mt-6')}>
         <BadgeScope videos={vs}>
         {vs.map((v) => (
@@ -942,12 +979,15 @@ const more = (to: string, label = 'More') => (
 );
 
 /** A Home section: the title (editorial ones carry a gold label beside it, as Curated collections does) and a link. */
-function Section({ title, label, action, children }: { title: string; label?: string; action?: ReactNode; children: ReactNode }) {
+function Section({ title, eyebrow, label, action, children }: { title: string; eyebrow?: string; label?: string; action?: ReactNode; children: ReactNode }) {
   return (
     <section aria-label={title}>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex items-end justify-between gap-3">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h2 className="text-xl sm:text-2xl">{title}</h2>
+          <h2 className="text-xl sm:text-2xl">
+            {eyebrow && <span className={EYEBROW}>{eyebrow}</span>}
+            {title}
+          </h2>
           {label && <EditorialLabel>{label}</EditorialLabel>}
         </div>
         {action}
@@ -1180,7 +1220,7 @@ const SEASON: SeriesStop[] = [
     const starts = events.filter((e) => e.seriesId === s.id).flatMap((e) => e.days.map((d) => d.start));
     const first = [s.start, ...starts].sort()[0];
     const last = [s.end, ...starts].sort().pop()!;
-    return { ...s, start: first, end: last, art: s.id === 'lv25' ? TABLE_ART[0] : s.id === 'pa25' ? VENUE_ART[3] : s.id === 'eu26' ? VENUE_ART[2] : VENUE_ART[0] };
+    return { ...s, start: first, end: last, art: s.id === 'lv25' ? TABLE_ART[0] : s.id === 'pa24' ? VENUE_ART[3] : s.id === 'eu25' ? VENUE_ART[2] : VENUE_ART[0] };
   }),
 ];
 
@@ -1211,10 +1251,10 @@ export function SchedulePage() {
       return n;
     });
   return (
-    <Page className="max-w-[72rem]">
-      <h1 className="text-2xl sm:text-3xl">Schedule</h1>
-      <p className="mt-1 text-sm text-muted">This season's series. Open one to see its broadcasts.</p>
-      <div className="mt-5 flex flex-col gap-3">
+    <Page className="max-w-[96rem]">
+      {/* The page title, the same as Browse's (Schedule has no sub-menu, so no tabs under it). */}
+      <h1 className={PAGE_TITLE}>Schedule</h1>
+      <div className="mt-6 flex flex-col gap-3">
         {byStart.map((x) => (
           <SeriesFold key={x.id} s={x} open={open.has(x.id)} onToggle={() => toggle(x.id)} now={now} />
         ))}
@@ -1334,14 +1374,7 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
         <p className="text-sm text-muted">
           {st === 'past' ? 'Every broadcast is on demand. ' : ''}Times in your time zone ({tzAbbr(state.tz, new Date(now))}), with local time in {s.city.split(',')[0]}.
         </p>
-        {/* A series that is over: its replays as event cards in Browse. */}
-        {st === 'past' && (
-          <Link to={`/videos/replays?series=${s.id}`}>
-            <Button size="sm" variant="primary" tabIndex={-1}>
-              <Icon name="play" size={14} /> All replays in Browse
-            </Button>
-          </Link>
-        )}
+        {/* A series that is over: no extra button here; its Videos row below carries the one All replays → link. */}
       </div>
       {/* One table: a series that is over reads first day to last; a running one puts live and upcoming on top. */}
       {rows.length > 0 && table(ahead.length === 0 ? [...earlier].reverse() : [...ahead, ...earlier])}
@@ -1350,7 +1383,7 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
         <div className="mt-6">
           <div className="mb-3 flex items-end justify-between gap-3">
             <h3 className="text-base font-bold">Videos from this series</h3>
-            <Link to={`/videos/replays?series=${s.id}`} className="text-sm font-semibold text-muted hover:text-text">
+            <Link to={`/videos/year/${s.name.slice(0, 4)}`} className="text-sm font-semibold text-muted hover:text-text">
               All replays →
             </Link>
           </div>
@@ -1395,7 +1428,7 @@ function BroadcastRow({ e, d, st, venueTz }: ScheduleItem & { st: Day['status'];
           </Link>
         </span>
       </td>
-      <td className="px-4 py-3 tnum">{e.buyIn ? money(e.buyIn) : 'TBA'}</td>
+      <td className="px-4 py-3 tnum">{e.buyIn ? (e.currency === '€' ? `€${e.buyIn.toLocaleString('en-US')}` : money(e.buyIn)) : 'TBA'}</td>
       <td className="px-4 py-3">{e.game}</td>
       <td className="px-4 py-3 text-right">
         {live ? (
@@ -1472,7 +1505,7 @@ export function EventPage() {
           ))}
         </div>
       </section>
-      <VideoRow title="Key hands" videos={clips} action={<Link to={`/tag/event-${e.id}`} className="text-sm font-semibold text-muted hover:text-text">All videos →</Link>} />
+      <VideoRow title="Key Hands" videos={clips} action={<Link to={`/tag/event-${e.id}`} className="text-sm font-semibold text-muted hover:text-text">All videos →</Link>} />
       {/* The same event in other years (the loop: event → another event). */}
       <OtherYearsSection items={otherYears(e.name, /main event/i.test(e.name) ? 'Main Event' : 'Open', 'lv', e.id)} />
     </Page>
