@@ -4,6 +4,7 @@
 // Cards show YouTube's own thumbnail; playback uses the demo's archive clip, like the rest of the demo.
 import { FOOTAGE } from '../lib/media';
 import type { Video } from './catalog';
+import { archiveEvent, broadcastsOf, highlightsOf } from './archive';
 
 type Group = 'mizrachi' | 'hands' | 'iconic' | 'event';
 interface Yt {
@@ -73,7 +74,8 @@ const toVideo = (y: Yt, i: number): Video => ({
   kind: 'clip',
   title: y.title,
   subtitle: 'WSOP on YouTube',
-  description: y.title,
+  // The title is the channel's own text; no separate description.
+  description: '',
   // hqdefault is 4:3 with the 16:9 picture letterboxed; the card's 16:9 crop of its middle drops the bars.
   thumb: `https://i.ytimg.com/vi/${y.id}/hqdefault.jpg`,
   thumbPos: '50% 50%',
@@ -100,3 +102,20 @@ export const ytForEvent = (key: string) =>
   LIST.filter((y) => y.event === key)
     .sort((a, b) => b.date.localeCompare(a.date))
     .map((y) => byId.get(`yt.${y.id}`)!);
+
+/**
+ * Related videos for a channel video: for an event's clip, that event's own broadcasts and highlights (the archive
+ * files) and its other channel clips; otherwise the other videos of its group (hands, iconic moments).
+ */
+export function ytRelated(v: Video, n = 10): Video[] {
+  const y = LIST.find((x) => `yt.${x.id}` === v.id);
+  if (!y) return [];
+  const others = (list: Yt[]) => list.filter((x) => x.id !== y.id).map((x) => byId.get(`yt.${x.id}`)!);
+  if (y.event) {
+    const [series, ev] = y.event.split(':');
+    const ref = archiveEvent(`2025-${series}-${ev}`);
+    const files = ref ? [...broadcastsOf(ref), ...highlightsOf(ref)] : [];
+    return [...others(LIST.filter((x) => x.event === y.event)), ...files].slice(0, n);
+  }
+  return others(LIST.filter((x) => x.group === y.group)).slice(0, n);
+}

@@ -11,7 +11,7 @@ import { isOnAir } from '../lib/broadcast';
 import { mediaFor } from '../features/channels/Channels';
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, PROMO_ART, SEASON_ART, TABLE_ART, VENUE_ART } from '../lib/brand';
 import type { StreamStatus } from '../data/types';
-import { youtubeVideo } from './youtube';
+import { youtubeVideo, ytRelated } from './youtube';
 
 export type VideoKind = 'broadcast' | 'classic' | 'clip' | 'channel';
 
@@ -317,6 +317,7 @@ export function badgeFor(v: Video, streamMode: StreamStatus, now = Date.now()): 
  */
 export function relatedTo(v: Video, n = 10): Video[] {
   if (v.id.startsWith('arc.')) return archiveRelated(v, n);
+  if (v.id.startsWith('yt.')) return ytRelated(v, n);
   const self = (x: Video) => x.id === v.id || x.id === v.dayId;
   const same = v.eventId ? catalog.filter((x) => !self(x) && x.eventId === v.eventId).sort((a, b) => airedAt(b) - airedAt(a) || Number(a.kind === 'clip') - Number(b.kind === 'clip') || b.views - a.views) : [];
   // The loop after this event: its winner's other final tables, then the series' other final tables, newest first.

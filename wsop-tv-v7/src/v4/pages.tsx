@@ -75,7 +75,7 @@ function TitleView({ v }: { v: Video }) {
     enterFullScreen();
     nav(`/watch/${v.id}?play=1`);
   };
-  const facts = [ref && fmtDate(ref.day.start, state.tz), duration(v.durationSec), ref?.event.game, ref?.event.buyIn ? `Buy-in ${money(ref.event.buyIn)}` : undefined].filter(Boolean);
+  const facts = [ref && fmtDate(ref.day.start, state.tz), v.durationSec > 0 && duration(v.durationSec), ref?.event.game, ref?.event.buyIn ? `Buy-in ${money(ref.event.buyIn)}` : undefined].filter(Boolean);
   const suggested = relatedTo(v, 8);
   return (
     <>
@@ -359,7 +359,7 @@ function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: bool
               <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
                 {live && <LiveTag />}
                 <span>{v.subtitle}</span>
-                {!live && <span>· {duration(v.durationSec)}</span>}
+                {!live && v.durationSec > 0 && <span>· {duration(v.durationSec)}</span>}
               </p>
             </div>
             {v.kind !== 'channel' && <MyListButton kind={listKind(v)} id={v.id} size="md" />}
