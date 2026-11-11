@@ -561,12 +561,13 @@ export function HomeRows() {
       <ThemeRow id="this-series" now={now} />
       {/* Players */}
       <ThemeRow id="mizrachi-run" now={now} />
+      {/* Continue watching in the middle of Home (signed in, with something to continue). */}
+      <ContinueRow items={continuing} onRemove={removeContinue} />
       {/* Classics */}
       <CarouselRow title={hands.title} videos={hands.videos} />
       <SeasonTiles />
       <ThemeShelf skip={shown} now={now} placed={placed} />
-      {/* Personal rows last. */}
-      <ContinueRow items={continuing} onRemove={removeContinue} />
+      {/* My List last. */}
       <MyListRow videos={myRow} />
     </>
   );
