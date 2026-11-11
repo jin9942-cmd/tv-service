@@ -874,9 +874,8 @@ export function FeaturedTheme({ now, skip, id }: { now: number; skip: string[]; 
  * ./themes.ts, so a new theme appears here on its own and one with too few videos drops out.
  */
 function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; placed: string[] }) {
-  const featured = featuredTheme(now, placed)?.theme.id;
-  // Six at most: a shelf, not the whole catalog (the rest still take turns as the featured theme).
-  const list = activeThemes(now).filter((x) => !placed.includes(x.theme.id) && x.theme.id !== featured).slice(0, 6);
+  // Five: one full row of covers (Home no longer has a separate featured theme, so none is held back for it).
+  const list = activeThemes(now).filter((x) => !placed.includes(x.theme.id)).slice(0, 5);
   if (!list.length) return null;
   const pick = photoPicker(skip);
   const usedArt = new Set<string>();
