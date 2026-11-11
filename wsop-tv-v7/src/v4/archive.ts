@@ -133,9 +133,18 @@ export const S25: Record<string, { key: string; day: number }> = {
 export const s25Still = (key: string) => `${import.meta.env.BASE_URL}s25/${key}.jpg`;
 export const s25Clip = (key: string) => `${import.meta.env.BASE_URL}s25/${key}.mp4`;
 const eventIdOf = (id: string) => id.replace(/^arc\./, '').replace(/\.h?\d+$/, '');
+/** The 2025 Main Event's days: each day's own frame (public/frames, cut from that day's broadcast on the NAS). */
+const ME25_FRAME: Record<string, string> = { 'Day 1A': 'me-day1a', 'Day 1C': 'me-day1c', 'Day 1D': 'me-day1d', 'Day 2A': 'me-day2abc', 'Day 2D': 'me-day2d', 'Day 3': 'me-day3', 'Day 4': 'me-day4', 'Day 5': 'me-day5', 'Day 6': 'me-day6', 'Day 7': 'me-day7', 'Day 8': 'me-day8', 'Final Table': 'me-ft-4', 'Final Table Day 2': 'me-ft-1' };
 export const archiveArt = (id: string) => {
-  const own = S25[eventIdOf(id)] ?? S25[id];
-  if (own) return s25Still(own.key);
+  const eid = eventIdOf(id);
+  const day = id.match(/\.(\d+)$/)?.[1];
+  if (eid === '2025-lv-main' && day != null) {
+    const label = INDEX.get(eid)?.event.days[Number(day)]?.label ?? '';
+    if (ME25_FRAME[label]) return `${import.meta.env.BASE_URL}frames/${ME25_FRAME[label]}.jpg`;
+  }
+  // An event's own still is from one broadcast day: it goes on that day (and the event), not on every day.
+  const own = S25[eid] ?? S25[id];
+  if (own && (id === eid || day == null || Number(day) === own.day)) return s25Still(own.key);
   const ref = INDEX.get(id) ?? INDEX.get(eventIdOf(id));
   return (ref?.year.classic && classicArt(ref.year.year, id)) || seriesArt(ref?.series.key ?? 'lv', id);
 };

@@ -1422,6 +1422,10 @@ function BackToTop() {
 
 /** One event: its name (opens the event page) and who won, then its videos — sideways, or all laid out (`grid`). */
 export function EventVideoRow({ r, grid }: { r: SeasonRow; grid?: boolean }) {
+  // The full list (series page): one line of four, and "Show all" opens the rest in place (and closes it again).
+  const [all, setAll] = useState(false);
+  const GRID_FIRST = 4;
+  const gridVideos = all ? r.videos : r.videos.slice(0, GRID_FIRST);
   if (grid)
     return (
       <section aria-label={r.title}>
@@ -1433,13 +1437,21 @@ export function EventVideoRow({ r, grid }: { r: SeasonRow; grid?: boolean }) {
           </h3>
           <p className="mt-0.5 text-sm text-muted">{[r.winner && `Won by ${r.winner}`, `${r.videos.length} video${r.videos.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</p>
         </div>
-        <BadgeScope videos={r.videos}>
+        <BadgeScope videos={gridVideos}>
           <div className="grid grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-4">
-            {r.videos.map((v) => (
+            {gridVideos.map((v) => (
               <VideoCard key={v.id} v={v} />
             ))}
           </div>
         </BadgeScope>
+        {r.videos.length > GRID_FIRST && (
+          <div className="mt-5 flex justify-center">
+            <button type="button" onClick={() => setAll((x) => !x)} aria-expanded={all} className="inline-flex h-10 items-center gap-2 rounded-full border border-line-strong px-5 text-sm font-bold hover:border-white/60">
+              {all ? 'Show less' : `Show all ${r.videos.length}`}
+              <Icon name="chevron" size={16} className={all ? '-rotate-90' : 'rotate-90'} />
+            </button>
+          </div>
+        )}
       </section>
     );
   return (
