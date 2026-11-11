@@ -1087,31 +1087,118 @@ export function LegendsRow() {
   );
 }
 
-// ---- Browse (one page: the season's events, then the players) -----------------------------------------------------
+// ---- Browse (one page: filters, the season's events, then the players) -------------------------------------------
+
+type SeriesType = 'all' | 'bracelets' | 'super' | 'circuit';
+const TYPE_OPTIONS: [SeriesType, string][] = [
+  ['all', 'All'],
+  ['bracelets', 'Bracelets'],
+  ['super', 'Super Circuit'],
+  ['circuit', 'Circuit'],
+];
+/** Which circuit stops were Super Circuits (2025 Cyprus, 2023 London International); the others were regular Circuit stops. */
+const SUPER_CIRCUIT_YEARS = new Set([2025, 2023]);
+const typeOf = (year: number, key: SeriesKey): Exclude<SeriesType, 'all'> => (key === 'circuit' ? (SUPER_CIRCUIT_YEARS.has(year) ? 'super' : 'circuit') : 'bracelets');
 
 /**
- * Browse, one page (no Years / Players split): the 2025 season's bracelet events and Super Circuit events, newest
- * first, each as a row of its videos; then WSOP Legends, the players to follow (active players only, 15 at most).
+ * Browse, one page (no Years / Players split), with filters on top as on WSOP.com: the year, the kind of series
+ * (Bracelets · Super Circuit · Circuit) and players (search, or tick the most searched). Under them, each event as a
+ * row of its videos, newest first; then WSOP Legends, the players to follow (active players only, 15 at most).
+ * Picking players searches every year, so a player's events show whichever year they were in.
  */
 export function BrowseAll() {
-  const rows = seasonRows();
+  const [year, setYear] = useState(CURRENT_YEAR);
+  const [type, setType] = useState<SeriesType>('all');
+  const [q, setQ] = useState('');
+  const [picked, setPicked] = useState<string[]>([]);
+  const years = ARCHIVE.map((y) => y.year);
+  const pool = picked.length ? years.flatMap((y) => seasonRows(y)) : seasonRows(year);
+  const rows = pool.filter((r) => (type === 'all' || r.type === type) && (!picked.length || picked.some((p) => r.players.includes(p))));
+  const needle = q.trim().toLowerCase();
+  const shown = needle ? ALL_PLAYER_NAMES.filter((n) => n.toLowerCase().includes(needle)) : MOST_SEARCHED;
+  const toggle = (n: string) => setPicked((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n]));
   return (
     <>
-      <section aria-label="2025 season" className="mt-6 space-y-10">
-        {rows.map((r) => (
-          <EventVideoRow key={r.key} r={r} />
-        ))}
+      <div className="mt-5 grid gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="relative">
+            <span className="sr-only">Year</span>
+            <select id="browse-year" value={year} onChange={(e) => setYear(Number(e.target.value))} disabled={picked.length > 0} className="h-11 w-56 appearance-none rounded-chip border border-line-strong bg-surface px-4 pr-10 text-[15px] font-bold tnum disabled:opacity-50">
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+            <Icon name="chevron" size={16} className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 rotate-90 text-muted" />
+          </label>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Series">
+            {TYPE_OPTIONS.map(([k, label]) => (
+              <button key={k} type="button" aria-pressed={type === k} onClick={() => setType(k)} className={cx('h-11 rounded-chip border px-4 text-sm font-semibold uppercase', type === k ? 'border-live bg-live text-white' : 'border-line-strong text-text/80 hover:border-white/60 hover:text-text')}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Players: search, or tick the most searched. */}
+        <div className="rounded-card border border-line bg-surface p-4">
+          <label className="flex h-11 items-center gap-2 rounded-chip border border-line-strong bg-bg px-3">
+            <Icon name="search" size={16} className="text-muted" />
+            <input id="browse-player-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search players" aria-label="Search players" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
+            {(q || picked.length > 0) && (
+              <button type="button" onClick={() => (setQ(''), setPicked([]))} aria-label="Clear players" className="text-muted hover:text-text">
+                <Icon name="close" size={16} />
+              </button>
+            )}
+          </label>
+          <p className="mt-4 mb-2 text-sm font-bold">{needle ? `Players matching "${q.trim()}"` : 'Most Searched'}</p>
+          {shown.length ? (
+            <ul className="grid max-h-52 grid-cols-1 gap-x-4 gap-y-1 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-4">
+              {shown.map((n) => {
+                const photo = photoOf(n);
+                return (
+                  <li key={n} className="min-w-0">
+                    <label className="flex cursor-pointer items-center gap-2.5 rounded px-1.5 py-1.5 hover:bg-white/5">
+                      <input type="checkbox" checked={picked.includes(n)} onChange={() => toggle(n)} className="size-4 shrink-0 accent-[var(--color-live)]" />
+                      {photo ? (
+                        <img src={photo} alt="" className="size-6 shrink-0 rounded-full object-cover" />
+                      ) : (
+                        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-[10px] font-bold">
+                          {n
+                            .split(' ')
+                            .map((w) => w[0])
+                            .slice(0, 2)
+                            .join('')}
+                        </span>
+                      )}
+                      <span className="truncate text-sm">{n}</span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">No player matches "{q.trim()}".</p>
+          )}
+        </div>
+        {picked.length > 0 && <p className="text-sm text-muted">Showing every year for {picked.join(', ')}.</p>}
+      </div>
+
+      <section aria-label="Events" className="mt-8 space-y-10">
+        {rows.length ? rows.map((r) => <EventVideoRow key={r.key} r={r} />) : <p className="rounded-card border border-line bg-surface p-5 text-sm text-muted">No videos match these filters.</p>}
       </section>
       <WsopLegendsRow />
     </>
   );
 }
 
-type SeasonRow = { key: string; to: string; title: string; note: string; videos: Video[] };
+type SeasonRow = { key: string; to: string; title: string; note: string; videos: Video[]; type: Exclude<SeriesType, 'all'>; players: string[] };
 
-/** Newest series first: Paradise (Dec 4 – 18), the Super Circuit Cyprus (Oct 9 – 21), Europe (Sep 17 – Oct 9), Las Vegas (May 27 – Jul 16). */
-const SERIES_ORDER: SeriesKey[] = ['pa', 'circuit', 'eu', 'lv'];
-const SERIES_LABEL: Record<string, string> = { pa: '2025 WSOP Paradise', eu: '2025 WSOP Europe', lv: '2025 WSOP Las Vegas', circuit: '2025 WSOP Super Circuit Cyprus', apac: '2025 WSOP Asia-Pacific' };
+/** Newest series first: Paradise (Dec), the Super Circuit (2025: Cyprus, Oct 9 – 21), Europe (Sep – Oct), Las Vegas (May – Jul). */
+const SERIES_ORDER: SeriesKey[] = ['pa', 'circuit', 'eu', 'apac', 'lv'];
+/** A series' name in a row: "2025 WSOP Super Circuit Cyprus", "2024 WSOP Circuit", "2019 WSOP Las Vegas". */
+const seriesLabel = (year: number, key: SeriesKey, name: string) =>
+  key === 'circuit' ? (year === 2025 ? '2025 WSOP Super Circuit Cyprus' : SUPER_CIRCUIT_YEARS.has(year) ? `${year} WSOP Super Circuit` : `${year} WSOP Circuit`) : `${year} WSOP ${name}`;
 /** The archive's folder names, with the official name and the winner where a source states them (PokerNews event pages). */
 const ARCHIVE_FIX: Record<string, { title: string; winner?: string }> = {
   '2025-pa-main': { title: '#11 · $25,000 Super Main Event', winner: 'Bernhard Binder' },
@@ -1119,39 +1206,55 @@ const ARCHIVE_FIX: Record<string, { title: string; winner?: string }> = {
   '2025-circuit-main': { title: '$5,300 Main Event' },
 };
 
-/** The season's events as rows: the live service's own events (with their recaps and key hands), else the archive's. */
+/** Every player the demo knows by name: the legends, this year's players and the Main Event champions. */
+const ALL_PLAYER_NAMES = [...new Set([...LEGENDS.map((l) => l.name), ...players.map((p) => p.name), ...ARCHIVE.flatMap((y) => (y.champion ? [y.champion.name] : [])), ...Object.values(ARCHIVE_FIX).flatMap((f) => (f.winner ? [f.winner] : []))])].sort((a, b) =>
+  a.localeCompare(b),
+);
+/** Most Searched: the players to follow (WSOP Legends) and the 2025 bracelet winners, A – Z. */
+const MOST_SEARCHED = [
+  ...new Set(
+    [...['mizrachi', 'deeb', 'glaser', 'schulman', 'koon', 'hellmuth', 'negreanu', 'ivey', 'seidel', 'seiver', 'arieh', 'tamayo', 'weinman', 'jorstad', 'moneymaker'].map((id) => legendById(`legend-${id}`)?.name ?? ''), ...events.filter((e) => e.winnerId && e.seriesId === 'lv25').map((e) => players.find((p) => p.id === e.winnerId)?.name ?? '')].filter(Boolean),
+  ),
+].sort((a, b) => a.localeCompare(b));
+
+/** The players in a row: its winner, and anyone named in full in its videos' titles. */
+const playersIn = (winner: string | undefined, videos: Video[]) => {
+  const titles = videos.map((v) => v.title).join(' | ');
+  return ALL_PLAYER_NAMES.filter((n) => n === winner || titles.includes(n));
+};
+
+/** A season's events as rows: in 2025 the live service's own Las Vegas events (with their recaps and hands), else the archive's. */
 export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
   const arch = ARCHIVE.find((y) => y.year === year);
   if (!arch) return [];
-  const own = events.filter((e) => e.seriesId === 'lv25');
+  const own = year === CURRENT_YEAR ? events.filter((e) => e.seriesId === 'lv25') : [];
   const out: SeasonRow[] = [];
   for (const key of SERIES_ORDER) {
     const s = arch.series.find((x) => x.key === key);
     if (!s) continue;
-    type Item = { n: number; main: boolean; row: SeasonRow };
-    const items: Item[] = [];
-    const winnerNote = (id?: string) => {
-      const p = id ? players.find((x) => x.id === id) : undefined;
-      return p ? `Won by ${p.name}` : '';
-    };
-    // Las Vegas: the live service's events first (they carry their recaps and hands), then the archive's others.
+    const items: { n: number; row: SeasonRow }[] = [];
+    const label = seriesLabel(year, key, s.name);
+    const type = typeOf(year, key);
     if (key === 'lv') {
       for (const e of own) {
         const videos = [...catalog.filter((v) => v.eventId === e.id && v.kind !== 'channel'), ...ytForEvent(`lv:${e.id === 'lv-main' ? 'main' : e.number}`)];
         if (!videos.length) continue;
         const main = e.id === 'lv-main';
-        items.push({ n: main ? 999 : (e.number ?? 0), main, row: { key: e.id, to: `/events/${e.id}`, title: `${e.number != null ? `#${e.number} · ` : ''}${e.name.replace(' World Championship', '')}`, note: [SERIES_LABEL.lv, winnerNote(e.winnerId)].filter(Boolean).join(' · '), videos } });
+        const winner = players.find((p) => p.id === e.winnerId)?.name;
+        items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/events/${e.id}`, title: `${e.number != null ? `#${e.number} · ` : ''}${e.name.replace(' World Championship', '')}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos) } });
       }
     }
     for (const e of s.events) {
-      if (key === 'lv' && (e.kind === 'Main Event' || own.some((m) => m.number === e.number))) continue;
+      if (own.length && key === 'lv' && (e.kind === 'Main Event' || own.some((m) => m.number === e.number))) continue;
       const ref = archiveEvent(e.id);
       if (!ref) continue;
-      const videos = [...ytForEvent(`${key}:${e.kind === 'Main Event' ? 'main' : e.number}`), ...broadcastsOf(ref), ...highlightsOf(ref)];
+      const videos = [...(year === CURRENT_YEAR ? ytForEvent(`${key}:${e.kind === 'Main Event' ? 'main' : e.number}`) : []), ...broadcastsOf(ref), ...highlightsOf(ref)];
       if (!videos.length) continue;
       const main = e.kind === 'Main Event';
       const fix = ARCHIVE_FIX[e.id];
-      items.push({ n: main ? 999 : (e.number ?? 0), main, row: { key: e.id, to: `/videos/event/${e.id}`, title: fix?.title ?? `${e.number != null ? `#${e.number} · ` : ''}${e.name}`, note: [SERIES_LABEL[key] ?? seriesTitle(year, s), fix?.winner && `Won by ${fix.winner}`].filter(Boolean).join(' · '), videos } });
+      // The Las Vegas Main Event's champion is on record for every year.
+      const winner = fix?.winner ?? (main && key === 'lv' ? arch.champion?.name : undefined);
+      items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/videos/event/${e.id}`, title: fix?.title ?? `${e.number != null ? `#${e.number} · ` : ''}${e.name}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos) } });
     }
     // Newest first within a series: its Main Event (decided last), then the higher event numbers.
     items.sort((a, b) => b.n - a.n);
