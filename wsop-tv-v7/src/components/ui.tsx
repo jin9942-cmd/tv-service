@@ -206,6 +206,11 @@ export function CountryCode({ cc }: { cc: string }) {
   return <span className="label rounded-[3px] border border-line-strong px-1 text-[10px] text-muted">{cc}</span>;
 }
 
+/** A country as its flag (flagcdn.com, by ISO code), with the code as its accessible name. */
+export function Flag({ cc, className }: { cc: string; className?: string }) {
+  return <img src={`https://flagcdn.com/w40/${cc.toLowerCase()}.png`} alt={cc} title={cc} loading="lazy" className={cx('inline-block h-3.5 w-auto shrink-0 rounded-[2px] ring-1 ring-white/15', className)} />;
+}
+
 // ---- section header ------------------------------------------------------------------------
 
 export function SectionHeader({ title, kicker, action }: { title: ReactNode; kicker?: string; action?: ReactNode }) {

@@ -4,10 +4,10 @@
 //   Players: the player grid (sort) → a player page (profile, final tables by year, appearances by year).
 //   Events: the events that come back every year → a chronicle of each, year by year.
 //   The event page is where all three tabs land: its facts, the days that were broadcast, full broadcasts or highlights.
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../state/app';
-import { Avatar, BraceletCount, Button, CountryCode, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
+import { Avatar, BraceletCount, Button, CountryCode, Flag, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
 import { HERO_DAY_ID, classicEvents, events, players, seatsFor, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
@@ -1112,14 +1112,27 @@ export function BrowseAll() {
   const [q, setQ] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
   const years = ARCHIVE.map((y) => y.year);
-  const pool = picked.length ? years.flatMap((y) => seasonRows(y)) : seasonRows(year);
-  const rows = pool.filter((r) => (type === 'all' || r.type === type) && (!picked.length || picked.some((p) => r.players.includes(p))));
+  // The player list opens only while searching (the search box has focus or text), as a dropdown under the box.
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', away);
+    document.addEventListener('keydown', esc);
+    return () => (document.removeEventListener('mousedown', away), document.removeEventListener('keydown', esc));
+  }, [open]);
+  const pool = (picked.length ? years.flatMap((y) => seasonRows(y)) : seasonRows(year)).filter((r) => !picked.length || picked.some((p) => r.players.includes(p)));
+  const rows = pool.filter((r) => type === 'all' || r.type === type);
+  // A kind of series with nothing in it this year can't be picked (2025 had no regular Circuit broadcasts).
+  const has = (k: SeriesType) => k === 'all' || pool.some((r) => r.type === k);
   const needle = q.trim().toLowerCase();
   const shown = needle ? ALL_PLAYER_NAMES.filter((n) => n.toLowerCase().includes(needle)) : MOST_SEARCHED;
   const toggle = (n: string) => setPicked((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n]));
   return (
     <>
-      <div className="mt-5 grid gap-4">
+      <div className="mt-5 grid gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <label className="relative">
             <span className="sr-only">Year</span>
@@ -1134,54 +1147,60 @@ export function BrowseAll() {
           </label>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Series">
             {TYPE_OPTIONS.map(([k, label]) => (
-              <button key={k} type="button" aria-pressed={type === k} onClick={() => setType(k)} className={cx('h-11 rounded-chip border px-4 text-sm font-semibold uppercase', type === k ? 'border-live bg-live text-white' : 'border-line-strong text-text/80 hover:border-white/60 hover:text-text')}>
+              <button key={k} type="button" aria-pressed={type === k} disabled={!has(k)} onClick={() => setType(k)} className={cx('h-11 rounded-chip border px-4 text-sm font-semibold uppercase disabled:cursor-not-allowed disabled:opacity-35', type === k ? 'border-live bg-live text-white' : 'border-line-strong text-text/80 enabled:hover:border-white/60 enabled:hover:text-text')}>
                 {label}
               </button>
             ))}
           </div>
-        </div>
-        {/* Players: search, or tick the most searched. */}
-        <div className="rounded-card border border-line bg-surface p-4">
-          <label className="flex h-11 items-center gap-2 rounded-chip border border-line-strong bg-bg px-3">
-            <Icon name="search" size={16} className="text-muted" />
-            <input id="browse-player-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search players" aria-label="Search players" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
-            {(q || picked.length > 0) && (
-              <button type="button" onClick={() => (setQ(''), setPicked([]))} aria-label="Clear players" className="text-muted hover:text-text">
-                <Icon name="close" size={16} />
-              </button>
+          {/* Players: a search box; its list (Most Searched, or the matches) opens under it only while searching. */}
+          <div ref={box} className="relative min-w-64 flex-1">
+            <label className="flex h-11 items-center gap-2 rounded-chip border border-line-strong bg-surface px-3 focus-within:border-white/60">
+              <Icon name="search" size={16} className="text-muted" />
+              <input id="browse-player-search" value={q} onFocus={() => setOpen(true)} onChange={(e) => (setQ(e.target.value), setOpen(true))} placeholder="Search players" aria-label="Search players" aria-expanded={open} className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
+              {(q || picked.length > 0) && (
+                <button type="button" onClick={() => (setQ(''), setPicked([]))} aria-label="Clear players" className="text-muted hover:text-text">
+                  <Icon name="close" size={16} />
+                </button>
+              )}
+            </label>
+            {open && (
+              <div className="absolute inset-x-0 top-full z-30 mt-2 rounded-card border border-line bg-surface p-4 shadow-2xl shadow-black/60 lg:left-auto lg:w-[min(48rem,calc(100vw-4rem))]">
+                <p className="mb-2 text-sm font-bold">{needle ? `Players matching "${q.trim()}"` : 'Most Searched'}</p>
+                {shown.length ? (
+                  <ul className="grid max-h-64 grid-cols-1 gap-x-4 gap-y-0.5 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {shown.map((n) => {
+                      const cc = ccOf(n);
+                      return (
+                        <li key={n} className="min-w-0">
+                          <label className="flex cursor-pointer items-center gap-2.5 rounded px-1.5 py-1.5 hover:bg-white/5">
+                            <input type="checkbox" checked={picked.includes(n)} onChange={() => toggle(n)} className="size-4 shrink-0 accent-[var(--color-live)]" />
+                            {cc ? <Flag cc={cc} /> : <span className="w-5 shrink-0" aria-hidden />}
+                            <span className="truncate text-sm">{n}</span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted">No player matches "{q.trim()}".</p>
+                )}
+              </div>
             )}
-          </label>
-          <p className="mt-4 mb-2 text-sm font-bold">{needle ? `Players matching "${q.trim()}"` : 'Most Searched'}</p>
-          {shown.length ? (
-            <ul className="grid max-h-52 grid-cols-1 gap-x-4 gap-y-1 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-4">
-              {shown.map((n) => {
-                const photo = photoOf(n);
-                return (
-                  <li key={n} className="min-w-0">
-                    <label className="flex cursor-pointer items-center gap-2.5 rounded px-1.5 py-1.5 hover:bg-white/5">
-                      <input type="checkbox" checked={picked.includes(n)} onChange={() => toggle(n)} className="size-4 shrink-0 accent-[var(--color-live)]" />
-                      {photo ? (
-                        <img src={photo} alt="" className="size-6 shrink-0 rounded-full object-cover" />
-                      ) : (
-                        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-[10px] font-bold">
-                          {n
-                            .split(' ')
-                            .map((w) => w[0])
-                            .slice(0, 2)
-                            .join('')}
-                        </span>
-                      )}
-                      <span className="truncate text-sm">{n}</span>
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted">No player matches "{q.trim()}".</p>
-          )}
+          </div>
         </div>
-        {picked.length > 0 && <p className="text-sm text-muted">Showing every year for {picked.join(', ')}.</p>}
+        {/* The players picked, as chips (remove one with its ×); they search every year. */}
+        {picked.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {picked.map((n) => (
+              <button key={n} type="button" onClick={() => toggle(n)} className="inline-flex h-8 items-center gap-2 rounded-full border border-line-strong bg-surface px-3 text-sm font-semibold hover:border-white/60" aria-label={`Remove ${n}`}>
+                {ccOf(n) && <Flag cc={ccOf(n)!} />}
+                {n}
+                <Icon name="close" size={12} className="text-muted" />
+              </button>
+            ))}
+            <span className="text-sm text-muted">· every year</span>
+          </div>
+        )}
       </div>
 
       <section aria-label="Events" className="mt-8 space-y-10">
@@ -1210,6 +1229,8 @@ const ARCHIVE_FIX: Record<string, { title: string; winner?: string }> = {
 const ALL_PLAYER_NAMES = [...new Set([...LEGENDS.map((l) => l.name), ...players.map((p) => p.name), ...ARCHIVE.flatMap((y) => (y.champion ? [y.champion.name] : [])), ...Object.values(ARCHIVE_FIX).flatMap((f) => (f.winner ? [f.winner] : []))])].sort((a, b) =>
   a.localeCompare(b),
 );
+/** A player's country code: from the legends, this year's players or the Main Event champions. */
+const ccOf = (name: string): string | undefined => LEGENDS.find((l) => l.name === name)?.cc ?? players.find((p) => p.name === name)?.cc ?? ARCHIVE.find((y) => y.champion?.name === name)?.champion?.cc ?? ({ 'Bernhard Binder': 'AT', 'Daniel Pidun': 'DE' } as Record<string, string>)[name];
 /** Most Searched: the players to follow (WSOP Legends) and the 2025 bracelet winners, A – Z. */
 const MOST_SEARCHED = [
   ...new Set(
@@ -1298,9 +1319,9 @@ function EventVideoRow({ r }: { r: SeasonRow }) {
 // most WSOP video, then the recent Main Event champions. Doyle Brunson and Johnny Moss (died) and anyone not playing
 // the WSOP in 2024 – 2025 stay out.
 const LEGEND_ORDER = ['mizrachi', 'deeb', 'glaser', 'schulman', 'koon', 'hellmuth', 'negreanu', 'ivey', 'seidel', 'seiver', 'arieh', 'tamayo', 'weinman', 'jorstad', 'moneymaker'];
-export const WSOP_LEGENDS: { name: string; bracelets: number; line: string; to?: string }[] = LEGEND_ORDER.map((id) => legendById(`legend-${id}`))
+export const WSOP_LEGENDS: { name: string; cc: string; bracelets: number; line: string; to?: string }[] = LEGEND_ORDER.map((id) => legendById(`legend-${id}`))
   .filter((l): l is Legend => !!l)
-  .map((l) => ({ name: l.name, bracelets: l.bracelets, line: l.note, to: `/videos/players/${l.id}` }));
+  .map((l) => ({ name: l.name, cc: l.cc, bracelets: l.bracelets, line: l.note, to: `/videos/players/${l.id}` }));
 function WsopLegendsRow() {
   const list = WSOP_LEGENDS.slice(0, 15);
   if (!list.length) return null;
@@ -1319,7 +1340,10 @@ function WsopLegendsRow() {
                   <span className="absolute inset-0 grid place-items-center font-display text-5xl text-white/80">{p.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
                 )}
               </span>
-              <span className="mt-2 block truncate text-[15px] font-bold group-hover:text-gold-strong">{p.name}</span>
+              <span className="mt-2 flex items-center gap-2">
+                <Flag cc={p.cc} />
+                <span className="truncate text-[15px] font-bold group-hover:text-gold-strong">{p.name}</span>
+              </span>
               <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
                 <BraceletCount n={p.bracelets} size={13} /> {p.line}
               </span>
