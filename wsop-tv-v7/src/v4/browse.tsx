@@ -895,7 +895,8 @@ export function ArchiveEventPage() {
   if (!ref) return <Navigate to="/videos" replace />;
   const { year, series, event } = ref;
   const full = broadcastsOf(ref);
-  const clips = highlightsOf(ref);
+  // The event's clips: the WSOP channel's (2025 events) and the archive's highlights.
+  const clips = [...(year.year === CURRENT_YEAR ? ytForEvent(`${series.key}:${event.kind === 'Main Event' ? 'main' : event.number}`) : []), ...highlightsOf(ref)];
   const facts = [fmtBuyIn(event) && `Buy-in ${fmtBuyIn(event)}`, event.game, event.kind !== 'Open' ? event.kind : '', `${full.length} broadcast day${full.length === 1 ? '' : 's'}`].filter(Boolean);
   const champion = event.kind === 'Main Event' && series.key === 'lv' ? year.champion : null;
   return (
@@ -1087,12 +1088,6 @@ export function LegendsRow() {
 // ---- Browse (one page: filters, the season's events, then the players) -------------------------------------------
 
 type SeriesType = 'all' | 'bracelets' | 'super' | 'circuit';
-const TYPE_OPTIONS: [SeriesType, string][] = [
-  ['all', 'All'],
-  ['bracelets', 'Bracelets'],
-  ['super', 'Super Circuit'],
-  ['circuit', 'Circuit'],
-];
 /** Which circuit stops were Super Circuits (2025 Cyprus, 2023 London International); the others were regular Circuit stops. */
 const SUPER_CIRCUIT_YEARS = new Set([2025, 2023]);
 const typeOf = (year: number, key: SeriesKey): Exclude<SeriesType, 'all'> => (key === 'circuit' ? (SUPER_CIRCUIT_YEARS.has(year) ? 'super' : 'circuit') : 'bracelets');
@@ -1104,8 +1099,9 @@ const typeOf = (year: number, key: SeriesKey): Exclude<SeriesType, 'all'> => (ke
  * Picking players searches every year, so a player's events show whichever year they were in.
  */
 export function BrowseAll() {
-  const [year, setYear] = useState(CURRENT_YEAR);
-  const [type, setType] = useState<SeriesType>('all');
+  // All years by default: the newest year first, then "See more" opens the year before it, and so on.
+  const [year, setYear] = useState<'all' | number>('all');
+  const [more, setMore] = useState(1);
   const [q, setQ] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
   const years = ARCHIVE.map((y) => y.year);
@@ -1120,20 +1116,40 @@ export function BrowseAll() {
     document.addEventListener('keydown', esc);
     return () => (document.removeEventListener('mousedown', away), document.removeEventListener('keydown', esc));
   }, [open]);
-  const pool = (picked.length ? years.flatMap((y) => seasonRows(y)) : seasonRows(year)).filter((r) => !picked.length || picked.some((p) => r.players.includes(p)));
-  const rows = pool.filter((r) => type === 'all' || r.type === type);
-  // A kind of series with nothing in it this year can't be picked (2025 had no regular Circuit broadcasts).
-  const has = (k: SeriesType) => k === 'all' || pool.some((r) => r.type === k);
+  // Back to the top: a round button at the bottom right once the page has scrolled.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 800);
+    on();
+    window.addEventListener('scroll', on, { passive: true });
+    return () => window.removeEventListener('scroll', on);
+  }, []);
+  // Which years are on the page: one year; or, for All, the newest `more` years; picking players searches every year.
+  const shownYears = picked.length ? years : year === 'all' ? years.slice(0, more) : [year];
+  const groups = shownYears
+    .map((y) => ({ y, rows: seasonRows(y).filter((r) => !picked.length || picked.some((p) => r.players.includes(p))) }))
+    .filter((g) => g.rows.length);
+  const nextYear = !picked.length && year === 'all' ? years[more] : undefined;
   const needle = q.trim().toLowerCase();
   const shown = needle ? ALL_PLAYER_NAMES.filter((n) => n.toLowerCase().includes(needle)) : MOST_SEARCHED;
   const toggle = (n: string) => setPicked((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n]));
   return (
     <>
-      <div className="mt-5 grid gap-3">
+      {/* WSOP Legends first, then the filters and the events. */}
+      <WsopLegendsRow />
+
+      <div className="mt-12 grid gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <label className="relative">
             <span className="sr-only">Year</span>
-            <select id="browse-year" value={year} onChange={(e) => setYear(Number(e.target.value))} disabled={picked.length > 0} className="h-11 w-56 appearance-none rounded-chip border border-line-strong bg-surface px-4 pr-10 text-[15px] font-bold tnum disabled:opacity-50">
+            <select
+              id="browse-year"
+              value={String(year)}
+              onChange={(e) => (setYear(e.target.value === 'all' ? 'all' : Number(e.target.value)), setMore(1))}
+              disabled={picked.length > 0}
+              className="h-11 w-56 appearance-none rounded-chip border border-line-strong bg-surface px-4 pr-10 text-[15px] font-bold tnum disabled:opacity-50"
+            >
+              <option value="all">All years</option>
               {years.map((y) => (
                 <option key={y} value={y}>
                   {y}
@@ -1142,13 +1158,6 @@ export function BrowseAll() {
             </select>
             <Icon name="chevron" size={16} className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 rotate-90 text-muted" />
           </label>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Series">
-            {TYPE_OPTIONS.map(([k, label]) => (
-              <button key={k} type="button" aria-pressed={type === k} disabled={!has(k)} onClick={() => setType(k)} className={cx('h-11 rounded-chip border px-4 text-sm font-semibold uppercase disabled:cursor-not-allowed disabled:opacity-35', type === k ? 'border-live bg-live text-white' : 'border-line-strong text-text/80 enabled:hover:border-white/60 enabled:hover:text-text')}>
-                {label}
-              </button>
-            ))}
-          </div>
           {/* Players: a search box; its list (Most Searched, or the matches) opens under it only while searching. */}
           <div ref={box} className="relative min-w-64 flex-1">
             <label className="flex h-11 items-center gap-2 rounded-chip border border-line-strong bg-surface px-3 focus-within:border-white/60">
@@ -1200,10 +1209,33 @@ export function BrowseAll() {
         )}
       </div>
 
-      <section aria-label="Events" className="mt-8 space-y-10">
-        {rows.length ? groupBySeries(rows).map((g) => <SeriesEventsRow key={g.series} series={g.series} events={g.events} />) : <p className="rounded-card border border-line bg-surface p-5 text-sm text-muted">No videos match these filters.</p>}
-      </section>
-      <WsopLegendsRow />
+      {/* The events, newest first, one row each; a year heading where the year changes. */}
+      <div className="mt-8 space-y-12">
+        {groups.length ? (
+          groups.map((g) => (
+            <section key={g.y} aria-label={String(g.y)} className="space-y-10">
+              {(shownYears.length > 1 || year === 'all') && <h2 className="border-b border-line pb-2 font-display text-3xl tnum">{g.y}</h2>}
+              {g.rows.map((r) => (
+                <EventVideoRow key={r.key} r={r} />
+              ))}
+            </section>
+          ))
+        ) : (
+          <p className="rounded-card border border-line bg-surface p-5 text-sm text-muted">No videos match these filters.</p>
+        )}
+      </div>
+      {nextYear != null && (
+        <div className="mt-10 flex justify-center">
+          <button type="button" onClick={() => setMore((n) => n + 1)} className="inline-flex h-11 items-center gap-2 rounded-full border border-line-strong px-6 text-sm font-bold hover:border-white/60">
+            See more · {nextYear} <Icon name="chevron" size={16} className="rotate-90" />
+          </button>
+        </div>
+      )}
+      {scrolled && (
+        <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Back to top" className="fixed right-[max(1.25rem,env(safe-area-inset-right))] bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-40 grid size-12 place-items-center rounded-full bg-white text-black shadow-lg shadow-black/50 hover:bg-white/85">
+          <Icon name="chevron" size={20} className="-rotate-90" />
+        </button>
+      )}
     </>
   );
 }
@@ -1282,68 +1314,25 @@ export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
 }
 
 /** One event: its name (opens the event page), where and who won, then its videos in a sideways row. */
-/** The rows in order, gathered by series (the order they came in: newest series first). */
-const groupBySeries = (rows: SeasonRow[]) => {
-  const out: { series: string; events: SeasonRow[] }[] = [];
-  for (const r of rows) {
-    const g = out.find((x) => x.series === r.series);
-    if (g) g.events.push(r);
-    else out.push({ series: r.series, events: [r] });
-  }
-  return out;
-};
-
-/**
- * One series as one row (F1 TV's season → races): a card per event, its Main Event first, newest first after it.
- * A card opens the event page, where its broadcasts, highlights and channel clips are.
- */
-function SeriesEventsRow({ series, events: list }: { series: string; events: SeasonRow[] }) {
-  const videos = list.reduce((n, r) => n + r.videos.length, 0);
-  return (
-    <section aria-label={series}>
-      <div className="mb-3 flex items-baseline gap-3">
-        <h2 className="text-xl sm:text-2xl">{series}</h2>
-        <span className="text-sm text-muted tnum">
-          {list.length} event{list.length === 1 ? '' : 's'} · {videos} videos
-        </span>
-      </div>
-      <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
-        {list.map((r) => {
-          // The event's own broadcast picture first (channel thumbnails carry their own graphics).
-          const pic = r.videos.find((v) => !v.id.startsWith('yt.')) ?? r.videos[0];
-          return (
-            <li key={r.key} className="min-w-0">
-              <Link to={r.to} className="group block">
-                <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
-                  <img src={pic.thumb} style={artStyle({ pos: pic.thumbPos, fit: pic.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
-                  <span className="absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold tnum">
-                    {r.videos.length} video{r.videos.length === 1 ? '' : 's'}
-                  </span>
-                </span>
-                <span className="mt-2 line-clamp-2 block text-[15px] leading-snug font-semibold group-hover:text-gold-strong">{r.title}</span>
-                <span className="mt-0.5 block truncate text-xs text-muted">{r.winner ? `Won by ${r.winner}` : ' '}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </Carousel>
-    </section>
-  );
-}
-
 /** One event as its own row of videos (kept for event lists elsewhere). */
 export function EventVideoRow({ r }: { r: SeasonRow }) {
   return (
     <section aria-label={r.title}>
-      <div className="mb-3">
-        <h2 className="text-lg font-bold sm:text-xl">
-          <Link to={r.to} className="hover:underline hover:decoration-2 hover:underline-offset-4">
-            {r.title}
-          </Link>
-        </h2>
-        <p className="mt-0.5 text-sm text-muted">
-          {r.note} · {r.videos.length} video{r.videos.length === 1 ? '' : 's'}
-        </p>
+      {/* The event's name and where/who, with See more on the right: the event page lists every one of its videos. */}
+      <div className="mb-3 flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="text-lg font-bold sm:text-xl">
+            <Link to={r.to} className="hover:underline hover:decoration-2 hover:underline-offset-4">
+              {r.title}
+            </Link>
+          </h3>
+          <p className="mt-0.5 text-sm text-muted">
+            {r.note} · {r.videos.length} video{r.videos.length === 1 ? '' : 's'}
+          </p>
+        </div>
+        <Link to={r.to} className="shrink-0 text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
+          See more →
+        </Link>
       </div>
       <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={r.videos}>
