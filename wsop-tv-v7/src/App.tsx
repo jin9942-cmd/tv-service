@@ -38,9 +38,10 @@ export default function App() {
             <Route path="schedule/:seriesId" element={<SchedulePage />} />
             <Route path="schedule/channels" element={<Navigate to="/schedule" replace />} />
             <Route path="tournaments" element={<Navigate to="/schedule" replace />} />
-            {/* Browse (as v8): Years, Players; Highlights on its own page; Replays now live under Years. */}
-            <Route path="videos" element={<VideosPage tab="years" />} />
-            <Route path="videos/players" element={<VideosPage tab="players" />} />
+            {/* Browse: one page of years and players; Highlights on its own page; Replays now live under the years. */}
+            {/* Browse is one page: the years and the players together (the old Players tab lands there). */}
+            <Route path="videos" element={<VideosPage />} />
+            <Route path="videos/players" element={<Navigate to="/videos" replace />} />
             <Route path="videos/events" element={<Navigate to="/videos" replace />} />
             <Route path="videos/tag/:tag" element={<Navigate to="/videos" replace />} />
             <Route path="videos/highlights" element={<Navigate to="/videos" replace />} />

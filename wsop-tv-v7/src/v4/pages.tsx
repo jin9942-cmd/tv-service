@@ -14,7 +14,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, EYEBROW, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseTabs, PlayersTab, YearsTab, seasonPhoto } from './browse';
+import { BrowsePage, seasonPhoto } from './browse';
 import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
@@ -493,14 +493,12 @@ export function TagPage() {
 // ---- Videos ------------------------------------------------------------------------------------------
 
 /** Browse (as v8): Years and Players. Hand clips have no page of their own (Home's hands row and the themes carry them). */
-export function VideosPage({ tab }: { tab: 'years' | 'players' }) {
+/** Browse: one page where the year and the player meet (no tabs). */
+export function VideosPage() {
   return (
     <Page className="max-w-[96rem]">
-      {/* The two tabs are the page's headline (Years · Players); the word Browse is already lit in the menu. */}
-      {/* The page title (as Schedule's), then Browse's own sub-menu: Years · Players. */}
       <h1 className={PAGE_TITLE}>Browse</h1>
-      <BrowseTabs tab={tab} />
-      {tab === 'years' ? <YearsTab /> : <PlayersTab />}
+      <BrowsePage />
     </Page>
   );
 }
@@ -630,7 +628,7 @@ const playerRowGrid = 'hscroll gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-3*0.75
 function HallOfFameRow() {
   const list = HALL_OF_FAME.slice(0, 12);
   return (
-    <Section title="Poker Hall of Fame" action={more('/videos/players', 'All players')}>
+    <Section title="Poker Hall of Fame" action={more('/videos', 'All players')}>
       <ul className={playerRowGrid}>
         {list.map((x) => (
           <li key={x.name} className="min-w-0">

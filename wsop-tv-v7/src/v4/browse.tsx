@@ -7,7 +7,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../state/app';
-import { Avatar, BraceletCount, Button, CountryCode, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
+import { Avatar, BraceletCount, Button, CountryCode, Icon, LiveTag, Page, cx } from '../components/ui';
 import { HERO_DAY_ID, classicEvents, events, players, seatsFor, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
@@ -23,26 +23,6 @@ import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcasts
 const CURRENT_YEAR = 2025;
 
 // ---- shared bits -------------------------------------------------------------------------------------
-
-/** Browse is built on two things, the year and the player. (Hashtags are an advanced feature, left out for now.) */
-export function BrowseTabs({ tab }: { tab: 'years' | 'players' }) {
-  const tabs = [
-    ['/videos', 'Years', 'years'],
-    ['/videos/players', 'Players', 'players'],
-  ] as const;
-  return (
-    <>
-      {/* Browse's sub-menu, drawn as a menu: pill buttons under the title (the one you're on filled white). */}
-      <nav className="mt-4 flex gap-2" aria-label="Browse">
-        {tabs.map(([to, label, k]) => (
-          <Link key={k} to={to} aria-current={tab === k ? 'page' : undefined} className={cx('inline-flex h-11 items-center rounded-full border px-6 text-base font-bold transition-colors', tab === k ? 'border-white bg-white text-black' : 'border-line-strong text-text/80 hover:border-white/60 hover:text-text')}>
-            {label}
-          </Link>
-        ))}
-      </nav>
-    </>
-  );
-}
 
 const back = (to: string, label: string) => (
   <Link to={to} className="text-sm text-muted hover:text-text">
@@ -114,11 +94,11 @@ export function SeasonTile({ year, line, live, big }: { year: number; line: stri
 }
 
 /**
- * Years, as F1 TV's archive: this year large, then every season as a photo tile (a picture of play with the year
- * large on it, and a line under it), recent seasons first, the older ones by decade, then the Classics (one broadcast
- * a year, so their tile plays it straight away).
+ * Browse, one page where the year and the player meet: this season large, the bracelet legends, then every season as
+ * a photo tile (recent first, the older ones by decade, then the Classics) with the champions of those seasons right
+ * under each block. Every name opens the player's page; every year its season.
  */
-export function YearsTab() {
+export function BrowsePage() {
   const modern = ARCHIVE.filter((y) => !y.classic && y.year < CURRENT_YEAR);
   const recent = modern.filter((y) => y.year >= RECENT_FROM);
   const older = modern.filter((y) => y.year < RECENT_FROM);
@@ -150,10 +130,14 @@ export function YearsTab() {
       </li>
     );
   };
+  // Each block of seasons, then the champions of those seasons right under it: the year and the player side by side.
   const row = (list: typeof ARCHIVE) => (
-    <div className="mt-4">
-      <Carousel className={yearRowGrid}>{list.map(tile)}</Carousel>
-    </div>
+    <>
+      <div className="mt-4">
+        <Carousel className={yearRowGrid}>{list.map(tile)}</Carousel>
+      </div>
+      <ChampionStrip years={list.map((y) => y.year)} />
+    </>
   );
   return (
     <>
@@ -221,6 +205,8 @@ export function YearsTab() {
           </div>
         )}
       </section>
+
+      <LegendsSection />
 
       <section aria-label="Recent seasons" className="mt-10">
         <h2 className="text-xl sm:text-2xl">Recent seasons</h2>
@@ -535,101 +521,65 @@ function PlannedRow({ title, what }: { title: string; what: string }) {
 
 // ---- Players ---------------------------------------------------------------------------------------
 
-type Sort = 'bracelets' | 'name';
-/** Players: the bracelet legends (all-time leaders, WSOP records), the Main Event champions, the Hall of Fame; sort. */
-export function PlayersTab() {
-  const [sort, setSort] = useState<Sort>('bracelets');
-  // No search on Browse for now: every player is listed.
-  const match = (name: string) => !!name;
-  const order = <T extends { name: string; bracelets: number }>(a: T, b: T) => (sort === 'name' ? a.name.localeCompare(b.name) : b.bracelets - a.bracelets || a.name.localeCompare(b.name));
-  const legends = LEGENDS.filter((l) => match(l.name)).sort(order);
-  const champions = CHAMPIONS.filter((c) => match(c.name)).sort((a, b) => (sort === 'name' ? a.name.localeCompare(b.name) : b.years[0] - a.years[0]));
+/** The bracelet legends (WSOP's all-time bracelet leaders), most bracelets first. */
+function LegendsSection() {
+  const legends = [...LEGENDS].sort((a, b) => b.bracelets - a.bracelets || a.name.localeCompare(b.name));
   return (
-    <>
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        <Segmented
-          label="Sort players"
-          value={sort}
-          onChange={setSort}
-          options={[
-            { value: 'bracelets', label: 'Bracelets' },
-            { value: 'name', label: 'Name' },
-          ]}
-        />
-      </div>
-      {legends.length > 0 && (
-        <section aria-label="Bracelet legends" className="mt-10">
-          <h2 className="text-xl sm:text-2xl">Bracelet legends</h2>
-          <p className="mt-1 text-sm text-muted">The most WSOP bracelets of all time</p>
-          <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {legends.map((l) => (
-              <li key={l.id}>
-                <LegendCard l={l} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      {/* Main Event champions: every champion in the archive, newest first; each page opens on the final table they won. */}
-      <section aria-label="Main Event champions" className="mt-12">
-        <h2 className="text-xl sm:text-2xl">Main Event champions</h2>
-        <p className="mt-1 text-sm text-muted">Watch the final table each of them won</p>
-        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {champions.map((c) => (
-            <li key={c.id} className="min-w-0">
-              <Link to={playerLink(c.name)!} className="group block h-full overflow-hidden rounded-card border border-line bg-surface transition-colors hover:border-white/40">
-                <span className="relative block aspect-video overflow-hidden bg-surface-2">
-                  <img src={c.years[0] >= 2003 ? seasonPhoto(c.years[0]) : (mainEventFinal(c.years[0])?.final.thumb ?? '')} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
-                  <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden />
-                  <span className="absolute bottom-2 left-2.5 font-display text-2xl leading-none text-white tnum">{c.years.slice().sort((a, b) => a - b).join(' · ')}</span>
-                </span>
-                <span className="block p-3">
-                  <span className="block truncate text-sm font-bold group-hover:text-gold-strong">{c.name}</span>
-                  <span className="block truncate text-xs text-muted">{c.country}</span>
-                </span>
-              </Link>
+    <section aria-label="Bracelet legends" className="mt-10">
+      <h2 className="text-xl sm:text-2xl">Bracelet legends</h2>
+      <p className="mt-1 text-sm text-muted">The most WSOP bracelets of all time</p>
+      <div className="mt-4">
+        <Carousel className="gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-3*0.75rem)/4)] lg:[&>*]:w-[calc((100%-5*0.75rem)/6)]">
+          {legends.map((l) => (
+            <li key={l.id} className="min-w-0">
+              <LegendCard l={l} />
             </li>
           ))}
-        </ul>
-      </section>
-      {/* Poker Hall of Fame (WSOP.com's list): the names first, by the decade they were inducted, newest first. */}
-      <section aria-label="Poker Hall of Fame" className="mt-12">
-        <h2 className="text-xl sm:text-2xl">Poker Hall of Fame</h2>
-        <p className="mt-1 text-sm text-muted">{HALL_OF_FAME.length} members since 1979 · WSOP.com</p>
-        {[...new Set(HALL_OF_FAME.map((x) => Math.floor(x.year / 10) * 10))].map((d) => (
-          <div key={d} className="mt-6">
-            <h3 className="mb-3 font-display text-lg text-gold-strong tnum">{d}s</h3>
-            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {HALL_OF_FAME.filter((x) => Math.floor(x.year / 10) * 10 === d).map((x) => {
-                const body = (
-                  <span className="flex h-full items-center gap-3.5 rounded-card border border-line bg-surface p-3.5 transition-colors group-hover:border-white/40">
-                    <Avatar name={x.name.replace(/ “[^”]+”/, '')} hue={[...x.name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)} size={56} photo={x.photo} ring />
-                    <span className="min-w-0">
-                      <span className="block text-base leading-snug font-bold group-hover:text-gold-strong">{x.name}</span>
-                      <span className="mt-0.5 block text-xs text-muted tnum">
-                        Inducted {x.year} · {x.country}
-                      </span>
-                    </span>
-                  </span>
-                );
-                return (
-                  <li key={x.name} className="min-w-0">
-                    {x.to ? (
-                      <Link to={x.to} className="group block h-full">
-                        {body}
-                      </Link>
-                    ) : (
-                      <div className="h-full">{body}</div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </section>
-      {/* Only real players here: the demo's own players are made up, so they are not listed. */}
-    </>
+        </Carousel>
+      </div>
+    </section>
+  );
+}
+
+/** The Main Event champions of a block of seasons, newest first: a face, the name and the year, each opening their page. */
+function ChampionStrip({ years }: { years: number[] }) {
+  const seen = new Map<string, number[]>();
+  for (const y of [...years].sort((a, b) => b - a)) {
+    const c = ARCHIVE.find((x) => x.year === y)?.champion;
+    if (!c || y >= CURRENT_YEAR) continue;
+    seen.set(c.name, [...(seen.get(c.name) ?? []), y]);
+  }
+  if (!seen.size) return null;
+  return (
+    <div className="mt-4">
+      <p className="mb-2 text-xs font-bold tracking-wide text-muted uppercase">Main Event champions</p>
+      <ul className="hscroll gap-2">
+        {[...seen].map(([name, ys]) => {
+          const to = playerLink(name);
+          const photo = hofPhoto(name) ?? (ys[0] >= 2003 && ys[0] <= 2024 ? seasonPhoto(ys[0]) : undefined);
+          const body = (
+            <>
+              <Avatar name={name} hue={[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)} size={36} photo={photo} />
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold group-hover:text-gold-strong">{name}</span>
+                <span className="block text-[11px] text-muted tnum">{ys.slice().sort((a, b) => a - b).join(' · ')}</span>
+              </span>
+            </>
+          );
+          return (
+            <li key={name} className="shrink-0">
+              {to ? (
+                <Link to={to} className="group flex items-center gap-2.5 rounded-full border border-line bg-surface py-1.5 pr-4 pl-1.5 transition-colors hover:border-white/40">
+                  {body}
+                </Link>
+              ) : (
+                <span className="flex items-center gap-2.5 rounded-full border border-line bg-surface py-1.5 pr-4 pl-1.5">{body}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -656,7 +606,7 @@ export function PlayerPage() {
   const champ = championById(playerId);
   if (champ) return <ArchivePlayerPage person={fromChampion(champ)} />;
   const p = players.find((x) => x.id === playerId);
-  if (!p) return <Navigate to="/videos/players" replace />;
+  if (!p) return <Navigate to="/videos" replace />;
   const finals = p.recent
     .map((r) => ({ r, e: events.find((e) => e.id === r.eventId) }))
     .filter((x): x is { r: (typeof p.recent)[number]; e: TourEvent } => !!x.e);
@@ -679,7 +629,7 @@ export function PlayerPage() {
     .map((y) => ({ y, rows: finals.filter((x) => yearOfEvent(x.e) === y).sort((p1, p2) => p1.r.place - p2.r.place) }));
   return (
     <Page className="max-w-[96rem]">
-      {back('/videos/players', 'Players')}
+      {back('/videos', 'Browse')}
       <header className="mt-4 flex flex-wrap items-center gap-5">
         <Avatar name={p.name} hue={p.hue} size={96} photo={p.photo} ring />
         <div>
@@ -829,7 +779,7 @@ function ArchivePlayerPage({ person: p }: { person: ArchivePerson }) {
   const labels = [p.legend && 'Bracelet legend', p.mainEvents.length > 0 && 'Main Event champion', p.hof && `Poker Hall of Fame ${p.hof}`].filter(Boolean) as string[];
   return (
     <Page className="max-w-[96rem]">
-      {back('/videos/players', 'Players')}
+      {back('/videos', 'Browse')}
       <header className="mt-4 flex flex-wrap items-center gap-5">
         <Avatar name={p.name} hue={p.hue} size={96} photo={p.photo} ring />
         <div>
@@ -1204,7 +1154,7 @@ export function YearsRow() {
 /** Bracelet Legends: the players with the most bracelets; each opens the player page in Browse. */
 export function LegendsRow() {
   return (
-    <HomeSection title="Bracelet Legends" action={moreLink('/videos/players', 'All players')}>
+    <HomeSection title="Bracelet Legends" action={moreLink('/videos', 'All players')}>
       <ul className="hscroll gap-3 [&>*]:w-[40%] sm:[&>*]:w-[calc((100%-2.25rem)/4)] lg:[&>*]:w-[calc((100%-5.25rem)/8)]">
         {LEGENDS.slice(0, 10).map((l) => (
           <li key={l.id}>
