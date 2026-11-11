@@ -558,7 +558,7 @@ export function HomeRows() {
   return (
     <>
       {/* Season */}
-      <FeaturedTheme now={now} skip={[]} id="this-series" />
+      <ThemeRow id="this-series" now={now} />
       {/* Players */}
       <ThemeRow id="mizrachi-run" now={now} />
       {/* Classics */}
@@ -828,7 +828,7 @@ const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: '', weekly: 'F
  * The featured theme on Home: one wide card (title, note, how long, Play all) with its first videos beside it. Which
  * theme it is comes from ./themes.ts: the operator's pin, a seasonal theme while it's on, or the weekly rotation.
  */
-function FeaturedTheme({ now, skip, id }: { now: number; skip: string[]; id?: string }) {
+export function FeaturedTheme({ now, skip, id }: { now: number; skip: string[]; id?: string }) {
   const pinned = id ? themeById(id, now) : undefined;
   const f = pinned ? { ...pinned, why: 'seasonal' as const } : featuredTheme(now, skip);
   if (!f) return null;
