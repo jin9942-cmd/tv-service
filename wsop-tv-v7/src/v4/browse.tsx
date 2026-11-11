@@ -1102,6 +1102,15 @@ export function BrowseAll() {
   // All years by default: the newest year first, then "See more" opens the year before it, and so on.
   const [year, setYear] = useState<'all' | number>('all');
   const [more, setMore] = useState(1);
+  // Years folded shut (each year opens by default; its heading folds it).
+  const [folded, setFolded] = useState<Set<number>>(new Set());
+  const toggleYear = (y: number) =>
+    setFolded((s) => {
+      const n = new Set(s);
+      if (n.has(y)) n.delete(y);
+      else n.add(y);
+      return n;
+    });
   const [q, setQ] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
   const years = ARCHIVE.map((y) => y.year);
@@ -1214,10 +1223,20 @@ export function BrowseAll() {
         {groups.length ? (
           groups.map((g) => (
             <section key={g.y} aria-label={String(g.y)} className="space-y-10">
-              {(shownYears.length > 1 || year === 'all') && <h2 className="border-b border-line pb-2 font-display text-3xl tnum">{g.y}</h2>}
-              {g.rows.map((r) => (
-                <EventVideoRow key={r.key} r={r} />
-              ))}
+              {/* The year as a fold: click to collapse or open its series (open by default). */}
+              <h2 className="border-b border-line">
+                <button type="button" onClick={() => toggleYear(g.y)} aria-expanded={!folded.has(g.y)} className="flex w-full items-center justify-between gap-3 pb-2 text-left">
+                  <span className="font-display text-3xl tnum">{g.y}</span>
+                  <span className="flex items-center gap-2 text-sm font-semibold text-muted">
+                    {folded.has(g.y) ? 'Show' : 'Hide'}
+                    <span className="grid size-8 place-items-center rounded-full border border-line-strong">
+                      <Icon name="chevron" size={16} className={folded.has(g.y) ? 'rotate-90' : '-rotate-90'} />
+                    </span>
+                  </span>
+                </button>
+              </h2>
+              {!folded.has(g.y) &&
+                seriesOf(g.rows).map((s) => <SeriesBlock key={s.key} s={s} limit={picked.length ? undefined : SERIES_PREVIEW} />)}
             </section>
           ))
         ) : (
@@ -1240,7 +1259,7 @@ export function BrowseAll() {
   );
 }
 
-type SeasonRow = { key: string; to: string; title: string; note: string; videos: Video[]; type: Exclude<SeriesType, 'all'>; players: string[]; series: string; winner?: string };
+type SeasonRow = { key: string; to: string; title: string; note: string; videos: Video[]; type: Exclude<SeriesType, 'all'>; players: string[]; series: string; seriesKey: SeriesKey; year: number; winner?: string };
 
 /** Newest series first: Paradise (Dec), the Super Circuit (2025: Cyprus, Oct 9 – 21), Europe (Sep – Oct), Las Vegas (May – Jul). */
 const SERIES_ORDER: SeriesKey[] = ['pa', 'circuit', 'eu', 'apac', 'lv'];
@@ -1291,7 +1310,7 @@ export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
         if (!videos.length) continue;
         const main = e.id === 'lv-main';
         const winner = players.find((p) => p.id === e.winnerId)?.name;
-        items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/events/${e.id}`, title: `${e.number != null ? `#${e.number} · ` : ''}${e.name.replace(' World Championship', '')}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos), series: label, winner } });
+        items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/events/${e.id}`, title: `${e.number != null ? `#${e.number} · ` : ''}${e.name.replace(' World Championship', '')}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos), series: label, seriesKey: key, year, winner } });
       }
     }
     for (const e of s.events) {
@@ -1304,7 +1323,7 @@ export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
       const fix = ARCHIVE_FIX[e.id];
       // The Las Vegas Main Event's champion is on record for every year.
       const winner = fix?.winner ?? (main && key === 'lv' ? arch.champion?.name : undefined);
-      items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/videos/event/${e.id}`, title: fix?.title ?? `${e.number != null ? `#${e.number} · ` : ''}${e.name}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos), series: label, winner } });
+      items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/videos/event/${e.id}`, title: fix?.title ?? `${e.number != null ? `#${e.number} · ` : ''}${e.name}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos), series: label, seriesKey: key, year, winner } });
     }
     // Newest first within a series: its Main Event (decided last), then the higher event numbers.
     items.sort((a, b) => b.n - a.n);
@@ -1314,25 +1333,83 @@ export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
 }
 
 /** One event: its name (opens the event page), where and who won, then its videos in a sideways row. */
-/** One event as its own row of videos (kept for event lists elsewhere). */
+/** How many events a series shows on Browse before its See more (the series page lists them all). */
+const SERIES_PREVIEW = 3;
+type SeriesGroup = { key: string; year: number; seriesKey: SeriesKey; name: string; events: SeasonRow[] };
+/** A year's rows gathered by series, in order (newest series first). */
+const seriesOf = (rows: SeasonRow[]): SeriesGroup[] => {
+  const out: SeriesGroup[] = [];
+  for (const r of rows) {
+    const g = out.find((x) => x.name === r.series);
+    if (g) g.events.push(r);
+    else out.push({ key: `${r.year}-${r.seriesKey}`, year: r.year, seriesKey: r.seriesKey, name: r.series, events: [r] });
+  }
+  return out;
+};
+
+/**
+ * A series on Browse: its name with how many events and videos, See more on the right (the series page: all its
+ * events), and under it its events, each a row of its own videos (the Main Event first, then the newest).
+ */
+function SeriesBlock({ s, limit }: { s: SeriesGroup; limit?: number }) {
+  const videos = s.events.reduce((n, r) => n + r.videos.length, 0);
+  const list = limit ? s.events.slice(0, limit) : s.events;
+  return (
+    <section aria-label={s.name} className="space-y-6">
+      <div className="flex items-baseline justify-between gap-4">
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h2 className="text-xl sm:text-2xl">{s.name}</h2>
+          <span className="text-sm text-muted tnum">
+            {s.events.length} event{s.events.length === 1 ? '' : 's'} · {videos} videos
+          </span>
+        </div>
+        <Link to={`/videos/series/${s.year}/${s.seriesKey}`} className="shrink-0 text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
+          See more →
+        </Link>
+      </div>
+      {list.map((r) => (
+        <EventVideoRow key={r.key} r={r} />
+      ))}
+    </section>
+  );
+}
+
+/** A series' page (Browse > See more): every event of the series, newest first, each a row of its videos. */
+export function SeriesEventsPage() {
+  const { year = '', series: key = '' } = useParams();
+  const g = seriesOf(seasonRows(Number(year)).filter((r) => r.seriesKey === key))[0];
+  if (!g) return <Navigate to="/videos" replace />;
+  const videos = g.events.reduce((n, r) => n + r.videos.length, 0);
+  return (
+    <Page className="max-w-[96rem]">
+      {back('/videos', 'Browse')}
+      <h1 className="mt-3 text-title">{g.name}</h1>
+      <p className="mt-1 text-sm text-muted tnum">
+        {g.events.length} event{g.events.length === 1 ? '' : 's'} · {videos} videos
+      </p>
+      <div className="mt-8 space-y-10">
+        {g.events.map((r) => (
+          <EventVideoRow key={r.key} r={r} />
+        ))}
+      </div>
+    </Page>
+  );
+}
+
+/** One event as a row of its videos: its name (opens the event page) and who won, then the videos sideways. */
 export function EventVideoRow({ r }: { r: SeasonRow }) {
   return (
     <section aria-label={r.title}>
-      {/* The event's name and where/who, with See more on the right: the event page lists every one of its videos. */}
-      <div className="mb-3 flex items-end justify-between gap-4">
-        <div className="min-w-0">
-          <h3 className="text-lg font-bold sm:text-xl">
-            <Link to={r.to} className="hover:underline hover:decoration-2 hover:underline-offset-4">
-              {r.title}
-            </Link>
-          </h3>
-          <p className="mt-0.5 text-sm text-muted">
-            {r.note} · {r.videos.length} video{r.videos.length === 1 ? '' : 's'}
-          </p>
-        </div>
-        <Link to={r.to} className="shrink-0 text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
-          See more →
-        </Link>
+      {/* The event's name (opens the event page) and who won; the series line above already says where. */}
+      <div className="mb-3">
+        <h3 className="text-base font-bold sm:text-lg">
+          <Link to={r.to} className="hover:underline hover:decoration-2 hover:underline-offset-4">
+            {r.title}
+          </Link>
+        </h3>
+        <p className="mt-0.5 text-sm text-muted">
+          {[r.winner && `Won by ${r.winner}`, `${r.videos.length} video${r.videos.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
+        </p>
       </div>
       <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={r.videos}>
