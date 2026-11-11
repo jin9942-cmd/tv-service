@@ -1099,15 +1099,6 @@ export function BrowseAll() {
   // All years by default: the newest year first, then "See more" opens the year before it, and so on.
   const [year, setYear] = useState<'all' | number>('all');
   const [more, setMore] = useState(1);
-  // Years folded shut (each year opens by default; its heading folds it).
-  const [folded, setFolded] = useState<Set<number>>(new Set());
-  const toggleYear = (y: number) =>
-    setFolded((s) => {
-      const n = new Set(s);
-      if (n.has(y)) n.delete(y);
-      else n.add(y);
-      return n;
-    });
   const [q, setQ] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
   const years = ARCHIVE.map((y) => y.year);
@@ -1215,25 +1206,14 @@ export function BrowseAll() {
       </div>
 
       <WsopLegendsRow />
-      {/* The events, newest first, one row each; a year heading where the year changes. */}
-      <div className="mt-8 space-y-12">
+      {/* The series, newest first, one row each (no year headings: each series name carries its year). */}
+      <div className="mt-8 space-y-10">
         {groups.length ? (
           groups.map((g) => (
             <section key={g.y} aria-label={String(g.y)} className="space-y-10">
-              {/* The year as a fold: click to collapse or open its series (open by default). */}
-              <h2 className="border-b border-line">
-                <button type="button" onClick={() => toggleYear(g.y)} aria-expanded={!folded.has(g.y)} className="flex w-full items-center justify-between gap-3 pb-2 text-left">
-                  <span className="font-display text-3xl tnum">{g.y}</span>
-                  <span className="flex items-center gap-2 text-sm font-semibold text-muted">
-                    {folded.has(g.y) ? 'Show' : 'Hide'}
-                    <span className="grid size-8 place-items-center rounded-full border border-line-strong">
-                      <Icon name="chevron" size={16} className={folded.has(g.y) ? 'rotate-90' : '-rotate-90'} />
-                    </span>
-                  </span>
-                </button>
-              </h2>
-              {!folded.has(g.y) &&
-                seriesOf(g.rows).map((s) => <SeriesBlock key={s.key} s={s} />)}
+              {seriesOf(g.rows).map((s) => (
+                <SeriesBlock key={s.key} s={s} />
+              ))}
             </section>
           ))
         ) : (
@@ -1243,7 +1223,7 @@ export function BrowseAll() {
       {nextYear != null && (
         <div className="mt-10 flex justify-center">
           <button type="button" onClick={() => setMore((n) => n + 1)} className="inline-flex h-11 items-center gap-2 rounded-full border border-line-strong px-6 text-sm font-bold hover:border-white/60">
-            See more · {nextYear} <Icon name="chevron" size={16} className="rotate-90" />
+            See more <Icon name="chevron" size={16} className="rotate-90" />
           </button>
         </div>
       )}
