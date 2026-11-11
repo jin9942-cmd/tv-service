@@ -18,7 +18,7 @@ import { HALL_OF_FAME, hofPhoto } from './halloffame';
 import { Carousel } from './carousel';
 import { photoOf } from './photos';
 import { ytForEvent } from './youtube';
-import { DaySchedule, EventRows, EventTile, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, scheduleOrder, type EventItem } from './loop';
+import { EventRows, EventTile, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, scheduleOrder, type EventItem } from './loop';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
 /** The demo's live series: the 2025 World Series of Poker in Las Vegas, reconstructed from the real broadcasts. */
@@ -931,10 +931,7 @@ export function ArchiveEventPage() {
         </Page>
       </div>
       <Page className="py-8">
-        {/* The broadcast days as a schedule strip (F1 TV's weekend schedule), then the broadcasts and, when there are any, the highlights. */}
-        <div className="mb-10">
-          <DaySchedule videos={full} isLiveNow={() => false} />
-        </div>
+        {/* No schedule strip of days: the Broadcasts row below already lists them in order (with their lengths on the pictures). */}
         {[
           ['Broadcasts', full],
           ['Highlights', clips],

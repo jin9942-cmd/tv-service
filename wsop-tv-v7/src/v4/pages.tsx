@@ -22,7 +22,7 @@ import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, SEASON_ART, TABLE_ART, 
 import { USED_THUMBS, byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
 import { activeThemes, featuredTheme, homeHands, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
-import { DaySchedule, OtherYearsSection, otherYears } from './loop';
+import { OtherYearsSection, otherYears } from './loop';
 import { ARCHIVE, archiveEvent, broadcastsOf } from './archive';
 import { ytGroup } from './youtube';
 
@@ -1484,8 +1484,6 @@ export function EventPage() {
           live && <p className="mt-3 text-[15px] font-semibold">The final table is on air now</p>
         )}
       </div>
-      {/* The broadcast days as a schedule strip (F1 TV's weekend schedule): a chip a day, each plays it. */}
-      <DaySchedule videos={list.filter((v) => v.kind === 'broadcast')} isLiveNow={(v) => isLive(v, state.streamMode)} />
       <section aria-label="Broadcasts">
         <h2 className="mb-3 text-xl sm:text-2xl">Broadcasts</h2>
         <div className={rowGrid}>
