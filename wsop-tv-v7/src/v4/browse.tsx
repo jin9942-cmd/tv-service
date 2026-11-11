@@ -18,7 +18,7 @@ import { HALL_OF_FAME, hofPhoto } from './halloffame';
 import { Carousel } from './carousel';
 import { photoOf } from './photos';
 import { ytForEvent } from './youtube';
-import { EventRows, EventTile, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, scheduleOrder, type EventItem } from './loop';
+import { EventRows, EventTile, archiveItem, liveItem, newestFirst, playerLink, scheduleOrder, type EventItem } from './loop';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
 /** The demo's live series: the 2025 World Series of Poker in Las Vegas, reconstructed from the real broadcasts. */
@@ -950,9 +950,6 @@ export function ArchiveEventPage() {
             </section>
           ) : null,
         )}
-        <div className="mt-2">
-          <OtherYearsSection items={otherYears(event.name, event.kind, series.key, event.id)} />
-        </div>
       </Page>
     </>
   );

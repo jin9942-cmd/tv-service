@@ -22,7 +22,6 @@ import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, SEASON_ART, TABLE_ART, 
 import { USED_THUMBS, byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
 import { activeThemes, featuredTheme, homeHands, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
-import { OtherYearsSection, otherYears } from './loop';
 import { ARCHIVE, archiveEvent, broadcastsOf } from './archive';
 import { ytGroup } from './youtube';
 
@@ -1499,8 +1498,6 @@ export function EventPage() {
         </div>
       </section>
       <VideoRow title="Key Hands" videos={clips} action={<Link to={`/tag/event-${e.id}`} className="text-sm font-semibold text-muted hover:text-text">All videos →</Link>} />
-      {/* The same event in other years (the loop: event → another event). */}
-      <OtherYearsSection items={otherYears(e.name, /main event/i.test(e.name) ? 'Main Event' : 'Open', 'lv', e.id)} />
     </Page>
   );
 }
