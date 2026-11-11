@@ -1204,14 +1204,14 @@ export function BrowseAll() {
       </div>
 
       <section aria-label="Events" className="mt-8 space-y-10">
-        {rows.length ? rows.map((r) => <EventVideoRow key={r.key} r={r} />) : <p className="rounded-card border border-line bg-surface p-5 text-sm text-muted">No videos match these filters.</p>}
+        {rows.length ? groupBySeries(rows).map((g) => <SeriesEventsRow key={g.series} series={g.series} events={g.events} />) : <p className="rounded-card border border-line bg-surface p-5 text-sm text-muted">No videos match these filters.</p>}
       </section>
       <WsopLegendsRow />
     </>
   );
 }
 
-type SeasonRow = { key: string; to: string; title: string; note: string; videos: Video[]; type: Exclude<SeriesType, 'all'>; players: string[] };
+type SeasonRow = { key: string; to: string; title: string; note: string; videos: Video[]; type: Exclude<SeriesType, 'all'>; players: string[]; series: string; winner?: string };
 
 /** Newest series first: Paradise (Dec), the Super Circuit (2025: Cyprus, Oct 9 – 21), Europe (Sep – Oct), Las Vegas (May – Jul). */
 const SERIES_ORDER: SeriesKey[] = ['pa', 'circuit', 'eu', 'apac', 'lv'];
@@ -1262,7 +1262,7 @@ export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
         if (!videos.length) continue;
         const main = e.id === 'lv-main';
         const winner = players.find((p) => p.id === e.winnerId)?.name;
-        items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/events/${e.id}`, title: `${e.number != null ? `#${e.number} · ` : ''}${e.name.replace(' World Championship', '')}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos) } });
+        items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/events/${e.id}`, title: `${e.number != null ? `#${e.number} · ` : ''}${e.name.replace(' World Championship', '')}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos), series: label, winner } });
       }
     }
     for (const e of s.events) {
@@ -1275,7 +1275,7 @@ export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
       const fix = ARCHIVE_FIX[e.id];
       // The Las Vegas Main Event's champion is on record for every year.
       const winner = fix?.winner ?? (main && key === 'lv' ? arch.champion?.name : undefined);
-      items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/videos/event/${e.id}`, title: fix?.title ?? `${e.number != null ? `#${e.number} · ` : ''}${e.name}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos) } });
+      items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/videos/event/${e.id}`, title: fix?.title ?? `${e.number != null ? `#${e.number} · ` : ''}${e.name}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos), series: label, winner } });
     }
     // Newest first within a series: its Main Event (decided last), then the higher event numbers.
     items.sort((a, b) => b.n - a.n);
@@ -1285,7 +1285,57 @@ export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
 }
 
 /** One event: its name (opens the event page), where and who won, then its videos in a sideways row. */
-function EventVideoRow({ r }: { r: SeasonRow }) {
+/** The rows in order, gathered by series (the order they came in: newest series first). */
+const groupBySeries = (rows: SeasonRow[]) => {
+  const out: { series: string; events: SeasonRow[] }[] = [];
+  for (const r of rows) {
+    const g = out.find((x) => x.series === r.series);
+    if (g) g.events.push(r);
+    else out.push({ series: r.series, events: [r] });
+  }
+  return out;
+};
+
+/**
+ * One series as one row (F1 TV's season → races): a card per event, its Main Event first, newest first after it.
+ * A card opens the event page, where its broadcasts, highlights and channel clips are.
+ */
+function SeriesEventsRow({ series, events: list }: { series: string; events: SeasonRow[] }) {
+  const videos = list.reduce((n, r) => n + r.videos.length, 0);
+  return (
+    <section aria-label={series}>
+      <div className="mb-3 flex items-baseline gap-3">
+        <h2 className="text-xl sm:text-2xl">{series}</h2>
+        <span className="text-sm text-muted tnum">
+          {list.length} event{list.length === 1 ? '' : 's'} · {videos} videos
+        </span>
+      </div>
+      <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        {list.map((r) => {
+          // The event's own broadcast picture first (channel thumbnails carry their own graphics).
+          const pic = r.videos.find((v) => !v.id.startsWith('yt.')) ?? r.videos[0];
+          return (
+            <li key={r.key} className="min-w-0">
+              <Link to={r.to} className="group block">
+                <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+                  <img src={pic.thumb} style={artStyle({ pos: pic.thumbPos, fit: pic.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+                  <span className="absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold tnum">
+                    {r.videos.length} video{r.videos.length === 1 ? '' : 's'}
+                  </span>
+                </span>
+                <span className="mt-2 line-clamp-2 block text-[15px] leading-snug font-semibold group-hover:text-gold-strong">{r.title}</span>
+                <span className="mt-0.5 block truncate text-xs text-muted">{r.winner ? `Won by ${r.winner}` : ' '}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </Carousel>
+    </section>
+  );
+}
+
+/** One event as its own row of videos (kept for event lists elsewhere). */
+export function EventVideoRow({ r }: { r: SeasonRow }) {
   return (
     <section aria-label={r.title}>
       <div className="mb-3">
