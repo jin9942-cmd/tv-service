@@ -1135,10 +1135,9 @@ export function BrowseAll() {
   const toggle = (n: string) => setPicked((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n]));
   return (
     <>
-      {/* WSOP Legends first, then the filters and the events. */}
-      <WsopLegendsRow />
 
-      <div className="mt-12 grid gap-3">
+      {/* The filters first (they apply to the whole page), then WSOP Legends, then the events. */}
+      <div className="mt-5 grid gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <label className="relative">
             <span className="sr-only">Year</span>
@@ -1209,6 +1208,7 @@ export function BrowseAll() {
         )}
       </div>
 
+      <WsopLegendsRow />
       {/* The events, newest first, one row each; a year heading where the year changes. */}
       <div className="mt-8 space-y-12">
         {groups.length ? (
