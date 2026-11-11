@@ -14,16 +14,17 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, EYEBROW, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseTabs, PlayersTab, YearsTab, seasonPhoto } from './browse';
+import { BrowseAll, seasonPhoto } from './browse';
 import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, SEASON_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { USED_THUMBS, byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
-import { activeThemes, featuredTheme, homeHands, inSeason, themeById } from './themes';
+import { activeThemes, featuredTheme, homeHands, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
 import { DaySchedule, OtherYearsSection, otherYears } from './loop';
 import { ARCHIVE, archiveEvent, broadcastsOf } from './archive';
+import { ytGroup } from './youtube';
 
 // ---- watch ------------------------------------------------------------------------------------------
 
@@ -493,14 +494,12 @@ export function TagPage() {
 // ---- Videos ------------------------------------------------------------------------------------------
 
 /** Browse (as v8): Years and Players. Hand clips have no page of their own (Home's hands row and the themes carry them). */
-export function VideosPage({ tab }: { tab: 'years' | 'players' }) {
+/** Browse: one page, no Years / Players split (the old /videos/players address lands here too). */
+export function VideosPage(_: { tab?: 'years' | 'players' }) {
   return (
     <Page className="max-w-[96rem]">
-      {/* The two tabs are the page's headline (Years · Players); the word Browse is already lit in the menu. */}
-      {/* The page title (as Schedule's), then Browse's own sub-menu: Years · Players. */}
       <h1 className={PAGE_TITLE}>Browse</h1>
-      <BrowseTabs tab={tab} />
-      {tab === 'years' ? <YearsTab /> : <PlayersTab />}
+      <BrowseAll />
     </Page>
   );
 }
@@ -552,27 +551,19 @@ export function HomeRows() {
   // The programming follows the calendar (see ./themes.ts). `?date=2025-11-10` shows Home as it reads on that day.
   const [params] = useSearchParams();
   const now = Date.parse(params.get('date') ?? '') || Date.now();
-  const season = inSeason(now);
-  // Themes with their own row here stay out of the featured spot and the shelf.
-  const ownRow = season ? 'main-event-day-by-day' : 'this-time-of-year';
-  const placed = [EDITORS_THEME, ownRow];
+  // Home is programmed in three kinds of rows (what F1 TV, UFC Fight Pass and NBA League Pass have in common):
+  //   Season — the last series' results;  Players — one player's story;  Classics — the hands and final tables people
+  //   come back for. Then the collections, and the personal rows last. Rows already placed stay off the shelf.
+  const placed = [EDITORS_THEME, 'this-series', 'mizrachi-run', 'main-event-day-by-day'];
   const hands = homeHands(now);
   return (
     <>
-      {/* No "Recommended for you": every row says why it is there. */}
-      <FeaturedTheme now={now} skip={placed} />
-      {season ? (
-        <>
-          <ThemeRow id={ownRow} now={now} />
-          <VideoRow title={hands.title} eyebrow={hands.eyebrow} videos={hands.videos} />
-        </>
-      ) : (
-        <>
-          <VideoRow title={hands.title} eyebrow={hands.eyebrow} videos={hands.videos} />
-          <ThemeRow id={ownRow} now={now} />
-          <HallOfFameRow />
-        </>
-      )}
+      {/* Season */}
+      <FeaturedTheme now={now} skip={[]} id="this-series" />
+      {/* Players */}
+      <ThemeRow id="mizrachi-run" now={now} />
+      {/* Classics */}
+      <CarouselRow title={hands.title} videos={hands.videos} />
       <SeasonTiles />
       <ThemeShelf skip={shown} now={now} placed={placed} />
       {/* Personal rows last. */}
@@ -627,7 +618,7 @@ export const PAGE_TITLE = 'text-2xl sm:text-3xl';
 const playerRowGrid = 'hscroll gap-3 [&>*]:w-[42%] sm:[&>*]:w-[calc((100%-3*0.75rem)/4)] lg:[&>*]:w-[calc((100%-8*0.75rem)/9)]';
 
 /** Poker Hall of Fame (off-season): the latest classes from WSOP.com's list, newest first; legends open their page. */
-function HallOfFameRow() {
+export function HallOfFameRow() {
   const list = HALL_OF_FAME.slice(0, 12);
   return (
     <Section title="Poker Hall of Fame" action={more('/videos/players', 'All players')}>
@@ -743,9 +734,10 @@ const archiveFinals = (): Video[] =>
     .slice(0, 10);
 
 function SeasonTiles() {
-  const finals = archiveFinals();
+  // The Main Event final tables of the archive, then the channel's iconic moments.
+  const finals = [...archiveFinals(), ...ytGroup('iconic')];
   return (
-    <Section title="Popular Final Tables From the Archive" action={more('/videos', 'View all')}>
+    <Section title="Iconic Final Tables" action={more('/videos', 'View all')}>
       <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={finals}>
           {finals.map((v) => (
@@ -837,8 +829,9 @@ const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: '', weekly: 'F
  * The featured theme on Home: one wide card (title, note, how long, Play all) with its first videos beside it. Which
  * theme it is comes from ./themes.ts: the operator's pin, a seasonal theme while it's on, or the weekly rotation.
  */
-function FeaturedTheme({ now, skip }: { now: number; skip: string[] }) {
-  const f = featuredTheme(now, skip);
+function FeaturedTheme({ now, skip, id }: { now: number; skip: string[]; id?: string }) {
+  const pinned = id ? themeById(id, now) : undefined;
+  const f = pinned ? { ...pinned, why: 'seasonal' as const } : featuredTheme(now, skip);
   if (!f) return null;
   const { theme, videos } = f;
   return (
@@ -1216,11 +1209,12 @@ const DAY_MS = 86_400_000;
 /** The season's WSOP series (the 2025 Las Vegas series), from the data. */
 const SEASON: SeriesStop[] = [
   // The demo series' dates cover all of their broadcasts.
-  ...series.map((s) => {
+  // The last year of series and the next one (the 2024 Paradise stop is older than that, so it stays off).
+  ...series.filter((s) => Date.parse(s.end) > Date.now() - 365 * 864e5).map((s) => {
     const starts = events.filter((e) => e.seriesId === s.id).flatMap((e) => e.days.map((d) => d.start));
     const first = [s.start, ...starts].sort()[0];
     const last = [s.end, ...starts].sort().pop()!;
-    return { ...s, start: first, end: last, art: s.id === 'lv25' ? TABLE_ART[0] : s.id === 'pa24' ? VENUE_ART[3] : s.id === 'eu25' ? VENUE_ART[2] : VENUE_ART[0] };
+    return { ...s, start: first, end: last, art: s.id === 'lv25' ? TABLE_ART[0] : s.id === 'pa25' ? VENUE_ART[3] : s.id === 'eu25' ? VENUE_ART[2] : VENUE_ART[0] };
   }),
 ];
 
@@ -1562,5 +1556,23 @@ export function TodayCards({ now }: { now: number }) {
         <ChannelCard key={c.id} c={c} now={now} />
       ))}
     </div>
+  );
+}
+
+/** A Home row of videos in a sideways carousel (four across, the arrows step through the rest). */
+function CarouselRow({ title, videos }: { title: string; videos: Video[] }) {
+  if (!videos.length) return null;
+  return (
+    <Section title={title}>
+      <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        <BadgeScope videos={videos}>
+          {videos.map((v) => (
+            <li key={v.id} className="min-w-0">
+              <VideoCard v={v} />
+            </li>
+          ))}
+        </BadgeScope>
+      </Carousel>
+    </Section>
   );
 }

@@ -242,18 +242,26 @@ const L = (id: string, name: string, country: string, cc: string, bracelets: num
   hue: hash(id) % 360,
   ...extra,
 });
+// Bracelet counts at the end of 2025 (the demo is set before the 2026 series): PokerNews player pages and 2025 reports.
 export const LEGENDS: Legend[] = [
   L('hellmuth', 'Phil Hellmuth', 'United States', 'US', 17, [1989], 'The most WSOP bracelets of all time'),
   L('ivey', 'Phil Ivey', 'United States', 'US', 11, [], 'Second on the all-time bracelet list'),
   L('seidel', 'Erik Seidel', 'United States', 'US', 10, [], 'Runner-up to Johnny Chan in the 1988 Main Event', { archive: [{ eventId: '1988-lv-main', role: 'Main Event runner-up' }] }),
   L('brunson', 'Doyle Brunson', 'United States', 'US', 10, [1976, 1977], 'Back-to-back Main Event champion'),
   L('chan', 'Johnny Chan', 'United States', 'US', 10, [1987, 1988], 'Back-to-back Main Event champion'),
-  L('mizrachi', 'Michael Mizrachi', 'United States', 'US', 9, [2025], 'Main Event champion 2025'),
-  L('deeb', 'Shaun Deeb', 'United States', 'US', 9, [], 'Nine bracelets'),
-  L('glaser', 'Benny Glaser', 'United Kingdom', 'GB', 9, [], 'Nine bracelets'),
+  L('mizrachi', 'Michael Mizrachi', 'United States', 'US', 8, [2025], '2025 Main Event and $50,000 Poker Players Championship'),
+  L('deeb', 'Shaun Deeb', 'United States', 'US', 8, [], '2025 WSOP Player of the Year'),
+  L('glaser', 'Benny Glaser', 'United Kingdom', 'GB', 8, [], 'Three bracelets in 2025'),
   L('moss', 'Johnny Moss', 'United States', 'US', 9, [1970, 1971, 1974], 'Three-time Main Event champion'),
-  L('negreanu', 'Daniel Negreanu', 'Canada', 'CA', 8, [], 'Eight bracelets', { playerId: 'p04' }),
-  L('schulman', 'Nick Schulman', 'United States', 'US', 8, [], 'Eight bracelets'),
+  L('negreanu', 'Daniel Negreanu', 'Canada', 'CA', 7, [], 'Seven bracelets', { playerId: 'p04' }),
+  L('schulman', 'Nick Schulman', 'United States', 'US', 7, [], '2025 $10,000 No-Limit 2-7 Championship'),
+  L('seiver', 'Scott Seiver', 'United States', 'US', 7, [], '2024 WSOP Player of the Year'),
+  L('arieh', 'Josh Arieh', 'United States', 'US', 7, [], 'Seven bracelets'),
+  L('koon', 'Jason Koon', 'United States', 'US', 2, [], '2025 $50,000 High Roller'),
+  L('tamayo', 'Jonathan Tamayo', 'United States', 'US', 1, [2024], 'Main Event champion 2024'),
+  L('weinman', 'Daniel Weinman', 'United States', 'US', 2, [2023], 'Main Event champion 2023'),
+  L('jorstad', 'Espen Jorstad', 'Norway', 'NO', 2, [2022], 'Main Event champion 2022'),
+  L('moneymaker', 'Chris Moneymaker', 'United States', 'US', 1, [2003], 'Main Event champion 2003'),
 ];
 export const legendById = (id: string) => LEGENDS.find((l) => l.id === id);
 

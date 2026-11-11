@@ -11,6 +11,7 @@
 import { HERO_DAY_ID, classicEvents, dayById, events, isClassicEvent, seriesById } from '../data/mock';
 import type { Day, TourEvent } from '../data/types';
 import { catalog, highlightClips, type Video } from './catalog';
+import { ytGroup } from './youtube';
 
 export interface Theme {
   id: string;
@@ -77,10 +78,26 @@ export const THEMES: Theme[] = [
   {
     id: 'this-series',
     // Named by its season ("2025 WSOP Las Vegas"), not "this series": the title says which one.
-    title: 'This Summer’s Bracelet Winners',
-    blurb: `Every bracelet decided so far at the ${SEASON}, newest first.`,
-    when: (now) => inSeason(now),
+    // The demo is set before the 2026 series: the 2025 Las Vegas bracelets are last summer's.
+    title: 'Last Summer’s Bracelet Winners',
+    blurb: `Every bracelet decided at the ${SEASON}, newest first.`,
     rule: () => broadcasts().filter((v) => isFinalTable(v) && eventOf(v)?.seriesId === currentSeries().id).sort(newest),
+  },
+  {
+    // Player-led (not event-led): Michael Mizrachi's 2025, the $50,000 Poker Players Championship and then the Main
+    // Event — his final tables, the Main Event day by day on the way, and the hands that featured him.
+    id: 'mizrachi-run',
+    title: 'Michael Mizrachi’s Historic Run',
+    blurb: 'The 2025 $50,000 Poker Players Championship and the Main Event: his two bracelets of the summer, start to finish.',
+    rule: () => {
+      const won = (v: Video) => eventOf(v)?.winnerId === 'mizrachi';
+      const finals = broadcasts().filter((v) => won(v) && isFinalTable(v));
+      const mainDays = catalog.filter((v) => v.kind === 'broadcast' && eventOf(v)?.id === 'lv-main' && !isFinalTable(v));
+      const hands = highlightClips.filter((v) => /Mizrachi/.test(v.title));
+      // His story from the WSOP channel first, then the run in order: the PPC final, the Main Event days, its final.
+      const run = [...finals, ...mainDays, ...hands].sort((a, b) => startOf(a) - startOf(b));
+      return [...ytGroup('mizrachi'), ...run].filter((v, i, all) => all.findIndex((x) => x.id === v.id) === i);
+    },
   },
   {
     id: 'main-event-day-by-day',
@@ -177,8 +194,8 @@ export function homeHands(now = Date.now()): { title: string; eyebrow?: string; 
   const s = currentSeries();
   const own = highlightClips.filter((v) => eventOf(v)?.seriesId === s.id && startOf(v) <= now);
   return inSeason(now)
-    ? { title: 'Must-See Hands', videos: [...own].sort((a, b) => startOf(b) - startOf(a) || b.views - a.views) }
-    : { title: `Best Hands of the ${s.name.slice(0, 4)} WSOP`, videos: own };
+    ? { title: 'The Craziest Hands', videos: [...ytGroup('hands'), ...own].slice(0, 16) }
+    : { title: 'The Craziest Hands', videos: [...ytGroup('hands'), ...own].slice(0, 16) };
 }
 
 export type LiveTheme = { theme: Theme; videos: Video[]; seasonal: boolean };

@@ -7,7 +7,7 @@ import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '..
 import { HERO_DAY_ID, dayById, hands, seriesById } from '../data/mock';
 import { isOnAir } from '../lib/broadcast';
 import { FOOTAGE, thumbFor } from '../lib/media';
-import { HERO_IMAGES } from '../lib/brand';
+import { HERO_IMAGES, VENUE_ART } from '../lib/brand';
 import { money } from '../lib/format';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
@@ -83,20 +83,37 @@ function PromoBanner() {
   const [slide, setSlide] = useState(0);
   const { event, day } = dayById(HERO_DAY_ID)!;
   const live = isOnAir(state.streamMode);
+  // The demo is set before the 2026 series: the banner leads with what's next, then last summer's champion.
+  const next = seriesById('lv26');
   const slides = [
+    {
+      img: VENUE_ART[0].src, // the room, no broadcast graphics (the 2026 series hasn't started)
+      pos: '50% 40%',
+      kicker: `${next.name} · Las Vegas`,
+      title: 'Starts May 26',
+      facts: [next.venue, 'Main Event from July 2'],
+      line: 'May 26 – July 15, 2026',
+      preview: false,
+      actions: (
+        <Link to="/schedule">
+          <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
+            See the schedule
+          </Button>
+        </Link>
+      ),
+    },
     {
       img: HERO_IMAGES.finalTable,
       pos: '50% 60%',
-      kicker: `${seriesById(event.seriesId).name} · Las Vegas`,
-      title: `Main Event ${day.label}`,
-      // No players-left count on Home (no live table data at launch).
-      facts: [event.game, `${money(event.firstPrize)} to the winner`],
-      line: 'On air now from Horseshoe / Paris Las Vegas',
+      kicker: `${seriesById(event.seriesId).name} · Main Event`,
+      title: 'Michael Mizrachi, World Champion',
+      facts: [`${money(event.firstPrize)}`, `${event.entrants.toLocaleString('en-US')} entries`],
+      line: `Watch the ${day.label.toLowerCase()} that made him champion`,
       preview: true,
       actions: (
-        <Link to={`/watch/${HERO_DAY_ID}`}>
+        <Link to={`/watch/${HERO_DAY_ID}${live ? '' : '?play=1'}`}>
           <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
-            <Icon name="play" size={18} /> {live ? 'Watch live' : 'Watch'}
+            <Icon name="play" size={18} /> Watch the final table
           </Button>
         </Link>
       ),

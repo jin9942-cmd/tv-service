@@ -109,7 +109,7 @@ export function VideoCard({ v, progress, onRemove, className, reason, size = 'md
         </Link>
         {badge && <CardBadge b={badge} className="pointer-events-none absolute top-2 left-2" />}
         {/* Runtime on the artwork (not for live or 24/7 channels, which have no fixed length). */}
-        {!live && v.kind !== 'channel' && <span className="pointer-events-none absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>}
+        {!live && v.kind !== 'channel' && v.durationSec > 0 && <span className="pointer-events-none absolute right-2 bottom-2 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>}
         {onRemove && (
           <button
             onClick={onRemove}

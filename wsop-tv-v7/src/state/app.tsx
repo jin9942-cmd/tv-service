@@ -76,7 +76,7 @@ const INITIAL: AppState = {
   // Report build (v3): opens as a WSOP+ Premium member so the channels play straight away (Shift+D to change).
   scenario: PRESENTATION ? 'premium' : 'guest',
   // v7: the hero final table is live in real time (no broadcast delay is shown anywhere).
-  streamMode: 'live',
+  streamMode: 'vod',
   regionBlocked: false,
   platform: 'web',
   tvPreview: false,

@@ -11,6 +11,7 @@ import { isOnAir } from '../lib/broadcast';
 import { mediaFor } from '../features/channels/Channels';
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, PROMO_ART, SEASON_ART, TABLE_ART, VENUE_ART } from '../lib/brand';
 import type { StreamStatus } from '../data/types';
+import { youtubeVideo } from './youtube';
 
 export type VideoKind = 'broadcast' | 'classic' | 'clip' | 'channel';
 
@@ -265,6 +266,7 @@ export function channelVideo(channelId: string, at: number): Video | undefined {
 export function videoById(id: string, at = Date.now()): Video | undefined {
   if (id.startsWith('ch-')) return channelVideo(id.slice(3), at);
   if (id.startsWith('arc.')) return archiveVideo(id);
+  if (id.startsWith('yt.')) return youtubeVideo(id);
   return catalog.find((v) => v.id === id);
 }
 

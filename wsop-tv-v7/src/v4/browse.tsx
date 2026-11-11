@@ -16,6 +16,8 @@ import { catalog, highlightClips, isLive, stageOf, videoById, type Video } from 
 import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { HALL_OF_FAME, hofPhoto } from './halloffame';
 import { Carousel } from './carousel';
+import { photoOf } from './photos';
+import { ytForEvent } from './youtube';
 import { DaySchedule, EventRows, EventTile, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, scheduleOrder, type EventItem } from './loop';
 import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
@@ -1082,5 +1084,157 @@ export function LegendsRow() {
         ))}
       </ul>
     </HomeSection>
+  );
+}
+
+// ---- Browse (one page: the season's events, then the players) -----------------------------------------------------
+
+/**
+ * Browse, one page (no Years / Players split): the 2025 season's bracelet events and Super Circuit events, newest
+ * first, each as a row of its videos; then WSOP Legends, the players to follow (active players only, 15 at most).
+ */
+export function BrowseAll() {
+  const rows = seasonRows();
+  return (
+    <>
+      <section aria-label="2025 season" className="mt-6 space-y-10">
+        {rows.map((r) => (
+          <EventVideoRow key={r.key} r={r} />
+        ))}
+      </section>
+      <WsopLegendsRow />
+    </>
+  );
+}
+
+type SeasonRow = { key: string; to: string; title: string; note: string; videos: Video[] };
+
+/** Newest series first: Paradise (Dec 4 – 18), the Super Circuit Cyprus (Oct 9 – 21), Europe (Sep 17 – Oct 9), Las Vegas (May 27 – Jul 16). */
+const SERIES_ORDER: SeriesKey[] = ['pa', 'circuit', 'eu', 'lv'];
+const SERIES_LABEL: Record<string, string> = { pa: '2025 WSOP Paradise', eu: '2025 WSOP Europe', lv: '2025 WSOP Las Vegas', circuit: '2025 WSOP Super Circuit Cyprus', apac: '2025 WSOP Asia-Pacific' };
+/** The archive's folder names, with the official name and the winner where a source states them (PokerNews event pages). */
+const ARCHIVE_FIX: Record<string, { title: string; winner?: string }> = {
+  '2025-pa-main': { title: '#11 · $25,000 Super Main Event', winner: 'Bernhard Binder' },
+  '2025-eu-main': { title: '#14 · €10,350 Main Event', winner: 'Daniel Pidun' },
+  '2025-circuit-main': { title: '$5,300 Main Event' },
+};
+
+/** The season's events as rows: the live service's own events (with their recaps and key hands), else the archive's. */
+export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
+  const arch = ARCHIVE.find((y) => y.year === year);
+  if (!arch) return [];
+  const own = events.filter((e) => e.seriesId === 'lv25');
+  const out: SeasonRow[] = [];
+  for (const key of SERIES_ORDER) {
+    const s = arch.series.find((x) => x.key === key);
+    if (!s) continue;
+    type Item = { n: number; main: boolean; row: SeasonRow };
+    const items: Item[] = [];
+    const winnerNote = (id?: string) => {
+      const p = id ? players.find((x) => x.id === id) : undefined;
+      return p ? `Won by ${p.name}` : '';
+    };
+    // Las Vegas: the live service's events first (they carry their recaps and hands), then the archive's others.
+    if (key === 'lv') {
+      for (const e of own) {
+        const videos = [...catalog.filter((v) => v.eventId === e.id && v.kind !== 'channel'), ...ytForEvent(`lv:${e.id === 'lv-main' ? 'main' : e.number}`)];
+        if (!videos.length) continue;
+        const main = e.id === 'lv-main';
+        items.push({ n: main ? 999 : (e.number ?? 0), main, row: { key: e.id, to: `/events/${e.id}`, title: `${e.number != null ? `#${e.number} · ` : ''}${e.name.replace(' World Championship', '')}`, note: [SERIES_LABEL.lv, winnerNote(e.winnerId)].filter(Boolean).join(' · '), videos } });
+      }
+    }
+    for (const e of s.events) {
+      if (key === 'lv' && (e.kind === 'Main Event' || own.some((m) => m.number === e.number))) continue;
+      const ref = archiveEvent(e.id);
+      if (!ref) continue;
+      const videos = [...ytForEvent(`${key}:${e.kind === 'Main Event' ? 'main' : e.number}`), ...broadcastsOf(ref), ...highlightsOf(ref)];
+      if (!videos.length) continue;
+      const main = e.kind === 'Main Event';
+      const fix = ARCHIVE_FIX[e.id];
+      items.push({ n: main ? 999 : (e.number ?? 0), main, row: { key: e.id, to: `/videos/event/${e.id}`, title: fix?.title ?? `${e.number != null ? `#${e.number} · ` : ''}${e.name}`, note: [SERIES_LABEL[key] ?? seriesTitle(year, s), fix?.winner && `Won by ${fix.winner}`].filter(Boolean).join(' · '), videos } });
+    }
+    // Newest first within a series: its Main Event (decided last), then the higher event numbers.
+    items.sort((a, b) => b.n - a.n);
+    out.push(...items.map((x) => x.row));
+  }
+  return out;
+}
+
+/** One event: its name (opens the event page), where and who won, then its videos in a sideways row. */
+function EventVideoRow({ r }: { r: SeasonRow }) {
+  return (
+    <section aria-label={r.title}>
+      <div className="mb-3">
+        <h2 className="text-lg font-bold sm:text-xl">
+          <Link to={r.to} className="hover:underline hover:decoration-2 hover:underline-offset-4">
+            {r.title}
+          </Link>
+        </h2>
+        <p className="mt-0.5 text-sm text-muted">
+          {r.note} · {r.videos.length} video{r.videos.length === 1 ? '' : 's'}
+        </p>
+      </div>
+      <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        <BadgeScope videos={r.videos}>
+          {r.videos.map((v) => (
+            <li key={v.id} className="min-w-0">
+              <VideoCard v={v} />
+            </li>
+          ))}
+        </BadgeScope>
+      </Carousel>
+    </section>
+  );
+}
+
+/**
+ * WSOP Legends: the players to follow — recent bracelet winners and the big names with the most WSOP video. Active
+ * players only (no one who has died or stopped playing), 15 at most, most bracelets first.
+ */
+// Order: the 2025 winners first (the champion, then the year's other bracelet winners), then the big names with the
+// most WSOP video, then the recent Main Event champions. Doyle Brunson and Johnny Moss (died) and anyone not playing
+// the WSOP in 2024 – 2025 stay out.
+const LEGEND_ORDER = ['mizrachi', 'deeb', 'glaser', 'schulman', 'koon', 'hellmuth', 'negreanu', 'ivey', 'seidel', 'seiver', 'arieh', 'tamayo', 'weinman', 'jorstad', 'moneymaker'];
+export const WSOP_LEGENDS: { name: string; bracelets: number; line: string; to?: string }[] = LEGEND_ORDER.map((id) => legendById(`legend-${id}`))
+  .filter((l): l is Legend => !!l)
+  .map((l) => ({ name: l.name, bracelets: l.bracelets, line: l.note, to: `/videos/players/${l.id}` }));
+function WsopLegendsRow() {
+  const list = WSOP_LEGENDS.slice(0, 15);
+  if (!list.length) return null;
+  return (
+    <section aria-label="WSOP Legends" className="mt-14">
+      <h2 className="text-xl sm:text-2xl">WSOP Legends</h2>
+      <Carousel className="mt-4 gap-3 [&>*]:w-[40%] sm:[&>*]:w-[calc((100%-3*0.75rem)/4)] lg:[&>*]:w-[calc((100%-5*0.75rem)/6)]">
+        {list.map((p) => {
+          const photo = photoOf(p.name);
+          const body = (
+            <>
+              <span className="relative block aspect-[3/4] overflow-hidden rounded-card border border-line bg-surface-2 transition-colors group-hover:border-white/40">
+                {photo ? (
+                  <img src={photo} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+                ) : (
+                  <span className="absolute inset-0 grid place-items-center font-display text-5xl text-white/80">{p.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
+                )}
+              </span>
+              <span className="mt-2 block truncate text-[15px] font-bold group-hover:text-gold-strong">{p.name}</span>
+              <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
+                <BraceletCount n={p.bracelets} size={13} /> {p.line}
+              </span>
+            </>
+          );
+          return (
+            <li key={p.name} className="min-w-0">
+              {p.to ? (
+                <Link to={p.to} className="group block">
+                  {body}
+                </Link>
+              ) : (
+                <div className="group block">{body}</div>
+              )}
+            </li>
+          );
+        })}
+      </Carousel>
+    </section>
   );
 }

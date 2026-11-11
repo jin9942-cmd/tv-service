@@ -24,7 +24,7 @@ const P = (id: string, name: string, country: string, cc: string, hue: number, b
 
 export const players: Player[] = [
   // 2025 Main Event final table (https://www.pokernews.com/tours/wsop/2025-wsop/event-81-10000-wsop-main-event/?highlights=1)
-  P('mizrachi', 'Michael Mizrachi', 'United States', 'US', 20, 7), // the Main Event became his 8th (CardPlayer)
+  P('mizrachi', 'Michael Mizrachi', 'United States', 'US', 20, 8), // the 2025 $50K PPC (7th) and Main Event (8th)
   P('wasnock', 'John Wasnock', 'United States', 'US', 210),
   P('dunaway', 'Braxton Dunaway', 'United States', 'US', 140, 1), // 2023 #39 Monster Stack
   P('hallaert', 'Kenny Hallaert', 'Belgium', 'BE', 270),
@@ -42,7 +42,7 @@ export const players: Player[] = [
   P('lim', 'Brett Lim', 'United States', 'US', 350),
   P('okamoto', 'Shiina Okamoto', 'Japan', 'JP', 320),
   P('wang', 'Michael Wang', 'United States', 'US', 200),
-  P('soverel', 'Sam Soverel', 'United States', 'US', 40, 2), // #94 (decided Jul 15) became his 3rd
+  P('soverel', 'Sam Soverel', 'United States', 'US', 40, 3), // #94 (decided Jul 15, 2025) was his 3rd
   P('kenney', 'Bryn Kenney', 'United States', 'US', 290),
   P('foxen', 'Alex Foxen', 'United States', 'US', 30),
   // Champions of the classics
@@ -51,6 +51,9 @@ export const players: Player[] = [
   P('weinman', 'Daniel Weinman', 'United States', 'US', 280),
   // 2024 WSOP Paradise Super Main Event champion
   P('zhou', 'Yinan Zhou', 'China', 'CN', 100),
+  // 2025 WSOP Europe and 2025 WSOP Paradise Main Event champions
+  P('pidun', 'Daniel Pidun', 'Germany', 'DE', 60),
+  P('binder', 'Bernhard Binder', 'Austria', 'AT', 15),
   // A bracelet legend (Browse > Players links to him); no 2025 results are claimed for him here.
   { ...P('p04', 'Daniel Negreanu', 'Canada', 'CA', 270), photo: `${import.meta.env.BASE_URL}promo/negreanu-avatar.webp` },
 ];
@@ -65,8 +68,12 @@ export const players: Player[] = [
 export const series: Series[] = [
   { id: 'pa24', name: '2024 WSOP Paradise', venue: 'Atlantis Paradise Island', city: 'Paradise Island, Bahamas', tz: 'America/Nassau', start: '2024-12-06T15:00:00Z', end: '2024-12-20T04:59:00Z' },
   { id: 'lv25', name: '2025 World Series of Poker', venue: 'Horseshoe / Paris Las Vegas', city: 'Las Vegas, NV', tz: 'America/Los_Angeles', start: '2025-05-27T19:00:00Z', end: '2025-07-17T06:59:00Z' },
-  { id: 'ca25', name: '2025 WSOP Super Circuit Canada', venue: 'Playground', city: 'Kahnawake, QC', tz: 'America/Toronto', start: '2025-08-18T16:00:00Z', end: '2025-09-03T03:59:00Z' },
-  { id: 'eu25', name: '2025 WSOP Europe', venue: 'King’s Resort', city: 'Rozvadov, CZ', tz: 'Europe/Prague', start: '2025-09-17T10:00:00Z', end: '2025-10-08T21:59:00Z' },
+
+  { id: 'eu25', name: '2025 WSOP Europe', venue: 'King’s Resort', city: 'Rozvadov, CZ', tz: 'Europe/Prague', start: '2025-09-17T10:00:00Z', end: '2025-10-09T21:59:00Z' },
+  // 2025 WSOP Paradise, Dec 4 – 18 (the Super Main Event ended Dec 18): https://www.pokernews.com/tours/world-series-of-poker-paradise/2025-wsop-paradise/event-11-25000-super-main-event/
+  { id: 'pa25', name: '2025 WSOP Paradise', venue: 'Atlantis Paradise Island', city: 'Paradise Island, Bahamas', tz: 'America/Nassau', start: '2025-12-04T15:00:00Z', end: '2025-12-19T04:59:00Z' },
+  // 2026 World Series of Poker, May 26 – Jul 15, 2026 (the next series at the demo moment): https://www.pokernews.com/news/2026/02/2026-world-series-of-poker-schedule-50625.htm
+  { id: 'lv26', name: '2026 World Series of Poker', venue: 'Horseshoe / Paris Las Vegas', city: 'Las Vegas, NV', tz: 'America/Los_Angeles', start: '2026-05-26T19:00:00Z', end: '2026-07-16T06:59:00Z' },
 ];
 
 /** A final table is a single table, so its extra streams are camera feeds of that table; earlier days have outer tables. */
@@ -158,7 +165,7 @@ export const events: TourEvent[] = [
     // hero still: seven left, blinds 1M/2M (2M big-blind ante), Mizrachi leading after his ace-king cracked kings.
     id: 'lv-main', seriesId: LV, number: 81, name: 'Main Event World Championship', game: 'No-Limit Hold’em', startingStack: 60_000,
     blinds: { sb: 1_000_000, bb: 2_000_000, ante: 2_000_000 },
-    buyIn: 10_000, entrants: 9_735, prizePool: 90_535_500, firstPrize: 10_000_000, level: 0, remaining: 7, leaderId: 'mizrachi', featured: true,
+    buyIn: 10_000, entrants: 9_735, prizePool: 90_535_500, firstPrize: 10_000_000, level: 0, remaining: 1, winnerId: 'mizrachi', featured: true, // Michael Mizrachi won it on Jul 16, 2025 ($10,000,000 of 9,735 entries)
     days: [
       day('lv-main', 'Day 1A', noon('2025-07-02'), 600, 'vod'),
       day('lv-main', 'Day 1B', noon('2025-07-03'), 600, 'vod'),
@@ -172,21 +179,35 @@ export const events: TourEvent[] = [
       day('lv-main', 'Day 6', noon('2025-07-11'), 660, 'vod', 2),
       day('lv-main', 'Day 7', noon('2025-07-12'), 660, 'vod', 4),
       day('lv-main', 'Day 8', noon('2025-07-13'), 660, 'vod', 4),
-      day('lv-main', 'Final Table', at('2025-07-15T20:30:00Z'), 540, 'live', 4),
+      day('lv-main', 'Final Table', at('2025-07-15T20:30:00Z'), 540, 'vod', 4),
     ],
   },
   {
     // ${PN}/event-94-10000-no-limit-hold-em-championship/ — 546 entries; its winner was decided later on Jul 15, so
     // at the demo moment it is still being played (no winner yet). Its start time on the day is not published.
     id: 'lv-hr', seriesId: LV, number: 94, name: '$10,000 No-Limit Hold’em 6-Handed Championship', game: 'No-Limit Hold’em', startingStack: 300_000,
-    buyIn: 10_000, entrants: 546, prizePool: 5_077_800, firstPrize: 986_337, level: 0, remaining: 6,
-    days: [day('lv-hr', 'Final Table', noon('2025-07-15'), 480, 'live', 2)],
+    buyIn: 10_000, entrants: 546, prizePool: 5_077_800, firstPrize: 986_337, level: 0, remaining: 1, winnerId: 'soverel',
+    days: [day('lv-hr', 'Final Table', noon('2025-07-15'), 480, 'vod', 2)],
   },
   {
-    // 2025 WSOP Europe #14 €10,350 Main Event: Day 1A Oct 3, final Oct 8 (the published schedule); not played yet.
+    // 2025 WSOP Europe #14 €10,350 Main Event: Day 1A Oct 3, final day Oct 9.
     id: 'eu-main', seriesId: 'eu25', number: 14, name: 'Main Event', currency: '€', game: 'No-Limit Hold’em', startingStack: 60_000,
-    buyIn: 10_350, entrants: 0, prizePool: 0, firstPrize: 0, level: 0, remaining: 0,
-    days: [day('eu-main', 'Day 1A', at('2025-10-03T11:00:00Z'), 600, 'upcoming'), day('eu-main', 'Final Table', at('2025-10-08T13:00:00Z'), 540, 'upcoming')],
+    // Won by Daniel Pidun (Germany), €1,140,000 of 659 entries, final day Oct 9: https://www.pokernews.com/tours/wsope/2025-wsop-europe/event-14-10350-main-event/
+    buyIn: 10_350, entrants: 659, prizePool: 6_138_585, firstPrize: 1_140_000, level: 0, remaining: 1, winnerId: 'pidun',
+    days: [day('eu-main', 'Day 1A', at('2025-10-03T11:00:00Z'), 600, 'vod'), day('eu-main', 'Final Table', at('2025-10-09T13:00:00Z'), 540, 'vod')],
+  },
+  {
+    // 2025 WSOP Paradise #11 $25,000 Super Main Event: Bernhard Binder (Austria), $10,000,000 of 2,891 entries, Dec 18, 2025.
+    id: 'pa25-main', seriesId: 'pa25', number: 11, name: '$25,000 Super Main Event', game: 'No-Limit Hold’em', startingStack: 250_000,
+    buyIn: 25_000, entrants: 2_891, prizePool: 72_275_000, firstPrize: 10_000_000, level: 0, remaining: 1, winnerId: 'binder',
+    days: [day('pa25-main', 'Final Table', at('2025-12-18T17:00:00Z'), 540, 'vod')],
+  },
+  {
+    // The 2026 Main Event: Day 1A on Thursday, Jul 2, 2026 (the published schedule); not played yet at the demo moment.
+    // Its event number isn't on the schedule source, so none is shown (0 = no number).
+    id: 'lv26-main', seriesId: 'lv26', number: 0, name: 'Main Event', game: 'No-Limit Hold’em', startingStack: 60_000,
+    buyIn: 10_000, entrants: 0, prizePool: 0, firstPrize: 0, level: 0, remaining: 0,
+    days: [day('lv26-main', 'Day 1A', noon('2026-07-02'), 600, 'upcoming')],
   },
 ];
 
