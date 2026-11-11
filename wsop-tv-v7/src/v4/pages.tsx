@@ -1209,12 +1209,12 @@ const DAY_MS = 86_400_000;
 /** The season's WSOP series (the 2025 Las Vegas series), from the data. */
 const SEASON: SeriesStop[] = [
   // The demo series' dates cover all of their broadcasts.
-  // The last year of series and the next one (the 2024 Paradise stop is older than that, so it stays off).
-  ...series.filter((s) => Date.parse(s.end) > Date.now() - 365 * 864e5).map((s) => {
+  // The season as signed off: 2025 Paradise, 2026 WSOP Europe (Prague), the 2026 World Series of Poker, 2026 Super Circuit Canada.
+  ...['pa25', 'eu26', 'lv26', 'ca26'].map((id) => series.find((x) => x.id === id)!).map((s) => {
     const starts = events.filter((e) => e.seriesId === s.id).flatMap((e) => e.days.map((d) => d.start));
     const first = [s.start, ...starts].sort()[0];
     const last = [s.end, ...starts].sort().pop()!;
-    return { ...s, start: first, end: last, art: s.id === 'lv25' ? TABLE_ART[0] : s.id === 'pa25' ? VENUE_ART[3] : s.id === 'eu25' ? VENUE_ART[2] : VENUE_ART[0] };
+    return { ...s, start: first, end: last, art: s.id === 'lv26' ? TABLE_ART[0] : s.id === 'pa25' ? VENUE_ART[3] : s.id === 'eu26' ? VENUE_ART[2] : VENUE_ART[0] };
   }),
 ];
 
@@ -1248,6 +1248,7 @@ export function SchedulePage() {
     <Page className="max-w-[96rem]">
       {/* The page title, the same as Browse's (Schedule has no sub-menu, so no tabs under it). */}
       <h1 className={PAGE_TITLE}>Schedule</h1>
+      <p className="mt-1 text-sm text-muted">This season's series. Open one to see its broadcasts.</p>
       <div className="mt-6 flex flex-col gap-3">
         {byStart.map((x) => (
           <SeriesFold key={x.id} s={x} open={open.has(x.id)} onToggle={() => toggle(x.id)} now={now} />

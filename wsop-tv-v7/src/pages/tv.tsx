@@ -93,7 +93,8 @@ function PromoBanner() {
       title: 'Starts May 26',
       facts: [next.venue, 'Main Event from July 2'],
       line: 'May 26 – July 15, 2026',
-      preview: false,
+      // A trailer plays over the photo, as on the champion's slide.
+      preview: true,
       actions: (
         <Link to="/schedule">
           <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">

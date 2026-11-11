@@ -74,6 +74,10 @@ export const series: Series[] = [
   { id: 'pa25', name: '2025 WSOP Paradise', venue: 'Atlantis Paradise Island', city: 'Paradise Island, Bahamas', tz: 'America/Nassau', start: '2025-12-04T15:00:00Z', end: '2025-12-19T04:59:00Z' },
   // 2026 World Series of Poker, May 26 – Jul 15, 2026 (the next series at the demo moment): https://www.pokernews.com/news/2026/02/2026-world-series-of-poker-schedule-50625.htm
   { id: 'lv26', name: '2026 World Series of Poker', venue: 'Horseshoe / Paris Las Vegas', city: 'Las Vegas, NV', tz: 'America/Los_Angeles', start: '2026-05-26T19:00:00Z', end: '2026-07-16T06:59:00Z' },
+  // The Schedule's season (as signed off): 2025 Paradise, 2026 WSOP Europe in Prague (Mar 31 – Apr 12, 2026), the 2026
+  // World Series of Poker and the 2026 WSOP Super Circuit Canada (Aug 26 – Sep 12, 2026: https://www.newswire.ca/news-releases/a-historic-first-for-canada-from-august-26-to-september-12-2026-the-wsop-super-circuit-comes-to-canada-with-more-than-14-million-in-guaranteed-prize-pools-811014038.html).
+  { id: 'eu26', name: '2026 WSOP Europe', venue: 'King’s Casino Prague', city: 'Prague, CZ', tz: 'Europe/Prague', start: '2026-03-31T10:00:00Z', end: '2026-04-12T21:59:00Z' },
+  { id: 'ca26', name: '2026 WSOP Super Circuit Canada', venue: 'Playground Poker Club', city: 'Kahnawake, QC', tz: 'America/Toronto', start: '2026-08-26T16:00:00Z', end: '2026-09-13T03:59:00Z' },
 ];
 
 /** A final table is a single table, so its extra streams are camera feeds of that table; earlier days have outer tables. */
@@ -205,10 +209,28 @@ export const events: TourEvent[] = [
   {
     // The 2026 Main Event: Day 1A on Thursday, Jul 2, 2026 (the published schedule); not played yet at the demo moment.
     // Its event number isn't on the schedule source, so none is shown (0 = no number).
-    id: 'lv26-main', seriesId: 'lv26', number: 0, name: 'Main Event', game: 'No-Limit Hold’em', startingStack: 60_000,
+    id: 'lv26-main', seriesId: 'lv26', number: 82, name: 'Main Event', game: 'No-Limit Hold’em', startingStack: 60_000,
     buyIn: 10_000, entrants: 0, prizePool: 0, firstPrize: 0, level: 0, remaining: 0,
     days: [day('lv26-main', 'Day 1A', noon('2026-07-02'), 600, 'upcoming')],
   },
+  // The 2026 series' broadcast final tables, as on the signed-off Schedule (event, buy-in, Las Vegas date, 2:30 PM); none played yet.
+  ...(
+    [
+      ['lv26-1', 1, '$550 Mini Mystery Millions', 550, '2026-06-01'],
+      ['lv26-7', 7, '$25,000 Heads Up Championship', 25_000, '2026-06-01'],
+      ['lv26-11', 11, 'GGMillion$ High Roller', 10_000, '2026-06-04'],
+      ['lv26-36', 36, '$100,000 High Roller', 100_000, '2026-06-12'],
+      ['lv26-41', 41, '$250,000 Super High Roller', 250_000, '2026-06-15'],
+      ['lv26-50', 50, '$1,500 Millionaire Maker', 1_500, '2026-06-24'],
+      ['lv26-68', 68, 'Ladies Championship', 1_000, '2026-06-28'],
+      ['lv26-70', 70, 'Pot-Limit Omaha Championship', 10_000, '2026-06-29', 'Pot-Limit Omaha'],
+      ['lv26-94', 94, '$10,000 6-Handed Championship', 10_000, '2026-07-14'],
+    ] as [string, number, string, number, string, TourEvent['game']?][]
+  ).map(([id, number, name, buyIn, date, game]): TourEvent => ({
+    id, seriesId: 'lv26', number, name, game: game ?? 'No-Limit Hold’em', startingStack: 0,
+    buyIn, entrants: 0, prizePool: 0, firstPrize: 0, level: 0, remaining: 0,
+    days: [day(id, 'Final Table', at(`${date}T21:30:00Z`), 480, 'upcoming')],
+  })),
 ];
 
 // Hero Final Table: one table, four camera feeds on the same 30-minute delay (hole cards are shown, so every feed
