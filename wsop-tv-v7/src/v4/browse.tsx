@@ -5,7 +5,7 @@
 //   Events: the events that come back every year → a chronicle of each, year by year.
 //   The event page is where all three tabs land: its facts, the days that were broadcast, full broadcasts or highlights.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Avatar, BraceletCount, Button, CountryCode, Flag, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
 import { HERO_DAY_ID, classicEvents, events, players, seatsFor, seriesById } from '../data/mock';
@@ -1104,7 +1104,9 @@ const typeOf = (year: number, key: SeriesKey): Exclude<SeriesType, 'all'> => (ke
  */
 export function BrowseAll() {
   // All years by default: the newest year first, then "See more" opens the year before it, and so on.
-  const [year, setYear] = useState<'all' | number>('all');
+  // A link can pick the year (?year=2025); otherwise All.
+  const [params] = useSearchParams();
+  const [year, setYear] = useState<'all' | number>(() => (Number(params.get('year')) || 'all'));
   const [more, setMore] = useState(1);
   const [q, setQ] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
@@ -1580,4 +1582,14 @@ function PlayerVideosBlock({ name }: { name: string }) {
   const vs = playerVideos(name);
   if (!vs.length) return null;
   return <VideoGridBlock title="Videos" sub={`${vs.length} video${vs.length === 1 ? '' : 's'} · every year`} videos={vs} />;
+}
+
+/**
+ * The old year pages (/videos/year/…) are gone: a year opens Browse with that year picked, and a year's series opens
+ * that series' events page, so older links still land on the current screens.
+ */
+export function YearRedirect() {
+  const { year = '', series } = useParams();
+  if (series) return <Navigate to={`/videos/series/${year}/${series}`} replace />;
+  return <Navigate to={ARCHIVE.some((y) => String(y.year) === year) ? `/videos?year=${year}` : '/videos'} replace />;
 }
