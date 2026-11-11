@@ -12,6 +12,7 @@ import { HERO_DAY_ID, classicEvents, dayById, events, isClassicEvent, seriesById
 import type { Day, TourEvent } from '../data/types';
 import { catalog, highlightClips, type Video } from './catalog';
 import { ytGroup } from './youtube';
+import { archiveEvent, broadcastsOf } from './archive';
 
 export interface Theme {
   id: string;
@@ -81,7 +82,8 @@ export const THEMES: Theme[] = [
     // The demo is set before the 2026 series: the 2025 Las Vegas bracelets are last summer's.
     title: 'Last Summer’s Bracelet Winners',
     blurb: `Every bracelet decided at the ${SEASON}, newest first.`,
-    rule: () => broadcasts().filter((v) => isFinalTable(v) && eventOf(v)?.seriesId === currentSeries().id).sort(newest),
+    // Final tables there is a broadcast file of (the archive has no file of #94, the $10,000 6-Handed, so it isn't here).
+    rule: () => broadcasts().filter((v) => isFinalTable(v) && eventOf(v)?.seriesId === currentSeries().id && eventOf(v)?.id !== 'lv-hr').sort(newest),
   },
   {
     // Player-led (not event-led): Michael Mizrachi's 2025, the $50,000 Poker Players Championship and then the Main
@@ -90,13 +92,15 @@ export const THEMES: Theme[] = [
     title: 'Michael Mizrachi’s Historic Run',
     blurb: 'The 2025 $50,000 Poker Players Championship and the Main Event: his two bracelets of the summer, start to finish.',
     rule: () => {
-      const won = (v: Video) => eventOf(v)?.winnerId === 'mizrachi';
-      const finals = broadcasts().filter((v) => won(v) && isFinalTable(v));
-      const mainDays = catalog.filter((v) => v.kind === 'broadcast' && eventOf(v)?.id === 'lv-main' && !isFinalTable(v));
+      // Real videos only: his story from the WSOP channel, then the broadcast files in order — the $50K PPC (its days
+      // on the NAS) and the Main Event (every day there is a file of, to the final table), then the real hand that
+      // gave him the chip lead at the final table.
+      const files = (id: string) => {
+        const ref = archiveEvent(id);
+        return ref ? broadcastsOf(ref) : [];
+      };
       const hands = highlightClips.filter((v) => /Mizrachi/.test(v.title));
-      // His story from the WSOP channel first, then the run in order: the PPC final, the Main Event days, its final.
-      const run = [...finals, ...mainDays, ...hands].sort((a, b) => startOf(a) - startOf(b));
-      return [...ytGroup('mizrachi'), ...run].filter((v, i, all) => all.findIndex((x) => x.id === v.id) === i);
+      return [...ytGroup('mizrachi'), ...files('2025-lv-66'), ...files('2025-lv-main'), ...hands];
     },
   },
   {

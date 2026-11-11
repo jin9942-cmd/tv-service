@@ -104,7 +104,7 @@ const INITIAL: AppState = {
   recentSearches: ['Negreanu', 'final table', 'bluff'],
   myList: [
     { kind: 'day', id: 'lv-tc-finaltable', addedAt: 3 },
-    { kind: 'hand', id: 'w1', addedAt: 2 },
+    { kind: 'hand', id: 'r3', addedAt: 2 },
     { kind: 'day', id: 'classic-a3-finaltable', addedAt: 1 },
     { kind: 'day', id: 'lv-seniors-finaltable', addedAt: 0 },
   ],

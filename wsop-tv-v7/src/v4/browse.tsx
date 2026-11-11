@@ -1296,7 +1296,11 @@ const playersIn = (winner: string | undefined, videos: Video[]) => {
 export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
   const arch = ARCHIVE.find((y) => y.year === year);
   if (!arch) return [];
+  // Real videos only: every row is the archive's broadcast files for that event (the NAS list), the WSOP channel's
+  // uploads for it, and for the 2025 Main Event its three real final-table hands. The live service's 2025 events only
+  // lend their official name and winner. An event with no file (2025 #94) has no row.
   const own = year === CURRENT_YEAR ? events.filter((e) => e.seriesId === 'lv25') : [];
+  const realHands = catalog.filter((v) => /^r\d+$/.test(v.id));
   const out: SeasonRow[] = [];
   for (const key of SERIES_ORDER) {
     const s = arch.series.find((x) => x.key === key);
@@ -1304,26 +1308,20 @@ export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
     const items: { n: number; row: SeasonRow }[] = [];
     const label = seriesLabel(year, key, s.name);
     const type = typeOf(year, key);
-    if (key === 'lv') {
-      for (const e of own) {
-        const videos = [...catalog.filter((v) => v.eventId === e.id && v.kind !== 'channel'), ...ytForEvent(`lv:${e.id === 'lv-main' ? 'main' : e.number}`)];
-        if (!videos.length) continue;
-        const main = e.id === 'lv-main';
-        const winner = players.find((p) => p.id === e.winnerId)?.name;
-        items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/events/${e.id}`, title: `${e.number != null ? `#${e.number} · ` : ''}${e.name.replace(' World Championship', '')}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos), series: label, seriesKey: key, year, winner } });
-      }
-    }
     for (const e of s.events) {
-      if (own.length && key === 'lv' && (e.kind === 'Main Event' || own.some((m) => m.number === e.number))) continue;
       const ref = archiveEvent(e.id);
       if (!ref) continue;
-      const videos = [...(year === CURRENT_YEAR ? ytForEvent(`${key}:${e.kind === 'Main Event' ? 'main' : e.number}`) : []), ...broadcastsOf(ref), ...highlightsOf(ref)];
-      if (!videos.length) continue;
       const main = e.kind === 'Main Event';
+      const mine = key === 'lv' ? own.find((m) => (main ? m.id === 'lv-main' : m.number === e.number)) : undefined;
+      const videos = [...(year === CURRENT_YEAR ? ytForEvent(`${key}:${main ? 'main' : e.number}`) : []), ...broadcastsOf(ref), ...(mine?.id === 'lv-main' ? realHands : []), ...highlightsOf(ref)];
+      if (!videos.length) continue;
       const fix = ARCHIVE_FIX[e.id];
-      // The Las Vegas Main Event's champion is on record for every year.
-      const winner = fix?.winner ?? (main && key === 'lv' ? arch.champion?.name : undefined);
-      items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/videos/event/${e.id}`, title: fix?.title ?? `${e.number != null ? `#${e.number} · ` : ''}${e.name}`, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos), series: label, seriesKey: key, year, winner } });
+      // The winner: the live service's record (2025 Las Vegas), the fixes, or the Las Vegas Main Event champion.
+      const winner = (mine?.winnerId && players.find((p) => p.id === mine.winnerId)?.name) || fix?.winner || (main && key === 'lv' ? arch.champion?.name : undefined);
+      const number = main && key === 'lv' && mine ? mine.number : e.number;
+      const name = mine ? mine.name.replace(' World Championship', '') : e.name;
+      const title = fix?.title ?? `${number != null ? `#${number} · ` : ''}${name}`;
+      items.push({ n: main ? 999 : (e.number ?? 0), row: { key: e.id, to: `/videos/event/${e.id}`, title, note: [label, winner && `Won by ${winner}`].filter(Boolean).join(' · '), videos, type, players: playersIn(winner, videos), series: label, seriesKey: key, year, winner } });
     }
     // Newest first within a series: its Main Event (decided last), then the higher event numbers.
     items.sort((a, b) => b.n - a.n);

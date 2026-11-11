@@ -5,7 +5,7 @@
 // What isn't published (broadcast lengths, the pots of most clips, earlier days' feature tables) stays generic and
 // names nobody: no real player is put in a hand or at a table they weren't at.
 // Times are relative to the demo clock (lib/clock.ts), so the demo always opens on that moment.
-import type { Access, ArchiveItem, Day, DayLabel, Hand, HandType, Player, Series, StreamStatus, TableFeed, TourEvent } from './types';
+import type { Access, ArchiveItem, Day, DayLabel, Hand, Player, Series, StreamStatus, TableFeed, TourEvent } from './types';
 import { PRESENTATION } from './policy';
 
 export const T0 = Date.now();
@@ -285,35 +285,6 @@ export const finalTableSeats: { playerId: string; stack: number }[] = [
 
 // ---- hands ------------------------------------------------------------------------------------------
 
-const HAND_TITLES: Record<HandType, string[]> = {
-  bluff: ['Triple-barrel with seven-high', 'River bluff on a scare card', 'Float the flop, raise the turn', 'Blocker bluff on a four-flush board', 'Check-raise bluff on a paired board', 'Repping the straight on the river'],
-  herocall: ['Hero call with ace-high', 'Picking off the river bluff', 'Calling down with second pair', 'The snap call that caught a bluff'],
-  cooler: ['Kings against aces before the flop', 'Set over set', 'Ace-king against queens for the chip lead', 'Flush over flush on the river', 'Full house against quads'],
-  badbeat: ['One-outer on the river', 'Runner-runner flush', 'Quads beat on the turn', 'Two-outer for a double-up', 'Set under set, then the case card'],
-  bigpot: ['The biggest pot of the day', 'Three streets of value with the nut straight', 'Overpair meets the nut flush draw', 'The pot that decided the chip lead', 'River overbet with the nuts', 'Four-way all-in before the flop'],
-  winning: ['The bracelet-winning hand', 'Heads-up for the bracelet', 'The final all-in', 'Champion on the river'],
-};
-/** Neutral result lines for clips that name nobody. */
-const NEUTRAL_RESULT: Record<HandType, string> = {
-  bluff: 'The bluff gets through',
-  herocall: 'The call is good',
-  cooler: 'The bigger hand holds',
-  badbeat: 'The river turns it around',
-  bigpot: 'A pot to remember',
-  winning: 'The bracelet is decided',
-};
-
-/** Typical pot size by stage — early days play small blinds, final tables play deep in the millions. */
-const STAGE_POT: Record<string, number> = { 'Day 1A': 220_000, 'Day 1B': 220_000, 'Day 1C': 220_000, 'Day 1D': 220_000, 'Day 2ABC': 1_600_000, 'Day 2D': 1_600_000, 'Day 3': 6_500_000 };
-const FT_POT: Record<string, number> = { 'lv-main': 60_000_000, 'lv-hr': 16_000_000, 'lv-plo': 14_000_000, 'lv-ladies': 3_200_000, 'lv-tc': 40_000_000, 'lv-ppc': 9_000_000 };
-const TYPE_POT: Record<HandType, number> = { bigpot: 1.9, cooler: 1.6, winning: 1.5, badbeat: 1.2, herocall: 0.9, bluff: 0.8 };
-/** Round to a broadcast-friendly figure (two significant digits). */
-const roundPot = (n: number) => {
-  const step = 10 ** Math.max(3, Math.floor(Math.log10(n)) - 1);
-  return Math.round(n / step) * step;
-};
-
-const dayOf = (eventId: string, label: DayLabel) => events.find((e) => e.id === eventId)!.days.find((d) => d.label === label)!;
 const playerById = (id: string) => players.find((p) => p.id === id)!;
 const access = (i: number) => (i % 4 === 0 ? 'free' : i % 4 === 1 ? 'signin' : 'subscriber') as Access;
 
@@ -329,69 +300,9 @@ const REAL_HANDS: Omit<Hand, 'id' | 'views' | 'access'>[] = [
   { title: 'A river ace cracks kings and hands Mizrachi the chip lead', type: 'badbeat', eventId: 'lv-main', dayId: MAIN_FT, playerIds: ['mizrachi', 'wasnock'], pot: 150_000_000, t: 120 * 60, result: 'Mizrachi’s ace-king catches up on the river and takes the chip lead', winnerId: 'mizrachi', durationSec: 190 },
 ];
 
-/** Generic clips (no names): where each is from, in turn. */
-const CLIP_PLACES: [string, DayLabel][] = [
-  ['lv-main', 'Day 8'],
-  ['lv-hr', 'Final Table'],
-  ['lv-plo', 'Final Table'],
-  ['lv-main', 'Day 7'],
-  ['lv-tc', 'Final Table'],
-  ['lv-ladies', 'Final Table'],
-  ['lv-main', 'Day 2ABC'],
-  ['lv-ppc', 'Final Table'],
-];
-/** Each finished final table's last hand: its winner (a fact) and nobody else. */
-const WON = events.filter((e) => e.winnerId && e.days.some((d) => d.label === 'Final Table'));
-
-const types: HandType[] = ['bluff', 'herocall', 'cooler', 'badbeat', 'bigpot'];
-const counts: Record<HandType, number> = { bluff: 5, herocall: 4, cooler: 4, badbeat: 4, bigpot: 5, winning: 0 };
-const seq: HandType[] = [];
-const left = { ...counts };
-while (seq.length < 22) for (const t of types) if (left[t]-- > 0) seq.push(t);
-const nth: Record<HandType, number> = { bluff: 0, herocall: 0, cooler: 0, badbeat: 0, bigpot: 0, winning: 0 };
-
-export const hands: Hand[] = [
-  ...REAL_HANDS.map((h, i) => ({ ...h, id: `r${i + 1}`, views: 180_000 + i * 41_000, access: access(i) })),
-  ...WON.map((e, i): Hand => {
-    const d = dayOf(e.id, 'Final Table');
-    return {
-      id: `w${i + 1}`,
-      title: HAND_TITLES.winning[i % HAND_TITLES.winning.length],
-      type: 'winning',
-      eventId: e.id,
-      dayId: d.id,
-      playerIds: [e.winnerId!],
-      pot: roundPot((FT_POT[e.id] ?? 10_000_000) * TYPE_POT.winning),
-      t: Math.round(d.durationMin * 60 * 0.92),
-      result: `${playerById(e.winnerId!).name} wins the bracelet`,
-      winnerId: e.winnerId!,
-      views: 30_000 + ((i * 7919) % 300_000),
-      durationSec: 90 + ((i * 53) % 150),
-      access: access(i + 1),
-    };
-  }),
-  ...seq.map((type, i): Hand => {
-    const [eventId, label] = CLIP_PLACES[i % CLIP_PLACES.length];
-    const d = dayOf(eventId, label);
-    const base = label === 'Final Table' ? (FT_POT[eventId] ?? 10_000_000) : (STAGE_POT[label] ?? 12_000_000);
-    return {
-      id: `h${String(i + 1).padStart(2, '0')}`,
-      title: HAND_TITLES[type][nth[type]++ % HAND_TITLES[type].length],
-      type,
-      eventId,
-      dayId: d.id,
-      playerIds: [],
-      pot: roundPot(base * TYPE_POT[type] * (0.7 + ((i * 37) % 60) / 100)),
-      // Live final tables: only hands already played (before the demo moment) are on the timeline.
-      t: Math.round(((i * 0.137) % 0.9 + 0.05) * Math.min(d.durationMin * 60, d.status === 'live' ? Math.max(600, (Date.now() - Date.parse(d.start)) / 1000 - 300) : Infinity)),
-      result: NEUTRAL_RESULT[type],
-      winnerId: '',
-      views: 12_000 + ((i * 7919) % 480_000),
-      durationSec: 70 + ((i * 53) % 240),
-      access: access(i),
-    };
-  }),
-];
+// Only real hands: the three Main Event final-table hands above (PokerNews hand reports). No made-up clips — the demo
+// shows only videos that exist (the NAS broadcasts, the WSOP channel's uploads) and hands that were really played.
+export const hands: Hand[] = REAL_HANDS.map((h, i) => ({ ...h, id: `r${i + 1}`, views: 180_000 + i * 41_000, access: access(i) }));
 
 // ---- archive classics ---------------------------------------------------------------------------
 // Earlier WSOP final tables, with their real champions and figures (PokerNews event pages):
@@ -441,29 +352,8 @@ export const classicEvents: TourEvent[] = archive.map((c) => {
     days: [{ id: dayId, label: 'Final Table', start: `${f.date}T19:00:00Z`, durationMin: Math.round(c.durationSec / 60), status: 'vod', tables: feeds(dayId, 2, undefined, true), access: c.access }],
   };
 });
-const CLASSIC_TYPES: HandType[] = ['bigpot', 'bluff', 'herocall', 'badbeat', 'cooler', 'winning'];
-/** A classic's key hands: generic (no names), then the final hand, won by its champion. */
-export const classicHands: Hand[] = classicEvents.flatMap((e, ci) => {
-  const d = e.days[0];
-  return CLASSIC_TYPES.map((type, k): Hand => {
-    const last = k === CLASSIC_TYPES.length - 1;
-    return {
-      id: `c${ci + 1}h${k + 1}`,
-      title: last ? 'The final hand' : HAND_TITLES[type][(ci + k) % HAND_TITLES[type].length],
-      type,
-      eventId: e.id,
-      dayId: d.id,
-      playerIds: last ? [e.winnerId!] : [],
-      pot: roundPot(FT_POT['lv-main'] * TYPE_POT[type] * (0.6 + k * 0.12)),
-      t: Math.round(((k + 0.6) / (CLASSIC_TYPES.length + 0.2)) * d.durationMin * 60),
-      result: last ? `${playerById(e.winnerId!).name} wins the bracelet` : NEUTRAL_RESULT[type],
-      winnerId: last ? e.winnerId! : '',
-      views: 40_000 + ((ci * 31 + k) * 7919) % 300_000,
-      durationSec: 90 + ((ci + k) * 53) % 200,
-      access: d.access ?? 'subscriber',
-    };
-  });
-});
+/** The classics' key hands: none until a hand from their broadcasts is named in a source (no made-up hands). */
+export const classicHands: Hand[] = [];
 
 /** Every hand with a place on a replay timeline: the series' hands and the classics' key hands. */
 export const allHands: Hand[] = [...hands, ...classicHands];
