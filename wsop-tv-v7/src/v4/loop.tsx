@@ -8,7 +8,7 @@ import { events, players, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
 import { artStyle } from '../lib/brand';
-import { ARCHIVE, LEGENDS, RECURRING, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, type ArchiveEvent, type ArchiveSeries } from './archive';
+import { ARCHIVE, RECURRING, archiveEvent, archivePersonLink, broadcastsOf, chronicle, fmtBuyIn, type ArchiveEvent, type ArchiveSeries } from './archive';
 import { catalog, stageOf, type Video } from './catalog';
 
 /** One event, whichever data it comes from (the live 2025 series or the archive). */
@@ -38,12 +38,11 @@ const enterFullScreen = () => {
 const short = (n: number) => (n >= 1e6 ? `$${+(n / 1e6).toFixed(1)}M` : `$${Math.round(n / 1e3)}K`);
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Los_Angeles' });
 
-/** A player's page, when there is one: a player of the demo data, or a bracelet legend. */
+/** A player's page, when there is one: a player of the demo data, a bracelet legend or a Main Event champion. */
 export function playerLink(name: string): string | undefined {
   const p = players.find((x) => x.name === name);
   if (p) return `/videos/players/${p.id}`;
-  const l = LEGENDS.find((x) => x.name === name);
-  return l ? `/videos/players/${l.playerId ?? l.id}` : undefined;
+  return archivePersonLink(name);
 }
 
 /** An event of the live series as a list item. */
@@ -188,20 +187,43 @@ export function OtherYearsSection({ items }: { items: EventItem[] }) {
   );
 }
 
-/** An event as a tile (F1 TV's Grand Prix card): its final table picture, number and date, name, buy-in, winner. */
+/**
+ * An event as a tile (F1 TV's Grand Prix card): its final table picture, number and date, name, buy-in, winner. The
+ * tile opens the event; the winner's name is its own link, on to their page (the loop: event → player).
+ */
 export function EventTile({ x }: { x: EventItem }) {
   return (
-    <Link to={x.to} className="group block h-full overflow-hidden rounded-card border border-line bg-surface transition-colors hover:border-white/40">
+    <div className="group relative h-full overflow-hidden rounded-card border border-line bg-surface transition-colors hover:border-white/40">
       <span className="relative block aspect-video overflow-hidden bg-surface-2">
         {x.final && <img src={x.final.thumb} style={artStyle({ pos: x.final.thumbPos, fit: x.final.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />}
       </span>
       <span className="block p-3">
         <span className="block text-xs text-muted tnum">{[x.number ? `Event #${x.number}` : '', x.date ? dateLabel(x.date) : ''].filter(Boolean).join(' · ') || ' '}</span>
-        <span className="mt-1 line-clamp-2 min-h-[2.5em] text-[15px] leading-tight font-bold group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4">{x.name}</span>
+        {/* The event link covers the whole tile; the winner link sits above it. */}
+        <Link to={x.to} className="mt-1 line-clamp-2 min-h-[2.5em] text-[15px] leading-tight font-bold group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4 after:absolute after:inset-0">
+          {x.name}
+        </Link>
         <span className="mt-1 block truncate text-xs text-muted tnum">{[x.buyLabel, x.game].filter(Boolean).join(' · ')}</span>
-        <span className="mt-2 block truncate border-t border-line pt-2 text-xs">{x.live ? <span className="font-semibold">On air now</span> : x.winner ? <><span className="text-muted">Winner · </span><span className="font-semibold">{x.winner.name}</span></> : <span className="text-muted">{x.broadcasts} broadcast{x.broadcasts === 1 ? '' : 's'}</span>}</span>
+        <span className="mt-2 block truncate border-t border-line pt-2 text-xs">
+          {x.live ? (
+            <span className="font-semibold">On air now</span>
+          ) : x.winner ? (
+            <>
+              <span className="text-muted">Winner · </span>
+              {x.winner.to ? (
+                <Link to={x.winner.to} className="relative z-10 font-semibold text-gold-strong hover:underline">
+                  {x.winner.name}
+                </Link>
+              ) : (
+                <span className="font-semibold">{x.winner.name}</span>
+              )}
+            </>
+          ) : (
+            <span className="text-muted">{x.broadcasts} broadcast{x.broadcasts === 1 ? '' : 's'}</span>
+          )}
+        </span>
       </span>
-    </Link>
+    </div>
   );
 }
 

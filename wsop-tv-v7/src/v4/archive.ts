@@ -289,3 +289,66 @@ export const chronicle = (slug: string) => {
   const r = RECURRING.find((x) => x.slug === slug);
   return r ? archiveEvents().filter((x) => r.match(x.event, x.series)).sort((a, b) => b.year.year - a.year.year) : [];
 };
+
+// ---- players of the archive ----------------------------------------------------------------------------------------
+
+/**
+ * The archive knows one result per year for certain: the Main Event champion. Each champion gets a player page built
+ * from that (the final table they won, its hands); bracelet legends add their WSOP records on top. Player-level
+ * tagging of every broadcast (who sat at which table) comes later and fills these pages further.
+ */
+export interface Champion {
+  id: string;
+  name: string;
+  cc: string;
+  country: string;
+  /** Main Event wins in this archive, newest first. */
+  years: number[];
+  /** Every Main Event title on the WSOP record, newest first (the archive skips some early years). */
+  titles: number[];
+}
+/** Main Event titles won in years the archive doesn't hold (WSOP.com, Main Event champions). */
+const TITLES_OUTSIDE_ARCHIVE: Record<string, number[]> = { 'Stu Ungar': [1980] };
+const COUNTRY: Record<string, string> = {
+  US: 'United States', CA: 'Canada', NO: 'Norway', DE: 'Germany', AR: 'Argentina', SE: 'Sweden', DK: 'Denmark',
+  AU: 'Australia', ES: 'Spain', IE: 'Ireland', GB: 'United Kingdom', FI: 'Finland', PL: 'Poland',
+};
+export const countryName = (cc: string) => COUNTRY[cc] ?? cc;
+const personSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+/** Names that other lists spell differently (the Hall of Fame keeps the full name). */
+const ALIAS: Record<string, string> = { 'Walter Clyde Pearson': 'Puggy Pearson' };
+/** A name as the archive spells it: no nickname in quotes, known aliases folded. */
+export const plainName = (name: string) => {
+  const n = name.replace(/ “[^”]+”/, '').replace(/ "[^"]+"/, '').trim();
+  return ALIAS[n] ?? n;
+};
+/** The archive's last finished Main Event (the demo is set during the 2025 final table). */
+const LAST_FINISHED = 2024;
+export const CHAMPIONS: Champion[] = (() => {
+  const byName = new Map<string, Champion>();
+  for (const y of ARCHIVE) {
+    if (!y.champion || y.year > LAST_FINISHED) continue;
+    const c = byName.get(y.champion.name);
+    if (c) c.years.push(y.year);
+    else byName.set(y.champion.name, { id: `champ-${personSlug(y.champion.name)}`, name: y.champion.name, cc: y.champion.cc, country: countryName(y.champion.cc), years: [y.year], titles: [] });
+  }
+  return [...byName.values()].map((c) => ({ ...c, years: c.years.sort((a, b) => b - a), titles: [...c.years, ...(TITLES_OUTSIDE_ARCHIVE[c.name] ?? [])].sort((a, b) => b - a) })).sort((a, b) => b.years[0] - a.years[0]);
+})();
+export const championById = (id: string) => CHAMPIONS.find((c) => c.id === id);
+export const championByName = (name: string) => CHAMPIONS.find((c) => c.name === plainName(name));
+/** A legend's or a champion's page in Browse > Players (undefined when the archive has nothing on them). */
+export function archivePersonLink(name: string): string | undefined {
+  const n = plainName(name);
+  const l = LEGENDS.find((x) => x.name === n);
+  if (l) return `/videos/players/${l.playerId ?? l.id}`;
+  const c = championByName(n);
+  return c ? `/videos/players/${c.id}` : undefined;
+}
+/** The Las Vegas Main Event of a year, with its final table broadcast. */
+export function mainEventFinal(year: number): { ref: ArchiveRef; final: Video } | undefined {
+  const ref = INDEX.get(`${year}-lv-main`) ?? archiveEvents().find((x) => x.year.year === year && x.series.key === 'lv' && x.event.kind === 'Main Event');
+  if (!ref) return undefined;
+  const all = broadcastsOf(ref);
+  const fi = ref.event.days.findIndex((d) => /final/i.test(d.label));
+  return { ref, final: all[fi >= 0 ? fi : all.length - 1] };
+}

@@ -17,7 +17,7 @@ import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { HALL_OF_FAME, hofPhoto } from './halloffame';
 import { Carousel } from './carousel';
 import { DaySchedule, EventRows, EventTile, OtherYearsSection, archiveItem, liveItem, newestFirst, otherYears, playerLink, scheduleOrder, type EventItem } from './loop';
-import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
+import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, CHAMPIONS, championById, championByName, mainEventFinal, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
 /** The demo's live series: the 2025 World Series of Poker in Las Vegas, reconstructed from the real broadcasts. */
 const CURRENT_YEAR = 2025;
@@ -536,13 +536,14 @@ function PlannedRow({ title, what }: { title: string; what: string }) {
 // ---- Players ---------------------------------------------------------------------------------------
 
 type Sort = 'bracelets' | 'name';
-/** Players: the bracelet legends (all-time leaders, WSOP records), real players only; sort. */
+/** Players: the bracelet legends (all-time leaders, WSOP records), the Main Event champions, the Hall of Fame; sort. */
 export function PlayersTab() {
   const [sort, setSort] = useState<Sort>('bracelets');
   // No search on Browse for now: every player is listed.
   const match = (name: string) => !!name;
   const order = <T extends { name: string; bracelets: number }>(a: T, b: T) => (sort === 'name' ? a.name.localeCompare(b.name) : b.bracelets - a.bracelets || a.name.localeCompare(b.name));
   const legends = LEGENDS.filter((l) => match(l.name)).sort(order);
+  const champions = CHAMPIONS.filter((c) => match(c.name)).sort((a, b) => (sort === 'name' ? a.name.localeCompare(b.name) : b.years[0] - a.years[0]));
   return (
     <>
       <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -569,6 +570,28 @@ export function PlayersTab() {
           </ul>
         </section>
       )}
+      {/* Main Event champions: every champion in the archive, newest first; each page opens on the final table they won. */}
+      <section aria-label="Main Event champions" className="mt-12">
+        <h2 className="text-xl sm:text-2xl">Main Event champions</h2>
+        <p className="mt-1 text-sm text-muted">Watch the final table each of them won</p>
+        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {champions.map((c) => (
+            <li key={c.id} className="min-w-0">
+              <Link to={playerLink(c.name)!} className="group block h-full overflow-hidden rounded-card border border-line bg-surface transition-colors hover:border-white/40">
+                <span className="relative block aspect-video overflow-hidden bg-surface-2">
+                  <img src={c.years[0] >= 2003 ? seasonPhoto(c.years[0]) : (mainEventFinal(c.years[0])?.final.thumb ?? '')} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+                  <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden />
+                  <span className="absolute bottom-2 left-2.5 font-display text-2xl leading-none text-white tnum">{c.years.slice().sort((a, b) => a - b).join(' · ')}</span>
+                </span>
+                <span className="block p-3">
+                  <span className="block truncate text-sm font-bold group-hover:text-gold-strong">{c.name}</span>
+                  <span className="block truncate text-xs text-muted">{c.country}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
       {/* Poker Hall of Fame (WSOP.com's list): the names first, by the decade they were inducted, newest first. */}
       <section aria-label="Poker Hall of Fame" className="mt-12">
         <h2 className="text-xl sm:text-2xl">Poker Hall of Fame</h2>
@@ -629,7 +652,9 @@ function LegendCard({ l, compact }: { l: Legend; compact?: boolean }) {
 export function PlayerPage() {
   const { playerId = '' } = useParams();
   const legend = legendById(playerId);
-  if (legend) return <LegendPage l={legend} />;
+  if (legend) return <ArchivePlayerPage person={fromLegend(legend)} />;
+  const champ = championById(playerId);
+  if (champ) return <ArchivePlayerPage person={fromChampion(champ)} />;
   const p = players.find((x) => x.id === playerId);
   if (!p) return <Navigate to="/videos/players" replace />;
   const finals = p.recent
@@ -730,59 +755,162 @@ export function PlayerPage() {
   );
 }
 
-/** A bracelet legend: bracelets and Main Event titles (WSOP records), and the broadcasts of this archive they are in. */
-function LegendPage({ l }: { l: Legend }) {
-  // From the WSOP record: Main Event titles, and the other Main Event final tables noted (Seidel, 1988 runner-up).
-  const results = [
-    ...l.mainEvents.map((y) => ({ y, label: 'Winner', winner: true })),
-    ...l.archive.filter((a) => !/champion/i.test(a.role)).map((a) => ({ y: Number(a.eventId.slice(0, 4)), label: 'Final table · #2', winner: false })),
-  ].sort((x, z) => z.y - x.y);
+/** A player of the archive: a bracelet legend, a Main Event champion, or both (and maybe a Hall of Famer). */
+interface ArchivePerson {
+  name: string;
+  cc: string;
+  country: string;
+  hue: number;
+  photo?: string;
+  note?: string;
+  legend: boolean;
+  /** WSOP bracelets, when the record is in (legends). */
+  bracelets?: number;
+  /** Main Event titles (WSOP record; the archive may hold only some of these years). */
+  mainEvents: number[];
+  /** Other Main Event final tables on record (Erik Seidel, 1988 runner-up). */
+  runnerUp: number[];
+  hof?: number;
+}
+const nameHue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+const hofYear = (name: string) => HALL_OF_FAME.find((x) => plainOf(x.name) === name)?.year;
+const plainOf = (name: string) => name.replace(/ “[^”]+”/, '').replace('Walter Clyde Pearson', 'Puggy Pearson');
+/** A champion's face: their Hall of Fame photo, else the winning moment from their final table (2003–2024). */
+const championPhoto = (name: string, years: number[]) => {
+  const y = years.find((x) => x >= 2003 && x <= 2024);
+  return hofPhoto(name) ?? (y ? `${import.meta.env.BASE_URL}frames/champ-${y}.jpg` : undefined);
+};
+function fromLegend(l: Legend): ArchivePerson {
+  const c = championByName(l.name);
+  return {
+    name: l.name,
+    cc: l.cc,
+    country: l.country,
+    hue: l.hue,
+    photo: hofPhoto(l.name) ?? (c ? championPhoto(l.name, c.years) : undefined),
+    note: l.note,
+    legend: true,
+    bracelets: l.bracelets,
+    mainEvents: [...new Set([...l.mainEvents, ...(c?.titles ?? [])])].sort((a, b) => b - a),
+    runnerUp: l.archive.filter((a) => !/champion/i.test(a.role)).map((a) => Number(a.eventId.slice(0, 4))),
+    hof: hofYear(l.name),
+  };
+}
+function fromChampion(c: (typeof CHAMPIONS)[number]): ArchivePerson {
+  const n = c.titles.length;
+  return {
+    name: c.name,
+    cc: c.cc,
+    country: c.country,
+    hue: nameHue(c.name),
+    photo: championPhoto(c.name, c.years),
+    note: n > 1 ? `${n === 2 ? 'Two' : 'Three'}-time Main Event champion` : `${c.titles[0]} Main Event champion`,
+    legend: false,
+    mainEvents: c.titles,
+    runnerUp: [],
+    hof: hofYear(c.name),
+  };
+}
+
+/**
+ * A player of the archive. What the archive can show today comes first: the Main Event final tables they won (or
+ * reached), each playing straight away, and the hands from those final tables; then their WSOP record. Everything
+ * else they played (other events, other days) appears once the archive is tagged by player.
+ */
+function ArchivePlayerPage({ person: p }: { person: ArchivePerson }) {
+  const tables = [
+    ...p.mainEvents.map((y) => ({ y, role: 'Winner', winner: true })),
+    ...p.runnerUp.map((y) => ({ y, role: 'Runner-up', winner: false })),
+  ]
+    .sort((a, b) => b.y - a.y)
+    .map((t) => ({ ...t, me: mainEventFinal(t.y) }));
+  const watchable = tables.filter((t) => t.me);
+  const hands = watchable.flatMap((t) => highlightsOf(t.me!.ref));
+  const labels = [p.legend && 'Bracelet legend', p.mainEvents.length > 0 && 'Main Event champion', p.hof && `Poker Hall of Fame ${p.hof}`].filter(Boolean) as string[];
   return (
     <Page className="max-w-[96rem]">
       {back('/videos/players', 'Players')}
       <header className="mt-4 flex flex-wrap items-center gap-5">
-        <Avatar name={l.name} hue={l.hue} size={96} photo={hofPhoto(l.name)} ring />
+        <Avatar name={p.name} hue={p.hue} size={96} photo={p.photo} ring />
         <div>
-          <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">Bracelet legend</p>
-          <h1 className="mt-1 text-title">{l.name}</h1>
+          <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">{labels.join(' · ')}</p>
+          <h1 className="mt-1 text-title">{p.name}</h1>
           <p className="mt-1 text-sm text-muted">
-            {l.country} <CountryCode cc={l.cc} /> · {l.note}
+            {p.country} <CountryCode cc={p.cc} />
+            {p.note && ` · ${p.note}`}
           </p>
           <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            <div className="flex items-center gap-2">
-              <dt className="text-muted">Bracelets</dt>
-              <dd>
-                <BraceletCount n={l.bracelets} />
-              </dd>
-            </div>
+            {p.bracelets != null && (
+              <div className="flex items-center gap-2">
+                <dt className="text-muted">Bracelets</dt>
+                <dd>
+                  <BraceletCount n={p.bracelets} />
+                </dd>
+              </div>
+            )}
             <div className="flex gap-2">
               <dt className="text-muted">Main Event titles</dt>
-              <dd className="font-semibold tnum">{l.mainEvents.length ? l.mainEvents.join(' · ') : '—'}</dd>
+              <dd className="font-semibold tnum">{p.mainEvents.length ? p.mainEvents.join(' · ') : '—'}</dd>
             </div>
+            {p.hof && (
+              <div className="flex gap-2">
+                <dt className="text-muted">Hall of Fame</dt>
+                <dd className="font-semibold tnum">{p.hof}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
 
+      {/* What there is to watch: the final tables they won (or reached), large, each playing straight away. */}
+      <section aria-label="Final tables" className="mt-10">
+        <h2 className="text-xl sm:text-2xl">{p.mainEvents.length ? 'Winning final tables' : 'Final tables'}</h2>
+        {watchable.length ? (
+          <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {watchable.map(({ y, role, winner, me }) => (
+              <li key={y} className="min-w-0">
+                <Link to={`/watch/${me!.final.id}?play=1`} onClick={enterFullScreen} className="group block">
+                  <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
+                    <img src={winner && y >= 2003 && y <= 2024 ? seasonPhoto(y) : me!.final.thumb} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+                    <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden />
+                    <span className="absolute bottom-3 left-3 font-display text-4xl leading-none text-white tnum">{y}</span>
+                    <span className="absolute right-3 bottom-3 grid size-10 place-items-center rounded-full bg-white/90 text-black opacity-90 group-hover:opacity-100" aria-hidden>
+                      <Icon name="play" size={18} />
+                    </span>
+                  </span>
+                  <span className="mt-2 block truncate text-[15px] font-semibold group-hover:text-gold-strong">{y} Main Event · {me!.final.title.split(' · ').pop()}</span>
+                  <span className={cx('block text-xs tnum', winner ? 'text-gold-strong' : 'text-muted')}>{role}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-sm text-muted">None of {p.name}’s final tables are in the archive yet{p.mainEvents.length ? ` (the archive starts in 1973 and skips some early years)` : ''}.</p>
+        )}
+      </section>
+
+      <SeriesRow title="Hands from these final tables" videos={hands} play={playsFull} />
+
+      {/* The WSOP record: one row per Main Event final table on record, opening the event where the archive has it. */}
       <section aria-label="Results" className="mt-10">
         <h2 className="text-xl sm:text-2xl">Results</h2>
-        {results.length ? (
+        {tables.length ? (
           <ul className="mt-3 divide-y divide-line rounded-panel border border-line bg-surface">
-            {results.map(({ y, label, winner }) => {
-              const ref = archiveEvent(`${y}-lv-main`);
+            {tables.map(({ y, role, winner, me }) => {
               const row = (
                 <>
-                  <span className={cx('w-14 font-display text-2xl tnum', !ref && 'text-muted')}>{y}</span>
+                  <span className={cx('w-14 font-display text-2xl tnum', !me && 'text-muted')}>{y}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">Main Event</span>
                     <span className="block truncate text-xs text-muted">{y} WSOP Las Vegas</span>
                   </span>
-                  <span className={cx('text-sm font-semibold', winner && 'text-gold-strong')}>{label}</span>
+                  <span className={cx('text-sm font-semibold', winner && 'text-gold-strong')}>{role}</span>
                 </>
               );
               return (
-                <li key={`${y}-${label}`}>
-                  {ref ? (
-                    <Link to={`/videos/event/${ref.event.id}`} className="flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
+                <li key={`${y}-${role}`}>
+                  {me ? (
+                    <Link to={`/videos/event/${me.ref.event.id}`} className="flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
                       {row}
                       <Icon name="chevron" size={16} className="text-muted" />
                     </Link>
@@ -799,6 +927,9 @@ function LegendPage({ l }: { l: Legend }) {
         ) : (
           <p className="mt-3 text-sm text-muted">No Main Event final tables on record here yet.</p>
         )}
+        <p className="mt-3 text-xs text-muted">
+          {p.legend && p.bracelets && p.bracelets > p.mainEvents.length ? `${p.name}’s other bracelet events and the rest of their broadcasts appear here as the archive is tagged by player.` : `More of ${p.name}’s broadcasts appear here as the archive is tagged by player.`}
+        </p>
       </section>
     </Page>
   );
