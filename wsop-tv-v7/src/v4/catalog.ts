@@ -148,7 +148,7 @@ function dayVideo(e: TourEvent, d: Day, i: number): Video {
         : `${d.label} of the ${short(e)}, from the feature table.`,
     ...artFor(d.id, d.label === 'Final Table' || classic ? 'table' : 'venue'),
     media: { url: v.url, start: v.start },
-    durationSec: d.durationMin * 60,
+    durationSec: lengthOf(d.id, d.durationMin),
     eventId: e.id,
     dayId: d.id,
     status: d.status,
@@ -229,6 +229,18 @@ export const USED_THUMBS = new Set<string>();
 }
 
 /** Everything on demand or live from an event (channels are built on request, since what's on changes). */
+/**
+ * A broadcast day's length. Demo days carry round planned lengths (420, 480 … minutes); until the real file lengths
+ * are in, each shows a stand-in length near its plan (within ±30 min, to the second) so cards don't read 8:00:00.
+ */
+function lengthOf(id: string, minutes: number): number {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  // Minutes on record keep their minutes and get stand-in seconds.
+  if (minutes % 10 !== 0) return minutes * 60 + (h % 60);
+  return Math.max(60, minutes * 60 - 1800 + (h % 3600));
+}
+
 export const catalog: Video[] = [...days, ...clips];
 
 /** A 24/7 channel as a video: whatever is on air right now. */

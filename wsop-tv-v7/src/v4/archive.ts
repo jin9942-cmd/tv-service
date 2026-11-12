@@ -176,7 +176,8 @@ function makeVideo(ref: ArchiveRef, n: number | `h${number}`): Video | undefined
     thumb: archiveArt(id),
     thumbPos: '50% 50%',
     media: S25[event.id] ? { url: s25Clip(S25[event.id].key), start: 0 } : year.classic && CLASSIC_CLIP ? { url: CLASSIC_CLIP, start: 0 } : { url: FOOTAGE.ft.url, start: 40 + (hash(id) % 360) },
-    durationSec: clip ? 120 + (hash(id) % 240) : day!.minutes * 60,
+    // Day lengths are the files' minutes (stand-in seconds); highlight lengths are stand-ins until the files' are in.
+    durationSec: clip ? 120 + (hash(id) % 240) : day!.minutes * 60 + (hash(id) % 60),
     eventId: `arc:${event.id}`,
     status: 'vod',
     tags,
