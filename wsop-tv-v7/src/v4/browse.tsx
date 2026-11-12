@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../state/app';
-import { Avatar, Button, CountryCode, Flag, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
+import { Avatar, Button, Flag, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
 import { HERO_DAY_ID, classicEvents, events, players, seatsFor, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
@@ -418,7 +418,7 @@ export function YearPage() {
               <p className="mt-1 text-sm text-muted">{[main.buyLabel, main.game, daysNote(main.days)].filter(Boolean).join(' · ')}</p>
               {arch?.champion && current.key === 'lv' ? (
                 <p className="mt-4 text-[15px]">
-                  Champion · {playerLink(arch.champion.name) ? <Link to={playerLink(arch.champion.name)!} className="font-semibold text-gold-strong hover:underline">{arch.champion.name}</Link> : <span className="font-semibold">{arch.champion.name}</span>} <CountryCode cc={arch.champion.cc} />
+                  Champion · {playerLink(arch.champion.name) ? <Link to={playerLink(arch.champion.name)!} className="font-semibold text-gold-strong hover:underline">{arch.champion.name}</Link> : <span className="font-semibold">{arch.champion.name}</span>} <Flag cc={arch.champion.cc} className="ml-1 align-[-2px]" />
                 </p>
               ) : (
                 main.live && <p className="mt-4 text-[15px] font-semibold">The final table is on air now</p>
@@ -559,8 +559,8 @@ export function PlayersTab() {
         />
       </div>
       {legends.length > 0 && (
-        <section aria-label="Bracelet legends" className="mt-10">
-          <h2 className="text-xl sm:text-2xl">Bracelet legends</h2>
+        <section aria-label="WSOP Players" className="mt-10">
+          <h2 className="text-xl sm:text-2xl">WSOP Players</h2>
           <p className="mt-1 text-sm text-muted">The most WSOP bracelets of all time</p>
           <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             {legends.map((l) => (
@@ -634,7 +634,6 @@ export function PlayerPage() {
   const finals = p.recent
     .map((r) => ({ r, e: events.find((e) => e.id === r.eventId) }))
     .filter((x): x is { r: (typeof p.recent)[number]; e: TourEvent } => !!x.e);
-  const asLegend = LEGENDS.find((l) => l.playerId === p.id);
   // The loop: their seat at the live final table, and every event they made the final table of (live series and
   // classics) as event rows, newest first, with their place where it isn't a win.
   const seats = seatsFor(HERO_DAY_ID);
@@ -659,9 +658,8 @@ export function PlayerPage() {
         <div>
           <h1 className="text-title">{p.name}</h1>
           <p className="mt-1 text-sm text-muted">
-            {p.country} <CountryCode cc={p.cc} />
+            <Flag cc={p.cc} className="h-4" />
           </p>
-          {asLegend && <p className="mt-2 text-xs font-bold tracking-wide text-gold-strong uppercase">Bracelet legend</p>}
         </div>
         <FollowButton name={p.name} className="sm:ml-auto" />
       </header>
@@ -738,10 +736,9 @@ function LegendPage({ l }: { l: Legend }) {
       <header className="mt-4 flex flex-wrap items-center gap-5">
         <Avatar name={l.name} hue={l.hue} size={96} photo={photoOf(l.name) ?? hofPhoto(l.name)} ring />
         <div>
-          <p className="text-xs font-bold tracking-wide text-gold-strong uppercase">Bracelet legend</p>
-          <h1 className="mt-1 text-title">{l.name}</h1>
+          <h1 className="text-title">{l.name}</h1>
           <p className="mt-1 text-sm text-muted">
-            {l.country} <CountryCode cc={l.cc} /> · {l.note}
+            <span className="inline-flex items-center gap-2"><Flag cc={l.cc} className="h-4" /> {l.note}</span>
           </p>
           <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
             <div className="flex gap-2">
@@ -918,7 +915,7 @@ export function ArchiveEventPage() {
           </p>
           {champion && (
             <p className="mt-2 text-sm font-semibold">
-              Champion · {playerLink(champion.name) ? <Link to={playerLink(champion.name)!} className="text-gold-strong hover:underline">{champion.name}</Link> : champion.name} <CountryCode cc={champion.cc} />
+              Champion · {playerLink(champion.name) ? <Link to={playerLink(champion.name)!} className="text-gold-strong hover:underline">{champion.name}</Link> : champion.name} <Flag cc={champion.cc} className="ml-1 align-[-2px]" />
             </p>
           )}
         </Page>
@@ -1062,7 +1059,7 @@ export function YearsRow() {
 /** Bracelet Legends: the players with the most bracelets; each opens the player page in Browse. */
 export function LegendsRow() {
   return (
-    <HomeSection title="Bracelet Legends" action={moreLink('/videos/players', 'All players')}>
+    <HomeSection title="WSOP Players" action={moreLink('/videos/players', 'All players')}>
       <ul className="hscroll gap-3 [&>*]:w-[40%] sm:[&>*]:w-[calc((100%-2.25rem)/4)] lg:[&>*]:w-[calc((100%-5.25rem)/8)]">
         {LEGENDS.slice(0, 10).map((l) => (
           <li key={l.id}>
