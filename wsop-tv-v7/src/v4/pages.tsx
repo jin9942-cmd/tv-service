@@ -788,11 +788,6 @@ function MyListRow({ videos }: { videos: Video[] }) {
 // The themes themselves (rules, rotation, pin) live in ./themes.ts.
 /** The all-time final tables theme: the featured theme already covers final tables, so it stays off Home. */
 const EDITORS_THEME = 'final-tables';
-/** How long a theme runs, in words: "46 hours", "59 min". */
-const themeLength = (vs: Video[]) => {
-  const sec = vs.reduce((n, v) => n + v.durationSec, 0);
-  return sec >= 5400 ? `${Math.round(sec / 3600)} hours` : `${Math.max(1, Math.round(sec / 60))} min`;
-};
 
 
 /** Curated collections (from the archive): four tiles, each opening its own page. */
@@ -901,7 +896,7 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
                 <span className="absolute inset-x-0 bottom-0 flex flex-col p-4">
                   <span className="font-display text-xl leading-[1.05] uppercase xl:text-2xl">{theme.title}</span>
                   <span className="mt-2 text-[11px] font-bold tracking-wide text-gold-strong uppercase tnum">
-                    {videos.length} videos{videos.every((v) => v.durationSec > 0) && ` · ${themeLength(videos)}`}
+                    {videos.length} videos
                   </span>
                 </span>
               </Link>
@@ -958,7 +953,7 @@ export function CollectionPage() {
       <h1 className="mt-1 text-title">{theme.title}</h1>
       <p className="mt-2 max-w-2xl text-[15px] text-text/85">{theme.blurb}</p>
       <p className="mt-1 text-sm text-muted tnum">
-        {vs.length} videos · {themeLength(vs)}
+        {vs.length} videos
       </p>
       {/* No Play all: the collection is a set of videos to pick from, not a playlist. */}
       <div className={cx(rowGrid, 'mt-6')}>
