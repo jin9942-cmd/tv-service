@@ -138,7 +138,7 @@ export function VideoCard({ v, progress, onRemove, className, reason, size = 'md
         )}
       </div>
       <Link to={to} onClick={onOpen} className="mt-2 block min-w-0">
-        <span className={cx('line-clamp-2 leading-snug font-semibold group-hover:text-gold-strong', size === 'lg' ? 'text-base' : size === 'sm' ? 'text-sm' : 'text-[15px]')}>{v.title}</span>
+        <span className={cx('line-clamp-2 min-h-[2lh] leading-snug font-semibold group-hover:text-gold-strong', size === 'lg' ? 'text-base' : size === 'sm' ? 'text-sm' : 'text-[15px]')}>{v.title}</span>
         <span className="mt-0.5 block truncate text-xs text-muted">{v.subtitle}</span>
         {reason && <span className="mt-1 block truncate text-xs font-semibold text-gold-strong">{reason}</span>}
       </Link>

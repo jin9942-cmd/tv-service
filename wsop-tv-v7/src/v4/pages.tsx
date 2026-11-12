@@ -177,7 +177,7 @@ function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; l
                     {isLive(x, state.streamMode) ? null : <span className="absolute right-1.5 bottom-1.5 rounded-[4px] bg-black/80 px-1 text-[10px] font-semibold text-white tnum">{duration(x.durationSec)}</span>}
                   </span>
                   <span className="min-w-0">
-                    <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
+                    <span className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
                     <span className="mt-0.5 block truncate text-xs text-white/60">{x.subtitle}</span>
                   </span>
                 </button>
@@ -268,7 +268,7 @@ function UpcomingView({ e, d }: { e: TourEvent; d: Day }) {
                       <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
                     </span>
                     <span className="min-w-0">
-                      <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
+                      <span className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
                       <span className="mt-0.5 block truncate text-xs text-muted">{x.subtitle}</span>
                     </span>
                   </Link>
@@ -384,7 +384,7 @@ function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: bool
                       <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
                     </span>
                     <span className="min-w-0">
-                      <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
+                      <span className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
                       <span className="mt-0.5 block truncate text-xs text-muted">{x.subtitle}</span>
                     </span>
                   </Link>
@@ -589,7 +589,7 @@ function PlayerTile({ to, rank, name, cc, line, out, photo }: { to?: string; ran
           <span className="text-[11px] font-semibold text-white/80">{cc}</span>
         </span>
       </span>
-      <span className="mt-2 line-clamp-2 block text-[15px] leading-snug font-bold group-hover:text-gold-strong">{name}</span>
+      <span className="mt-2 line-clamp-2 block min-h-[2lh] text-[15px] leading-snug font-bold group-hover:text-gold-strong">{name}</span>
       <span className="mt-0.5 block truncate text-xs text-muted">{line}</span>
     </span>
   ) : (
@@ -599,7 +599,7 @@ function PlayerTile({ to, rank, name, cc, line, out, photo }: { to?: string; ran
         <span className="text-xs font-semibold text-muted">{cc}</span>
       </span>
       <span className="min-w-0">
-        <span className="line-clamp-2 text-[15px] leading-snug font-bold group-hover:text-gold-strong">{name}</span>
+        <span className="line-clamp-2 min-h-[2lh] text-[15px] leading-snug font-bold group-hover:text-gold-strong">{name}</span>
         <span className="mt-1 block truncate text-xs text-muted tnum">{line}</span>
       </span>
     </span>
@@ -1152,7 +1152,7 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
           )}
         </span>
         <span className="min-w-0">
-          <span className="line-clamp-2 text-sm leading-snug font-semibold">{x.title}</span>
+          <span className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-semibold">{x.title}</span>
           <span className="mt-0.5 block truncate text-xs text-muted">{x.subtitle}</span>
         </span>
       </button>
