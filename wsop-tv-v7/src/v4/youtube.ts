@@ -263,8 +263,10 @@ const toVideo = (y: Yt, i: number): Video => ({
   subtitle: '',
   // The title is the channel's own text; no separate description.
   description: '',
-  // hqdefault is 4:3 with the 16:9 picture letterboxed; the card's 16:9 crop of its middle drops the bars.
-  thumb: `https://i.ytimg.com/vi/${y.id}/hqdefault.jpg`,
+  // The 2026 season shows a frame of play from inside the video (as the archive's events show their own stills), not
+  // the channel's designed thumbnail; the rest use hqdefault (4:3 with the 16:9 picture letterboxed — the card's 16:9
+  // crop of its middle drops the bars).
+  thumb: y.group === 'y2026' || y.group === 'season26' ? `${import.meta.env.BASE_URL}frames/y26/${y.id}.jpg` : `https://i.ytimg.com/vi/${y.id}/hqdefault.jpg`,
   thumbPos: '50% 50%',
   media: { url: FOOTAGE.ft.url, start: 40 + ((i * 53) % 360) },
   durationSec: LENGTH[y.id] ?? 0,
