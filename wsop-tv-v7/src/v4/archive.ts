@@ -276,6 +276,152 @@ export const LEGENDS: Legend[] = [
 ];
 export const legendById = (id: string) => LEGENDS.find((l) => l.id === id);
 
+/**
+ * WSOP bracelet wins of the WSOP Players (the players Browse shows), as each player's English Wikipedia bracelet
+ * table lists them (checked Nov 12, 2026); the 2022 – 2024 Main Event champions from the WSOP record. A year's letter
+ * is the series: E Europe, A Asia Pacific, P Paradise, O Online; no letter, the World Series of Poker in Las Vegas.
+ */
+export const BRACELET_WINS: Record<string, [string, string][]> = {
+  mizrachi: [
+    ["2010", "$50,000 Poker Players Championship"],
+    ["2011E", "€10,400 No Limit Hold'em (Split Format)"],
+    ["2012", "$50,000 Poker Players Championship"],
+    ["2018", "$50,000 Poker Players Championship"],
+    ["2019", "$1,500 Seven Card Stud Hi-Lo 8 or Better"],
+    ["2024O", "$888 No Limit Hold'em - Crazy 8's Encore"],
+    ["2025", "$50,000 Poker Players Championship"],
+    ["2025", "$10,000 No-Limit Hold'em Main Event"],
+    ["2026", "$10,000 Pot-Limit Omaha Championship"],
+  ],
+  deeb: [
+    ["2015", "$10,000 Pot Limit Hold'em"],
+    ["2016", "$1,500 Seven Card Stud"],
+    ["2018", "$25,000 Pot Limit Omaha 8-Handed High Roller"],
+    ["2018", "$10,000 No-limit Hold'em Six Handed Championship"],
+    ["2021", "$25,000 Pot Limit Omaha High Roller - 8 Handed"],
+    ["2023", "$1,500 Eight-Game Mix - 6 Handed"],
+    ["2025", "$100,000 Pot Limit Omaha High Roller"],
+    ["2025E", "€25,000 No-Limit Hold'em GGMillion€"],
+    ["2026", "$1,500 8-Game Mixed"],
+  ],
+  glaser: [
+    ["2015", "$1,500 Triple Draw Lowball (Limit)"],
+    ["2016", "$1,500 Omaha Hi-Low Split-8 or Better"],
+    ["2016", "$10,000 Omaha Hi-Low Split-8 or Better Championship"],
+    ["2021", "$10,000 Razz Championship"],
+    ["2023", "$10,000 Limit 2-7 Triple Draw Championship"],
+    ["2025", "$1,500 Dealer's Choice"],
+    ["2025", "$1,500 Mixed Omaha"],
+    ["2025", "$2,500 Mixed Triple Draw Lowball"],
+    ["2026", "$50,000 Poker Players Championship"],
+  ],
+  schulman: [
+    ["2009", "$10,000 Deuce-to-Seven Lowball World Championship"],
+    ["2012", "$10,000 Deuce-to-Seven Lowball World Championship"],
+    ["2019", "$10,000 Pot Limit Omaha Hi-Lo 8 or Better"],
+    ["2023", "$1,500 7-Card Stud"],
+    ["2024", "$25,000 High Roller No Limit Hold'em (8-Handed)"],
+    ["2024P", "$5,000 The Closer No-Limit Hold'em Bounty Turbo"],
+    ["2025", "$10,000 No-Limit 2–7 Lowball Draw Championship"],
+    ["2026", "$1,500 H.O.R.S.E."],
+  ],
+  koon: [
+    ["2021", "$25,000 Heads Up No-Limit Hold'em Championship"],
+    ["2025", "$50,000 No-Limit Hold'em High Roller"],
+  ],
+  hellmuth: [
+    ["1989", "$10,000 No Limit Hold'em World Championship"],
+    ["1992", "$5,000 Limit Hold'em"],
+    ["1993", "$1,500 No Limit Hold'em"],
+    ["1993", "$2,500 No Limit Hold'em"],
+    ["1993", "$5,000 Limit Hold'em"],
+    ["1997", "$3,000 Pot Limit Hold'em"],
+    ["2001", "$2,000 No Limit Hold'em"],
+    ["2003", "$2,500 Limit Hold'em"],
+    ["2003", "$3,000 No Limit Hold'em"],
+    ["2006", "$1,000 No Limit Hold'em with rebuys"],
+    ["2007", "$1,500 No Limit Hold'em"],
+    ["2012", "$2,500 Seven-Card Razz"],
+    ["2012E", "€10,450 No Limit Hold'em Main Event"],
+    ["2015", "$10,000 Seven-Card Razz"],
+    ["2018", "$5,000 No Limit Hold'em"],
+    ["2021", "$1,500 No Limit 2–7 Lowball Draw"],
+    ["2023", "$10,000 Super Turbo Bounty No-Limit Hold'em"],
+  ],
+  negreanu: [
+    ["1998", "$2,000 Pot Limit Hold'em"],
+    ["2003", "$2,000 S.H.O.E."],
+    ["2004", "$2,000 Limit Hold'em"],
+    ["2008", "$2,000 Limit Hold'em"],
+    ["2013A", "A$10,000 No Limit Hold'em Main Event"],
+    ["2013E", "€25,600 High Roller No Limit Hold'em"],
+    ["2024", "$50,000 Poker Players Championship"],
+    ["2026", "$100,000 High Roller Pot-Limit Omaha"],
+  ],
+  ivey: [
+    ["2000", "$2,500 Pot Limit Omaha"],
+    ["2002", "$2,500 7 Card Stud Hi/Lo"],
+    ["2002", "$2,000 S.H.O.E."],
+    ["2002", "$1,500 7 Card Stud"],
+    ["2005", "$5,000 Pot Limit Omaha"],
+    ["2009", "$2,500 No-Limit 2–7 Draw Lowball"],
+    ["2009", "$2,500 Omaha Hi/Lo / 7 Card Stud Hi/Lo"],
+    ["2010", "$3,000 H.O.R.S.E."],
+    ["2013A", "A$2,200 Mixed Event"],
+    ["2014", "$1,500 Eight Game Mix"],
+    ["2024", "$10,000 Limit 2-7 Lowball Triple Draw Championship"],
+  ],
+  seidel: [
+    ["1992", "$2,500 Limit Hold'em"],
+    ["1993", "$2,500 Omaha 8 or Better"],
+    ["1994", "$5,000 Limit Hold'em"],
+    ["1998", "$5,000 Deuce to Seven Draw"],
+    ["2001", "$3,000 No Limit Hold'em"],
+    ["2003", "$1,500 Pot Limit Omaha"],
+    ["2005", "$2,000 No Limit Hold'em"],
+    ["2007", "$5,000 World Championship No-Limit"],
+    ["2021O", "$10,000 Super Million$ High Roller"],
+    ["2023P", "$50,000 Super High Roller"],
+  ],
+  seiver: [
+    ["2008", "$5,000 No Limit Hold'em"],
+    ["2018", "$10,000 Limit Hold'em Championship"],
+    ["2019", "$10,000 Razz Championship"],
+    ["2022", "$2,500 Freezeout No Limit Hold'em"],
+    ["2024", "$10,000 Omaha Hi-Lo 8 or Better Championship"],
+    ["2024", "$1,500 Razz"],
+    ["2024", "$10,000 No-Limit 2-7 Lowball Draw Championship"],
+  ],
+  arieh: [
+    ["1999", "$3,000 Limit Hold'em"],
+    ["2005", "$2,000 Pot Limit Omaha"],
+    ["2021", "$1,500 Pot Limit Omaha"],
+    ["2021", "$10,000 Pot Limit Omaha Hi-Lo 8 or Better"],
+    ["2023", "$10,000 Limit Hold'em"],
+    ["2023", "$25,000 H.O.R.S.E. High Roller"],
+    ["2025O", "$500 NLH Ultra Deepstack"],
+  ],
+  tamayo: [
+    ["2024", "$10,000 No-Limit Hold'em Main Event"],
+  ],
+  weinman: [
+    ["2022", "$1,000 Pot-Limit Omaha"],
+    ["2023", "$10,000 No-Limit Hold'em Main Event"],
+  ],
+  jorstad: [
+    ["2022", "$10,000 No-Limit Hold'em Main Event"],
+  ],
+  moneymaker: [
+    ["2003", "$10,000 No-Limit Hold'em Main Event"],
+  ],
+};
+/** "2011E" → "2011 WSOP Europe"; "2025" → "2025 World Series of Poker". */
+export const winSeries = (y: string) => {
+  const year = y.slice(0, 4);
+  const s = ({ E: 'WSOP Europe', A: 'WSOP Asia Pacific', P: 'WSOP Paradise', O: 'WSOP Online' } as Record<string, string>)[y.slice(4).trim()];
+  return s ? `${year} ${s}` : `${year} World Series of Poker`;
+};
+
 /** Suggested for an archive video: the rest of its event, then the year's other events, then the next year's. */
 export function archiveRelated(v: Video, n = 10): Video[] {
   const ref = v.eventId ? INDEX.get(v.eventId.replace(/^arc:/, '')) : undefined;

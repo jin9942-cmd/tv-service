@@ -19,7 +19,7 @@ import { Carousel } from './carousel';
 import { photoOf } from './photos';
 import { YT_VIDEOS, ytForEvent } from './youtube';
 import { EventRows, EventTile, archiveItem, liveItem, newestFirst, playerLink, scheduleOrder, type EventItem } from './loop';
-import { ARCHIVE, CLASSIC_RANGE, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
+import { ARCHIVE, BRACELET_WINS, CLASSIC_RANGE, winSeries, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
 /** The demo's live series: the 2025 World Series of Poker in Las Vegas, reconstructed from the real broadcasts. */
 const CURRENT_YEAR = 2025;
@@ -725,11 +725,18 @@ export function PlayerPage() {
 
 /** A bracelet legend: bracelets and Main Event titles (WSOP records), and the broadcasts of this archive they are in. */
 function LegendPage({ l }: { l: Legend }) {
-  // From the WSOP record: Main Event titles, and the other Main Event final tables noted (Seidel, 1988 runner-up).
+  // Every WSOP bracelet they won (newest first), and the other Main Event final tables noted (Seidel, 1988 runner-up).
+  // Players without a bracelet list keep their Main Event titles.
+  const wins = BRACELET_WINS[l.id.replace(/^legend-/, '')];
   const results = [
-    ...l.mainEvents.map((y) => ({ y, label: 'Winner', winner: true })),
-    ...l.archive.filter((a) => !/champion/i.test(a.role)).map((a) => ({ y: Number(a.eventId.slice(0, 4)), label: 'Final table · #2', winner: false })),
+    ...(wins
+      ? wins.map(([ys, ev]) => ({ y: Number(ys.slice(0, 4)), key: ys + ev, title: ev, series: winSeries(ys), main: /^\d{4}$/.test(ys) && /Main Event|World Championship/.test(ev), lv: /^\d{4}$/.test(ys), label: 'Winner', winner: true }))
+      : l.mainEvents.map((y) => ({ y, key: `${y}-me`, title: 'Main Event', series: `${y} World Series of Poker`, main: true, lv: true, label: 'Winner', winner: true }))),
+    ...l.archive.filter((a) => !/champion/i.test(a.role)).map((a) => { const y = Number(a.eventId.slice(0, 4)); return { y, key: `${y}-ft`, title: 'Main Event', series: `${y} World Series of Poker`, main: true, lv: true, label: 'Final table · #2', winner: false }; }),
   ].sort((x, z) => z.y - x.y);
+  // Ten rows at first; See more opens the rest in place.
+  const [allResults, setAllResults] = useState(false);
+  const shownResults = allResults ? results : results.slice(0, 10);
   return (
     <Page className="max-w-[96rem]">
       {back('/videos/players', 'Players')}
@@ -754,22 +761,24 @@ function LegendPage({ l }: { l: Legend }) {
         <h2 className="text-xl sm:text-2xl">Results</h2>
         {results.length ? (
           <ul className="mt-3 divide-y divide-line rounded-panel border border-line bg-surface">
-            {results.map(({ y, label, winner }) => {
-              const ref = archiveEvent(`${y}-lv-main`);
+            {shownResults.map(({ y, key, title, series, main, lv, label, winner }) => {
+              // A row opens what there is of it: the Main Event's archive page, or the 2026 series page.
+              const ref = main ? archiveEvent(`${y}-lv-main`) : undefined;
+              const to = ref ? `/videos/event/${ref.event.id}` : y === 2026 && lv ? '/videos/series/2026/lv' : undefined;
               const row = (
                 <>
-                  <span className={cx('w-14 font-display text-2xl tnum', !ref && 'text-muted')}>{y}</span>
+                  <span className={cx('w-14 font-display text-2xl tnum', !to && 'text-muted')}>{y}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">Main Event</span>
-                    <span className="block truncate text-xs text-muted">{y} World Series of Poker</span>
+                    <span className="block truncate font-semibold">{title}</span>
+                    <span className="block truncate text-xs text-muted">{series}</span>
                   </span>
                   <span className={cx('text-sm font-semibold', winner && 'text-gold-strong')}>{label}</span>
                 </>
               );
               return (
-                <li key={`${y}-${label}`}>
-                  {ref ? (
-                    <Link to={`/videos/event/${ref.event.id}`} className="flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
+                <li key={key}>
+                  {to ? (
+                    <Link to={to} className="flex items-center gap-4 px-4 py-3 hover:bg-surface-2">
                       {row}
                       <Icon name="chevron" size={16} className="text-muted" />
                     </Link>
@@ -783,9 +792,16 @@ function LegendPage({ l }: { l: Legend }) {
               );
             })}
           </ul>
-        ) : (
-          <p className="mt-3 text-sm text-muted">No Main Event final tables on record here yet.</p>
+        ) : null}
+        {results.length > 10 && (
+          <div className="mt-5 flex justify-center">
+            <button type="button" onClick={() => setAllResults((x) => !x)} aria-expanded={allResults} className="inline-flex h-10 items-center gap-2 rounded-full border border-line-strong px-5 text-sm font-bold hover:border-white/60">
+              {allResults ? 'See less' : 'See more'}
+              <Icon name="chevron" size={16} className={allResults ? '-rotate-90' : 'rotate-90'} />
+            </button>
+          </div>
         )}
+        {!results.length && <p className="mt-3 text-sm text-muted">No results on record here yet.</p>}
       </section>
       {/* Their videos from the whole archive (events they won, videos that name them, the WSOP channel's), under the results. */}
       <div className="mt-12">
