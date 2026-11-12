@@ -87,9 +87,10 @@ function PromoBanner() {
   const live = isOnAir(state.streamMode);
   // The demo is set before the 2026 series: the banner leads with what's next, then last summer's champion.
   const next = seriesById('lv26');
-  // `?live`: Home during the series (the Schedule's moment, Jul 14, 2026) — the final tables on air lead the banner,
-  // each with Watch live (principle 1: a tournament in progress comes first).
-  const inSeries = params.has('live');
+  // The banner is set during the series (the Schedule's moment, Jul 14, 2026): the final tables on air lead it, each
+  // with LIVE and Watch live (principle 1: a tournament in progress comes first). `?offseason` shows the banner as it
+  // reads between series (the next series, last summer's champion).
+  const inSeries = !params.has('offseason');
   const watchLive = (dayId: string) => (
     <Link to={`/watch/${dayId}`}>
       <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
