@@ -1,6 +1,6 @@
 // v4 — WSOP TV, OTT-standard (Netflix / YouTube): promotion banner, 24/7 channels, then the rows; plus the
 // schedule, shows and how to watch. Labels stay minimal.
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { channelById, channels, programAt, programsFor, reminderKey, type LinearChannel, type Program } from '../data/channels';
 import { airingsOf, commentaryFor, showById, showOf, shows, type Show } from '../data/shows';
@@ -87,7 +87,58 @@ function PromoBanner() {
   const live = isOnAir(state.streamMode);
   // The demo is set before the 2026 series: the banner leads with what's next, then last summer's champion.
   const next = seriesById('lv26');
-  const slides = [
+  // `?live`: Home during the series (the Schedule's moment, Jul 14, 2026) — the final tables on air lead the banner,
+  // each with Watch live (principle 1: a tournament in progress comes first).
+  const inSeries = params.has('live');
+  const watchLive = (dayId: string) => (
+    <Link to={`/watch/${dayId}`}>
+      <Button variant="primary" size="lg" tabIndex={-1} className="min-w-52">
+        <Icon name="play" size={18} /> Watch live
+      </Button>
+    </Link>
+  );
+  const seeSchedule = (
+    <Link to="/schedule">
+      <Button variant="secondary" size="lg" tabIndex={-1}>
+        See the schedule
+      </Button>
+    </Link>
+  );
+  const liveSlides = [
+    {
+      live: true,
+      img: HERO_IMAGES.finalTable,
+      pos: '50% 60%',
+      kicker: `${next.name} · Day 50 of 51`,
+      title: 'Main Event Final Table',
+      facts: ['Event #82', '$10,000 No-Limit Hold’em', next.venue],
+      line: 'On air now from Las Vegas',
+      preview: true,
+      actions: (
+        <>
+          {watchLive('lv26-main-finaltable')}
+          {seeSchedule}
+        </>
+      ),
+    },
+    {
+      live: true,
+      img: VENUE_ART[0].src,
+      pos: '50% 40%',
+      kicker: `${next.name} · Day 50 of 51`,
+      title: '$10,000 6-Handed Championship',
+      facts: ['Event #94', 'Final Table', 'No-Limit Hold’em'],
+      line: 'On air now from Las Vegas',
+      preview: true,
+      actions: (
+        <>
+          {watchLive('lv26-94-finaltable')}
+          {seeSchedule}
+        </>
+      ),
+    },
+  ];
+  const offSlides = [
     {
       img: VENUE_ART[0].src, // the room, no broadcast graphics (the 2026 series hasn't started)
       pos: '50% 40%',
@@ -138,7 +189,8 @@ function PromoBanner() {
       ),
     },
   ];
-  const sl = slides[slide];
+  const slides: { live?: boolean; img: string; pos: string; kicker: string; title: string; facts: string[]; line: string; preview: boolean; actions: ReactNode }[] = inSeries ? [...liveSlides, offSlides[2]] : offSlides;
+  const sl = slides[Math.min(slide, slides.length - 1)];
   return (
     <div className="relative overflow-hidden bg-black" aria-roledescription="carousel" aria-label="Featured">
       {/* Ambient fill: the same photo, blurred and dimmed, across the whole banner, so the photo never ends in a hard edge. */}
@@ -160,7 +212,7 @@ function PromoBanner() {
           {/* Above the headline: LIVE, then the year, series and venue (fixed box height, so nothing moves). */}
           <div className="flex h-[6.65rem] flex-col justify-end sm:h-[8.7rem]">
             <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wide text-text/90 uppercase sm:text-[13px]">
-              {slide === 0 && live && <LiveTag className="px-2 py-1 text-xs" />}
+              {(sl.live || (slide === 0 && live && !inSeries)) && <LiveTag className="px-2 py-1 text-xs" />}
               {sl.kicker}
             </p>
             <h1 className="line-clamp-2 text-[2.4rem] leading-[1.02] sm:text-[3.4rem]">{sl.title}</h1>

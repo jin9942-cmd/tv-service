@@ -15,7 +15,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, EYEBROW, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseAll, seasonPhoto } from './browse';
+import { BrowseAll, playerVideos, seasonPhoto, useFollowing } from './browse';
 import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
@@ -564,6 +564,8 @@ export function HomeRows() {
       <ThemeRow id="mizrachi-run" now={now} />
       {/* Continue watching in the middle of Home (signed in, with something to continue). */}
       <ContinueRow items={continuing} onRemove={removeContinue} />
+      {/* Players you follow (NBA League Pass "Following"): their newest videos, signed in or not. */}
+      <FollowingRow />
       {/* Classics */}
       <CarouselRow title={hands.title} videos={hands.videos} />
       <SeasonTiles />
@@ -635,6 +637,35 @@ export function HallOfFameRow() {
 }
 
 /** Continue watching: big pictures with a thick progress bar and the title (no time left); one sideways line. */
+/** The newest videos of the players the viewer follows, taking turns between players; hidden when they follow no one. */
+function FollowingRow() {
+  const [names] = useFollowing();
+  // The 2026 series' uploads belong to the Schedule's July moment, not to Home (May 15, 2026).
+  const later = new Set(ytGroup('season26').map((v) => v.id));
+  // Each player's list: videos that name them first (their story, their wins), then the rest of the events they won.
+  const lists = names.map((n) => {
+    const all = playerVideos(n).filter((v) => !later.has(v.id));
+    const named = all.filter((v) => v.title.includes(n.split(' ').slice(-1)[0]));
+    return [...named, ...all.filter((v) => !named.includes(v))];
+  });
+  const out: Video[] = [];
+  for (let i = 0; out.length < 16 && lists.some((l) => l.length > i); i++) for (const l of lists) if (l[i] && !out.some((v) => v.id === l[i].id)) out.push(l[i]);
+  if (!out.length) return null;
+  return (
+    <Section title="From Players You Follow" action={<span className="text-sm text-muted">{names.join(' · ')}</span>}>
+      <ol className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        <BadgeScope videos={out}>
+          {out.map((v) => (
+            <li key={v.id} className="min-w-0">
+              <VideoCard v={v} />
+            </li>
+          ))}
+        </BadgeScope>
+      </ol>
+    </Section>
+  );
+}
+
 function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; onRemove: (v: Video) => void }) {
   if (!items.length) return null;
   return (
@@ -902,7 +933,7 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
                 <span className="absolute inset-x-0 bottom-0 flex flex-col p-4">
                   <span className="font-display text-xl leading-[1.05] uppercase xl:text-2xl">{theme.title}</span>
                   <span className="mt-2 text-[11px] font-bold tracking-wide text-gold-strong uppercase tnum">
-                    {videos.length} videos · {themeLength(videos)}
+                    {videos.length} videos{videos.every((v) => v.durationSec > 0) && ` · ${themeLength(videos)}`}
                   </span>
                 </span>
               </Link>

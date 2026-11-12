@@ -11,7 +11,7 @@
 import { HERO_DAY_ID, classicEvents, dayById, events, isClassicEvent, seriesById } from '../data/mock';
 import type { Day, TourEvent } from '../data/types';
 import { catalog, highlightClips, type Video } from './catalog';
-import { ytGroup } from './youtube';
+import { YT_VIDEOS, ytGroup } from './youtube';
 import { archiveEvent, broadcastsOf } from './archive';
 
 export interface Theme {
@@ -136,12 +136,6 @@ export const THEMES: Theme[] = [
     rule: () => broadcasts().filter((v) => (eventOf(v)?.buyIn ?? 0) >= 25_000).sort(newest),
   },
   {
-    id: 'plo-and-mixed',
-    title: 'PLO & Mixed Games',
-    blurb: 'Four cards, eight games. For when Hold’em feels too simple.',
-    rule: () => broadcasts().filter((v) => eventOf(v)?.game !== 'No-Limit Hold’em').sort(newest),
-  },
-  {
     id: 'this-time-of-year',
     title: 'This Day in WSOP History',
     blurb: 'Broadcasts from around this date in past WSOP seasons.',
@@ -149,6 +143,26 @@ export const THEMES: Theme[] = [
       broadcasts()
         .filter((v) => yearOf(v) < new Date(now).getUTCFullYear() && daysApartInYear(startOf(v), now) <= 35)
         .sort((a, b) => yearOf(b) - yearOf(a)),
+  },
+  // Originals (UFC Fight Pass Originals, F1 TV documentaries): the WSOP channel's own shows, as collections.
+  {
+    id: 'winners-circle',
+    title: 'Winner’s Circle',
+    blurb: 'The bracelet winners, straight after the win: what they took home and how they did it.',
+    // The channel's #WinnersCircle interviews: "$X for <winner> – <event>".
+    rule: () => YT_VIDEOS.filter((v) => /^\$[\d,]+ for /.test(v.title)),
+  },
+  {
+    id: 'player-stories',
+    title: 'Player Stories',
+    blurb: 'The people behind the bracelets, in their own stories from the WSOP channel.',
+    rule: () => YT_VIDEOS.filter((v) => /Relive Michael Mizrachi|First Woman in 3 Decades|Phil Ivey Chasing|Back-to-Back Champion|Right After the Win|Good or Bad for Poker/.test(v.title)),
+  },
+  {
+    id: 'plo-and-mixed',
+    title: 'PLO & Mixed Games',
+    blurb: 'Four cards, eight games. For when Hold’em feels too simple.',
+    rule: () => broadcasts().filter((v) => eventOf(v)?.game !== 'No-Limit Hold’em').sort(newest),
   },
   {
     id: 'one-hour-binge',

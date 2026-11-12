@@ -4,7 +4,7 @@
 //   Players: the player grid (sort) → a player page (profile, final tables by year, appearances by year).
 //   Events: the events that come back every year → a chronicle of each, year by year.
 //   The event page is where all three tabs land: its facts, the days that were broadcast, full broadcasts or highlights.
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Avatar, BraceletCount, Button, CountryCode, Flag, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
@@ -674,6 +674,7 @@ export function PlayerPage() {
           </dl>
           {asLegend && <p className="mt-2 text-xs font-bold tracking-wide text-gold-strong uppercase">Bracelet legend</p>}
         </div>
+        <FollowButton name={p.name} className="sm:ml-auto" />
       </header>
 
       {/* At the live Main Event final table right now: straight back to the broadcast (the loop: player → video). */}
@@ -766,6 +767,7 @@ function LegendPage({ l }: { l: Legend }) {
             </div>
           </dl>
         </div>
+        <FollowButton name={l.name} className="sm:ml-auto" />
       </header>
 
       <section aria-label="Results" className="mt-10">
@@ -1592,4 +1594,48 @@ export function YearRedirect() {
   const { year = '', series } = useParams();
   if (series) return <Navigate to={`/videos/series/${year}/${series}`} replace />;
   return <Navigate to={ARCHIVE.some((y) => String(y.year) === year) ? `/videos?year=${year}` : '/videos'} replace />;
+}
+
+// ---- Following -------------------------------------------------------------------------------------------------
+
+/**
+ * Players the viewer follows (NBA League Pass "Following"): kept in this browser. The demo starts with two followed,
+ * so Home's Following row has something to show; Follow / Following on a player page changes it.
+ */
+const FOLLOW_KEY = 'wsop-tv.v7.following';
+const FOLLOW_START = ['Michael Mizrachi', 'Jason Koon'];
+let followed: string[] = (() => {
+  try {
+    const raw = localStorage.getItem(FOLLOW_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : FOLLOW_START;
+  } catch {
+    return FOLLOW_START;
+  }
+})();
+const followListeners = new Set<() => void>();
+export function useFollowing(): [string[], (name: string) => void] {
+  const list = useSyncExternalStore(
+    (l) => (followListeners.add(l), () => followListeners.delete(l)),
+    () => followed,
+  );
+  const toggle = (name: string) => {
+    followed = followed.includes(name) ? followed.filter((n) => n !== name) : [...followed, name];
+    try {
+      localStorage.setItem(FOLLOW_KEY, JSON.stringify(followed));
+    } catch {
+      /* private mode: kept for this visit only */
+    }
+    followListeners.forEach((l) => l());
+  };
+  return [list, toggle];
+}
+
+function FollowButton({ name, className }: { name: string; className?: string }) {
+  const [list, toggle] = useFollowing();
+  const on = list.includes(name);
+  return (
+    <Button variant={on ? 'secondary' : 'outline'} aria-pressed={on} onClick={() => toggle(name)} className={className}>
+      <Icon name={on ? 'check' : 'plus'} size={16} /> {on ? 'Following' : 'Follow'}
+    </Button>
+  );
 }
