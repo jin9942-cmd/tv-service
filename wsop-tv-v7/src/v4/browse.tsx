@@ -1137,7 +1137,7 @@ export function BrowseAll() {
               disabled={picked.length > 0}
               className="h-11 w-56 appearance-none rounded-chip border border-line-strong bg-surface px-4 pr-10 text-[15px] font-bold tnum disabled:opacity-50"
             >
-              <option value="all">All years</option>
+              <option value="all">All Seasons</option>
               {years.map((y) => (
                 <option key={y} value={y}>
                   {y}
@@ -1327,17 +1327,30 @@ const seriesOf = (rows: SeasonRow[]): SeriesGroup[] => {
  * A series on Browse: its name with how many events and videos, See more on the right (the series page: all its
  * events, each a row of its videos), and under it one row of all its videos, event by event.
  */
+/**
+ * What kind of series it is, as WSOP.com's schedule marks it: Bracelets (the World Series of Poker, Europe, Paradise,
+ * APAC), Super Circuit, or Circuit.
+ */
+function SeriesBadge({ s }: { s: Pick<SeriesGroup, 'seriesKey' | 'name'> }) {
+  const kind = s.seriesKey !== 'circuit' ? 'Bracelets' : /Super Circuit/i.test(s.name) ? 'Super Circuit' : 'Circuit';
+  const tone = kind === 'Bracelets' ? 'border-[#e5484d] text-[#ff6b70]' : kind === 'Super Circuit' ? 'border-[#9b7bd4] text-[#b9a0ea]' : 'border-[#3fa37a] text-[#5cc79a]';
+  return <span className={cx('inline-block rounded-[3px] border px-1.5 py-px text-[11px] leading-4 font-bold tracking-wide uppercase', tone)}>{kind}</span>;
+}
+
 function SeriesBlock({ s }: { s: SeriesGroup }) {
   const videos = s.events.reduce((n, r) => n + r.videos.length, 0);
   const rowVideos = s.events.flatMap((r) => r.videos).filter((v, i, all) => all.findIndex((x) => x.id === v.id) === i);
   return (
     <section aria-label={s.name} className="space-y-6">
-      <div className="flex items-baseline justify-between gap-4">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <SeriesBadge s={s} />
+          <div className="mt-1.5 flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
           <h2 className="text-xl sm:text-2xl">{s.name}</h2>
           <span className="text-sm text-muted tnum">
             {s.events.length} event{s.events.length === 1 ? '' : 's'} · {videos} videos
           </span>
+          </div>
         </div>
         <Link to={`/videos/series/${s.year}/${s.seriesKey}`} className="shrink-0 text-sm font-semibold whitespace-nowrap text-muted hover:text-text">
           See more →
@@ -1366,7 +1379,10 @@ export function SeriesEventsPage() {
   return (
     <Page className="max-w-[96rem]">
       {back('/videos', 'Browse')}
-      <h1 className="mt-3 text-title">{g.name}</h1>
+      <div className="mt-3">
+        <SeriesBadge s={g} />
+      </div>
+      <h1 className="mt-1.5 text-title">{g.name}</h1>
       <p className="mt-1 text-sm text-muted tnum">
         {g.events.length} event{g.events.length === 1 ? '' : 's'} · {videos} videos
       </p>
