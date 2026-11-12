@@ -58,8 +58,8 @@ export function WatchPage() {
     const ref = v.dayId ? dayById(v.dayId) : undefined;
     return ref ? Math.max(120, Math.min(v.durationSec, (Date.now() - Date.parse(ref.day.start)) / 1000)) : v.durationSec;
   };
-  // A live broadcast plays full screen straight away (24/7 channels keep the watch page).
-  if (live && v.kind !== 'channel') return <FullPlayer key={v.id} v={v} live liveEdge={liveEdge} />;
+  // Live broadcasts and 24/7 channels play full screen straight away, with what else is on in the side panel.
+  if (live) return <FullPlayer key={`${v.id}:${program?.id ?? ''}`} v={v} live liveEdge={liveEdge} />;
   return <WatchView key={`${v.id}:${program?.id ?? ''}`} v={v} live={live} liveEdge={live ? liveEdge : undefined} channelId={channelId} now={now} />;
 }
 
@@ -148,8 +148,9 @@ function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; l
   }, []);
   const close = () => (document.fullscreenElement ? document.exitFullscreen().catch(leave) : leave());
   const { state } = useApp();
+  // VOD: Suggested videos. Live and 24/7: what else is on now (open from the start on a channel) and what's coming up.
   const [panel, setPanel] = useState(false);
-  const next = relatedTo(v, 10);
+  const next = live ? [] : relatedTo(v, 10);
   // Picking from Suggested: VOD keeps playing full screen; a live broadcast opens its live player.
   const pick = (x: Video) => {
     setPanel(false);
@@ -162,10 +163,11 @@ function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; l
         <Icon name="close" size={20} />
       </button>
       <div className="w-full" style={{ maxWidth: 'calc(100vh * 16 / 9)' }}>
-        <Player v={v} live={live} liveEdge={liveEdge} upNext={next.length ? { open: panel, toggle: () => setPanel((p) => !p) } : undefined} />
+        <Player v={v} live={live} liveEdge={liveEdge} heading={v.kind === 'channel' ? `${v.subtitle} · ${v.title}` : v.title} upNext={next.length || live ? { open: panel, toggle: () => setPanel((p) => !p) } : undefined} />
       </div>
+      {panel && live && <LivePanel current={v} onPick={(id) => nav(`/watch/${id}`, { replace: true })} />}
       {/* Suggested: videos in a side panel over the player. */}
-      {panel && (
+      {panel && !live && (
         <aside aria-label="Suggested" className="absolute top-0 right-0 bottom-16 z-10 flex w-[min(24rem,90vw)] flex-col rounded-bl-panel bg-black/90 pt-6 backdrop-blur">
           <h2 className="px-5 text-lg font-bold">Suggested</h2>
           <ul className="mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-6">
@@ -186,6 +188,78 @@ function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; l
         </aside>
       )}
     </div>
+  );
+}
+
+/** The live side panel of the full-screen player: events on air, the 24/7 channels, then what's coming up. */
+function LivePanel({ current, onPick }: { current: Video; onPick: (id: string) => void }) {
+  const { state } = useApp();
+  const now = useTick(15_000);
+  const events = catalog.filter((x) => isLive(x, state.streamMode));
+  const chans = channels.map((c) => channelVideo(c.id, now)).filter((x): x is Video => !!x);
+  const upcoming = programs
+    .filter((p) => p.start > now && p.start < now + 6 * 3_600_000 && !BREAKS.includes(p.title))
+    .sort((a, b) => a.start - b.start)
+    .slice(0, 6);
+  const item = (x: Video) => {
+    const on = x.id === current.id;
+    return (
+      <li key={x.id}>
+        <button onClick={() => onPick(x.id)} aria-current={on || undefined} className={cx('group flex w-full gap-3 rounded-card p-2 text-left', on ? 'bg-white/15' : 'hover:bg-white/10')}>
+          <span className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-card bg-surface-2">
+            <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" className="absolute inset-0 size-full object-cover" />
+            {on && (
+              <span className="absolute inset-0 flex items-center justify-center bg-black/45" aria-hidden>
+                <Icon name="play" size={18} />
+              </span>
+            )}
+          </span>
+          <span className="min-w-0">
+            <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
+            {x.kind === 'channel' && <span className="mt-0.5 block truncate text-xs text-white/60">{x.subtitle}</span>}
+          </span>
+        </button>
+      </li>
+    );
+  };
+  return (
+    <aside aria-label="Live now" className="absolute top-0 right-0 bottom-16 z-10 flex w-[min(24rem,90vw)] flex-col rounded-bl-panel bg-black/90 pt-6 backdrop-blur">
+      <div className="flex-1 overflow-y-auto px-3 pb-6">
+        <h2 className="px-2 text-lg font-bold">Live now</h2>
+        {events.length > 0 && (
+          <>
+            <h3 className="mt-4 mb-1 px-2 text-xs font-semibold tracking-wide text-white/50 uppercase">Events</h3>
+            <ul className="space-y-1">{events.map(item)}</ul>
+          </>
+        )}
+        <h3 className="mt-4 mb-1 px-2 text-xs font-semibold tracking-wide text-white/50 uppercase">24/7 Channels</h3>
+        <ul className="space-y-1">{chans.map(item)}</ul>
+        <h2 className="mt-6 px-2 text-lg font-bold">Coming up</h2>
+        <ol className="mt-2 divide-y divide-white/10 px-2">
+          {upcoming.map((p) => (
+            <ComingUpRow key={p.id} id={p.id} title={p.title} start={p.start} channel={channelById(p.channelId)?.name ?? ''} />
+          ))}
+        </ol>
+      </div>
+    </aside>
+  );
+}
+
+/** One program coming up on a 24/7 channel: when, what, where, and a reminder. */
+function ComingUpRow({ id, title, start, channel }: { id: string; title: string; start: number; channel: string }) {
+  const { state } = useApp();
+  const [on, toggle] = useReminder(`prog:${id}`, title);
+  return (
+    <li className="flex items-center gap-3 py-2 text-sm">
+      <span className="w-16 shrink-0 text-white/60 tnum">{fmtTime(start, state.tz)}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate">{title}</span>
+        <span className="block truncate text-xs text-white/50">{channel}</span>
+      </span>
+      <button onClick={toggle} aria-pressed={on} aria-label={on ? `Reminder set for ${title}` : `Remind me about ${title}`} title={on ? 'Reminder set' : 'Remind me'} className={cx('grid size-8 shrink-0 place-items-center rounded-full ring-1', on ? 'bg-gold/20 text-gold-strong ring-gold' : 'text-white/70 ring-white/25 hover:text-white')}>
+        <Icon name={on ? 'check' : 'bell'} size={14} />
+      </button>
+    </li>
   );
 }
 
@@ -1052,125 +1126,15 @@ export function MyListPage() {
 
 // ---- Live -------------------------------------------------------------------------------------------
 
-/** Seconds into the broadcast at the live edge: a channel counts from the start of what's on, an event from its day's start. */
-function liveEdgeFor(v: Video, at: number) {
-  if (v.kind === 'channel') {
-    const p = programAt(v.id.slice(3), at);
-    return () => Math.max(60, (Date.now() - (p?.start ?? Date.now())) / 1000);
-  }
-  const ref = v.dayId ? dayById(v.dayId) : undefined;
-  return () => (ref ? Math.max(120, Math.min(v.durationSec, (Date.now() - Date.parse(ref.day.start)) / 1000)) : v.durationSec);
-}
-
-/**
- * Live: something is always playing. The player opens on the first live event (or a 24/7 channel when no event is
- * live); the list beside it switches what's on screen without leaving the page.
- */
+/** Live: opens the full-screen player on the asked-for (or first) live event or 24/7 channel. */
 export function LivePage() {
   const { state } = useApp();
   const now = useTick(15_000);
-  const [params, setParams] = useSearchParams();
-  const events = catalog.filter((v) => isLive(v, state.streamMode));
-  const chans = channels.map((c) => channelVideo(c.id, now)).filter((v): v is Video => !!v);
-  const sources = [...events, ...chans];
+  const [params] = useSearchParams();
+  // The live page is the full-screen player now: the asked-for (or first) event or channel, with the side panel.
+  const sources = [...catalog.filter((x) => isLive(x, state.streamMode)), ...channels.map((c) => channelVideo(c.id, now)).filter((x): x is Video => !!x)];
   const v = sources.find((x) => x.id === params.get('v')) ?? sources[0];
-  const program = v.kind === 'channel' ? programAt(v.id.slice(3), now) : undefined;
-  const pick = (id: string) => setParams({ v: id }, { replace: true });
-  const upcoming = programs
-    .filter((p) => p.start > now && p.start < now + 6 * 3_600_000 && !BREAKS.includes(p.title))
-    .sort((a, b) => a.start - b.start)
-    .slice(0, 6);
-  return (
-    <Page className="max-w-[96rem] py-4 sm:py-6">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0">
-          <div className="overflow-hidden rounded-panel">
-            <Player key={`${v.id}:${program?.id ?? ''}`} v={v} live liveEdge={liveEdgeFor(v, now)} />
-          </div>
-          <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="font-sans text-xl leading-snug font-bold normal-case sm:text-2xl">{v.title}</h1>
-              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-                <LiveTag />
-                <span>{v.subtitle}</span>
-                {program && (
-                  <span className="tnum">
-                    · {fmtTime(program.start, state.tz)} – {fmtTime(program.end, state.tz)}
-                  </span>
-                )}
-              </p>
-            </div>
-            <Link to={`/watch/${v.id}`} className="text-sm font-semibold text-muted hover:text-text">
-              Details & related →
-            </Link>
-          </div>
-          <TagList v={v} className="mt-4" />
-        </div>
-
-        <aside className="space-y-6">
-          <section aria-label="Live now">
-            <h2 className="mb-3 font-sans text-base font-bold normal-case">Live now</h2>
-            {events.length > 0 && (
-              <>
-                <h3 className="mt-4 mb-2 text-xs font-semibold tracking-wide text-subtle uppercase first:mt-0">Events</h3>
-                <ul className="space-y-2">
-                  {events.map((x) => (
-                <SourceItem key={x.id} x={x} on={x.id === v.id} onPick={pick} />
-              ))}
-                </ul>
-              </>
-            )}
-            <h3 className="mt-4 mb-2 text-xs font-semibold tracking-wide text-subtle uppercase first:mt-0">24/7 Channels</h3>
-            <ul className="space-y-2">
-              {chans.map((x) => (
-                <SourceItem key={x.id} x={x} on={x.id === v.id} onPick={pick} />
-              ))}
-            </ul>
-          </section>
-          <section aria-label="Coming up">
-            <div className="mb-2 flex items-end justify-between">
-              <h2 className="font-sans text-base font-bold normal-case">Coming up</h2>
-              <Link to="/schedule" className="text-sm font-semibold text-muted hover:text-text">
-                Full schedule →
-              </Link>
-            </div>
-            <ol className="divide-y divide-line">
-              {upcoming.map((p) => (
-                <li key={p.id} className="flex gap-3 py-2 text-sm">
-                  <span className="w-16 shrink-0 text-muted tnum">{fmtTime(p.start, state.tz)}</span>
-                  <span className="min-w-0">
-                    <span className="block truncate">{p.title}</span>
-                    <span className="block truncate text-xs text-subtle">{channelById(p.channelId)?.name}</span>
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </section>
-        </aside>
-      </div>
-    </Page>
-  );
-}
-
-/** One row of the Live list: thumbnail (play mark when it's on screen), title, where it's from. */
-function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: string) => void }) {
-  return (
-    <li>
-      <button onClick={() => onPick(x.id)} aria-current={on || undefined} className={cx('flex w-full gap-3 rounded-card p-2 text-left transition-colors duration-150', on ? 'bg-surface-3' : 'hover:bg-surface-2')}>
-        <span className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-chip bg-surface-2">
-          <img src={x.thumb} style={artStyle({ pos: x.thumbPos, fit: x.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
-          {on && (
-            <span className="absolute inset-0 flex items-center justify-center bg-black/45" aria-hidden>
-              <Icon name="play" size={18} />
-            </span>
-          )}
-        </span>
-        <span className="min-w-0">
-          <span className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-semibold">{x.title}</span>
-        </span>
-      </button>
-    </li>
-  );
+  return v ? <Navigate to={`/watch/${v.id}`} replace /> : <Navigate to="/" replace />;
 }
 
 // ---- Schedule ---------------------------------------------------------------------------------------
@@ -1560,11 +1524,11 @@ function ChannelCard({ c, now, selected, onSelect }: { c: LinearChannel; now: nu
             {text}
           </button>
         ) : (
-          <Link to={`/live?v=ch-${c.id}`} className={hit} aria-label={`${c.name}: ${p?.title ?? ''}`}>
+          <Link to={`/watch/ch-${c.id}`} className={hit} aria-label={`${c.name}: ${p?.title ?? ''}`}>
             {text}
           </Link>
         )}
-        <Link to={`/live?v=ch-${c.id}`} className="relative z-10 mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-strong hover:underline">
+        <Link to={`/watch/ch-${c.id}`} className="relative z-10 mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-strong hover:underline">
           <Icon name="play" size={14} /> Watch now
         </Link>
       </div>

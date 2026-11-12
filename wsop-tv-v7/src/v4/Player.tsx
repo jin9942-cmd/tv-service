@@ -15,7 +15,7 @@ const QUALITY_OPTIONS = ['Auto', '1080p', '720p', '480p'];
 const SPEED_OPTIONS = [0.5, 1, 1.5, 2];
 const speedLabel = (x: number) => (x === 1 ? 'Normal' : `${x}×`);
 
-export function Player({ v, live, liveEdge, mini = false, upNext }: { v: Video; live: boolean; /** Seconds into the broadcast at the live edge. */ liveEdge?: () => number; mini?: boolean; /** Full-screen playback: the Suggested button in the control bar. */ upNext?: { open: boolean; toggle: () => void } }) {
+export function Player({ v, live, liveEdge, mini = false, upNext, heading }: { v: Video; live: boolean; /** Seconds into the broadcast at the live edge. */ liveEdge?: () => number; mini?: boolean; /** Full-screen playback: the Suggested button in the control bar. */ upNext?: { open: boolean; toggle: () => void }; /** Full-screen playback: what's on, top left, shown with the controls. */ heading?: string }) {
   const { state, set } = useApp();
   const box = useRef<HTMLDivElement>(null);
   const vid = useRef<HTMLVideoElement>(null);
@@ -107,8 +107,14 @@ export function Player({ v, live, liveEdge, mini = false, upNext }: { v: Video; 
           </span>
         </button>
       )}
+      {/* What's on (channel · program, or the video's title), with the controls: shown while they are. */}
+      {heading && !mini && (
+        <div className={cx('pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 to-transparent pt-4 pr-6 pb-10 pl-20 transition-opacity duration-150', playing && 'opacity-0 group-hover/player:opacity-100 group-focus-within/player:opacity-100 [@media(hover:none)]:opacity-100')}>
+          <p className="truncate text-lg font-bold text-white">{heading}</p>
+        </div>
+      )}
       {muted && !mini && (
-        <button onClick={() => setMuted(false)} className="absolute top-3 left-3 inline-flex items-center gap-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white hover:bg-black">
+        <button onClick={() => setMuted(false)} className={cx('absolute left-3 inline-flex items-center gap-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white hover:bg-black', heading ? 'top-16' : 'top-3')}>
           <Icon name="mute" size={14} /> Tap to unmute
         </button>
       )}
