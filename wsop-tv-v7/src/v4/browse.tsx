@@ -1539,8 +1539,8 @@ function WsopLegendsRow() {
   const list = WSOP_LEGENDS.slice(0, 15);
   if (!list.length) return null;
   return (
-    <section aria-label="WSOP Legends" className="mt-14">
-      <h2 className="text-xl sm:text-2xl">WSOP Legends</h2>
+    <section aria-label="WSOP Players" className="mt-14">
+      <h2 className="text-xl sm:text-2xl">WSOP Players</h2>
       <Carousel className="mt-4 gap-3 [&>*]:w-[40%] sm:[&>*]:w-[calc((100%-3*0.75rem)/4)] lg:[&>*]:w-[calc((100%-5*0.75rem)/6)]">
         {list.map((p) => {
           const photo = photoOf(p.name);
