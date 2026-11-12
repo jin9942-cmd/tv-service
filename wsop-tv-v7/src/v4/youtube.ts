@@ -6,7 +6,7 @@ import { FOOTAGE } from '../lib/media';
 import type { Video } from './catalog';
 import { archiveEvent, broadcastsOf, highlightsOf } from './archive';
 
-type Group = 'mizrachi' | 'hands' | 'iconic' | 'event' | 'season26';
+type Group = 'mizrachi' | 'hands' | 'iconic' | 'event' | 'season26' | 'y2026';
 interface Yt {
   id: string;
   title: string;
@@ -75,6 +75,55 @@ const LIST: Yt[] = [
   Y('HwEHTLyTBE4', "The Most ABSURD Main Event Hand We've Seen", '2026-07-10', 'season26'),
   Y('IMZVcSsG5PI', "Michael Mizrachi's Bracelet #9 Run | $10,000 PLO Championship Final Table", '2026-06-29', 'season26'),
   Y('deAsBMKAaFk', '$50,000 PPC - Final Table | World Series of Poker', '2026-06-25', 'season26'),
+  // The 2026 season in Browse (WSOP Europe in Prague, the World Series of Poker, Super Circuit Canada): the channel's
+  // broadcasts and highlights of each series, with their upload dates.
+  Y('hbBsq81e8d0', "€10,000,000 GTD | WSOP Europe Main Event - Day 1A", '2026-04-03', 'y2026'),
+  Y('EFrXwz3WX0I', "€10,000,000 GTD | WSOP Europe Main Event - Day 1B", '2026-04-04', 'y2026'),
+  Y('pp9pA3dQWIk', "€10,000,000 GTD | WSOP Europe Main Event - Day 1C", '2026-04-05', 'y2026'),
+  Y('guQ6R799HWk', "€10,000,000 GTD | WSOP Europe Main Event - Day 2", '2026-04-06', 'y2026'),
+  Y('hGQfNNau0AI', "€10,000,000 GTD | WSOP Europe Main Event - Day 3", '2026-04-07', 'y2026'),
+  Y('2NdbZTnIIAM', "€10,000,000 GTD | WSOP Europe Main Event - Day 4", '2026-04-08', 'y2026'),
+  Y('ryST1tVOUAw', "€10,000,000 GTD | WSOP Europe Main Event - Day 5", '2026-04-09', 'y2026'),
+  Y('Dqkl7d_pnqc', "€10,000,000 GTD | WSOP Europe Main Event - Final Table (Session 1)", '2026-04-10', 'y2026'),
+  Y('z_ykW11RBRI', "€10,000,000 GTD | WSOP Europe Main Event - Final Table (Session 2)", '2026-04-10', 'y2026'),
+  Y('C7QTh7wva00', "HIGHLIGHTS | 2026 WSOPE Main Event | Day 1A | Prague", '2026-04-03', 'y2026'),
+  Y('hTgGN22V_PY', "HIGHLIGHTS | 2026 WSOPE Main Event | Day 1B | Prague", '2026-04-04', 'y2026'),
+  Y('sSKRlPNO0UY', "HIGHLIGHTS | 2026 WSOPE Main Event | Day 2 | Prague", '2026-04-07', 'y2026'),
+  Y('Zih5mb_5EVQ', "HIGHLIGHTS | 2026 WSOPE Main Event | Final Table | Prague", '2026-04-10', 'y2026'),
+  Y('To5xgFlsnCY', "WSOP Super Circuit Canada Main Event $5K - Day 2A", '2026-09-04', 'y2026'),
+  Y('H0JSipNlrNY', "WSOP Super Circuit Canada Main Event $5K - Day 2B", '2026-09-05', 'y2026'),
+  Y('alcnNHlgdUk', "WSOP Super Circuit Canada Main Event $5K - Day 2C", '2026-09-06', 'y2026'),
+  Y('Ur4ZIB3erL0', "WSOP Super Circuit Canada Main Event $5K - Day 3", '2026-09-07', 'y2026'),
+  Y('-1SlgRr5Wt8', "WSOP Super Circuit Canada Main Event $5K - Day 4", '2026-09-08', 'y2026'),
+  Y('XZFpibvB5uA', "WSOP Super Circuit Canada Main Event $5K - Day 5", '2026-09-09', 'y2026'),
+  Y('YLd_y-jRqCE', "WSOP Super Circuit Canada Main Event $5K - FINAL TABLE", '2026-09-10', 'y2026'),
+  Y('6ISDwWBcFqc', "WSOP Super Circuit Canada Main Event $5K - FINAL TABLE", '2026-09-10', 'y2026'),
+  Y('NgmC2AyY6eQ', "$10,000 Main Event - Day 1A | World Series of Poker", '2026-07-03', 'y2026'),
+  Y('5WAC_EHuelU', "$10,000 Main Event Day 1B | World Series of Poker", '2026-07-04', 'y2026'),
+  Y('2vo-KVi9rJs', "$10,000 Main Event Day 1C | World Series of Poker", '2026-07-04', 'y2026'),
+  Y('GLXWjV3Ic0I', "$10,000 Main Event Day 1D | World Series of Poker", '2026-07-05', 'y2026'),
+  Y('ecq6RRht7GI', "$10,000 Main Event Day 2ABC | World Series of Poker", '2026-07-06', 'y2026'),
+  Y('R_44RqfjiWY', "$10,000 Main Event Day 3 | World Series of Poker", '2026-07-09', 'y2026'),
+  Y('lRuDBOkDvQk', "$10,000 Main Event Day 5 | World Series of Poker", '2026-07-10', 'y2026'),
+  Y('ogoG54uaq9k', "$10,000 Main Event Day 6 | World Series of Poker", '2026-07-12', 'y2026'),
+  Y('qAeO_w5QJrQ', "$10,000 Main Event Day 8 | World Series of Poker", '2026-07-14', 'y2026'),
+  Y('QwqXyihmYBQ', "HIGHLIGHTS | $10,000 Main Event | Day 1A", '2026-07-03', 'y2026'),
+  Y('kIErxAhqX1o', "HIGHLIGHTS | $10,000 Main Event | Day 1D", '2026-07-06', 'y2026'),
+  Y('WWPGWi8aLvI', "HIGHLIGHTS | $10,000 Main Event | Day 2D", '2026-07-08', 'y2026'),
+  Y('31rhZNp5zzI', "HIGHLIGHTS | $10,000 Main Event | Day 3", '2026-07-09', 'y2026'),
+  Y('y7Yx4ZWtm68', "HIGHLIGHTS | $10,000 Main Event | Day 6", '2026-07-12', 'y2026'),
+  Y('r8YzivCqwTQ', "HIGHLIGHTS | $10,000 Main Event | Day 7", '2026-07-13', 'y2026'),
+  Y('3N-xegeMSos', "HIGHLIGHTS | $10,000 Main Event | Day 8", '2026-07-14', 'y2026'),
+  Y('DtBU-JcgnkU', "HIGHLIGHTS | $10,000 Main Event | Final Table", '2026-08-04', 'y2026'),
+  Y('_IiFpKlPB1k', "HIGHLIGHTS | $10,000 Main Event | Final Table Pt 2", '2026-08-05', 'y2026'),
+  Y('OjAlvTqwQuc', "HIGHLIGHTS | $10,000 Main Event | Final Table Finale", '2026-08-06', 'y2026'),
+  Y('t43kLxHyCKg', "$10,000 PLO Championship Final Table | World Series of Poker", '2026-06-29', 'y2026'),
+  Y('jS7IqqfNZCE', "$5,000 NLH 6-Handed - FINAL TABLE | World Series of Poker", '2026-07-01', 'y2026'),
+  Y('FeCb4Q5Xam8', "HIGHLIGHTS | $5,000 6-Handed No-Limit Hold’em | Final Table", '2026-07-01', 'y2026'),
+  Y('-0CN3AbtOIk', "$10,000 NLH Mystery Bounty - Final Table | World Series of Poker", '2026-06-19', 'y2026'),
+  Y('WrnZdEdZD4I', "$10,000 GGMillion$ High Roller - Final Table | World Series of Poker", '2026-06-04', 'y2026'),
+  Y('1k1hXnTwK_U', "$1,000 Ladies Championship - Final Table | World Series of Poker", '2026-06-29', 'y2026'),
+  Y('fGU5ONdh5p8', "$500 NLH Colossus - Final Table | World Series of Poker", '2026-06-16', 'y2026'),
 ];
 
 /**
@@ -101,11 +150,60 @@ export function cardTitle(raw: string): string {
   return text
     .replace(/(\s*·\s*)+/g, ' · ')
     .replace(/^\s*·\s*|\s*·\s*$/g, '')
+    // The channel's sign-off ("… | World Series of Poker") says nothing on WSOP TV.
+    .replace(/\s*·\s*World Series of Poker$/, '')
     .trim();
 }
 
 /** Each upload's length in seconds, as YouTube lists it (checked Nov 12, 2026). */
 const LENGTH: Record<string, number> = {
+  'hbBsq81e8d0': 19351,
+  'EFrXwz3WX0I': 31505,
+  'pp9pA3dQWIk': 30902,
+  'guQ6R799HWk': 38295,
+  'hGQfNNau0AI': 38750,
+  '2NdbZTnIIAM': 38105,
+  'ryST1tVOUAw': 27825,
+  'Dqkl7d_pnqc': 31465,
+  'z_ykW11RBRI': 16445,
+  'C7QTh7wva00': 3553,
+  'hTgGN22V_PY': 823,
+  'sSKRlPNO0UY': 1024,
+  'Zih5mb_5EVQ': 1220,
+  'To5xgFlsnCY': 23770,
+  'H0JSipNlrNY': 25905,
+  'alcnNHlgdUk': 27050,
+  'Ur4ZIB3erL0': 31195,
+  '-1SlgRr5Wt8': 27085,
+  'XZFpibvB5uA': 38580,
+  'YLd_y-jRqCE': 42900,
+  '6ISDwWBcFqc': 4005,
+  'NgmC2AyY6eQ': 24390,
+  '5WAC_EHuelU': 24650,
+  '2vo-KVi9rJs': 24330,
+  'GLXWjV3Ic0I': 24085,
+  'ecq6RRht7GI': 24201,
+  'R_44RqfjiWY': 24710,
+  'lRuDBOkDvQk': 16100,
+  'ogoG54uaq9k': 42900,
+  'qAeO_w5QJrQ': 41650,
+  'QwqXyihmYBQ': 1237,
+  'kIErxAhqX1o': 1556,
+  'WWPGWi8aLvI': 1030,
+  '31rhZNp5zzI': 1085,
+  'y7Yx4ZWtm68': 1756,
+  'r8YzivCqwTQ': 1551,
+  '3N-xegeMSos': 1737,
+  'DtBU-JcgnkU': 1174,
+  '_IiFpKlPB1k': 1416,
+  'OjAlvTqwQuc': 1333,
+  't43kLxHyCKg': 19475,
+  'jS7IqqfNZCE': 18015,
+  'FeCb4Q5Xam8': 1233,
+  '-0CN3AbtOIk': 18600,
+  'WrnZdEdZD4I': 15805,
+  '1k1hXnTwK_U': 25365,
+  'fGU5ONdh5p8': 21095,
   '1Y4waMzoPak': 49,
   '2SqDbxxXFdA': 44,
   '5VhUDMsnnA4': 25600,

@@ -1095,7 +1095,8 @@ export function BrowseAll() {
   const [more, setMore] = useState(1);
   const [q, setQ] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
-  const years = ARCHIVE.map((y) => y.year);
+  // 2026 first (its series from the WSOP channel), then the archive years.
+  const years = [2026, ...ARCHIVE.map((y) => y.year)];
   // The player list opens only while searching (the search box has focus or text), as a dropdown under the box.
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -1274,6 +1275,7 @@ const playersIn = (winner: string | undefined, videos: Video[]) => {
 
 /** A season's events as rows: in 2025 the live service's own Las Vegas events (with their recaps and hands), else the archive's. */
 export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
+  if (year === 2026) return rows2026();
   const arch = ARCHIVE.find((y) => y.year === year);
   if (!arch) return [];
   // Real videos only: every row is the archive's broadcast files for that event (the NAS list), the WSOP channel's
@@ -1308,6 +1310,51 @@ export function seasonRows(year = CURRENT_YEAR): SeasonRow[] {
     out.push(...items.map((x) => x.row));
   }
   return out;
+}
+
+/**
+ * The 2026 season, newest series first: Super Circuit Canada (Aug – Sep), the World Series of Poker (May – Jul) and
+ * WSOP Europe in Prague (Mar – Apr). Real videos only: the WSOP channel's broadcasts and highlights of each event (its
+ * uploads, checked Nov 12, 2026), broadcasts in day order, then the highlights. Winners as PokerNews reports them.
+ */
+const SEASON_2026: { key: SeriesKey; label: string; events: { id: string; title: string; winner?: string; ids: string[] }[] }[] = [
+  {
+    key: 'circuit',
+    label: '2026 WSOP Super Circuit Canada',
+    events: [{ id: '2026-ca-main', title: '$5,000 Main Event', ids: ['To5xgFlsnCY', 'H0JSipNlrNY', 'alcnNHlgdUk', 'Ur4ZIB3erL0', '-1SlgRr5Wt8', 'XZFpibvB5uA', 'YLd_y-jRqCE', '6ISDwWBcFqc'] }],
+  },
+  {
+    key: 'lv',
+    label: '2026 World Series of Poker',
+    events: [
+      {
+        id: '2026-lv-main',
+        title: '#82 · Main Event',
+        winner: 'Lucas Jumalon',
+        ids: ['NgmC2AyY6eQ', '5WAC_EHuelU', '2vo-KVi9rJs', 'GLXWjV3Ic0I', 'ecq6RRht7GI', 'R_44RqfjiWY', 'lRuDBOkDvQk', 'ogoG54uaq9k', 'qAeO_w5QJrQ', 'QwqXyihmYBQ', 'kIErxAhqX1o', 'WWPGWi8aLvI', '31rhZNp5zzI', 'y7Yx4ZWtm68', 'r8YzivCqwTQ', '3N-xegeMSos', 'DtBU-JcgnkU', '_IiFpKlPB1k', 'OjAlvTqwQuc', 'XjKaiw5oAY0', 'CeVpt52Ao2Y', 'y5PZt0XW-H8', 'HwEHTLyTBE4'],
+      },
+      { id: '2026-lv-6max', title: '$5,000 No-Limit Hold’em 6-Handed', ids: ['jS7IqqfNZCE', 'FeCb4Q5Xam8'] },
+      { id: '2026-lv-70', title: '#70 · $10,000 Pot-Limit Omaha Championship', winner: 'Michael Mizrachi', ids: ['t43kLxHyCKg', 'IMZVcSsG5PI'] },
+      { id: '2026-lv-68', title: '#68 · $1,000 Ladies Championship', winner: 'Skye Chen', ids: ['1k1hXnTwK_U'] },
+      { id: '2026-lv-ppc', title: '$50,000 Poker Players Championship', ids: ['deAsBMKAaFk'] },
+      { id: '2026-lv-mb', title: '$10,000 No-Limit Hold’em Mystery Bounty', ids: ['-0CN3AbtOIk'] },
+      { id: '2026-lv-colossus', title: '$500 Colossus', ids: ['fGU5ONdh5p8'] },
+      { id: '2026-lv-11', title: '#11 · $10,000 GGMillion$ High Roller', winner: 'Naseem Salem', ids: ['WrnZdEdZD4I'] },
+    ],
+  },
+  {
+    key: 'eu',
+    label: '2026 WSOP Europe',
+    events: [{ id: '2026-eu-main', title: '€10,000 Main Event', ids: ['hbBsq81e8d0', 'EFrXwz3WX0I', 'pp9pA3dQWIk', 'guQ6R799HWk', 'hGQfNNau0AI', '2NdbZTnIIAM', 'ryST1tVOUAw', 'Dqkl7d_pnqc', 'z_ykW11RBRI', 'C7QTh7wva00', 'hTgGN22V_PY', 'sSKRlPNO0UY', 'Zih5mb_5EVQ'] }],
+  },
+];
+function rows2026(): SeasonRow[] {
+  return SEASON_2026.flatMap((s) =>
+    s.events.map((e) => {
+      const videos = e.ids.map((id) => videoById(`yt.${id}`)).filter((v): v is Video => !!v);
+      return { key: e.id, to: `/videos/series/2026/${s.key}`, title: e.title, note: [s.label, e.winner && `Won by ${e.winner}`].filter(Boolean).join(' · '), videos, type: typeOf(2026, s.key), players: playersIn(e.winner, videos), series: s.label, seriesKey: s.key, year: 2026, winner: e.winner };
+    }),
+  ).filter((r) => r.videos.length);
 }
 
 /** One event: its name (opens the event page), where and who won, then its videos in a sideways row. */
