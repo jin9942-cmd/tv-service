@@ -15,7 +15,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, EYEBROW, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseAll, seasonPhoto } from './browse';
+import { BrowseAll, seasonPhoto, seasonRows } from './browse';
 import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
@@ -556,6 +556,8 @@ export function HomeRows() {
   return (
     <>
       {/* Season */}
+      {/* The latest series: the 2026 Super Circuit Canada Main Event, its broadcasts day by day. */}
+      <SeriesDayRow />
       <ThemeRow id="this-series" now={now} />
       {/* Players */}
       <ThemeRow id="mizrachi-run" now={now} />
@@ -901,6 +903,27 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
           );
         })}
       </ul>
+    </Section>
+  );
+}
+
+/** The most recent series on WSOP TV as a Home row: the 2026 Super Circuit Canada Main Event, day by day. */
+function SeriesDayRow() {
+  const videos = seasonRows(2026)
+    .filter((r) => r.seriesKey === 'circuit')
+    .flatMap((r) => r.videos);
+  if (!videos.length) return null;
+  return (
+    <Section title="Super Circuit Canada, Day by Day" action={more('/videos/series/2026/circuit', 'View all')}>
+      <ol className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        <BadgeScope videos={videos}>
+          {videos.map((v) => (
+            <li key={v.id} className="min-w-0">
+              <VideoCard v={v} />
+            </li>
+          ))}
+        </BadgeScope>
+      </ol>
     </Section>
   );
 }
