@@ -1483,8 +1483,8 @@ export function playerVideos(name: string): Video[] {
 
 /** A titled grid of videos: four on a line, "Show all N" opens the rest in place (player results, a player's page). */
 function VideoGridBlock({ title, to, sub, videos }: { title: string; to?: string; sub: string; videos: Video[] }) {
-  const [all, setAll] = useState(false);
-  const shown = all ? videos : videos.slice(0, 4);
+  // A player's videos are laid out in full (no See more).
+  const shown = videos;
   return (
     <section aria-label={title}>
       <div className="mb-4">
@@ -1498,14 +1498,6 @@ function VideoGridBlock({ title, to, sub, videos }: { title: string; to?: string
           ))}
         </div>
       </BadgeScope>
-      {videos.length > 4 && (
-        <div className="mt-5 flex justify-center">
-          <button type="button" onClick={() => setAll((x) => !x)} aria-expanded={all} className="inline-flex h-10 items-center gap-2 rounded-full border border-line-strong px-5 text-sm font-bold hover:border-white/60">
-            {all ? 'See less' : 'See more'}
-            <Icon name="chevron" size={16} className={all ? '-rotate-90' : 'rotate-90'} />
-          </button>
-        </div>
-      )}
     </section>
   );
 }
