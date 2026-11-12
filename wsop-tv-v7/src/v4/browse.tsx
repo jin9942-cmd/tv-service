@@ -1557,9 +1557,6 @@ function WsopLegendsRow() {
                 <Flag cc={p.cc} />
                 <span className="truncate text-[15px] font-bold group-hover:text-gold-strong">{p.name}</span>
               </span>
-              <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
-                <BraceletCount n={p.bracelets} size={13} /> {p.line}
-              </span>
             </>
           );
           return (
