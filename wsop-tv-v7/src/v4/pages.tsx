@@ -895,9 +895,6 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
                 <span className="absolute inset-x-0 top-0 h-1 bg-gold" aria-hidden />
                 <span className="absolute inset-x-0 bottom-0 flex flex-col p-4">
                   <span className="font-display text-xl leading-[1.05] uppercase xl:text-2xl">{theme.title}</span>
-                  <span className="mt-2 text-[11px] font-bold tracking-wide text-gold-strong uppercase tnum">
-                    {videos.length} videos
-                  </span>
                 </span>
               </Link>
             </li>
