@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../state/app';
-import { Avatar, BraceletCount, Button, CountryCode, Flag, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
+import { Avatar, Button, CountryCode, Flag, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
 import { HERO_DAY_ID, classicEvents, events, players, seatsFor, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
@@ -619,9 +619,6 @@ function LegendCard({ l, compact }: { l: Legend; compact?: boolean }) {
     <Link to={`/videos/players/${l.playerId ?? l.id}`} className="group flex h-full flex-col items-center rounded-card border border-line bg-surface p-4 text-center hover:border-line-strong hover:bg-surface-2">
       <Avatar name={l.name} hue={l.hue} size={compact ? 56 : 64} photo={photo} />
       <span className="mt-3 line-clamp-2 text-sm leading-snug font-semibold group-hover:text-gold-strong">{l.name}</span>
-      <span className="mt-1.5 text-sm">
-        <BraceletCount n={l.bracelets} size={14} />
-      </span>
       <span className="mt-1 text-[11px] text-muted tnum">{l.mainEvents.length ? `Main Event ${l.mainEvents.join(', ')}` : l.country}</span>
     </Link>
   );
@@ -664,14 +661,6 @@ export function PlayerPage() {
           <p className="mt-1 text-sm text-muted">
             {p.country} <CountryCode cc={p.cc} />
           </p>
-          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            <div className="flex items-center gap-2">
-              <dt className="text-muted">Bracelets</dt>
-              <dd>
-                {p.bracelets != null ? <BraceletCount n={p.bracelets} /> : <span className="text-muted">—</span>}
-              </dd>
-            </div>
-          </dl>
           {asLegend && <p className="mt-2 text-xs font-bold tracking-wide text-gold-strong uppercase">Bracelet legend</p>}
         </div>
         <FollowButton name={p.name} className="sm:ml-auto" />
@@ -755,12 +744,6 @@ function LegendPage({ l }: { l: Legend }) {
             {l.country} <CountryCode cc={l.cc} /> · {l.note}
           </p>
           <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            <div className="flex items-center gap-2">
-              <dt className="text-muted">Bracelets</dt>
-              <dd>
-                <BraceletCount n={l.bracelets} />
-              </dd>
-            </div>
             <div className="flex gap-2">
               <dt className="text-muted">Main Event titles</dt>
               <dd className="font-semibold tnum">{l.mainEvents.length ? l.mainEvents.join(' · ') : '—'}</dd>

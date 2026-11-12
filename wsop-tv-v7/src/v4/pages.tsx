@@ -647,6 +647,8 @@ function ContinueRow({ items, onRemove }: { items: { v: Video; sec: number }[]; 
               <Link to={`/watch/${v.id}`} className="block" aria-label={`Resume ${v.title}`}>
                 <span className="relative block aspect-video overflow-hidden rounded-card bg-surface-2">
                   <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+                  {/* Its length, as on every other card (above the progress bar). */}
+                  {v.durationSec > 0 && <span className="pointer-events-none absolute right-2 bottom-3 rounded-[4px] bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold text-white tnum">{duration(v.durationSec)}</span>}
                   <span className="absolute inset-x-0 bottom-0 h-1.5 bg-white/20">
                     <i className="block h-full bg-gold" style={{ width: `${pct}%` }} />
                   </span>
