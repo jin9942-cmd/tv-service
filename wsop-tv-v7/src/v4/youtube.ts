@@ -77,10 +77,37 @@ const LIST: Yt[] = [
   Y('deAsBMKAaFk', '$50,000 PPC - Final Table | World Series of Poker', '2026-06-25', 'season26'),
 ];
 
+/**
+ * The channel's titles as cards show them, in the same style as the other cards: the channel's own words, without
+ * emoji or hashtags, ALL-CAPS words in normal case (abbreviations such as WSOP or PLO kept), and "|" / " - "
+ * separators as "·".
+ */
+const KEEP_CAPS = new Set(['WSOP', 'WSOPE', 'PLO', 'PPC', 'NLH', 'GTD', 'TV', 'AA', 'KK', 'QQ', 'JJ', 'AK', 'NFL']);
+export function cardTitle(raw: string): string {
+  const text = raw
+    .replace(/\u{1F19A}/gu, 'vs')
+    .replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, ' ')
+    .replace(/#[A-Za-z]\w*/g, '')
+    .replace(/\s*\|\s*|\s+[–-]\s+/g, ' · ')
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .map((w) => {
+      const letters = w.replace(/[^A-Za-z]/g, '');
+      if (letters.length < 2 || letters !== letters.toUpperCase() || KEEP_CAPS.has(letters)) return w;
+      // HIGHLIGHTS → Highlights, ALL-INs stays (not all caps), "LIFETIME" → "Lifetime".
+      return w.replace(/[A-Z]{2,}/g, (m, at: number) => (at === w.search(/[A-Za-z]/) ? m[0] + m.slice(1).toLowerCase() : m.toLowerCase()));
+    })
+    .join(' ');
+  return text
+    .replace(/(\s*·\s*)+/g, ' · ')
+    .replace(/^\s*·\s*|\s*·\s*$/g, '')
+    .trim();
+}
+
 const toVideo = (y: Yt, i: number): Video => ({
   id: `yt.${y.id}`,
   kind: 'clip',
-  title: y.title,
+  title: cardTitle(y.title),
   // No line under the title (where it's from isn't something the viewer needs on the card).
   subtitle: '',
   // The title is the channel's own text; no separate description.
@@ -94,6 +121,7 @@ const toVideo = (y: Yt, i: number): Video => ({
   tags: [],
   about: [
     ['Source', 'WSOP YouTube channel'],
+    ['YouTube title', y.title],
   ],
   views: 0,
 });
