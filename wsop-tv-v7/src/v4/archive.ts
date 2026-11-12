@@ -55,7 +55,8 @@ export const archiveEvent = (id: string) => INDEX.get(id);
 export const archiveEvents = () => [...INDEX.values()];
 
 export const fmtBuyIn = (e: { buyIn: number; currency: string }) => (e.buyIn ? `${e.currency}${e.buyIn.toLocaleString('en-US')}` : '');
-export const seriesTitle = (year: number, s: ArchiveSeries) => `${year} WSOP ${s.name}`;
+// The Las Vegas series is the World Series of Poker itself: "2025 World Series of Poker"; the others "2025 WSOP Europe".
+export const seriesTitle = (year: number, s: ArchiveSeries) => (s.key === 'lv' ? `${year} World Series of Poker` : `${year} WSOP ${s.name}`);
 
 // Pictures: archive stills, picked steadily from the id so the same event always shows the same one.
 const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);

@@ -178,7 +178,6 @@ function FullPlayer({ v, live = false, liveEdge }: { v: Video; live?: boolean; l
                   </span>
                   <span className="min-w-0">
                     <span className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
-                    <span className="mt-0.5 block truncate text-xs text-white/60">{x.subtitle}</span>
                   </span>
                 </button>
               </li>
@@ -269,7 +268,6 @@ function UpcomingView({ e, d }: { e: TourEvent; d: Day }) {
                     </span>
                     <span className="min-w-0">
                       <span className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
-                      <span className="mt-0.5 block truncate text-xs text-muted">{x.subtitle}</span>
                     </span>
                   </Link>
                 </li>
@@ -385,7 +383,6 @@ function WatchView({ v, live, liveEdge, channelId, now }: { v: Video; live: bool
                     </span>
                     <span className="min-w-0">
                       <span className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-semibold group-hover:text-gold-strong">{x.title}</span>
-                      <span className="mt-0.5 block truncate text-xs text-muted">{x.subtitle}</span>
                     </span>
                   </Link>
                 </li>
@@ -1155,7 +1152,6 @@ function SourceItem({ x, on, onPick }: { x: Video; on: boolean; onPick: (id: str
         </span>
         <span className="min-w-0">
           <span className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-semibold">{x.title}</span>
-          <span className="mt-0.5 block truncate text-xs text-muted">{x.subtitle}</span>
         </span>
       </button>
     </li>

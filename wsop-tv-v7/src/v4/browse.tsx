@@ -764,7 +764,7 @@ function LegendPage({ l }: { l: Legend }) {
                   <span className={cx('w-14 font-display text-2xl tnum', !ref && 'text-muted')}>{y}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">Main Event</span>
-                    <span className="block truncate text-xs text-muted">{y} WSOP Las Vegas</span>
+                    <span className="block truncate text-xs text-muted">{y} World Series of Poker</span>
                   </span>
                   <span className={cx('text-sm font-semibold', winner && 'text-gold-strong')}>{label}</span>
                 </>
@@ -843,7 +843,7 @@ export function EventChronicle() {
               <img src={TABLE_ART[0].src} alt="" className="aspect-video w-24 shrink-0 rounded-card object-cover" style={artStyle(TABLE_ART[0])} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">Main Event · Final table on air</span>
-                <span className="block truncate text-xs text-muted">{CURRENT_YEAR} WSOP Las Vegas</span>
+                <span className="block truncate text-xs text-muted">{CURRENT_YEAR} World Series of Poker</span>
               </span>
               <LiveTag />
             </Link>
@@ -1245,7 +1245,7 @@ type SeasonRow = { key: string; to: string; title: string; note: string; videos:
 const SERIES_ORDER: SeriesKey[] = ['pa', 'circuit', 'eu', 'apac', 'lv'];
 /** A series' name in a row: "2025 WSOP Super Circuit Cyprus", "2024 WSOP Circuit", "2019 WSOP Las Vegas". */
 const seriesLabel = (year: number, key: SeriesKey, name: string) =>
-  key === 'circuit' ? (year === 2025 ? '2025 WSOP Super Circuit Cyprus' : SUPER_CIRCUIT_YEARS.has(year) ? `${year} WSOP Super Circuit` : `${year} WSOP Circuit`) : `${year} WSOP ${name}`;
+  key === 'circuit' ? (year === 2025 ? '2025 WSOP Super Circuit Cyprus' : SUPER_CIRCUIT_YEARS.has(year) ? `${year} WSOP Super Circuit` : `${year} WSOP Circuit`) : key === 'lv' ? `${year} World Series of Poker` : `${year} WSOP ${name}`;
 /** The archive's folder names, with the official name and the winner where a source states them (PokerNews event pages). */
 const ARCHIVE_FIX: Record<string, { title: string; winner?: string }> = {
   '2025-pa-main': { title: '#11 · $25,000 Super Main Event', winner: 'Bernhard Binder' },
