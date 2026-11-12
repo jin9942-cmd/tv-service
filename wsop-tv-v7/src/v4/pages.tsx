@@ -881,7 +881,7 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
   const usedArt = new Set<string>();
   const skipThumbs = new Set([...skip].map((id) => videoById(id)?.thumb ?? ''));
   return (
-    <Section title="WSOP Collections">
+    <Section title="WSOP Stories">
       {/* Tall poster covers (2:3), unlike the wide video rows around it: a collection reads as a set, not one video. */}
       {/* On wide screens the covers share the full row (4–6 of them), so the shelf never ends short. */}
       <ul
