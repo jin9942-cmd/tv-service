@@ -745,14 +745,9 @@ function LegendPage({ l }: { l: Legend }) {
         <div>
           <h1 className="text-title">{l.name}</h1>
           <p className="mt-1 text-sm text-muted">
-            <span className="inline-flex items-center gap-2"><Flag cc={l.cc} className="h-4" /> {l.note}</span>
+            {/* Name and flag only: what they won is in Results, from the data (nothing to keep up by hand). */}
+            <Flag cc={l.cc} className="h-4" />
           </p>
-          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            <div className="flex gap-2">
-              <dt className="text-muted">Main Event titles</dt>
-              <dd className="font-semibold tnum">{l.mainEvents.length ? l.mainEvents.join(' · ') : '—'}</dd>
-            </div>
-          </dl>
         </div>
         <FollowButton name={l.name} className="sm:ml-auto" />
       </header>
