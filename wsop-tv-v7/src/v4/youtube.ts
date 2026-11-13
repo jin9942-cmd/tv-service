@@ -279,6 +279,8 @@ const toVideo = (y: Yt, i: number): Video => ({
 });
 
 export const YT_VIDEOS: Video[] = LIST.map(toVideo);
+/** An upload's date (YYYY-MM-DD) by its YouTube id. */
+export const ytDateOf = (id: string) => LIST.find((y) => y.id === id)?.date;
 const byId = new Map(YT_VIDEOS.map((v) => [v.id, v]));
 export const youtubeVideo = (id: string) => byId.get(id);
 /** One group's videos, newest upload first. */

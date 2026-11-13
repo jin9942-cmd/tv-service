@@ -79,8 +79,8 @@ export function TournamentClock() {
                   ))}
                 </dl>
               </article>
-              {/* The series under its clock, centered (the size of a card title). */}
-              <h3 className="mt-2 truncate text-center text-[15px] font-semibold" title={c.series}>{c.series}</h3>
+              {/* The series under its clock, centered, toned down (the same series can repeat side by side). */}
+              <h3 className="mt-2 truncate text-center text-[15px] font-semibold text-muted" title={c.series}>{c.series}</h3>
             </li>
           );
         })}

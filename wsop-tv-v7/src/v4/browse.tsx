@@ -8,7 +8,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { Avatar, Button, Flag, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
-import { HERO_DAY_ID, classicEvents, events, players, seatsFor, seriesById } from '../data/mock';
+import { HERO_DAY_ID, classicEvents, dayById, events, players, seatsFor, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
 import { money } from '../lib/format';
 import { TABLE_ART, VENUE_ART, WSOP_LOGO, artStyle } from '../lib/brand';
@@ -17,7 +17,7 @@ import { BadgeScope, VideoCard, rowGrid } from './detail';
 import { HALL_OF_FAME, hofPhoto } from './halloffame';
 import { Carousel } from './carousel';
 import { photoOf } from './photos';
-import { YT_VIDEOS, ytForEvent } from './youtube';
+import { YT_VIDEOS, ytDateOf, ytForEvent } from './youtube';
 import { EventRows, EventTile, archiveItem, liveItem, newestFirst, playerLink, scheduleOrder, type EventItem } from './loop';
 import { ARCHIVE, BRACELET_WINS, CLASSIC_RANGE, winSeries, RECURRING, archiveArt, archiveEvent, broadcastsOf, chronicle, fmtBuyIn, highlightsOf, seriesArt, seriesTitle, LEGENDS, legendById, type ArchiveEvent, type Legend, type SeriesKey } from './archive';
 
@@ -661,7 +661,6 @@ export function PlayerPage() {
             <Flag cc={p.cc} className="h-4" />
           </p>
         </div>
-        <FollowButton name={p.name} className="sm:ml-auto" />
       </header>
 
       {/* At the live Main Event final table right now: straight back to the broadcast (the loop: player → video). */}
@@ -682,14 +681,14 @@ export function PlayerPage() {
 
       {/* Results (WSOP records): a row per event, newest first; play its final table, open the event, follow its winner. */}
       {results.length > 0 && (
-        <section aria-label="Results as rows" className="mt-10">
+        <section aria-label="Results as rows" className="mt-10" hidden>
           <h2 className="text-xl sm:text-2xl">Results</h2>
           <div className="mt-4">
             <EventRows items={results} showYear />
           </div>
         </section>
       )}
-      <section aria-label="Results" className="mt-10" hidden={results.length > 0}>
+      <section aria-label="Results" className="mt-10" hidden>
         <h2 className="text-xl sm:text-2xl">Results</h2>
         {byYear.length ? (
           byYear.map(({ y, rows }) => (
@@ -749,10 +748,10 @@ function LegendPage({ l }: { l: Legend }) {
             <Flag cc={l.cc} className="h-4" />
           </p>
         </div>
-        <FollowButton name={l.name} className="sm:ml-auto" />
       </header>
 
-      <section aria-label="Results" className="mt-10">
+      {/* Results are off the player page for now (kept for later). */}
+      <section aria-label="Results" className="mt-10" hidden>
         <h2 className="text-xl sm:text-2xl">Results</h2>
         {results.length ? (
           <ul className="mt-3 divide-y divide-line rounded-panel border border-line bg-surface">
@@ -1512,10 +1511,8 @@ function VideoGridBlock({ title, to, sub, videos }: { title: string; to?: string
 
 /** One event: its name (opens the event page) and who won, then its videos — sideways, or all laid out (`grid`). */
 export function EventVideoRow({ r, grid }: { r: SeasonRow; grid?: boolean }) {
-  // The full list (series page): one line of four, and "Show all" opens the rest in place (and closes it again).
-  const [all, setAll] = useState(false);
-  const GRID_FIRST = 4;
-  const gridVideos = all ? r.videos : r.videos.slice(0, GRID_FIRST);
+  // The full list (series page): every video laid out, four across (no See more).
+  const gridVideos = r.videos;
   if (grid)
     return (
       <section aria-label={r.title}>
@@ -1534,14 +1531,6 @@ export function EventVideoRow({ r, grid }: { r: SeasonRow; grid?: boolean }) {
             ))}
           </div>
         </BadgeScope>
-        {r.videos.length > GRID_FIRST && (
-          <div className="mt-5 flex justify-center">
-            <button type="button" onClick={() => setAll((x) => !x)} aria-expanded={all} className="inline-flex h-10 items-center gap-2 rounded-full border border-line-strong px-5 text-sm font-bold hover:border-white/60">
-              {all ? 'See less' : 'See more'}
-              <Icon name="chevron" size={16} className={all ? '-rotate-90' : 'rotate-90'} />
-            </button>
-          </div>
-        )}
       </section>
     );
   return (
@@ -1623,10 +1612,42 @@ function WsopLegendsRow() {
 }
 
 /** A player's page: their videos (Browse's player search finds the same set). */
+/** When a video aired or went up: a WSOP channel upload's date, a broadcast day's start, an archive file's year. */
+function videoTime(v: Video): number {
+  if (v.id.startsWith('yt.')) return Date.parse(ytDateOf(v.id.slice(3)) ?? '') || 0;
+  if (v.id.startsWith('arc.')) {
+    const year = Number(v.tags.find((t) => t.slug.startsWith('year-'))?.label) || 0;
+    const n = v.id.split('.').pop() ?? '0';
+    return Date.UTC(year, 5, 1) + (n.startsWith('h') ? 100 + Number(n.slice(1)) : Number(n)) * 3_600_000;
+  }
+  const ref = v.dayId ? dayById(v.dayId) : undefined;
+  return ref ? Date.parse(ref.day.start) : 0;
+}
+
+/** A player's page: all their videos laid out, newest first by default, or oldest first. */
 function PlayerVideosBlock({ name }: { name: string }) {
+  const [order, setOrder] = useState<'newest' | 'oldest'>('newest');
   const vs = playerVideos(name);
   if (!vs.length) return null;
-  return <VideoGridBlock title="Videos" sub={`${vs.length} video${vs.length === 1 ? '' : 's'} · every year`} videos={vs} />;
+  const sorted = vs.map((v, i) => ({ v, i, t: videoTime(v) })).sort((a, b) => (order === 'newest' ? b.t - a.t : a.t - b.t) || a.i - b.i).map((x) => x.v);
+  return (
+    <section aria-label="Videos">
+      <div className="mb-4 flex gap-2" role="radiogroup" aria-label="Sort">
+        {(['newest', 'oldest'] as const).map((o) => (
+          <button key={o} type="button" role="radio" aria-checked={order === o} onClick={() => setOrder(o)} className={cx('h-9 rounded-full border px-4 text-sm font-semibold', order === o ? 'border-white bg-white text-black' : 'border-line-strong text-muted hover:text-text')}>
+            {o === 'newest' ? 'Newest' : 'Oldest'}
+          </button>
+        ))}
+      </div>
+      <BadgeScope videos={sorted}>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-4">
+          {sorted.map((v) => (
+            <VideoCard key={v.id} v={v} />
+          ))}
+        </div>
+      </BadgeScope>
+    </section>
+  );
 }
 
 /**
@@ -1673,12 +1694,3 @@ export function useFollowing(): [string[], (name: string) => void] {
   return [list, toggle];
 }
 
-function FollowButton({ name, className }: { name: string; className?: string }) {
-  const [list, toggle] = useFollowing();
-  const on = list.includes(name);
-  return (
-    <Button variant={on ? 'secondary' : 'outline'} aria-pressed={on} onClick={() => toggle(name)} className={className}>
-      <Icon name={on ? 'check' : 'plus'} size={16} /> {on ? 'Following' : 'Follow'}
-    </Button>
-  );
-}
