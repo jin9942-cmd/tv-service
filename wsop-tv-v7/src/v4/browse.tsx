@@ -656,10 +656,9 @@ export function PlayerPage() {
       <header className="mt-4 flex flex-wrap items-center gap-5">
         <Avatar name={p.name} hue={p.hue} size={96} photo={p.photo} ring />
         <div>
+          {/* The flag above the name. */}
+          <Flag cc={p.cc} className="mb-2 block h-5" />
           <h1 className="text-title">{p.name}</h1>
-          <p className="mt-1 text-sm text-muted">
-            <Flag cc={p.cc} className="h-4" />
-          </p>
         </div>
       </header>
 
@@ -742,11 +741,9 @@ function LegendPage({ l }: { l: Legend }) {
       <header className="mt-4 flex flex-wrap items-center gap-5">
         <Avatar name={l.name} hue={l.hue} size={96} photo={photoOf(l.name) ?? hofPhoto(l.name)} ring />
         <div>
+          {/* The flag above the name (name and flag only, nothing to keep up by hand). */}
+          <Flag cc={l.cc} className="mb-2 block h-5" />
           <h1 className="text-title">{l.name}</h1>
-          <p className="mt-1 text-sm text-muted">
-            {/* Name and flag only: what they won is in Results, from the data (nothing to keep up by hand). */}
-            <Flag cc={l.cc} className="h-4" />
-          </p>
         </div>
       </header>
 
