@@ -41,7 +41,7 @@ export function TvHome() {
           </Page>
         )}
         <Page className="pt-6 pb-6">
-          <h2 className="mb-3 text-xl sm:text-2xl">24/7 On-Demand</h2>
+          <h2 className="mb-3 text-xl sm:text-2xl">24/7 Channels</h2>
           <TodayCards now={now} />
         </Page>
       </section>
