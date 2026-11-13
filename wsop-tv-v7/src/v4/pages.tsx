@@ -1256,8 +1256,6 @@ function SeriesFold({ s, open, onToggle, now }: { s: SeriesStop; open: boolean; 
   const { state } = useApp();
   const st = seriesState(s, now);
   const left = Math.ceil((Date.parse(s.start) - now) / DAY_MS);
-  const total = Math.round((Date.parse(s.end) - Date.parse(s.start)) / DAY_MS) + 1;
-  const day = Math.min(total, Math.floor((now - Date.parse(s.start)) / DAY_MS) + 1);
   const bodyId = `fold-${s.id}`;
   return (
     <section aria-label={s.name} className={cx('overflow-hidden rounded-panel border bg-surface', st === 'live' ? 'border-gold/70' : 'border-line')}>
@@ -1270,9 +1268,8 @@ function SeriesFold({ s, open, onToggle, now }: { s: SeriesStop; open: boolean; 
             ) : (
               <span className="rounded-[4px] border border-line-strong px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-muted uppercase">{st === 'upcoming' ? 'Upcoming' : 'Past'}</span>
             )}
-            <span className={cx('text-xs font-semibold tnum', st === 'live' ? 'text-live' : 'text-muted')}>
-              {st === 'live' ? `Day ${day} of ${total}` : st === 'upcoming' ? (left <= 1 ? 'Starts tomorrow' : `Starts in ${left} days`) : 'Replays'}
-            </span>
+            {/* Live: the LIVE tag says it (no day count). */}
+            {st !== 'live' && <span className="text-xs font-semibold text-muted tnum">{st === 'upcoming' ? (left <= 1 ? 'Starts tomorrow' : `Starts in ${left} days`) : 'Replays'}</span>}
           </span>
           <span className={cx('mt-1 block font-bold', 'text-lg sm:text-xl', st === 'past' && !open && 'text-text/80')}>{s.name}</span>
           <span className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted sm:text-sm">
