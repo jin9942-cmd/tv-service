@@ -17,6 +17,7 @@ import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/cha
 import { Plans } from '../features/auth/Plans';
 import { NotFound } from './NotFound';
 import { HomeRows, TodayCards } from '../v4/pages';
+import { TournamentClock } from '../v4/clock';
 
 const BREAK_TITLES = ['Coming Up', 'A continuación'];
 const isBreak = (p: Program) => BREAK_TITLES.includes(p.title);
@@ -26,11 +27,19 @@ const showPoster = (s: Show) => thumbFor(`show:${s.id}`, s.art);
 
 export function TvHome() {
   const now = useTick(15_000);
+  const [params] = useSearchParams();
+  const offseason = params.has('offseason');
   return (
     <>
       {/* v7 Home: the banner, the 24/7 channels, then the rows (Coming up, Continue watching … Shorts). */}
       <section className="border-b border-line" aria-label="Featured">
         <PromoBanner />
+        {/* While a series is on: the clock of the tournament running now, above the 24/7 channels. */}
+        {!offseason && (
+          <Page className="pt-6">
+            <TournamentClock />
+          </Page>
+        )}
         <Page className="pt-6 pb-6">
           <h2 className="mb-3 text-xl sm:text-2xl">24/7 On-Demand</h2>
           <TodayCards now={now} />
