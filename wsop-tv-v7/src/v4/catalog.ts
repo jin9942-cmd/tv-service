@@ -12,6 +12,7 @@ import { mediaFor } from '../features/channels/Channels';
 import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, PROMO_ART, SEASON_ART, TABLE_ART, VENUE_ART } from '../lib/brand';
 import type { StreamStatus } from '../data/types';
 import { youtubeVideo, ytRelated } from './youtube';
+import { mockVideo } from './mock26';
 
 export type VideoKind = 'broadcast' | 'classic' | 'clip' | 'channel';
 
@@ -279,6 +280,7 @@ export function videoById(id: string, at = Date.now()): Video | undefined {
   if (id.startsWith('ch-')) return channelVideo(id.slice(3), at);
   if (id.startsWith('arc.')) return archiveVideo(id);
   if (id.startsWith('yt.')) return youtubeVideo(id);
+  if (id.startsWith('mock.')) return mockVideo(id);
   return catalog.find((v) => v.id === id);
 }
 

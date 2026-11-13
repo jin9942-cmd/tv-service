@@ -1325,7 +1325,11 @@ const SEASON_2026: { key: SeriesKey; label: string; events: { id: string; title:
   {
     key: 'circuit',
     label: '2026 WSOP Super Circuit Canada',
-    events: [{ id: '2026-ca-main', title: '$5,000 Main Event', ids: ['To5xgFlsnCY', 'H0JSipNlrNY', 'alcnNHlgdUk', 'Ur4ZIB3erL0', '-1SlgRr5Wt8', 'XZFpibvB5uA', 'YLd_y-jRqCE', '6ISDwWBcFqc'] }],
+    events: [{ id: '2026-ca-main', title: '$5,000 Main Event', ids: ['To5xgFlsnCY', 'H0JSipNlrNY', 'alcnNHlgdUk', 'Ur4ZIB3erL0', '-1SlgRr5Wt8', 'XZFpibvB5uA', 'YLd_y-jRqCE', '6ISDwWBcFqc'] },
+      // Mockup stand-ins (no upload yet): show the page's structure with more than one event.
+      { id: '2026-ca-12', title: '#12: $25,000 Super High Roller', ids: ['mock.ca12-ft', 'mock.ca12-d1'] },
+      { id: '2026-ca-10', title: '#10: $14,000 GGMillion$ High Roller', ids: ['mock.ca10-ft', 'mock.ca10-d1', 'mock.ca10-hl'] },
+    ],
   },
   {
     key: 'lv',
@@ -1355,7 +1359,7 @@ const SEASON_2026: { key: SeriesKey; label: string; events: { id: string; title:
 function rows2026(): SeasonRow[] {
   return SEASON_2026.flatMap((s) =>
     s.events.map((e) => {
-      const videos = e.ids.map((id) => videoById(`yt.${id}`)).filter((v): v is Video => !!v);
+      const videos = e.ids.map((id) => videoById(id.startsWith('mock.') ? id : `yt.${id}`)).filter((v): v is Video => !!v);
       return { key: e.id, to: `/videos/series/2026/${s.key}`, title: e.title, note: [s.label, e.winner && `Won by ${e.winner}`].filter(Boolean).join(' · '), videos, type: typeOf(2026, s.key), players: playersIn(e.winner, videos), series: s.label, seriesKey: s.key, year: 2026, winner: e.winner };
     }),
   ).filter((r) => r.videos.length);
