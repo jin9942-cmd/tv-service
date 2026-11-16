@@ -956,13 +956,13 @@ function SeriesPlaylist({ skip }: { skip: Set<string> }) {
   );
 }
 
-/** The strip banner's series and its look (CMS-set in the live service). The art is the series' own YouTube key art. */
+/** The strip banner's series and its look (CMS-set in the live service). The art: a Las Vegas Strip photo (Paris Las Vegas at dusk), 2.4:1. */
 const BANNER = {
   key: '2026-lv',
   heading: 'World Series of Poker',
   title: '2026 World Series of Poker',
   place: 'Las Vegas',
-  art: `${import.meta.env.BASE_URL}frames/y26/banner-lv.jpg`,
+  art: `${import.meta.env.BASE_URL}frames/y26/banner-vegas.jpg`,
 };
 
 /** Series Home features on their own (Day by Day row, strip banner): not repeated in the Series Playlist. */
@@ -981,7 +981,7 @@ function SeriesBanner() {
     <Section title={BANNER.heading} action={more(to, 'View all')}>
       <Link to={to} className="group relative grid overflow-hidden rounded-card border border-line bg-[#0b1530] transition-colors hover:border-white/40 sm:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
         <span className="relative block aspect-[16/7] overflow-hidden sm:aspect-auto sm:min-h-64">
-          <img src={BANNER.art} alt="" className="absolute inset-0 size-full object-cover object-[0%_40%] transition-transform duration-300 group-hover:scale-[1.03]" />
+          <img src={BANNER.art} alt="" className="absolute inset-0 size-full object-cover object-[50%_20%] transition-transform duration-300 group-hover:scale-[1.03]" />
           <span className="absolute inset-y-0 right-0 hidden w-24 bg-gradient-to-r from-transparent to-[#0b1530] sm:block" aria-hidden />
         </span>
         <span className="flex items-center gap-4 p-5 sm:p-7">
