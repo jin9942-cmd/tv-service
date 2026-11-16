@@ -632,6 +632,8 @@ export function HomeRows() {
       {/* Season */}
       {/* The latest series: the 2026 Super Circuit Canada Main Event, its broadcasts day by day. */}
       <SeriesDayRow />
+      {/* Series Playlist: right under the latest series, the way back to the others. */}
+      <ThemeShelf skip={shown} now={now} placed={placed} />
       <ThemeRow id="this-series" now={now} />
       {/* Players */}
       <ThemeRow id="mizrachi-run" now={now} />
@@ -640,7 +642,6 @@ export function HomeRows() {
       {/* Classics */}
       <CarouselRow title={hands.title} videos={hands.videos} />
       <SeasonTiles />
-      <ThemeShelf skip={shown} now={now} placed={placed} />
       {/* My List last. */}
       <MyListRow videos={myRow} />
     </>
@@ -951,7 +952,7 @@ function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; pla
   const usedArt = new Set<string>();
   const skipThumbs = new Set([...skip].map((id) => videoById(id)?.thumb ?? ''));
   return (
-    <Section title="WSOP Stories">
+    <Section title="Series Playlist">
       {/* Tall poster covers (2:3), unlike the wide video rows around it: a collection reads as a set, not one video. */}
       {/* On wide screens the covers share the full row (4–6 of them), so the shelf never ends short. */}
       <ul
