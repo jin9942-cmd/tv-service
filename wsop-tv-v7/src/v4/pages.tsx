@@ -633,7 +633,6 @@ export function HomeRows() {
       <SeriesDayRow />
       {/* Series Playlist: right under the latest series, the way back to the others. */}
       <SeriesPlaylist skip={shown} />
-      <ThemeRow id="this-series" now={now} />
       {/* Players */}
       <ThemeRow id="mizrachi-run" now={now} />
       {/* Continue watching in the middle of Home (signed in, with something to continue). */}
