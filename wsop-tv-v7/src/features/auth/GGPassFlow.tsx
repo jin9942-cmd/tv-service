@@ -27,14 +27,8 @@ export function GGPassFlow() {
 
   return (
     <div className="min-h-dvh bg-ext-bg font-sans text-ext-ink">
-      {/* fake browser address bar to signal "you are on another domain" */}
-      <div className="flex items-center gap-2 border-b border-black/10 bg-white px-4 py-2 text-xs text-black/60">
-        <span className="size-2.5 rounded-full bg-black/15" />
-        <span className="size-2.5 rounded-full bg-black/15" />
-        <span className="size-2.5 rounded-full bg-black/15" />
-        <span className="ml-3 flex flex-1 items-center gap-1.5 rounded-md bg-black/5 px-3 py-1 font-mono">🔒 accounts.ggpass.example/{step === 'consent' ? 'oauth/consent' : 'login'}</span>
-        <span className="hidden rounded bg-black/80 px-2 py-0.5 text-[10px] font-bold text-white sm:inline">DEMO MOCK</span>
-      </div>
+      {/* Demo notice (no fake address bar or credential fields, so it never reads as a real sign-in page). */}
+      <div className="bg-black/80 px-4 py-2 text-center text-xs font-bold text-white">DEMO MOCK · stands in for the GGPASS sign-in step · nothing is entered or sent</div>
 
       <main className="mx-auto flex max-w-md flex-col px-6 py-12">
         <p className="text-2xl font-black tracking-tight text-ext-brand">GGPASS</p>
@@ -44,13 +38,9 @@ export function GGPassFlow() {
               {mode === 'signup' ? 'Create your GGPASS account' : 'Sign in to continue to WSOP TV'}
             </h1>
             <p className="mt-1 text-sm text-black/60">One account for the WSOP family of services.</p>
-            <div className="mt-6 space-y-3">
-              <div className="rounded-lg border border-black/10 bg-black/[0.03] px-3 py-2.5 text-sm text-black/50">demo.viewer@example.com</div>
-              <div className="rounded-lg border border-black/10 bg-black/[0.03] px-3 py-2.5 text-sm text-black/40">••••••••••</div>
-            </div>
-            <p className="mt-2 text-xs text-black/50">Demo mock — fields are pre-filled placeholders; nothing is entered or sent.</p>
+            <p className="mt-6 rounded-lg bg-black/[0.03] px-3 py-3 text-sm text-black/60">In the live service the viewer signs in on GGPASS here. In this demo, press Continue.</p>
             <button onClick={() => setStep('consent')} className="mt-6 h-11 w-full rounded-lg bg-ext-brand text-sm font-bold text-white hover:brightness-110 focus-visible:ring-4 focus-visible:ring-ext-brand/30 focus-visible:outline-none">
-              {mode === 'signup' ? 'Create account' : 'Sign in'}
+              Continue
             </button>
             <button onClick={() => nav(returnTo)} className="mt-2 h-10 w-full rounded-lg text-sm font-semibold text-black/60 hover:bg-black/5">
               Cancel and return to WSOP TV

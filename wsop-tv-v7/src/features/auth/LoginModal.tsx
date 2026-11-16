@@ -1,18 +1,16 @@
-import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../../state/app';
 import { Button, Modal } from '../../components/ui';
 import { Wordmark } from '../../components/Layout';
 
-/** Sign-in entry: GGPASS SSO first, email sign-up as the secondary option. */
+/** Sign-in entry: GGPASS SSO only (no email field on WSOP TV). */
 export function LoginModal() {
   const { login, closeLogin } = useApp();
   const nav = useNavigate();
   const loc = useLocation();
-  const [email, setEmail] = useState(false);
   if (!login) return null;
   const returnTo = login.returnTo ?? loc.pathname + loc.search;
-  const go = (mode: 'signin' | 'signup') => {
+  const go = (mode: 'signin') => {
     closeLogin();
     nav(`/auth/ggpass?mode=${mode}&return=${encodeURIComponent(returnTo)}`);
   };
@@ -38,32 +36,6 @@ export function LoginModal() {
       </Button>
       <p className="mt-2 text-center text-xs text-subtle">You'll sign in on GGPASS and come straight back here.</p>
 
-      <div className="my-6 flex items-center gap-3 text-xs text-subtle">
-        <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
-      </div>
-
-      {email ? (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            go('signup');
-          }}
-          className="space-y-3"
-        >
-          <label className="block text-sm font-semibold">
-            Email
-            <input type="email" required autoComplete="off" placeholder="you@example.com" className="mt-1 h-11 w-full rounded-chip border border-line-strong bg-surface-2 px-3 text-sm font-normal placeholder:text-subtle" />
-          </label>
-          <p className="text-xs text-subtle">Email sign-up creates a GGPASS account. Demo only — nothing is sent or stored.</p>
-          <Button type="submit" variant="outline" className="w-full">
-            Continue
-          </Button>
-        </form>
-      ) : (
-        <Button variant="outline" className="w-full" onClick={() => setEmail(true)}>
-          Sign up with email
-        </Button>
-      )}
       <p className="mt-6 text-center text-[11px] leading-relaxed text-subtle">By continuing you agree to the Terms of Use and Privacy Policy. Viewing service only — no real-money play.</p>
     </Modal>
   );
