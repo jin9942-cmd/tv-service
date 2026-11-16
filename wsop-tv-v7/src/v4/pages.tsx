@@ -1,6 +1,6 @@
 // v4 — the common watch page, Live, Videos (Highlights / Replays), the schedule, tag pages and the Home season strip
 // (all built from the catalog and the one card).
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
 import { DEMO_NOW } from '../lib/clock';
@@ -15,12 +15,12 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, EYEBROW, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseAll, seasonPhoto, seasonRows } from './browse';
+import { BrowseAll, seasonPhoto, seasonRows, seriesPlaylist } from './browse';
 import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
-import { CHANNEL_ART, EXTERIOR, HERO_IMAGES, PLAYER_ART, SEASON_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
-import { USED_THUMBS, byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
+import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
+import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
 import { activeThemes, featuredTheme, homeHands, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
 import { ARCHIVE, archiveEvent, broadcastsOf } from './archive';
@@ -624,8 +624,7 @@ export function HomeRows() {
   const now = Date.parse(params.get('date') ?? '') || Date.now();
   // Home is programmed in three kinds of rows (what F1 TV, UFC Fight Pass and NBA League Pass have in common):
   //   Season — the last series' results;  Players — one player's story;  Classics — the hands and final tables people
-  //   come back for. Then the collections, and the personal rows last. Rows already placed stay off the shelf.
-  const placed = [EDITORS_THEME, 'this-series', 'mizrachi-run', 'main-event-day-by-day'];
+  //   come back for. The Series Playlist sits under the latest series; the personal rows last.
   const hands = homeHands(now);
   return (
     <>
@@ -633,7 +632,7 @@ export function HomeRows() {
       {/* The latest series: the 2026 Super Circuit Canada Main Event, its broadcasts day by day. */}
       <SeriesDayRow />
       {/* Series Playlist: right under the latest series, the way back to the others. */}
-      <ThemeShelf skip={shown} now={now} placed={placed} />
+      <SeriesPlaylist skip={shown} />
       <ThemeRow id="this-series" now={now} />
       {/* Players */}
       <ThemeRow id="mizrachi-run" now={now} />
@@ -863,36 +862,9 @@ function MyListRow({ videos }: { videos: Video[] }) {
 // ---- curated collections ----------------------------------------------------------------------------
 
 // The themes themselves (rules, rotation, pin) live in ./themes.ts.
-/** The all-time final tables theme: the featured theme already covers final tables, so it stays off Home. */
-const EDITORS_THEME = 'final-tables';
 
 
 /** Curated collections (from the archive): four tiles, each opening its own page. */
-/** Broadcast stills come from a handful of CC clips (the same faces again and again), so tiles use photos instead. */
-const isStill = (src: string) => src.includes('/media/');
-type Pic = { thumb: string; thumbPos: string; thumbFit?: 'contain' };
-
-/**
- * Hands out photos for the tiles at the bottom of Home (collection covers, Shorts): each photo once before any repeats,
- * ones not already on the page first.
- */
-function photoPicker(skip: Set<string>) {
-  const onPage = new Set<string>([...Object.values(HERO_IMAGES), ...Object.values(CHANNEL_ART).map((a) => a.src), ...[...skip].map((id) => videoById(id)?.thumb ?? '')]);
-  // One photo per pictured player (several of the same face side by side read as repeats).
-  // Pictures no video card, channel or tile uses (so a cover never repeats a thumbnail on the page).
-  const pool = [...TABLE_ART, ...Object.values(PLAYER_ART).map((list) => list[0]), ...VENUE_ART.filter((a) => !EXTERIOR.has(a.src))].filter((a, i, all) => all.findIndex((x) => x.src === a.src) === i && !USED_THUMBS.has(a.src) && a.src !== SEASON_ART.src);
-  const faces = new Set(Object.values(PLAYER_ART).flat().map((a) => a.src));
-  const uses = new Map<string, number>();
-  return (own?: Pic): Pic => {
-    if (own && !isStill(own.thumb) && !faces.has(own.thumb) && !onPage.has(own.thumb) && !uses.has(own.thumb)) {
-      uses.set(own.thumb, 1);
-      return own;
-    }
-    const a = [...pool].sort((x, y) => (uses.get(x.src) ?? 0) - (uses.get(y.src) ?? 0) || Number(onPage.has(x.src)) - Number(onPage.has(y.src)))[0];
-    uses.set(a.src, (uses.get(a.src) ?? 0) + 1);
-    return { thumb: a.src, thumbPos: a.pos, thumbFit: a.fit };
-  };
-}
 
 // The season's own theme carries no label (its title says it); a pinned or rotating one is marked Featured collection.
 const FEATURED_LABEL = { pinned: 'Featured collection', seasonal: '', weekly: 'Featured collection' } as const;
@@ -941,43 +913,45 @@ export function FeaturedTheme({ now, skip, id }: { now: number; skip: string[]; 
 }
 
 /**
- * Every other theme on show, as a shelf of covers (title, note, how many videos); each opens its page. Filled by
- * ./themes.ts, so a new theme appears here on its own and one with too few videos drops out.
+ * Series Playlist: every series as a cover, newest first, the way back to past series (like a channel's playlists).
+ * A cover shows a picture from the series' own videos, its name, and under it the number of videos and View full
+ * playlist; it opens the series page. Filled from the archive, so a new series joins on its own.
  */
-function ThemeShelf({ skip, now, placed }: { skip: Set<string>; now: number; placed: string[] }) {
-  // Five: one full row of covers (Home no longer has a separate featured theme, so none is held back for it).
-  const list = activeThemes(now).filter((x) => !placed.includes(x.theme.id)).slice(0, 5);
+function SeriesPlaylist({ skip }: { skip: Set<string> }) {
+  const list = seriesPlaylist();
   if (!list.length) return null;
-  const pick = photoPicker(skip);
   const usedArt = new Set<string>();
   const skipThumbs = new Set([...skip].map((id) => videoById(id)?.thumb ?? ''));
   return (
     <Section title="Series Playlist">
-      {/* Tall poster covers (2:3), unlike the wide video rows around it: a collection reads as a set, not one video. */}
-      {/* On wide screens the covers share the full row (4–6 of them), so the shelf never ends short. */}
-      <ul
-        style={{ '--n': Math.max(4, list.length) } as CSSProperties}
-        className="hscroll gap-4 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*1rem)/3.5)] lg:[&>*]:w-[calc((100%_-_(var(--n)_-_1)*1rem)/var(--n))]"
-      >
-        {list.map(({ theme, videos }) => {
-          // Each cover is a picture from its own videos that no other cover (or card above) shows; else a spare still.
-          const own = videos.map((v) => v.thumb).find((t) => t && !usedArt.has(t) && !skipThumbs.has(t));
-          const art: Pic = own ? { thumb: own, thumbPos: 'center' } : pick();
-          usedArt.add(art.thumb);
+      <Carousel label="Series Playlist" className="gap-4 [&>*]:w-[44%] sm:[&>*]:w-[calc((100%-3*1rem)/3.5)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
+        {list.map((s) => {
+          // A picture from the series' own videos (from its last, usually the final table) that no other cover or card above shows.
+          const art = [...s.videos].reverse().map((v) => v.thumb).find((t) => t && !usedArt.has(t) && !skipThumbs.has(t)) ?? s.videos[0].thumb;
+          usedArt.add(art);
+          const to = `/videos/series/${s.year}/${s.seriesKey}`;
           return (
-            <li key={theme.id} className="min-w-0">
-              <Link to={`/collections/${theme.id}`} className="group relative block aspect-[2/3] lg:aspect-[4/5] overflow-hidden rounded-card border border-line bg-surface-2 transition-colors hover:border-white/40">
-                <img src={art.thumb} style={artStyle({ pos: art.thumbPos, fit: art.thumbFit })} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
-                <span className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" aria-hidden />
-                <span className="absolute inset-x-0 top-0 h-1 bg-gold" aria-hidden />
-                <span className="absolute inset-x-0 bottom-0 flex flex-col p-4">
-                  <span className="font-display text-xl leading-[1.05] uppercase xl:text-2xl">{theme.title}</span>
+            <li key={s.key} className="min-w-0">
+              <Link to={to} className="group block">
+                {/* A stack of cards behind the picture: a set of videos, not one video (as a playlist reads). */}
+                <span className="relative block pt-3">
+                  <span className="absolute inset-x-6 top-0 h-6 rounded-t-card bg-white/30" aria-hidden />
+                  <span className="absolute inset-x-3 top-1.5 h-6 rounded-t-card bg-white/55" aria-hidden />
+                  <span className="relative block aspect-video overflow-hidden rounded-card border border-line bg-surface-2 transition-colors group-hover:border-white/40">
+                    <img src={art} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-[1.04]" />
+                    <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded bg-black/80 px-1.5 py-0.5 text-xs font-semibold tnum">
+                      <svg viewBox="0 0 16 16" className="size-3.5" fill="currentColor" aria-hidden><rect x="1" y="3" width="9" height="1.6" /><rect x="1" y="7" width="9" height="1.6" /><rect x="1" y="11" width="6" height="1.6" /><path d="M11 9.5v5l4-2.5z" /></svg>
+                      {s.videos.length} {s.videos.length === 1 ? 'video' : 'videos'}
+                    </span>
+                  </span>
                 </span>
+                <span className="mt-2 line-clamp-2 block text-[15px] leading-snug font-bold group-hover:text-gold-strong">{s.name}</span>
+                <span className="mt-0.5 block text-sm text-muted group-hover:text-text">View full playlist</span>
               </Link>
             </li>
           );
         })}
-      </ul>
+      </Carousel>
     </Section>
   );
 }

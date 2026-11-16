@@ -1379,6 +1379,19 @@ const seriesOf = (rows: SeasonRow[]): SeriesGroup[] => {
 };
 
 /**
+ * Every series with videos, newest first (2026, then the archive years, each year in Browse's order): Home's Series
+ * Playlist. Each opens its series page.
+ */
+let playlist: { key: string; year: number; seriesKey: SeriesKey; name: string; videos: Video[] }[] | undefined;
+export function seriesPlaylist() {
+  playlist ??= [2026, ...ARCHIVE.map((y) => y.year)]
+    .flatMap((y) => seriesOf(seasonRows(y)))
+    .map((g) => ({ key: g.key, year: g.year, seriesKey: g.seriesKey, name: g.name, videos: g.events.flatMap((e) => e.videos) }))
+    .filter((g) => g.videos.length);
+  return playlist;
+}
+
+/**
  * A series on Browse: its name with how many events and videos, See more on the right (the series page: all its
  * events, each a row of its videos), and under it one row of all its videos, event by event.
  */
