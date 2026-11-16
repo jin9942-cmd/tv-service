@@ -21,7 +21,7 @@ import { Carousel } from './carousel';
 const CURRENT_SEASON = 2025;
 import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
-import { activeThemes, featuredTheme, homeHands, themeById } from './themes';
+import { activeThemes, featuredTheme, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
 import { ARCHIVE, archiveEvent, broadcastsOf } from './archive';
 import { ytGroup } from './youtube';
@@ -625,12 +625,13 @@ export function HomeRows() {
   // Home is programmed in three kinds of rows (what F1 TV, UFC Fight Pass and NBA League Pass have in common):
   //   Season — the last series' results;  Players — one player's story;  Classics — the hands and final tables people
   //   come back for. The Series Playlist sits under the latest series; the personal rows last.
-  const hands = homeHands(now);
   return (
     <>
       {/* Season */}
       {/* The latest series: the 2026 Super Circuit Canada Main Event, its broadcasts day by day. */}
       <SeriesDayRow />
+      {/* A strip banner: the 2026 World Series of Poker (Las Vegas). */}
+      <SeriesBanner />
       {/* Series Playlist: right under the latest series, the way back to the others. */}
       <SeriesPlaylist skip={shown} />
       {/* Players */}
@@ -638,7 +639,6 @@ export function HomeRows() {
       {/* Continue watching in the middle of Home (signed in, with something to continue). */}
       <ContinueRow items={continuing} onRemove={removeContinue} />
       {/* Classics */}
-      <CarouselRow title={hands.title} videos={hands.videos} />
       <SeasonTiles />
       {/* My List last. */}
       <MyListRow videos={myRow} />
@@ -917,7 +917,8 @@ export function FeaturedTheme({ now, skip, id }: { now: number; skip: string[]; 
  * playlist; it opens the series page. Filled from the archive, so a new series joins on its own.
  */
 function SeriesPlaylist({ skip }: { skip: Set<string> }) {
-  const list = seriesPlaylist();
+  // The series Home already features above (the Day by Day row and the strip banner) are left out.
+  const list = seriesPlaylist().filter((s) => !HOME_FEATURED.includes(s.key));
   if (!list.length) return null;
   const usedArt = new Set<string>();
   const skipThumbs = new Set([...skip].map((id) => videoById(id)?.thumb ?? ''));
@@ -951,6 +952,48 @@ function SeriesPlaylist({ skip }: { skip: Set<string> }) {
           );
         })}
       </Carousel>
+    </Section>
+  );
+}
+
+/** The strip banner's series and its look (CMS-set in the live service). The art is the series' own YouTube key art. */
+const BANNER = {
+  key: '2026-lv',
+  heading: 'World Series of Poker',
+  title: '2026 World Series of Poker',
+  place: 'Las Vegas',
+  art: `${import.meta.env.BASE_URL}frames/y26/banner-lv.jpg`,
+};
+
+/** Series Home features on their own (Day by Day row, strip banner): not repeated in the Series Playlist. */
+const HOME_FEATURED = ['2026-circuit', BANNER.key];
+
+/**
+ * Strip banner: one series as a wide band, its key art on the left and its name, facts and an arrow on the right. The
+ * whole band opens the series page. Editable (CMS): the series, picture, title, line, link.
+ */
+function SeriesBanner() {
+  const s = seriesPlaylist().find((x) => x.key === BANNER.key);
+  if (!s) return null;
+  const to = `/videos/series/${s.year}/${s.seriesKey}`;
+  const events = seasonRows(s.year).filter((r) => r.seriesKey === s.seriesKey).length;
+  return (
+    <Section title={BANNER.heading} action={more(to, 'View all')}>
+      <Link to={to} className="group relative grid overflow-hidden rounded-card border border-line bg-[#0b1530] transition-colors hover:border-white/40 sm:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+        <span className="relative block aspect-[16/7] overflow-hidden sm:aspect-auto sm:min-h-64">
+          <img src={BANNER.art} alt="" className="absolute inset-0 size-full object-cover object-[0%_40%] transition-transform duration-300 group-hover:scale-[1.03]" />
+          <span className="absolute inset-y-0 right-0 hidden w-24 bg-gradient-to-r from-transparent to-[#0b1530] sm:block" aria-hidden />
+        </span>
+        <span className="flex items-center gap-4 p-5 sm:p-7">
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-2xl leading-tight uppercase sm:text-3xl">{BANNER.title}</span>
+            <span className="mt-2 block text-sm text-white/75">{BANNER.place} · {events} events · {s.videos.length} videos</span>
+          </span>
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-black/60 ring-1 ring-white/25 group-hover:bg-white group-hover:text-black" aria-hidden>
+            <Icon name="chevron" size={18} />
+          </span>
+        </span>
+      </Link>
     </Section>
   );
 }
@@ -1518,20 +1561,3 @@ export function TodayCards({ now }: { now: number }) {
   );
 }
 
-/** A Home row of videos in a sideways carousel (four across, the arrows step through the rest). */
-function CarouselRow({ title, videos }: { title: string; videos: Video[] }) {
-  if (!videos.length) return null;
-  return (
-    <Section title={title}>
-      <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
-        <BadgeScope videos={videos}>
-          {videos.map((v) => (
-            <li key={v.id} className="min-w-0">
-              <VideoCard v={v} />
-            </li>
-          ))}
-        </BadgeScope>
-      </Carousel>
-    </Section>
-  );
-}
