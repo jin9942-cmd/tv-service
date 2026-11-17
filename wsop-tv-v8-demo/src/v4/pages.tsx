@@ -18,7 +18,7 @@ import { Player } from './Player';
 import { BrowseAll, seasonPhoto, seasonRows, seriesPlaylist, WsopLegendsRow } from './browse';
 
 /** Home's players row: Browse's WSOP Players list under its own title. */
-const PLAYERS_TITLE = 'Faces of the Felt';
+const PLAYERS_TITLE = 'Featured Players';
 import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
@@ -810,7 +810,7 @@ function SeasonTiles() {
   // The Main Event final tables of the archive, then the channel's iconic moments.
   const finals = [...archiveFinals(), ...ytGroup('iconic')];
   return (
-    <Section title="WSOP History: Iconic Final Tables" action={more('/videos', 'View all')}>
+    <Section title="WSOP Stories : @Iconic Final Tables" action={more('/videos', 'View all')}>
       <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={finals}>
           {finals.map((v) => (
