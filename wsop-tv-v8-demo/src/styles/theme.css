@@ -1,0 +1,74 @@
+/*
+ * Design tokens — the single source of truth for colour, type, spacing, radius, motion and focus.
+ * Tailwind v4 turns every token in @theme into utilities (bg-surface, text-muted, rounded-card, duration-base …).
+ *
+ * Direction: WSOP TV is part of wsop.com, so it takes wsop.com's palette and type as they are.
+ *  - Black base, wsop.com's neutral greys, one accent: WSOP red (#ed1c23). The "gold" token names are kept
+ *    so components don't change, but they now hold the WSOP red.
+ *  - Roboto for text, a condensed uppercase face for headings (Oswald stands in for wsop.com's Europa CG).
+ * Contrast (WCAG AA): text #fff on bg 21:1 · muted #ababab on bg 9.4:1 · subtle #969696 on surface 5.9:1 · red on bg 4.8:1.
+ */
+@theme {
+  /* surfaces */
+  --color-bg: #000;
+  --color-surface: #141414;
+  --color-surface-2: #1d1d1d;
+  --color-surface-3: #303030;
+  --color-line: #262626;
+  --color-line-strong: #454545;
+
+  /* text */
+  --color-text: #fff;
+  --color-muted: #ababab;
+  --color-subtle: #969696;
+  --color-ink: #fff; /* text on the accent */
+
+  /* accent (one): WSOP red */
+  --color-gold: #ed1c23;
+  --color-gold-strong: #ff5c61;
+  --color-gold-dim: #ed1c2329;
+
+  /* status */
+  --color-live: #ff333a;
+  --color-delayed: #f5a524;
+  --color-vod: #a7abb3;
+  --color-ok: #4cc38a;
+
+  /* GGPASS mock (external domain) — deliberately a different, light tone */
+  --color-ext-bg: #f4f5f7;
+  --color-ext-ink: #14161a;
+  --color-ext-brand: #2b59c3;
+
+  /* type */
+  --font-sans: Roboto, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: Oswald, 'Arial Narrow', Roboto, sans-serif;
+  --text-display: 3.25rem;
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 1.75rem;
+  --text-title--line-height: 1.15;
+  --text-label: 0.6875rem;
+  --text-label--letter-spacing: 0.08em;
+
+  /* radius */
+  --radius-chip: 4px;
+  --radius-card: 8px;
+  --radius-panel: 12px;
+
+  /* motion: restrained micro-interactions (150–250ms) */
+  --default-transition-duration: 180ms;
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* layout */
+  --spacing-gutter: 1rem;
+  --spacing-header: 4.5rem;
+  --container-content: 80rem;
+
+  /* focus ring */
+  --color-focus: #ff5c61;
+}
+
+:root {
+  --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-focus);
+  --tv-focus-ring: 0 0 0 4px var(--color-bg), 0 0 0 8px var(--color-focus);
+}

@@ -5,6 +5,7 @@
   "headers": [{ "source": "/(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }],
   "redirects": [
     { "source": "/v7", "destination": "/v7/", "permanent": false },
-    { "source": "/:path((?!v7/|nas/|robots.txt|favicon.svg).*)", "destination": "/v7/", "permanent": false }
+    { "source": "/v8", "destination": "/v8/", "permanent": false },
+    { "source": "/:path((?!v7/|v8/|nas/|robots.txt|favicon.svg).*)", "destination": "/v7/", "permanent": false }
   ]
 }
