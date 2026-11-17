@@ -1584,12 +1584,12 @@ const LEGEND_ORDER = ['mizrachi', 'deeb', 'glaser', 'schulman', 'koon', 'hellmut
 export const WSOP_LEGENDS: { name: string; cc: string; bracelets: number; line: string; to?: string }[] = LEGEND_ORDER.map((id) => legendById(`legend-${id}`))
   .filter((l): l is Legend => !!l)
   .map((l) => ({ name: l.name, cc: l.cc, bracelets: l.bracelets, line: l.note, to: `/videos/players/${l.id}` }));
-function WsopLegendsRow() {
+export function WsopLegendsRow({ title = 'WSOP Players', home }: { title?: string; home?: boolean } = {}) {
   const list = WSOP_LEGENDS.slice(0, 15);
   if (!list.length) return null;
   return (
-    <section aria-label="WSOP Players" className="mt-14">
-      <h2 className="text-xl sm:text-2xl">WSOP Players</h2>
+    <section aria-label={title} className={home ? undefined : 'mt-14'}>
+      <h2 className="text-xl sm:text-2xl">{title}</h2>
       <Carousel className="mt-4 gap-3 [&>*]:w-[40%] sm:[&>*]:w-[calc((100%-3*0.75rem)/4)] lg:[&>*]:w-[calc((100%-5*0.75rem)/6)]">
         {list.map((p) => {
           const photo = photoOf(p.name);

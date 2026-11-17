@@ -15,13 +15,13 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, EYEBROW, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseAll, seasonPhoto, seasonRows, seriesPlaylist } from './browse';
+import { BrowseAll, seasonPhoto, seasonRows, seriesPlaylist, WsopLegendsRow } from './browse';
 import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
 import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
 import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
-import { activeThemes, featuredTheme, themeById } from './themes';
+import { featuredTheme, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
 import { ARCHIVE, archiveEvent, broadcastsOf } from './archive';
 import { ytGroup } from './youtube';
@@ -619,9 +619,6 @@ export function HomeRows() {
     return out;
   };
   const myRow = take(mine, 4);
-  // The programming follows the calendar (see ./themes.ts). `?date=2025-11-10` shows Home as it reads on that day.
-  const [params] = useSearchParams();
-  const now = Date.parse(params.get('date') ?? '') || Date.now();
   // Home is programmed in three kinds of rows (what F1 TV, UFC Fight Pass and NBA League Pass have in common):
   //   Season — the last series' results;  Players — one player's story;  Classics — the hands and final tables people
   //   come back for. The Series Playlist sits under the latest series; the personal rows last.
@@ -635,7 +632,7 @@ export function HomeRows() {
       {/* Series Playlist: right under the latest series, the way back to the others. */}
       <SeriesPlaylist skip={shown} />
       {/* Players */}
-      <ThemeRow id="mizrachi-run" now={now} />
+      <WsopLegendsRow title="Featured Players" home />
       {/* Continue watching in the middle of Home (signed in, with something to continue). */}
       <ContinueRow items={continuing} onRemove={removeContinue} />
       {/* Classics */}
@@ -812,7 +809,7 @@ function SeasonTiles() {
   // The Main Event final tables of the archive, then the channel's iconic moments.
   const finals = [...archiveFinals(), ...ytGroup('iconic')];
   return (
-    <Section title="Iconic Final Tables" action={more('/videos', 'View all')}>
+    <Section title="WSOP Stories : @Iconic Final Tables" action={more('/videos', 'View all')}>
       <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={finals}>
           {finals.map((v) => (
@@ -1006,26 +1003,6 @@ function SeriesDayRow() {
   if (!videos.length) return null;
   return (
     <Section title="Super Circuit Canada, Day by Day" action={more('/videos/series/2026/circuit', 'View all')}>
-      <ol className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
-        <BadgeScope videos={videos}>
-          {videos.map((v) => (
-            <li key={v.id} className="min-w-0">
-              <VideoCard v={v} />
-            </li>
-          ))}
-        </BadgeScope>
-      </ol>
-    </Section>
-  );
-}
-
-/** One theme as its own Home row: the title and the videos in order. */
-function ThemeRow({ id, now }: { id: string; now: number }) {
-  const t = activeThemes(now).find((x) => x.theme.id === id);
-  if (!t) return null;
-  const { theme, videos } = t;
-  return (
-    <Section title={theme.title} eyebrow={theme.eyebrow} action={more(`/collections/${theme.id}`, 'View all')}>
       <ol className="hscroll gap-4 [&>*]:w-[78%] sm:[&>*]:w-[calc((100%-1rem)/2)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={videos}>
           {videos.map((v) => (
