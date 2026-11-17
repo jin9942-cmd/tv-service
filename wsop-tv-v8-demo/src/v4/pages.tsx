@@ -810,7 +810,7 @@ function SeasonTiles() {
   // The Main Event final tables of the archive, then the channel's iconic moments.
   const finals = [...archiveFinals(), ...ytGroup('iconic')];
   return (
-    <Section title="WSOP Stories : @Iconic Final Tables" action={more('/videos', 'View all')}>
+    <Section title="WSOP Stories : @WSOP @Bracelet" action={more('/videos', 'View all')}>
       <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
         <BadgeScope videos={finals}>
           {finals.map((v) => (
