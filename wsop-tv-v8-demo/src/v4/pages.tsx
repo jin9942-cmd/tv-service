@@ -800,15 +800,15 @@ const archiveFinals = (): Video[] =>
       const days = broadcastsOf(ref);
       const i = ref.event.days.findIndex((d) => /final/i.test(d.label));
       const v = days[i >= 0 ? i : days.length - 1];
-      return v ? ({ ...v, title: `${y.year} Main Event Final Table`, subtitle: y.champion ? `Won by ${y.champion.name}` : v.subtitle, thumb: seasonPhoto(y.year), thumbPos: '50% 50%', thumbFit: undefined } as Video) : undefined;
+      return v ? ({ ...v, title: y.champion ? `${y.champion.name} wins the ${y.year} Main Event` : `${y.year} Main Event Final Table`, subtitle: y.champion ? `Won by ${y.champion.name}` : v.subtitle, thumb: seasonPhoto(y.year), thumbPos: '50% 50%', thumbFit: undefined } as Video) : undefined;
     })
     .filter((v): v is Video => !!v)
     .sort((a, b) => b.views - a.views)
     .slice(0, 10);
 
 function SeasonTiles() {
-  // The Main Event final tables of the archive, then the channel's iconic moments.
-  const finals = [...archiveFinals(), ...ytGroup('iconic')];
+  // The bracelet moments: the archive's Main Event final tables, each titled with who won the bracelet (no short clips).
+  const finals = archiveFinals();
   return (
     <Section title="WSOP Stories : @WSOP @Bracelet" action={more('/videos', 'View all')}>
       <Carousel className="gap-4 [&>*]:w-[70%] sm:[&>*]:w-[calc((100%-2*1rem)/3)] lg:[&>*]:w-[calc((100%-3*1rem)/4)]">
