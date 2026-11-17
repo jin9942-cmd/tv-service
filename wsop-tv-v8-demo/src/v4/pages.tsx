@@ -944,7 +944,6 @@ function SeriesPlaylist({ skip }: { skip: Set<string> }) {
                   </span>
                 </span>
                 <span className="mt-2 line-clamp-2 block text-[15px] leading-snug font-bold group-hover:text-gold-strong">{s.name}</span>
-                <span className="mt-0.5 block text-sm text-muted group-hover:text-text">View full playlist</span>
               </Link>
             </li>
           );
