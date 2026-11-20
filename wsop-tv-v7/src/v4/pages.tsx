@@ -1228,20 +1228,23 @@ export function SchedulePage() {
       <p className="mt-1 text-sm text-muted">
         {year === SCHEDULE_YEAR ? "This season's series. Open one to see its broadcasts." : `The ${year} season's series. Every broadcast is on demand.`}
       </p>
-      {/* The season: one calendar year, this year first. */}
-      <div role="radiogroup" aria-label="Season" className="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
-        {SCHEDULE_YEARS.map((y) => (
-          <button
-            key={y}
-            type="button"
-            role="radio"
-            aria-checked={year === y}
-            onClick={() => pick(y)}
-            className={cx('h-9 shrink-0 rounded-full border px-4 text-sm font-semibold tnum', year === y ? 'border-white bg-white text-black' : 'border-line-strong text-muted hover:border-white/60 hover:text-text')}
+      {/* The season: one calendar year, picked from a pull-down like Browse's year (this year first). */}
+      <div className="mt-5">
+        <label className="relative inline-block">
+          <span className="sr-only">Season</span>
+          <select
+            value={String(year)}
+            onChange={(e) => pick(Number(e.target.value))}
+            className="h-11 w-56 appearance-none rounded-chip border border-line-strong bg-surface px-4 pr-10 text-[15px] font-bold tnum"
           >
-            {y}
-          </button>
-        ))}
+            {SCHEDULE_YEARS.map((y) => (
+              <option key={y} value={y}>
+                {y} Season
+              </option>
+            ))}
+          </select>
+          <Icon name="chevron" size={16} className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 rotate-90 text-muted" />
+        </label>
       </div>
       {year === SCHEDULE_YEAR ? <ThisSeason seriesId={seriesId} /> : <PastSeason key={year} year={year} />}
     </Page>
