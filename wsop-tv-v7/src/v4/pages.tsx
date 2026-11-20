@@ -1225,10 +1225,8 @@ export function SchedulePage() {
     <Page className="max-w-[96rem]">
       {/* The page title, the same as Browse's (Schedule has no sub-menu, so no tabs under it). */}
       <h1 className={PAGE_TITLE}>Schedule</h1>
-      <p className="mt-1 text-sm text-muted">
-        {year === SCHEDULE_YEAR ? "This season's series. Open one to see its broadcasts." : `The ${year} season's series. Every broadcast is on demand.`}
-      </p>
-      {/* The season: one calendar year, picked from a pull-down like Browse's year (this year first). */}
+      {/* No line under the title: the pull-down says the season. The season: one calendar year, picked from a pull-down
+          like Browse's year (this year first), as far under the title as Browse's. */}
       <div className="mt-5">
         <label className="relative inline-block">
           <span className="sr-only">Season</span>
