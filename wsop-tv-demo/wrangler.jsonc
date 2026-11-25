@@ -1,0 +1,6 @@
+// Cloudflare (Workers static assets): serves the built demo in dist/ (v7, v8, nas). _redirects / _headers in dist apply.
+{
+  "name": "tv-service-demo",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./dist" }
+}
