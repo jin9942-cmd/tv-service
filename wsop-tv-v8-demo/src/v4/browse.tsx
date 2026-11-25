@@ -1353,7 +1353,8 @@ const SEASON_2026: { key: SeriesKey; label: string; events: { id: string; title:
   {
     key: 'eu',
     label: '2026 WSOP Europe',
-    events: [{ id: '2026-eu-main', title: '€10,000 Main Event', ids: ['hbBsq81e8d0', 'EFrXwz3WX0I', 'pp9pA3dQWIk', 'guQ6R799HWk', 'hGQfNNau0AI', '2NdbZTnIIAM', 'ryST1tVOUAw', 'Dqkl7d_pnqc', 'z_ykW11RBRI', 'C7QTh7wva00', 'hTgGN22V_PY', 'sSKRlPNO0UY', 'Zih5mb_5EVQ'] }],
+    // The 2026 Main Event's buy-in was €5,300 with a €10M guarantee (the uploads' "€10,000,000 GTD"): https://pokerfuse.com/latest-news/2025/12/wsop-reveals-2026-dates-revamps-player-year-race/
+    events: [{ id: '2026-eu-main', title: '€5,300 Main Event', ids: ['hbBsq81e8d0', 'EFrXwz3WX0I', 'pp9pA3dQWIk', 'guQ6R799HWk', 'hGQfNNau0AI', '2NdbZTnIIAM', 'ryST1tVOUAw', 'Dqkl7d_pnqc', 'z_ykW11RBRI', 'C7QTh7wva00', 'hTgGN22V_PY', 'sSKRlPNO0UY', 'Zih5mb_5EVQ'] }],
   },
 ];
 function rows2026(): SeasonRow[] {
@@ -1377,6 +1378,9 @@ const seriesOf = (rows: SeasonRow[]): SeriesGroup[] => {
   }
   return out;
 };
+export type { SeasonRow, SeriesGroup };
+/** A past year's series with their events (newest series first), for the Schedule's year view. */
+export const seasonSeries = (year: number) => seriesOf(seasonRows(year));
 
 /**
  * Every series with videos, newest first (2026, then the archive years, each year in Browse's order): Home's Series

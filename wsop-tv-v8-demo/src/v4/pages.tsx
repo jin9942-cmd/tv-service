@@ -15,7 +15,7 @@ import { MyListButton } from '../features/library/listActions';
 import { NotFound } from '../pages/NotFound';
 import { About, BadgeScope, EYEBROW, TagList, VideoCard, VideoRow, listKind, rowGrid } from './detail';
 import { Player } from './Player';
-import { BrowseAll, seasonPhoto, seasonRows, seriesPlaylist, WsopLegendsRow } from './browse';
+import { BrowseAll, seasonPhoto, seasonRows, seasonSeries, seriesPlaylist, WsopLegendsRow, type SeasonRow, type SeriesGroup } from './browse';
 
 /** Home's players row: Browse's WSOP Players list under its own title. */
 const PLAYERS_TITLE = 'Featured Players';
@@ -26,7 +26,7 @@ import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/br
 import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
 import { featuredTheme, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
-import { ARCHIVE, archiveEvent, broadcastsOf } from './archive';
+import { ARCHIVE, archiveEvent, broadcastsOf, fmtBuyIn } from './archive';
 import { ytGroup } from './youtube';
 
 // ---- watch ------------------------------------------------------------------------------------------
@@ -1150,15 +1150,22 @@ const DAY_MS = 86_400_000;
 /** The season's WSOP series (the 2025 Las Vegas series), from the data. */
 /** The Schedule's moment (see SchedulePage). */
 const SCHEDULE_AT = Date.parse('2026-07-14T21:00:00Z');
+/** A season is one calendar year: the Schedule opens on this year, and the years above go back to 2018. */
+const SCHEDULE_YEAR = 2026;
+const SCHEDULE_YEARS = Array.from({ length: SCHEDULE_YEAR - 2018 + 1 }, (_, i) => SCHEDULE_YEAR - i);
 const SEASON: SeriesStop[] = [
   // The demo series' dates cover all of their broadcasts.
-  // The season as signed off: 2025 Paradise, 2026 WSOP Europe (Prague), the 2026 World Series of Poker, 2026 Super Circuit Canada.
-  ...['pa25', 'eu26', 'lv26', 'ca26'].map((id) => series.find((x) => x.id === id)!).map((s) => {
+  // The 2026 season (one calendar year): WSOP Europe (Prague), the World Series of Poker, Super Circuit Canada, Paradise.
+  // 2025 Paradise (Dec 2025) belongs to the 2025 season.
+  ...['eu26', 'lv26', 'ca26'].map((id) => series.find((x) => x.id === id)!).map((s) => {
     const starts = events.filter((e) => e.seriesId === s.id).flatMap((e) => e.days.map((d) => d.start));
     const first = [s.start, ...starts].sort()[0];
     const last = [s.end, ...starts].sort().pop()!;
-    return { ...s, start: first, end: last, art: s.id === 'lv26' ? TABLE_ART[0] : s.id === 'pa25' ? VENUE_ART[3] : s.id === 'eu26' ? VENUE_ART[2] : VENUE_ART[0] };
+    return { ...s, start: first, end: last, art: s.id === 'lv26' ? TABLE_ART[0] : s.id === 'eu26' ? VENUE_ART[2] : VENUE_ART[0] };
   }),
+  // 2026 WSOP Paradise, Dec 1 – 18, 2026 (the fourth edition): https://pokerfuse.com/latest-news/2025/12/wsop-reveals-2026-dates-revamps-player-year-race/
+  // No broadcast schedule yet: the fold says it is announced closer to the series.
+  { id: 'pa26', name: '2026 WSOP Paradise', venue: 'Atlantis Paradise Island', city: 'Paradise Island, Bahamas', tz: 'America/Nassau', start: '2026-12-01T15:00:00Z', end: '2026-12-19T04:59:00Z', art: VENUE_ART[3] },
 ];
 
 const seriesState = (s: SeriesStop, now: number) => (Date.parse(s.start) <= now && now <= Date.parse(s.end) ? 'live' : Date.parse(s.start) > now ? 'upcoming' : 'past');
@@ -1171,16 +1178,45 @@ const shortDate = (iso: string, tz: string) => new Intl.DateTimeFormat('en-US', 
  */
 export function SchedulePage() {
   const { seriesId } = useParams();
+  const [params, setParams] = useSearchParams();
+  // One season = one calendar year. The page opens on this year; `?year=` picks another (a series link is always this year).
+  const asked = Number(params.get('year'));
+  const year = !seriesId && SCHEDULE_YEARS.includes(asked) ? asked : SCHEDULE_YEAR;
+  const pick = (y: number) => setParams(y === SCHEDULE_YEAR ? {} : { year: String(y) }, { replace: true });
+  return (
+    <Page className="max-w-[96rem]">
+      {/* The page title, the same as Browse's (Schedule has no sub-menu, so no tabs under it). */}
+      <h1 className={PAGE_TITLE}>Schedule</h1>
+      {/* No line under the title: the pull-down says the season. The season: one calendar year, picked from a pull-down
+          like Browse's year (this year first), as far under the title as Browse's. */}
+      <div className="mt-5">
+        <label className="relative inline-block">
+          <span className="sr-only">Season</span>
+          <select
+            value={String(year)}
+            onChange={(e) => pick(Number(e.target.value))}
+            className="h-11 w-56 appearance-none rounded-chip border border-line-strong bg-surface px-4 pr-10 text-[15px] font-bold tnum"
+          >
+            {SCHEDULE_YEARS.map((y) => (
+              <option key={y} value={y}>
+                {y} Season
+              </option>
+            ))}
+          </select>
+          <Icon name="chevron" size={16} className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 rotate-90 text-muted" />
+        </label>
+      </div>
+      {year === SCHEDULE_YEAR ? <ThisSeason seriesId={seriesId} /> : <PastSeason key={year} year={year} />}
+    </Page>
+  );
+}
+
+/** This year's series in date order: past, live and upcoming, each a fold. */
+function ThisSeason({ seriesId }: { seriesId?: string }) {
   // The Schedule shows the season as signed off: Jul 14, 2026 in Las Vegas, the Main Event final table on air (the rest of
   // the demo is set on May 15, 2026). The clock keeps moving from there.
   const now = useTick(60_000) - DEMO_NOW + SCHEDULE_AT;
   const byStart = [...SEASON].sort((a, b) => a.start.localeCompare(b.start));
-  // Order policy for the series: live on top (several → earliest start first), then upcoming (soonest first), then past at the bottom (most recent first).
-  const RANK = { live: 0, upcoming: 1, past: 2 } as const;
-  const ordered = [...SEASON].sort((a, b) => {
-    const ra = RANK[seriesState(a, now)], rb = RANK[seriesState(b, now)];
-    return ra - rb || (ra === 2 ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start));
-  });
   const first =
     SEASON.find((x) => x.id === seriesId) ??
     SEASON.find((x) => seriesState(x, now) === 'live') ??
@@ -1195,17 +1231,166 @@ export function SchedulePage() {
       else n.add(id);
       return n;
     });
+  // Order policy for the series: live on top (several → earliest start first), then upcoming (soonest first), then past at the bottom (most recent first).
+  const RANK = { live: 0, upcoming: 1, past: 2 } as const;
+  const ordered = [...SEASON].sort((a, b) => {
+    const ra = RANK[seriesState(a, now)], rb = RANK[seriesState(b, now)];
+    return ra - rb || (ra === 2 ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start));
+  });
   return (
-    <Page className="max-w-[96rem]">
-      {/* The page title, the same as Browse's (Schedule has no sub-menu, so no tabs under it). */}
-      <h1 className={PAGE_TITLE}>Schedule</h1>
-      <p className="mt-1 text-sm text-muted">This season's series. Open one to see its broadcasts.</p>
-      <div className="mt-6 flex flex-col gap-3">
-        {ordered.map((x) => (
-          <SeriesFold key={x.id} s={x} open={open.has(x.id)} onToggle={() => toggle(x.id)} now={now} />
-        ))}
+    <div className="mt-6 flex flex-col gap-3">
+      {ordered.map((x) => (
+        <SeriesFold key={x.id} s={x} open={open.has(x.id)} onToggle={() => toggle(x.id)} now={now} />
+      ))}
+    </div>
+  );
+}
+
+/** Past years' series with known dates and venues (the rest show their city only). */
+const PAST_STOPS: Record<string, string> = { '2025-lv': 'lv25', '2025-eu': 'eu25', '2025-pa': 'pa25', '2024-pa': 'pa24' };
+const PAST_CITY: Partial<Record<SeriesGroup['seriesKey'], string>> = { lv: 'Las Vegas, NV', pa: 'Paradise Island, Bahamas' };
+
+/**
+ * A past year: its series in the order they ran (all Past), each a fold that lists its broadcast events with Watch on
+ * WSOP TV. The Las Vegas series opens on arrival.
+ */
+function PastSeason({ year }: { year: number }) {
+  const groups = [...seasonSeries(year)].reverse();
+  const [open, setOpen] = useState<Set<string>>(() => new Set([(groups.find((g) => g.seriesKey === 'lv') ?? groups[0])?.key ?? '']));
+  const toggle = (k: string) =>
+    setOpen((o) => {
+      const n = new Set(o);
+      if (n.has(k)) n.delete(k);
+      else n.add(k);
+      return n;
+    });
+  if (!groups.length) return <p className="mt-6 rounded-panel border border-line bg-surface-2 p-5 text-sm text-muted">No series with broadcasts in {year}.</p>;
+  return (
+    <div className="mt-6 flex flex-col gap-3">
+      {groups.map((g) => (
+        <PastSeriesFold key={g.key} g={g} open={open.has(g.key)} onToggle={() => toggle(g.key)} />
+      ))}
+    </div>
+  );
+}
+
+function PastSeriesFold({ g, open, onToggle }: { g: SeriesGroup; open: boolean; onToggle: () => void }) {
+  const { state } = useApp();
+  const stop = PAST_STOPS[g.key] ? series.find((x) => x.id === PAST_STOPS[g.key]) : undefined;
+  const videos = g.events.flatMap((r) => r.videos);
+  const art = [...videos].reverse().find((v) => v.thumb)?.thumb;
+  const bodyId = `fold-${g.key}`;
+  return (
+    <section aria-label={g.name} className="overflow-hidden rounded-panel border border-line bg-surface">
+      <button onClick={onToggle} aria-expanded={open} aria-controls={bodyId} className="flex w-full items-center gap-4 p-3 text-left hover:bg-surface-2 sm:p-4">
+        {art ? <img src={art} alt="" className="aspect-video w-24 shrink-0 rounded-card object-cover opacity-70 sm:w-32" /> : <span className="aspect-video w-24 shrink-0 rounded-card bg-surface-2 sm:w-32" />}
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="rounded-[4px] border border-line-strong px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-muted uppercase">Past</span>
+            <span className="text-xs font-semibold text-muted tnum">
+              Replays · {g.events.length} event{g.events.length === 1 ? '' : 's'}
+            </span>
+          </span>
+          <span className={cx('mt-1 block text-lg font-bold sm:text-xl', !open && 'text-text/80')}>{g.name}</span>
+          <span className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted sm:text-sm">
+            {stop ? (
+              <>
+                <span className="tnum">{shortDate(stop.start, stop.tz ?? state.tz)} – {shortDate(stop.end, stop.tz ?? state.tz)}</span>
+                <span className="hidden sm:inline">{stop.venue} · {stop.city}</span>
+              </>
+            ) : (
+              PAST_CITY[g.seriesKey] && <span>{PAST_CITY[g.seriesKey]}</span>
+            )}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-text/85">
+          <span className="hidden sm:inline">{open ? 'Hide' : 'Schedule'}</span>
+          <span className="grid size-9 place-items-center rounded-full border border-line-strong">
+            <Icon name="chevron" size={18} className={cx('transition-transform', open ? '-rotate-90' : 'rotate-90')} />
+          </span>
+        </span>
+      </button>
+      {open && (
+        <div id={bodyId} className="border-t border-line px-3 pt-4 pb-5 sm:px-5">
+          <PastEvents g={g} />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * A past series' broadcast events: Main Event first, then the newest events, each with Watch on WSOP TV (its final
+ * table, else its first broadcast). Ten rows, then Show all.
+ */
+function PastEvents({ g }: { g: SeriesGroup }) {
+  const [all, setAll] = useState(false);
+  const MAX = 10;
+  const rows = all ? g.events : g.events.slice(0, MAX);
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted">Every broadcast is on demand.</p>
+        <Link to={`/videos/series/${g.year}/${g.seriesKey}`} className="text-sm font-semibold text-muted hover:text-text">
+          All videos from this series →
+        </Link>
       </div>
-    </Page>
+      <div className="mt-3 overflow-x-auto rounded-panel border border-line">
+        <table className="w-full min-w-[44rem] text-left text-sm">
+          <thead className="bg-surface-2 text-xs text-muted">
+            <tr>
+              <th className="px-4 py-3 font-semibold">Event</th>
+              <th className="px-4 py-3 font-semibold">Buy-in</th>
+              <th className="px-4 py-3 font-semibold">Game</th>
+              <th className="px-4 py-3 font-semibold">Videos</th>
+              <th className="px-4 py-3" aria-label="Watch" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {rows.map((r) => (
+              <PastEventRow key={r.key} r={r} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {g.events.length > MAX && (
+        <div className="mt-3 text-center">
+          <Button size="sm" variant="outline" onClick={() => setAll((x) => !x)} aria-expanded={all}>
+            {all ? 'Show fewer' : `Show all ${g.events.length} events`}
+          </Button>
+        </div>
+      )}
+    </>
+  );
+}
+
+function PastEventRow({ r }: { r: SeasonRow }) {
+  const ev = archiveEvent(r.key)?.event;
+  const m = /^#(\d+) · (.*)$/.exec(r.title);
+  const name = m ? m[2] : r.title;
+  const watch = r.videos.find((v) => /final table|final day/i.test(v.title)) ?? r.videos[0];
+  return (
+    <tr className="bg-surface text-text/85">
+      <td className="px-4 py-3">
+        {m && <span className="block text-xs text-gold-strong">Event #{m[1]}</span>}
+        <Link to={r.to} className="mt-0.5 block text-[15px] font-bold hover:text-gold-strong">
+          {name}
+        </Link>
+      </td>
+      {/* Rows without an archive record (this year's uploads): the buy-in from the event's name; a Main Event is No-Limit Hold'em. */}
+      <td className="px-4 py-3 tnum">{(ev && fmtBuyIn(ev)) || /^[€$][\d,]+/.exec(name)?.[0] || '—'}</td>
+      <td className="px-4 py-3">{ev?.game ?? (/Main Event/.test(name) ? 'No-Limit Hold’em' : '—')}</td>
+      <td className="px-4 py-3 tnum">{r.videos.length}</td>
+      <td className="px-4 py-3 text-right">
+        {watch && (
+          <Link to={`/watch/${watch.id}`}>
+            <Button size="sm" variant="secondary" tabIndex={-1} className="whitespace-nowrap">
+              <Icon name="play" size={14} /> Watch on WSOP TV
+            </Button>
+          </Link>
+        )}
+      </td>
+    </tr>
   );
 }
 
@@ -1310,6 +1495,9 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
       </table>
     </div>
   );
+  // A series that is over with no schedule entries lists its broadcast events from Browse (the same rows as a past year).
+  const browseGroup = !all.length && st === 'past' ? seasonSeries(Number(s.name.slice(0, 4))).find((g) => g.name === s.name) : undefined;
+  if (browseGroup) return <PastEvents g={browseGroup} />;
   if (!all.length)
     return (
       <p className="rounded-panel border border-line bg-surface-2 p-5 text-sm text-muted">

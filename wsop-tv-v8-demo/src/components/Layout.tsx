@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigationType } from 'react-router-dom';
-import { useApp } from '../state/app';
+import { memberTier, useApp } from '../state/app';
 import { Button, Icon, cx } from './ui';
 import { WSOP_LOGO } from '../lib/brand';
 import { LoginModal } from '../features/auth/LoginModal';
-import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate } from '../data/policy';
+import { GRACE_DAYS, TRAVEL_COUNTRY, daysFromNow, fmtBillingDate, tierFull } from '../data/policy';
 import NAS from 'virtual:nas-media';
 import { isLive, videoById } from '../v4/catalog';
 
@@ -207,7 +207,7 @@ export function Layout() {
   );
 }
 
-/** "My" menu behind the account avatar: Account, My List, sign out. */
+/** "My" menu behind the account avatar: who is signed in and their WSOP+ plan, then My List, Account, sign out. */
 function MyMenu() {
   const { state, set, toast } = useApp();
   const [open, setOpen] = useState(false);
@@ -242,6 +242,7 @@ function MyMenu() {
           <div className="border-b border-line px-3 pt-1 pb-2.5">
             <p className="text-sm font-bold">Demo Viewer</p>
             <p className="text-xs text-muted">demo.viewer@example.com</p>
+            <p className="mt-1.5 text-xs font-semibold text-gold-strong">{memberTier(state) === 'free' ? 'No WSOP+ membership' : tierFull(memberTier(state) as Exclude<ReturnType<typeof memberTier>, 'free'>)}</p>
           </div>
           <NavLink to="/my-list" role="menuitem" className={item}>
             <Icon name="plus" size={16} className="text-muted" /> <span className="flex-1">My List</span>
