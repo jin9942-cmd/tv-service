@@ -4,10 +4,12 @@ import { DeviceList } from '../features/auth/Devices';
 import { GGPassMark } from '../features/auth/LoginModal';
 import { Button, Page, Placeholder, Switch } from '../components/ui';
 import { GRACE_DAYS, NEXT_PAYMENT_DAYS, daysFromNow, fmtBillingDate, tierFull } from '../data/policy';
+import { PLATFORMS } from '../data/platforms';
 
 /**
- * Account (My menu): who is signed in (GGPass), the WSOP+ membership, devices, notifications, then help and legal.
- * Viewing history has its own page in the My menu; viewing preferences (audio, captions) follow the player's last choice.
+ * Account (My menu): who is signed in (GGPass), the WSOP+ membership and devices. The apps (mobile, tablet, TV) add
+ * notifications and help & legal; on the web those links are in the footer and there are no push notifications.
+ * Audio and captions follow the player's last choice, so there are no viewing preferences here.
  */
 export function Account() {
   const { state, set, toast, signedIn, requireLogin } = useApp();
@@ -25,6 +27,7 @@ export function Account() {
     );
 
   const linked = state.scenario !== 'unlinked';
+  const app = PLATFORMS[state.platform].kind !== 'web';
 
   return (
     <Page className="max-w-4xl space-y-8">
@@ -34,11 +37,11 @@ export function Account() {
         <p className="text-sm text-muted">demo.viewer@example.com</p>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card title="GGPASS">
           <div className="flex items-center gap-3">
             <GGPassMark className="size-8 text-sm" />
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <p className="font-semibold">{linked ? 'Signed in with GGPass' : 'Not connected'}</p>
               <p className="text-xs text-muted">{state.scenario === 'restricted' ? 'Account restricted — contact GGPASS support' : 'demo.viewer@example.com'}</p>
             </div>
@@ -62,13 +65,16 @@ export function Account() {
         <DeviceList />
       </Card>
 
-      <Card title="Notifications">
-        <Switch label="Broadcast reminders" description="When a broadcast you set a reminder for goes live (mobile and TV apps)" on={state.notifyLiveStart} onChange={(v) => set({ notifyLiveStart: v })} />
-      </Card>
+      {app && (
+        <Card title="Notifications">
+          <Switch label="Broadcast reminders" description="When a broadcast you set a reminder for goes live" on={state.notifyLiveStart} onChange={(v) => set({ notifyLiveStart: v })} />
+        </Card>
+      )}
 
+      {app && (
       <Card title="Help & legal">
         <ul className="divide-y divide-line">
-          {['Help Center', 'Contact us', 'Terms of Use', 'Privacy Policy', 'Responsible Gaming', 'Delete account (GGPass)'].map((x) => (
+          {['Help Center', 'Terms of Use', 'Privacy Policy', 'Responsible Gaming', 'Delete account (GGPass)'].map((x) => (
             <li key={x}>
               <button onClick={() => toast(`Opens ${x} (demo)`)} className="flex w-full items-center justify-between py-3 text-left text-sm font-semibold hover:text-gold">
                 {x}
@@ -81,6 +87,7 @@ export function Account() {
         </ul>
         <p className="mt-3 text-xs text-muted">App version 1.0.0 (demo)</p>
       </Card>
+      )}
 
       <Button variant="ghost" onClick={() => (set({ scenario: 'guest' }), toast('Signed out'))}>
         Sign out
