@@ -11,6 +11,7 @@ import { HERO_IMAGES, VENUE_ART } from '../lib/brand';
 import { money } from '../lib/format';
 import { VENUE_TZ, dayKey, fmtDate, fmtTime, relative } from '../lib/time';
 import { useApp, useTick } from '../state/app';
+import { BackButton } from '../components/BackButton';
 import { HandCard } from '../components/cards';
 import { Button, Icon, LiveTag, Page, SectionHeader, cx } from '../components/ui';
 import { ChannelGuide, ChannelNumber, useProgramReminder } from '../features/channels/Channels';
@@ -395,9 +396,7 @@ export function TvShowDetail() {
         <img src={showPoster(s)} alt="" className="absolute inset-0 size-full object-cover opacity-45" />
         <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/80 to-bg/20" aria-hidden />
         <Page className="relative py-14 sm:py-20">
-          <Link to="/shows" className="text-sm font-semibold text-muted hover:text-text">
-            ← Shows
-          </Link>
+          <BackButton fallback="/shows" className="font-semibold" />
           <h1 className="mt-3 text-[2.5rem] leading-[1.02] font-black tracking-tight sm:text-display">{s.title}</h1>
           <p className="mt-2 text-lg font-semibold text-text/85">{s.tagline}</p>
           <p className="mt-3 max-w-2xl text-sm text-muted">{s.description}</p>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp, useTick } from '../state/app';
+import { BackButton } from '../components/BackButton';
 import { DEMO_NOW } from '../lib/clock';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
 import { channelById, channels, programAt, programs, upNext, type LinearChannel } from '../data/channels';
@@ -833,9 +834,7 @@ export function ArchivePage() {
   const vs = g.entries.map((x) => x.v);
   return (
     <Page className="max-w-[96rem]">
-      <Link to="/" className="text-sm text-muted hover:text-text">
-        ← Home
-      </Link>
+      <BackButton />
       <p className="mt-3 text-sm text-muted">{key.startsWith('year-') ? 'WSOP Season' : 'Champion'}</p>
       <h1 className="mt-1 text-title">{key.startsWith('year-') ? `${g.label} WSOP` : g.label}</h1>
       <p className="mt-1 text-sm text-muted">{vs.length} video{vs.length === 1 ? '' : 's'}</p>
@@ -1641,9 +1640,7 @@ export function EventPage() {
   return (
     <Page className="max-w-[96rem] space-y-10">
       <div>
-        <Link to={`/videos/year/${seriesById(e.seriesId).name.slice(0, 4)}`} className="text-sm text-muted hover:text-text">
-          ← {seriesById(e.seriesId).name.slice(0, 4)} season
-        </Link>
+        <BackButton fallback={`/videos/year/${seriesById(e.seriesId).name.slice(0, 4)}`} />
         <h1 className="mt-2 text-title">{e.name.replace(' World Championship', '')}</h1>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
           {live && <LiveTag />}

@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../state/app';
+import { BackButton } from '../components/BackButton';
 import { Avatar, Button, Flag, Icon, LiveTag, Page, Segmented, cx } from '../components/ui';
 import { HERO_DAY_ID, classicEvents, dayById, events, players, seatsFor, seriesById } from '../data/mock';
 import type { TourEvent } from '../data/types';
@@ -46,11 +47,8 @@ export function BrowseTabs({ tab }: { tab: 'years' | 'players' }) {
   );
 }
 
-const back = (to: string, label: string) => (
-  <Link to={to} className="text-sm text-muted hover:text-text">
-    ← {label}
-  </Link>
-);
+/** ← Back (history); `to` only when the page was opened directly. */
+const back = (to: string) => <BackButton fallback={to} />;
 
 /** Enter full screen (inside the click) and play the video straight away. */
 const enterFullScreen = () => {
@@ -393,7 +391,7 @@ export function YearPage() {
   const playable = (v: Video) => (isLive(v, streamMode) ? {} : playsFull(v));
   return (
     <Page className="max-w-[96rem]">
-      {back(isMainSeries ? '/videos' : `/videos/year/${y}`, isMainSeries ? 'Years' : `${y} season`)}
+      {back(isMainSeries ? '/videos' : `/videos/year/${y}`)}
       <p className="mt-3 text-xs font-bold tracking-wide text-gold-strong uppercase">{isMainSeries ? `${y} season` : current.name}</p>
       <h1 className="mt-1 text-title">{titleOf(current)}</h1>
       {arch?.classic && <p className="mt-1 text-xs font-bold tracking-wide text-gold-strong uppercase">WSOP Classics · Binion’s Horseshoe</p>}
@@ -652,7 +650,7 @@ export function PlayerPage() {
     .map((y) => ({ y, rows: finals.filter((x) => yearOfEvent(x.e) === y).sort((p1, p2) => p1.r.place - p2.r.place) }));
   return (
     <Page className="max-w-[96rem]">
-      {back('/videos/players', 'Players')}
+      {back('/videos')}
       <header className="mt-4 flex flex-wrap items-center gap-5">
         <Avatar name={p.name} hue={p.hue} size={96} photo={p.photo} ring />
         <div>
@@ -737,7 +735,7 @@ function LegendPage({ l }: { l: Legend }) {
   const shownResults = allResults ? results : results.slice(0, 10);
   return (
     <Page className="max-w-[96rem]">
-      {back('/videos/players', 'Players')}
+      {back('/videos')}
       <header className="mt-4 flex flex-wrap items-center gap-5">
         <Avatar name={l.name} hue={l.hue} size={96} photo={photoOf(l.name) ?? hofPhoto(l.name)} ring />
         <div>
@@ -836,7 +834,7 @@ export function EventChronicle() {
   const liveMain = slug === 'main-event' ? events.find((e) => e.id === 'lv-main') : undefined;
   return (
     <Page className="max-w-[96rem]">
-      {back('/videos', 'Browse')}
+      {back('/videos')}
       <h1 className="mt-3 text-title">{r.name}</h1>
       <p className="mt-1 text-sm text-muted">{r.blurb}</p>
       <ol className="mt-6 divide-y divide-line rounded-panel border border-line bg-surface">
@@ -1425,7 +1423,7 @@ export function SeriesEventsPage() {
   const videos = g.events.reduce((n, r) => n + r.videos.length, 0);
   return (
     <Page className="max-w-[96rem]">
-      {back('/videos', 'Browse')}
+      {back('/videos')}
       <div className="mt-3">
         <SeriesBadge s={g} />
       </div>
