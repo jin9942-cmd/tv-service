@@ -1087,9 +1087,9 @@ const typeOf = (year: number, key: SeriesKey): Exclude<SeriesType, 'all'> => (ke
 
 /**
  * Browse, one page (no Years / Players split), with filters on top as on WSOP.com: the year, the kind of series
- * (Bracelets · Super Circuit · Circuit) and players (search, or tick the most searched). Under them, each event as a
- * row of its videos, newest first; then WSOP Legends, the players to follow (active players only, 15 at most).
- * Picking players searches every year, so a player's events show whichever year they were in.
+ * (Bracelets · Super Circuit · Circuit) and a player search. Under them, each event as a row of its videos, newest first;
+ * then WSOP Legends, the players to follow (active players only, 15 at most).
+ * The player search is a way to a player, not a filter: picking a player (one at a time) opens that player's page.
  */
 export function BrowseAll() {
   // All years by default: the newest year first, then "See more" opens the year before it, and so on.
@@ -1098,7 +1098,7 @@ export function BrowseAll() {
   const [year, setYear] = useState<'all' | number>(() => (Number(params.get('year')) || 'all'));
   const [more, setMore] = useState(1);
   const [q, setQ] = useState('');
-  const [picked, setPicked] = useState<string[]>([]);
+  const nav = useNavigate();
   // 2026 first (its series from the WSOP channel), then the archive years.
   const years = [2026, ...ARCHIVE.map((y) => y.year)];
   // The player list opens only while searching (the search box has focus or text), as a dropdown under the box.
@@ -1120,13 +1120,14 @@ export function BrowseAll() {
     window.addEventListener('scroll', on, { passive: true });
     return () => window.removeEventListener('scroll', on);
   }, []);
-  // Which years are on the page: one year; or, for All, the newest `more` years; picking players searches every year.
-  const shownYears = picked.length ? [] : year === 'all' ? years.slice(0, more) : [year];
+  // Which years are on the page: one year; or, for All, the newest `more` years.
+  const shownYears = year === 'all' ? years.slice(0, more) : [year];
   const groups = shownYears.map((y) => ({ y, rows: seasonRows(y) })).filter((g) => g.rows.length);
-  const nextYear = !picked.length && year === 'all' ? years[more] : undefined;
+  const nextYear = year === 'all' ? years[more] : undefined;
   const needle = q.trim().toLowerCase();
   const shown = needle ? ALL_PLAYER_NAMES.filter((n) => n.toLowerCase().includes(needle)) : MOST_SEARCHED;
-  const toggle = (n: string) => setPicked((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n]));
+  // A player opens their own page: the player page when there is one, else the page of their videos by name.
+  const go = (n: string) => (setOpen(false), nav(playerLink(n) ?? `/videos/player/${encodeURIComponent(n)}`));
   return (
     <>
 
@@ -1139,7 +1140,6 @@ export function BrowseAll() {
               id="browse-year"
               value={String(year)}
               onChange={(e) => (setYear(e.target.value === 'all' ? 'all' : Number(e.target.value)), setMore(1))}
-              disabled={picked.length > 0}
               className="h-11 w-56 appearance-none rounded-chip border border-line-strong bg-surface px-4 pr-10 text-[15px] font-bold tnum disabled:opacity-50"
             >
               <option value="all">All Seasons</option>
@@ -1156,8 +1156,8 @@ export function BrowseAll() {
             <label className="flex h-11 items-center gap-2 rounded-chip border border-line-strong bg-surface px-3 focus-within:border-white/60">
               <Icon name="search" size={16} className="text-muted" />
               <input id="browse-player-search" value={q} onFocus={() => setOpen(true)} onChange={(e) => (setQ(e.target.value), setOpen(true))} placeholder="Search players" aria-label="Search players" aria-expanded={open} className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
-              {(q || picked.length > 0) && (
-                <button type="button" onClick={() => (setQ(''), setPicked([]))} aria-label="Clear players" className="text-muted hover:text-text">
+              {q && (
+                <button type="button" onClick={() => setQ('')} aria-label="Clear search" className="text-muted hover:text-text">
                   <Icon name="close" size={16} />
                 </button>
               )}
@@ -1171,11 +1171,10 @@ export function BrowseAll() {
                       const cc = ccOf(n);
                       return (
                         <li key={n} className="min-w-0">
-                          <label className="flex cursor-pointer items-center gap-2.5 rounded px-1.5 py-1.5 hover:bg-white/5">
-                            <input type="checkbox" checked={picked.includes(n)} onChange={() => toggle(n)} className="size-4 shrink-0 accent-[var(--color-live)]" />
+                          <button type="button" onClick={() => go(n)} className="flex w-full items-center gap-2.5 rounded px-1.5 py-1.5 text-left hover:bg-white/5">
                             {cc ? <Flag cc={cc} /> : <span className="w-5 shrink-0" aria-hidden />}
                             <span className="truncate text-sm">{n}</span>
-                          </label>
+                          </button>
                         </li>
                       );
                     })}
@@ -1187,33 +1186,10 @@ export function BrowseAll() {
             )}
           </div>
         </div>
-        {/* The players picked, as chips (remove one with its ×); they search every year. */}
-        {picked.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            {picked.map((n) => (
-              <button key={n} type="button" onClick={() => toggle(n)} className="inline-flex h-8 items-center gap-2 rounded-full border border-line-strong bg-surface px-3 text-sm font-semibold hover:border-white/60" aria-label={`Remove ${n}`}>
-                {ccOf(n) && <Flag cc={ccOf(n)!} />}
-                {n}
-                <Icon name="close" size={12} className="text-muted" />
-              </button>
-            ))}
-            <span className="text-sm text-muted">· every year</span>
-          </div>
-        )}
       </div>
 
       <WsopLegendsRow />
-      {/* Players picked: each player's videos from the whole archive in one block (not split by year or series). */}
-      {picked.length > 0 ? (
-        <div className="mt-8 space-y-12">
-          {picked.map((n) => {
-            const vs = playerVideos(n);
-            const l = LEGENDS.find((x) => x.name === n);
-            return vs.length ? <VideoGridBlock key={n} title={n} to={l ? `/videos/players/${l.id}` : undefined} sub={`${vs.length} video${vs.length === 1 ? '' : 's'} · every year`} videos={vs} /> : <p key={n} className="rounded-card border border-line bg-surface p-5 text-sm text-muted">No videos of {n} yet.</p>;
-          })}
-        </div>
-      ) : (
-      /* The series, newest first, one row each (no year headings: each series name carries its year). */
+      {/* The series, newest first, one row each (no year headings: each series name carries its year). */}
       <div className="mt-8 space-y-10">
         {groups.length ? (
           groups.map((g) => (
@@ -1227,7 +1203,6 @@ export function BrowseAll() {
           <p className="rounded-card border border-line bg-surface p-5 text-sm text-muted">No videos match these filters.</p>
         )}
       </div>
-      )}
       {nextYear != null && (
         <div className="mt-10 flex justify-center">
           <button type="button" onClick={() => setMore((n) => n + 1)} className="inline-flex h-11 items-center gap-2 rounded-full border border-line-strong px-6 text-sm font-bold hover:border-white/60">
@@ -1507,6 +1482,29 @@ export function playerVideos(name: string): Video[] {
 }
 
 /** A titled grid of videos: four on a line, "Show all N" opens the rest in place (player results, a player's page). */
+/** A player who has no player page (a past champion, say): their name, flag and every video of them. Back returns to where you were. */
+export function NamedPlayerPage() {
+  const { name = '' } = useParams();
+  const nav = useNavigate();
+  const n = decodeURIComponent(name);
+  const own = playerLink(n);
+  if (own) return <Navigate to={own} replace />;
+  const vs = playerVideos(n);
+  const cc = ccOf(n);
+  return (
+    <Page className="max-w-[96rem]">
+      <button onClick={() => (window.history.length > 1 ? nav(-1) : nav('/videos'))} className="text-sm text-muted hover:text-text">
+        ← Back
+      </button>
+      <header className="mt-4">
+        {cc && <Flag cc={cc} className="mb-2 block h-5" />}
+        <h1 className="text-title">{n}</h1>
+      </header>
+      <div className="mt-8">{vs.length ? <VideoGridBlock title="Videos" sub={`${vs.length} video${vs.length === 1 ? '' : 's'}`} videos={vs} /> : <p className="rounded-card border border-line bg-surface p-5 text-sm text-muted">No videos of {n} yet.</p>}</div>
+    </Page>
+  );
+}
+
 function VideoGridBlock({ title, to, sub, videos }: { title: string; to?: string; sub: string; videos: Video[] }) {
   // A player's videos are laid out in full (no See more).
   const shown = videos;

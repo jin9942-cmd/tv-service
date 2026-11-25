@@ -1,7 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppProvider } from './state/app';
 import { Layout } from './components/Layout';
-import { ArchiveEventPage, EventChronicle, PlayerPage, SeriesEventsPage, YearRedirect } from './v4/browse';
+import { ArchiveEventPage, EventChronicle, NamedPlayerPage, PlayerPage, SeriesEventsPage, YearRedirect } from './v4/browse';
 import { ArchivePage, ChannelRedirect, CollectionPage, EventPage, LivePage, MyListPage, SchedulePage, TagPage, VideosPage, WatchPage } from './v4/pages';
 import { TvHome, TvHowToWatch, TvShowDetail, TvShows } from './pages/tv';
 import { TvClassic } from './pages/poker';
@@ -49,6 +49,7 @@ export default function App() {
             <Route path="videos/year/:year/:series" element={<YearRedirect />} />
             <Route path="videos/series/:year/:series" element={<SeriesEventsPage />} />
             <Route path="videos/players/:playerId" element={<PlayerPage />} />
+            <Route path="videos/player/:name" element={<NamedPlayerPage />} />
             <Route path="videos/events/:slug" element={<EventChronicle />} />
             <Route path="videos/event/:id" element={<ArchiveEventPage />} />
             <Route path="collections/:id" element={<CollectionPage />} />
