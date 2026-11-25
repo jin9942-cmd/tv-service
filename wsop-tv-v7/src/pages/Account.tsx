@@ -89,9 +89,12 @@ export function Account() {
       </Card>
       )}
 
-      <Button variant="ghost" onClick={() => (set({ scenario: 'guest' }), toast('Signed out'))}>
-        Sign out
-      </Button>
+      {/* On the web, Sign out is in the My menu; the apps (no My menu dropdown on TV) keep it here. */}
+      {app && (
+        <Button variant="ghost" onClick={() => (set({ scenario: 'guest' }), toast('Signed out'))}>
+          Sign out
+        </Button>
+      )}
     </Page>
   );
 }
