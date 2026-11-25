@@ -1175,6 +1175,12 @@ export function SchedulePage() {
   // the demo is set on May 15, 2026). The clock keeps moving from there.
   const now = useTick(60_000) - DEMO_NOW + SCHEDULE_AT;
   const byStart = [...SEASON].sort((a, b) => a.start.localeCompare(b.start));
+  // Order policy for the series: live on top (several → earliest start first), then upcoming (soonest first), then past at the bottom (most recent first).
+  const RANK = { live: 0, upcoming: 1, past: 2 } as const;
+  const ordered = [...SEASON].sort((a, b) => {
+    const ra = RANK[seriesState(a, now)], rb = RANK[seriesState(b, now)];
+    return ra - rb || (ra === 2 ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start));
+  });
   const first =
     SEASON.find((x) => x.id === seriesId) ??
     SEASON.find((x) => seriesState(x, now) === 'live') ??
@@ -1195,7 +1201,7 @@ export function SchedulePage() {
       <h1 className={PAGE_TITLE}>Schedule</h1>
       <p className="mt-1 text-sm text-muted">This season's series. Open one to see its broadcasts.</p>
       <div className="mt-6 flex flex-col gap-3">
-        {byStart.map((x) => (
+        {ordered.map((x) => (
           <SeriesFold key={x.id} s={x} open={open.has(x.id)} onToggle={() => toggle(x.id)} now={now} />
         ))}
       </div>
@@ -1266,7 +1272,7 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
     .sort((a, b) => a.d.start.localeCompare(b.d.start));
   // At most 10 rows: a series with more broadcast days lists one row per event (live day, else final table, else last day).
   const MAX_ROWS = 10;
-  const rows =
+  const pool =
     all.length <= MAX_ROWS
       ? all
       : events
@@ -1274,12 +1280,16 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
           .map((e) => {
             const d = e.days.find((x) => isBroadcasting(status(x))) ?? e.days.find((x) => x.label === 'Final Table') ?? e.days[e.days.length - 1];
             return { e, d };
-          })
-          .sort((a, b) => a.d.start.localeCompare(b.d.start))
-          .slice(-MAX_ROWS);
-  // Live and upcoming first (soonest first), then what has aired (newest first); every row shown, nothing folded.
+          });
+  // Order policy: live on top (several at once → by start time, then event number), then upcoming (soonest first),
+  // then aired at the bottom (newest first). The cap keeps every live row and cuts from the bottom.
+  const byStart = (a: ScheduleItem, b: ScheduleItem) => a.d.start.localeCompare(b.d.start) || a.e.number - b.e.number;
+  const liveRows = pool.filter((x) => isBroadcasting(status(x.d))).sort(byStart);
+  const upcomingRows = pool.filter((x) => status(x.d) === 'upcoming').sort(byStart);
+  const airedRows = pool.filter((x) => status(x.d) === 'vod').sort((a, b) => b.d.start.localeCompare(a.d.start) || a.e.number - b.e.number);
+  const rows = [...liveRows, ...upcomingRows, ...airedRows].slice(0, Math.max(MAX_ROWS, liveRows.length));
   const ahead = rows.filter((x) => status(x.d) !== 'vod');
-  const earlier = rows.filter((x) => status(x.d) === 'vod').reverse();
+  const earlier = rows.filter((x) => status(x.d) === 'vod');
   const table = (rows: ScheduleItem[]) => (
     <div className="mt-3 overflow-x-auto rounded-panel border border-line">
       <table className="w-full min-w-[44rem] text-left text-sm">
@@ -1315,7 +1325,7 @@ function SeriesSchedule({ s, now }: { s: SeriesStop; now: number }) {
         {/* A series that is over: no extra button here; its Videos row below carries the one All replays → link. */}
       </div>
       {/* One table: a series that is over reads first day to last; a running one puts live and upcoming on top. */}
-      {rows.length > 0 && table(ahead.length === 0 ? [...earlier].reverse() : [...ahead, ...earlier])}
+      {rows.length > 0 && table(ahead.length === 0 ? [...earlier].reverse() : rows)}
       {/* The series' videos: newest replays and key hands, with what they are and how long they run. */}
       {seriesVideos.length > 0 && (
         <div className="mt-6">
