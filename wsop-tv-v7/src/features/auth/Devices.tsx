@@ -16,6 +16,11 @@ export function Devices() {
   );
 }
 
+/** Devices a plan lets one account stay signed in on (WSOP+ plan: Maximum Registered Devices). */
+const MAX_DEVICES = 5;
+/** One icon per kind of device; "This device" is told by its label, not its icon. */
+const DEVICE_ICON: Record<Device['kind'], string> = { web: 'laptop', mobile: 'phone', tablet: 'tablet', tv: 'tv' };
+
 export function DeviceList({ returnTo }: { returnTo?: string }) {
   const { state, set, toast } = useApp();
   const nav = useNavigate();
@@ -36,6 +41,9 @@ export function DeviceList({ returnTo }: { returnTo?: string }) {
         </b>{' '}
         · Your plan allows {MAX_STREAMS} streams at the same time.
       </p>
+      <p className="mt-1 text-sm text-muted">
+        Signed in on <b className="text-text tnum">{state.devices.length} / {MAX_DEVICES}</b> devices.
+      </p>
       {limit && (
         <div className="mt-4 rounded-card border border-delayed/50 bg-delayed/10 p-4 text-sm" role="alert">
           You've reached the stream limit. Sign out of a device that's currently streaming to watch here.
@@ -44,7 +52,7 @@ export function DeviceList({ returnTo }: { returnTo?: string }) {
       <ul className="mt-4 divide-y divide-line rounded-panel border border-line bg-surface">
         {state.devices.map((d) => (
           <li key={d.id} className="flex items-center gap-4 p-4">
-            <Icon name={d.kind === 'tv' ? 'tv' : d.kind === 'mobile' ? 'user' : 'grid1'} className="text-muted" />
+            <Icon name={DEVICE_ICON[d.kind]} className="text-muted" />
             <div className="min-w-0 flex-1">
               <p className="font-semibold">
                 {d.name} {d.current && <span className="label ml-1 text-[10px] text-gold">This device</span>}

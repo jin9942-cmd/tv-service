@@ -164,8 +164,11 @@ const PATHS: Record<string, string> = {
   history: 'M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7v5l3 2',
   card: 'M3 6h18v12H3zM3 10h18',
   shield: 'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z',
+  laptop: 'M5 5h14v10H5zM3 19h18',
+  phone: 'M8 3h8v18H8zM11 18h2',
+  tablet: 'M5 3h14v18H5zM11 18h2',
 };
-const STROKE = new Set(['plus', 'history', 'card', 'shield', 'check', 'close', 'chevron', 'back', 'full', 'tv', 'audio', 'mute', 'cc', 'globe', 'calendar', 'menu', 'layers', 'grid1', 'grid2', 'grid4']);
+const STROKE = new Set(['laptop', 'phone', 'tablet', 'plus', 'history', 'card', 'shield', 'check', 'close', 'chevron', 'back', 'full', 'tv', 'audio', 'mute', 'cc', 'globe', 'calendar', 'menu', 'layers', 'grid1', 'grid2', 'grid4']);
 
 export function Icon({ name, size = 20, className }: { name: keyof typeof PATHS | string; size?: number; className?: string }) {
   const stroke = STROKE.has(name);
@@ -275,7 +278,7 @@ export function Switch({ on, onChange, label, description }: { on: boolean; onCh
         {description && <span className="mt-0.5 block text-xs text-muted">{description}</span>}
       </span>
       <button role="switch" aria-checked={on} aria-labelledby={id} onClick={() => onChange(!on)} className={cx('relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200', on ? 'bg-gold' : 'bg-surface-3')}>
-        <span className={cx('absolute top-0.5 size-5 rounded-full bg-white transition-transform duration-200', on ? 'translate-x-[22px]' : 'translate-x-0.5')} />
+        <span className={cx('absolute top-0.5 left-0 size-5 rounded-full bg-white transition-transform duration-200', on ? 'translate-x-[22px]' : 'translate-x-0.5')} />
       </button>
     </div>
   );

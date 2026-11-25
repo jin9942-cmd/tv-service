@@ -7,7 +7,7 @@ import { PRESENTATION, atLeast, requiredTier, type IncludedFrom, type PaidTier, 
 export interface Device {
   id: string;
   name: string;
-  kind: 'web' | 'mobile' | 'tv';
+  kind: 'web' | 'mobile' | 'tablet' | 'tv';
   lastActive: string;
   current?: boolean;
   streaming?: boolean;
@@ -92,7 +92,7 @@ const INITIAL: AppState = {
   devices: [
     { id: 'd1', name: 'Chrome on macOS', kind: 'web', lastActive: 'Active now', current: true },
     { id: 'd2', name: 'iPhone 15', kind: 'mobile', lastActive: '2 hours ago', streaming: true },
-    { id: 'd3', name: 'iPad Air', kind: 'mobile', lastActive: 'Yesterday', streaming: true },
+    { id: 'd3', name: 'iPad Air', kind: 'tablet', lastActive: 'Yesterday', streaming: true },
     { id: 'd4', name: 'Pixel 8', kind: 'mobile', lastActive: '3 days ago' },
   ],
   // Demo history: videos no other Home row shows, so nothing appears twice on the page.
