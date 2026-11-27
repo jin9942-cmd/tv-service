@@ -3,7 +3,7 @@
 import { archiveRelated, archiveVideo } from './archive';
 import { archive, classicEvents, dayById, events, finalTableSeats, hands, playerById, seatsFor, seriesById } from '../data/mock';
 import { channelById, channels, programAt } from '../data/channels';
-import type { Day, Hand, TourEvent } from '../data/types';
+import type { Access, Day, Hand, TourEvent } from '../data/types';
 import { FOOTAGE, tableVideo, thumbFor } from '../lib/media';
 import { duration, money } from '../lib/format';
 import { VENUE_TZ, fmtDateTime } from '../lib/time';
@@ -44,7 +44,15 @@ export interface Video {
   about: [string, string][];
   /** For "most watched" ordering. */
   views: number;
+  /** Who can play it (see accessOf). */
+  access?: Access;
 }
+
+/**
+ * Who can play a video: its own access when it has one (broadcast days, hand clips, what a 24/7 channel is showing);
+ * otherwise a highlight clip is free and a full broadcast needs WSOP+.
+ */
+export const accessOf = (v: Video): Access => v.access ?? (v.kind === 'clip' ? 'free' : 'subscriber');
 
 const short = (e: TourEvent) => e.name.replace(' World Championship', '');
 
@@ -156,6 +164,7 @@ function dayVideo(e: TourEvent, d: Day, i: number): Video {
     tags: [eventTag(e), ...playerTags(tablePlayers(d)), GAME_TAG[e.game], stageTag(d), seriesTag(e)],
     about: aboutDay(e, d),
     views: 40_000 + ((i * 7919 + e.entrants) % 400_000),
+    access: d.access ?? 'subscriber',
   };
 }
 
@@ -181,6 +190,7 @@ function clipVideo(h: Hand, i: number): Video {
       ['Length', duration(h.durationSec)],
     ],
     views: h.views,
+    access: h.access,
   };
 }
 
@@ -273,6 +283,7 @@ export function channelVideo(channelId: string, at: number): Video | undefined {
           ['Length', duration(Math.round((p.end - p.start) / 1000))],
         ],
     views: 0,
+    access: p.access,
   };
 }
 

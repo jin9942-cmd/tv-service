@@ -2,7 +2,9 @@
 // (all built from the catalog and the one card).
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useApp, useTick } from '../state/app';
+import { gateForAccess, useApp, useTick } from '../state/app';
+import { PlaybackGate } from '../features/auth/Gates';
+import { requiredTier } from '../data/policy';
 import { BackButton } from '../components/BackButton';
 import { DEMO_NOW } from '../lib/clock';
 import { Button, Icon, LiveTag, Page, cx } from '../components/ui';
@@ -21,7 +23,7 @@ import { Carousel } from './carousel';
 /** This year's season (the live series). */
 const CURRENT_SEASON = 2025;
 import { CHANNEL_ART, TABLE_ART, VENUE_ART, artStyle, type Art } from '../lib/brand';
-import { byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
+import { accessOf, byTag, catalog, channelVideo, highlightClips, isLive, relatedTo, replays, stageOf, videoById, type Video } from './catalog';
 import { featuredTheme, themeById } from './themes';
 import { HALL_OF_FAME } from './halloffame';
 import { ARCHIVE, archiveEvent, broadcastsOf, fmtBuyIn } from './archive';
@@ -50,7 +52,11 @@ export function WatchPage() {
   const live = isLive(v, state.streamMode);
   // VOD: a pre-play page first; its Play opens the player full screen (?play=1). Live and 24/7 play right away.
   const vod = !live && v.kind !== 'channel';
-  if (vod) return params.get('play') === '1' ? <FullPlayer key={v.id} v={v} /> : <TitleView key={v.id} v={v} />;
+  if (vod && params.get('play') !== '1') return <TitleView key={v.id} v={v} />;
+  // Not signed in or not a WSOP+ member for this video: sign-in / plans in place of the player (soft paywall).
+  const gate = gateForAccess(accessOf(v), state, live);
+  if (gate !== 'ok') return <GateView v={v} gate={gate} live={live} />;
+  if (vod) return <FullPlayer key={v.id} v={v} />;
   const channelId = v.kind === 'channel' ? id.slice(3) : undefined;
   const program = channelId ? programAt(channelId, now) : undefined;
   // Live edge in seconds: a channel counts from the start of what's on; a live broadcast from the day's start.
@@ -68,13 +74,32 @@ export function WatchPage() {
  * VOD pre-play page: the picture with the title, what it is (series, aired, length, game), the description, Play and
  * My List; then suggested videos. Nothing else (no tabs). Play goes full screen.
  */
+function GateView({ v, gate, live }: { v: Video; gate: Exclude<ReturnType<typeof gateForAccess>, 'ok'>; live: boolean }) {
+  const { state } = useApp();
+  const vod = !live && v.kind !== 'channel';
+  return (
+    <div className="relative overflow-hidden bg-black">
+      <img src={v.thumb} style={artStyle({ pos: v.thumbPos, fit: v.thumbFit })} alt="" className="absolute inset-0 size-full object-cover opacity-25" />
+      <div className="relative flex min-h-[min(36rem,80vh)] flex-col">
+        <Page className="pt-6">
+          <BackButton />
+        </Page>
+        <div className="flex flex-1">
+          <PlaybackGate gate={gate} required={requiredTier(accessOf(v), state.includedFrom, live)} returnTo={`/watch/${v.id}${vod ? '?play=1' : ''}`} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TitleView({ v }: { v: Video }) {
   const nav = useNavigate();
   const { state } = useApp();
   const resume = state.progress[v.id];
   const ref = v.dayId ? dayById(v.dayId) : undefined;
+  const open = gateForAccess(accessOf(v), state) === 'ok';
   const play = () => {
-    enterFullScreen();
+    if (open) enterFullScreen();
     nav(`/watch/${v.id}?play=1`);
   };
   const facts = [ref && fmtDate(ref.day.start, state.tz), v.durationSec > 0 && duration(v.durationSec), ref?.event.game, ref?.event.buyIn ? `Buy-in ${money(ref.event.buyIn)}` : undefined].filter(Boolean);
